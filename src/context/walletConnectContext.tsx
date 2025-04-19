@@ -2,7 +2,13 @@ import { createContext, useContext, useEffect, useState, useRef, useMemo, useCal
 
 import { useAccount } from "wagmi";
 import { WalletClient } from "viem";
-import {ISSUER_PRIVATE_KEY} from "../config";
+import {ISSUER_PRIVATE_KEY, WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL} from "../config";
+
+
+import {
+  type SignatoryFactoryName,
+  useSelectedSignatory,
+} from "../signers/useSelectedSignatory";
 
 
 import { ethers } from 'ethers';
@@ -11,6 +17,7 @@ import { BiconomySmartAccountV2, createSmartAccountClient, PaymasterMode, create
 import { DIDSession } from 'did-session';
 import { AccountId } from 'caip';
 import { EthereumWebAuth } from '@didtools/pkh-ethereum';
+import { optimism } from "viem/chains";
 
 const SESSION_KEY = 'didSession';
 
@@ -33,7 +40,9 @@ export type WalletConnectContextState = {
     orgAccountSessionStorageClient?: any,
     session?: DIDSession;
     signer?: ethers.JsonRpcSigner,
-    setOrgNameValue: (orgNameValue: string) => Promise<void>;
+    selectedSignatory?: SignatoryFactory,
+    setOrgNameValue: (orgNameValue: string) => Promise<void>,
+    
 }
 
 export const WalletConnectContext = createContext<WalletConnectContextState>({
@@ -44,14 +53,16 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
   orgAccountClient: undefined,
   orgAccountSessionKeyAddress: undefined,
   orgAccountSessionStorageClient: undefined,
-    session: undefined,
-    signer: undefined,
-    connect: () => {
-        throw new Error('WalletConnectContext must be used within a WalletConnectProvider');
-      },
-    setOrgNameValue: async (orgNameValue: string) => {},
+  session: undefined,
+  signer: undefined,
+
+  connect: () => {
+      throw new Error('WalletConnectContext must be used within a WalletConnectProvider');
+    },
+  setOrgNameValue: async (orgNameValue: string) => {},
 
 })
+
 
 
 export const useWalletConnect = () => {
@@ -65,6 +76,13 @@ export const useWalletConnect = () => {
     const [orgAccountSessionStorageClient, setOrgAccountSessionStorageClient] = useState<any>();
     const [session, setSession] = useState<DIDSession | undefined>();
     const [signer, setSigner] = useState<ethers.JsonRpcSigner>();
+    const {selectedSignatory, setSelectedSignatoryName, selectedSignatoryName } =
+      useSelectedSignatory({
+        chain: optimism,
+        web3AuthClientId: WEB3_AUTH_CLIENT_ID,
+        web3AuthNetwork: WEB3_AUTH_NETWORK,
+        rpcUrl: RPC_URL,
+      });
 
     const setOrgNameValue = useCallback(async (orgNameValue: string) => {
       try {
@@ -83,13 +101,17 @@ export const useWalletConnect = () => {
         if (!chain || !isConnected || (connectedAddress && web3ModalAddress !== connectedAddress)) {
           setConnectedAddress(undefined);
         }
-      }, [chain, isConnected, web3ModalAddress, connectedAddress]);
+
+        console.info("*************  set signatory to injectedProviderSignatoryFactory ************")
+        setSelectedSignatoryName("injectedProviderSignatoryFactory")
+        //setSelectedSignatoryName("web3AuthSignatoryFactory")
+    }, [chain, isConnected, web3ModalAddress, connectedAddress]);
 
       
 
 
     const connect = async (address: string, walletClient: WalletClient) => {
-      
+    
       if (address && walletClient) {
 
           // Build RichCanvas authority Smart Wallet DID
@@ -356,7 +378,7 @@ export const useWalletConnect = () => {
               }
             })
 
-           
+          
             console.info("call send transaction")
             let swTx = await orgAccountClient.sendTransaction(tx.data,  {
                   
@@ -410,7 +432,7 @@ export const useWalletConnect = () => {
             //sessionKeyAddress:  "0x42F121bb72d1d1cb8937aB4775C27Bf363676BA6"
             //sessionStorageClient:  {"smartAccountAddress":"0x478df0535850b01cbe24aa2dad295b2968d24b67"}
 
- 
+
             */
 
 
@@ -466,22 +488,21 @@ export const useWalletConnect = () => {
           }
 
       }
-      else {
 
-      }
     }
     return {
-      issuerAccountClient,
-      orgDid,
-      orgName,
-      orgAddress,
-      orgAccountClient,
-      orgAccountSessionKeyAddress,
-      orgAccountSessionStorageClient,
-      session,
-      signer,
-      connect,
-      setOrgNameValue,
+            issuerAccountClient,
+            orgDid,
+            orgName,
+            orgAddress,
+            orgAccountClient,
+            orgAccountSessionKeyAddress,
+            orgAccountSessionStorageClient,
+            session,
+            signer,
+            selectedSignatory,
+            connect,
+            setOrgNameValue,
     }
         
 }
@@ -498,6 +519,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
       connect, 
       session, 
       signer,
+      selectedSignatory,
       setOrgNameValue
     } =
       useWalletConnect();
@@ -513,6 +535,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         orgAccountClient,
         session,
         signer,
+        selectedSignatory,
         connect,
         setOrgNameValue
       }),
@@ -526,12 +549,13 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         orgAccountClient,
         session, 
         signer, 
+        selectedSignatory,
         connect,
         setOrgNameValue]
     );
   
     return <WalletConnectContext.Provider value={providerProps}>{children}</WalletConnectContext.Provider>;
-  };
+};
 
 
 

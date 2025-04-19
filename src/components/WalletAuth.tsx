@@ -53,7 +53,7 @@ const WalletAuth = forwardRef<WalletAuthRef, WalletAuthProps>((props, ref) => {
 
   const { } = props;
   
-  const { connect, orgDid } = useWallectConnectContext();
+  const { selectedSignatory, connect, orgDid } = useWallectConnectContext();
 
 
   const navigate = useNavigate();
@@ -68,6 +68,12 @@ const WalletAuth = forwardRef<WalletAuthRef, WalletAuthProps>((props, ref) => {
 
   const openWalletPopup = () => {
     console.info(">>>>>>>>>>>>>> open wallet popup")
+    selectedSignatory.login().then(( owner, signatory ) => {
+      console.info("owner: ", owner)
+      console.info("signatory: ", signatory)
+    })
+
+    /*
     open().then(() => { // Opens the AppKit modal with X login option 
       console.info("returned from open wallet")
       console.info("connectors found: ", connectors)
@@ -76,6 +82,7 @@ const WalletAuth = forwardRef<WalletAuthRef, WalletAuthProps>((props, ref) => {
         //walletConnect({ connector: connectors[1] }); // e.g., MetaMask
       }
     })
+    */
   };
 
 
@@ -85,22 +92,21 @@ const WalletAuth = forwardRef<WalletAuthRef, WalletAuthProps>((props, ref) => {
   }));
 
   useEffect(() => {
-      //console.info("Wallet signed in via AppKit!", address);
-      //console.info("Wallet Client!", walletClient);
+      console.info("Wallet signed in", address);
+      console.info("Wallet Client!", walletClient);
     }, [isConnected, address]);
 
   useEffect(() => {
     // if wallet is defined and we have not defined smart wallet
     if (walletClient) {
-      
 
-      //console.info("WalletClient is available:", walletClient);
-      //console.info("is connected: ", isConnected)
-
+      console.info("WalletClient is available:", walletClient);
       if (isConnected && address && walletClient) {
         if (orgDid == undefined && !hasFiredOnce.current) {
           hasFiredOnce.current = true;
+          console.info("fire connect and configure all the smart wallet stuff")
           connect(address, walletClient).then(() => {
+            console.info("done with configuration of wallet so go to chat")
             navigate('/chat/')
           })
         }

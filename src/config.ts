@@ -5,3 +5,6 @@ export const OPENAI_DEFAULT_MODEL: string = (env as any).default_model;
 export const OPENAI_DEFAULT_SYSTEM_PROMPT: string = (env as any).default_system_prompt;
 export const OPENAI_DEFAULT_ASSISTANT_PROMPT: string = (env as any).default_assistant_prompt;
 export const ISSUER_PRIVATE_KEY = (env as any).issuer_eoc_private_key;
+export const WEB3_AUTH_NETWORK = (env as any).web3_auth_network;
+export const WEB3_AUTH_CLIENT_ID = (env as any).web3_auth_client_id;
+export const RPC_URL = (env as any).rpc_url;
