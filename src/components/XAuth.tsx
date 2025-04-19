@@ -1,0 +1,181 @@
+
+import axios from 'axios';
+import { useImperativeHandle, forwardRef, useEffect  } from 'react';
+
+import { useWallectConnectContext } from "../context/walletConnectContext";
+
+import { keccak256, toUtf8Bytes } from 'ethers';
+import { useWalletClient } from 'wagmi';
+import ConversationService from "../service/ConversationService"
+import {ChatMessage, MessageType, Role} from "../models/ChatCompletion";
+
+import AttestationService from '../service/AttestationService';
+import { SocialAttestation } from '../models/Attestation'
+
+import VerifiableCredentialsService from '../service/VerifiableCredentialsService'
+
+interface XProfile {
+  sub: string; 
+  name: string;
+  given_name: string;
+  family_name: string;
+  picture: string;
+  email: string;
+  email_verified: boolean;
+}
+
+
+const CLIENT_ID = 'LW1pdG96ZzVwbmlrNkJEXzIyTEo6MTpjaQ'; // Replace with your LinkedIn Client ID
+const REDIRECT_URI = 'http://localhost:5173/xcallback';
+const CLIENT_SECRET = '0D2ddZGdH3Uk6rKhBC2eHEjYiCGk6LyAZe-sukr_YQgMLBKzry'; // Replace with your LinkedIn Client Secret
+const SCOPES = 'profile email openid';
+const CALLBACK_URI = 'http://localhost:4000/x-callback'
+
+interface XAuthProps {
+}
+
+export interface XAuthRef {
+  openXPopup: () => void;
+}
+
+const entityId = "x"
+const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
+
+  const { data: walletClient } = useWalletClient();
+
+  const { } = props;
+  const { issuerAccountClient, signer, orgAccountClient, session, orgDid } = useWallectConnectContext();
+
+  
+
+  function generateRandomString(length: number) {
+    const array = new Uint8Array(length);
+    crypto.getRandomValues(array);
+    return btoa(String.fromCharCode(...array))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=/g, "")
+      .slice(0, length);
+  }
+
+  const codeVerifier = generateRandomString(50); // 43-128 characters
+
+
+  const openXPopup = () => {
+
+    
+    const codeChallenge = codeVerifier; // For plain method, they’re the same
+
+    
+    const authUrl = 'https://x.com/i/oauth2/authorize?response_type=code&client_id=' + CLIENT_ID + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) + '&scope=tweet.read%20users.read%20follows.read%20offline.access&state=state&code_challenge=' + codeChallenge + '&code_challenge_method=plain'
+    const width = 600;
+    const height = 600;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+
+    
+    const popup = window.open(
+      authUrl,
+      "_blank",
+      `width=${width},height=${height},top=${top},left=${left}`
+    );
+
+    if (!popup) {
+      return;
+    }
+
+    const handleEvent = async (event: MessageEvent) => {
+
+      if (event.data.type != "x_auth") {
+        console.info("skip this message: ", event.data.type)
+        return; // Skip this message
+      }
+
+      window.removeEventListener('message', handleEvent)
+
+      const res = await axios.get(CALLBACK_URI + '?code='+ event.data.code + '&verifier=' + codeVerifier);
+
+
+      let name = res["data"]["data"]["name"]
+      let url = "https://x.com/" + res["data"]["data"]["username"]
+
+
+      if (orgDid && walletClient && orgAccountClient && issuerAccountClient && session && signer) {
+  
+        const vc = await VerifiableCredentialsService.createSocialVC(entityId, orgDid, name, url);
+        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
+        const fullVc = result.vc
+        const proofUrl = result.proofUrl
+        if (fullVc && signer && orgAccountClient && walletClient) {
+        
+          // add attestation
+          const hash = keccak256(toUtf8Bytes("hash value"));
+          const attestation: SocialAttestation = {
+            attester: orgDid,
+            entityId: entityId,
+            hash: hash,
+            vccomm: (fullVc.credentialSubject as any).commitment.toString(),
+            vcsig: (fullVc.credentialSubject as any).commitmentSignature,
+            vciss: VerifiableCredentialsService.issuerDid,
+            proof: proofUrl,
+            name: name,
+            url: url
+          };
+
+          const uid = AttestationService.addSocialAttestation(attestation, signer, orgAccountClient)
+          console.info("add social attestation complete")
+
+          if (location.pathname.startsWith("/chat/c/")) {
+            let conversationId = location.pathname.replace("/chat/c/", "")
+            let id = parseInt(conversationId)
+            ConversationService.getConversationById(id).then((conversation) => {
+              if (conversation) {
+
+                var currentMsgs: ChatMessage[] = JSON.parse(conversation.messages);
+  
+                const newMsg: ChatMessage = {
+                  id: currentMsgs.length + 1,
+                  args: "",
+                  role: Role.Developer,
+                  messageType: MessageType.Normal,
+                  content: "I've updated your wallet with a verifiable credential and published your x attestation.",
+                };
+  
+                const msgs: ChatMessage[] = [...currentMsgs.slice(0, -1), newMsg]
+                const msgs2: ChatMessage[] = [...msgs, currentMsgs[currentMsgs.length - 1]]
+  
+                console.info("update conversation message ")
+                ConversationService.updateConversation(conversation, msgs2)
+              }
+            })
+            
+          }
+          
+
+        }
+      }
+
+
+    }
+
+    // Listen for message from callback
+    window.addEventListener('message', handleEvent)
+
+  };
+
+  // Use useImperativeHandle to expose the method to the parent
+  useImperativeHandle(ref, () => ({
+    openXPopup,
+  }));
+
+
+
+  return (
+    <div>
+    </div>
+  );
+
+
+});
+
+export default XAuth;

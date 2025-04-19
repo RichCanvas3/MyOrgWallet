@@ -1,0 +1,40 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import viteTsconfigPaths from 'vite-tsconfig-paths';
+import svgrPlugin from 'vite-plugin-svgr';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  define: {
+    // Mock process.env for compatibility
+    'process.env': {
+      NODE_ENV: process.env.NODE_ENV || 'development', // Use Node's process.env as fallback
+    },
+  },
+  resolve: {
+    alias: {
+      buffer: 'buffer',
+    },
+  },
+    plugins: [react(), viteTsconfigPaths(), svgrPlugin(),
+      nodePolyfills({
+        globals: {
+          Buffer: true, // Polyfill Buffer
+        },
+      }),],
+    server: {
+        // Proxy API requests to the backend server
+        proxy: {
+          '/api': {
+            target: 'http://localhost:4000',  // Your backend Express server
+            changeOrigin: true,
+            secure: false, // Disable SSL verification (useful in development)
+            rewrite: (path) => path.replace(/^\/api/, ''), // Remove `/api` prefix
+          },
+        },
+      },
+    build: {
+        chunkSizeWarningLimit: 2000, // in kilobytes
+    },
+});

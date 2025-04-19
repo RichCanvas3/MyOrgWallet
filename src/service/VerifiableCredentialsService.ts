@@ -1,0 +1,471 @@
+import { VerifiableCredential } from "../models/VerifiableCredential"
+import { WalletClient } from "viem";
+import { BiconomySmartAccountV2, createSmartAccountClient, PaymasterMode } from "@biconomy/account";
+import { ethers, hashMessage } from 'ethers'
+import { DIDSession } from 'did-session';
+import { vs } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import { Buffer } from 'buffer';
+
+// @ts-ignore
+window.Buffer = Buffer;
+
+class VerifiableCredentialsService {
+
+
+    static credentials : VerifiableCredential[] | undefined
+    static snapId : string = "local:http://localhost:8080"
+
+    static issuerDid = "did:pkh:eip155:10:0x478df0535850b01cBE24AA2DAd295B2968d24B67" // richcanvas did
+        
+
+    static async createWebsiteOwnershipVC(
+      entityId: string,
+      orgDid: string,
+      websiteType: string,
+      websiteUrl: string
+    ): Promise<VerifiableCredential> {
+      let vc : VerifiableCredential = {
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
+        type: ["VerifiableCredential", "WebsiteOwnershipCredential"],
+        issuer: VerifiableCredentialsService.issuerDid, 
+        issuanceDate: new Date().toISOString(),
+        credentialSubject: {
+          id: orgDid,
+          type: websiteType,
+          url: websiteUrl,
+          verifiedMethod: "OAuth",
+          platform: "richcanvas-" + entityId
+        }
+      }
+    
+      return vc;
+    }
+
+    static async createInsuranceVC(
+      orgDid: string,
+      insuranceId: string
+    ): Promise<VerifiableCredential> {
+      let vc : VerifiableCredential = {
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
+        type: ["VerifiableCredential", "InsuranceCredential"],
+        issuer: VerifiableCredentialsService.issuerDid, 
+        issuanceDate: new Date().toISOString(),
+        credentialSubject: {
+          id: orgDid,
+          insuranceId: insuranceId,
+          verifiedMethod: "OAuth",
+          platform: "richcanvas-insurance"
+        }
+      }
+    
+      return vc;
+    }
+
+    static async createSocialVC(
+      entityId: string,
+      orgDid: string,
+      socialId: string,
+      socialUrl: string
+    ): Promise<VerifiableCredential> {
+      let vc : VerifiableCredential = {
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
+        type: ["VerifiableCredential", "SocialCredential"],
+        issuer: VerifiableCredentialsService.issuerDid, 
+        issuanceDate: new Date().toISOString(),
+        credentialSubject: {
+          id: orgDid,
+          socialId: socialId,
+          socialUrl: socialUrl,
+          verifiedMethod: "OAuth",
+          platform: "richcanvas-" + entityId
+        }
+      }
+    
+      return vc;
+    }
+
+    static async createRegisteredDomainVC(
+      entityId: string,
+      orgDid: string,
+      domainname: string,
+      domaincreationdate: string
+    ): Promise<VerifiableCredential> {
+      let vc : VerifiableCredential = {
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
+        type: ["VerifiableCredential", "RegisteredDomainCredential"],
+        issuer: VerifiableCredentialsService.issuerDid, 
+        issuanceDate: new Date().toISOString(),
+        credentialSubject: {
+          id: orgDid,
+          domainName: domainname,
+          createdOn: domaincreationdate,
+          verifiedMethod: "OAuth",
+          platform: "richcanvas-" + entityId
+        }
+      }
+    
+      return vc;
+    }
+
+    static async createOrgVC(
+      entityId: string,
+      orgDid: string,
+      orgName: string
+    ): Promise<VerifiableCredential> {
+      let vc : VerifiableCredential = {
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
+        type: ["VerifiableCredential", "OrgCredential"],
+        issuer: VerifiableCredentialsService.issuerDid, 
+        issuanceDate: new Date().toISOString(),
+        credentialSubject: {
+          id: orgDid,
+          name: orgName,
+          verifiedMethod: "OAuth",
+          platform: "richcanvas-" + entityId
+        }
+      }
+    
+      return vc;
+    }
+
+    static async createStateRegistrationVC(
+      entityId: string,
+      orgDid: string,
+      idNumber: string,
+       orgName: string, 
+       status: string, 
+       formationDate: string, 
+       state: string, 
+       locationAddress: string
+    ): Promise<VerifiableCredential> {
+      let vc : VerifiableCredential = {
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
+        type: ["VerifiableCredential", "OrgStateRegistrationCredential"],
+        issuer: VerifiableCredentialsService.issuerDid, 
+        issuanceDate: new Date().toISOString(),
+        credentialSubject: {
+          id: orgDid,
+          name: orgName,
+          status: status,
+          formationDate: formationDate,
+          state: state,
+          locationAddress: locationAddress,
+          verifiedMethod: "State",
+          platform: "richcanvas-" + entityId
+        }
+      }
+    
+      return vc;
+    }
+
+    static async createEmailVC(
+      entityId: string,
+      orgDid: string,
+      emailType: string,
+      email: string
+    ): Promise<VerifiableCredential> {
+      let vc : VerifiableCredential = {
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
+        type: ["VerifiableCredential", "EmailCredential"],
+        issuer: VerifiableCredentialsService.issuerDid, 
+        issuanceDate: new Date().toISOString(),
+        credentialSubject: {
+          id: orgDid,
+          type: emailType,
+          email: email,
+          verifiedMethod: "oAuth",
+          platform: "richcanvas-" + entityId
+        }
+      }
+    
+      return vc;
+    }
+    
+    static async createOrgWalletVC(
+      entityId: string,
+      orgDid: string,
+      type: string,
+      contractaddress: string
+    ): Promise<VerifiableCredential> {
+      let vc : VerifiableCredential = {
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
+        type: ["VerifiableCredential", "OrgSmartWalletCredential"],
+        issuer: VerifiableCredentialsService.issuerDid, 
+        issuanceDate: new Date().toISOString(),
+        credentialSubject: {
+          id: orgDid,
+          type: type,
+          contractAddress: contractaddress,
+          verifiedMethod: "check",
+          platform: "richcanvas-" + entityId
+        }
+      }
+    
+      return vc;
+    }
+
+    
+
+    static async saveCredential(walletClient: WalletClient, credential: VerifiableCredential, entityId: string) {
+        
+        const credentialJSON = JSON.stringify(credential);
+        const snapVC = { id: entityId, credential: credentialJSON}
+
+        walletClient.request({
+          method: 'wallet_invokeSnap',
+          params: {
+            snapId: VerifiableCredentialsService.snapId,
+            request: { method: "storeVC", params: { snapVC } }
+          },
+        }).then((resp) => {
+          console.info("save call successful, ", resp)
+        })
+
+    }
+
+    static async getCredentials(walletClient: WalletClient): Promise<VerifiableCredential[]> {
+
+        if (VerifiableCredentialsService.credentials == undefined) {
+            VerifiableCredentialsService.credentials = []
+
+            let credentials : VerifiableCredential[] = []
+            walletClient.request({
+            method: 'wallet_invokeSnap',
+            params: {
+                snapId: VerifiableCredentialsService.snapId,
+                request: { method: "getVCs", params: {}},
+            },
+            }).then((response) => {
+                console.info("got all credentials response: ", JSON.stringify(response))
+            });
+        }
+        
+
+        return VerifiableCredentialsService.credentials
+
+    }
+
+    static async getCredential(walletClient: WalletClient, entityId: string): Promise<VerifiableCredential | undefined> {
+
+        let credential : VerifiableCredential | undefined
+
+        const response : any = await walletClient.request({
+            method: 'wallet_invokeSnap',
+            params: {
+                snapId: VerifiableCredentialsService.snapId,
+                request: { method: "getVC", params: {id: entityId}},
+            },
+        })
+        //console.info(" id: ", response?.id)
+        //console.info(" credential: ", response?.credential)
+        if (response?.id && response?.id == entityId) {
+            if (response?.credential) {
+
+                const credStr = response?.credential
+                const credJson = JSON.parse(credStr)
+
+                credential = {
+                    '@context': credJson['@context'],
+                    id: credJson['id'],
+                    type: credJson['type'],
+                    issuer: credJson['issuer'],
+                    issuanceDate: credJson['issuanceDate'],
+                    expirationDate: credJson['expirationDate'],
+                    credentialSubject: credJson['credentialSubject'],
+                    proof: credJson['proof']
+                }
+
+            }
+        }
+        //console.info("got  credential response: ", JSON.stringify(response))
+
+        
+        
+
+        return credential
+
+    }
+
+    static async createCredential(
+      vc: VerifiableCredential,
+      entityId: string,
+      orgDid: string, 
+      walletClient: WalletClient, 
+
+      issuerAccountClient: BiconomySmartAccountV2, 
+      session: DIDSession): Promise<any | undefined> {
+
+
+        let proofUrl = ""
+
+      
+      const encoder = new TextEncoder();
+
+      // Hash the subject DID
+      function hashDID(did: string) {
+        const encodedDID = Buffer.from(encoder.encode(did)).toString('hex');
+        const didBigInt = BigInt('0x' + encodedDID);
+        return didBigInt
+      }
+
+
+      // Finally, create the credential commitment: Poseidon(issuer_DID, leafHash)
+      /*
+      function createCredentialCommitment(poseidon: any, orgDid: string, issuerDID: string, credentialHash: string) {
+
+        const issuerDIDHash = hashDID(issuerDID)
+        const orgDIDHash = hashDID(orgDid)
+
+
+        console.info("issuerDIDHash: ", issuerDIDHash)
+        console.info("orgDIDHash: ", orgDIDHash)
+        console.info("credentialHash: ", credentialHash)
+
+        const leafHash = poseidon.F.toObject(poseidon([orgDIDHash, credentialHash]));
+        const commitmentHash = poseidon.F.toObject(poseidon([issuerDIDHash, leafHash]));
+
+        return commitmentHash
+      }
+        */
+
+      async function verifyMessageDirect(smartAccountAddress: string, messageHash: string, signature: string) {
+
+        const rpcUrl = "https://opt-mainnet.g.alchemy.com/v2/UXKG7nGL5a0mdDhvP-2ScOaLiRIM0rsW"
+        const provider = new ethers.JsonRpcProvider(rpcUrl);
+      
+        const abi = ["function isValidSignature(bytes32 _hash, bytes _signature) external view returns (bytes4)"];
+        const contract = new ethers.Contract(smartAccountAddress, abi, provider);
+        const result = await contract.isValidSignature(messageHash, signature);
+        return result.startsWith("0x1626ba7e");
+      }
+
+
+    // create verifiable credential to represent
+    //   - organization DID
+    //   - organization domain
+    //   - commitment
+    //   - verifier DID (richcanvas)
+
+
+      const issuerDid = vc.issuer
+      const credentialJSON = JSON.stringify(vc);
+
+      // Hash data according to EIP-712
+      const credentialHash = hashMessage(credentialJSON)
+      const signature = await issuerAccountClient?.signMessage(credentialHash)
+
+      const addr = await issuerAccountClient?.getAccountAddress()
+      if (addr && signature) {
+
+        //const validSignature = await verifyMessageDirect(addr, credentialHash, signature)
+        //console.info("is valid issuer signature: ", validSignature)
+
+        var sig = "'" + signature + "'"
+
+        // complete vc proof that holds commitmentHash hex in subject
+        vc.proof = {
+          type: 'EthereumEip712Signature2021',
+          created: vs.issuanceDate,
+          proofPurpose: 'assertionMethod',
+          verificationMethod: issuerDid,
+          // issuer signed a string of the vc without proof section
+          signature: sig
+        }
+
+
+        if (issuerDid && orgDid) {
+
+          const issuerDidHash = hashDID(issuerDid)
+          const orgDidHash = hashDID(orgDid)
+
+          const res = await fetch('http://localhost:3051/api/proof/commitment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              issuerDidHash: issuerDidHash.toString(),
+              orgDidHash: orgDidHash.toString(), 
+              vcHash: credentialHash.toString()
+            }),
+          })
+          const commitment = await res.json()
+
+          // construct zkProof associated with verifiable credential
+          const commitmenthHex = '0x' + BigInt(commitment as any).toString(16)
+          const commitmenthHexHash = hashMessage(commitmenthHex)
+
+          const commitmentSignature = await issuerAccountClient?.signMessage(commitment.toString())
+          if (commitmentSignature && vc.credentialSubject) {
+
+            vc.credentialSubject.commitment = commitment.toString()
+            vc.credentialSubject.commitmentSignature = commitmentSignature
+
+            const validCommitment = await verifyMessageDirect(addr, commitmenthHexHash, commitmentSignature)
+
+            // console.info("is valid signature for commitment: ", valid)
+            // generate Proof
+            const serializedSession = session?.serialize()
+
+            //console.info("issuerDid: ", issuerDid)
+            //console.info("issuerDidHash: ", issuerDidHash) 
+
+            //console.info("orgDid: ", orgDid)
+            //console.info("orgDidHash: ", orgDidHash) 
+
+            //console.info("credentialHash: ", credentialHash)
+
+            //console.info("commitment: ", commitment)
+            //console.info("commitmenthHex (can get back to commitment): ", commitmenthHex)
+            //console.info("commitmenthHexHash: ", commitmenthHexHash)
+
+            //console.info("commitmentSignature: ", commitmentSignature)
+
+            // save vc to metamask snap storage
+            if (walletClient) {
+              //console.info("save credential: ", JSON.stringify(vc))
+              await VerifiableCredentialsService.saveCredential(walletClient, vc, entityId)
+            }
+
+            const proofResp = await fetch('http://localhost:3051/api/proof/create', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                inputs: { issuerDidHash: issuerDidHash.toString(), orgDidHash: orgDidHash.toString(), vcHash: credentialHash.toString(), commitment: commitment.toString(), commitmentSignature: commitmentSignature.toString() }, // Example inputs
+                session: serializedSession,
+                commitment: commitment.toString(),
+                orgDid: orgDid
+              }),
+            })
+            const proofResults = await proofResp.json()
+            proofUrl = proofResults.proofUrl
+
+            console.info(" proof id stored on ceramic: ", proofUrl);
+
+            // verify if we have access to accountclient
+            const validSigData = await issuerAccountClient?.getIsValidSignatureData(commitmenthHexHash as `0x${string}`, commitmentSignature)
+            if (validSigData) {
+              const valid = validSigData.startsWith("0x1626ba7e"); // ERC-1271 magic value
+            }
+
+            
+          }
+          
+        }
+
+      }
+      return { vc: vc, proofUrl: proofUrl }
+    }
+        
+    static async verifyIssuerCredentialHashSignature(smartAccountAddress: string, messageHash: string, signature: string) {
+
+      //   PRIVATE DATA
+      const rpcUrl = "https://opt-mainnet.g.alchemy.com/v2/UXKG7nGL5a0mdDhvP-2ScOaLiRIM0rsW"
+      const provider = new ethers.JsonRpcProvider(rpcUrl);
+    
+      const abi = ["function isValidSignature(bytes32 _hash, bytes _signature) external view returns (bytes4)"];
+      const contract = new ethers.Contract(smartAccountAddress, abi, provider);
+      const result = await contract.isValidSignature(messageHash, signature);
+      return result.startsWith("0x1626ba7e");
+    }
+
+}
+export default VerifiableCredentialsService;
