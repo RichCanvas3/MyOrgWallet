@@ -183,7 +183,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   
   useEffect(() => {
-    if (orgDid) {
+    if (orgAccountClient && orgDid) {
       AttestationService.setEntityAttestations(orgDid).then((ents) => {
         if (ents != undefined) {
 
@@ -212,12 +212,12 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     }
     else {
       
-      //console.info("------------> org is not defined")
-      navigate("/")
+      console.info("------------> org is not defined")
+      //navigate("/")
     }
     
 
-  }, [orgDid]);
+  }, [orgAccountClient, orgDid]);
 
 
   useEffect(() => {
@@ -375,6 +375,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       };
       setConversation(newConversation);
 
+      ConversationService.storeConversation(newConversation, messages);
+
       navigate(`/chat/c/${newConversation.id}`);
 
     }
@@ -416,7 +418,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           } else {
             const errorMessage: string = 'Conversation ' + location.pathname + ' not found';
             NotificationService.handleError(errorMessage, CONVERSATION_NOT_FOUND);
-            navigate('/chat/');
+            //navigate('/chat/');
           }
         });
     } 

@@ -1,23 +1,49 @@
 import { createContext, useContext, useEffect, useState, useRef, useMemo, useCallback, ReactNode } from "react";
 
-import { useAccount } from "wagmi";
-import { WalletClient } from "viem";
-import {ISSUER_PRIVATE_KEY, WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL} from "../config";
+import { useAccount, useWalletClient } from "wagmi";
 
+import { createPublicClient, WalletClient, toHex, http, zeroAddress,  } from "viem";
+import { privateKeyToAccount, generatePrivateKey } from "viem/accounts";
+import {ISSUER_PRIVATE_KEY, WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, BUNDLER_URL, PAYMASTER_URL} from "../config";
+
+import type {
+  SignatoryFactory,
+} from "../signers/SignatoryTypes";
 
 import {
-  type SignatoryFactoryName,
-  useSelectedSignatory,
+  useSelectedSignatory
 } from "../signers/useSelectedSignatory";
 
 
 import { ethers } from 'ethers';
-import { BiconomySmartAccountV2, createSmartAccountClient, PaymasterMode, createSessionKeyEOA, createSessionSmartAccountClient, getSingleSessionTxParams } from "@biconomy/account";
+import {
+  Implementation,
+  toMetaMaskSmartAccount,
+  type MetaMaskSmartAccount,
+  type DelegationStruct,
+  createDelegation,
+  DelegationFramework,
+  SINGLE_DEFAULT_MODE,
+  getExplorerTransactionLink,
+  getExplorerAddressLink,
+  createExecution,
+  Delegation
+} from "@metamask/delegation-toolkit";
+
+import {
+  createBundlerClient,
+  createPaymasterClient,
+  UserOperationReceipt,
+} from "viem/account-abstraction";
+
+import { createPimlicoClient } from "permissionless/clients/pimlico";
 
 import { DIDSession } from 'did-session';
 import { AccountId } from 'caip';
 import { EthereumWebAuth } from '@didtools/pkh-ethereum';
 import { optimism } from "viem/chains";
+
+import { EAS, SchemaEncoder, SchemaDecodedItem, SchemaItem } from '@ethereum-attestation-service/eas-sdk';
 
 const SESSION_KEY = 'didSession';
 
@@ -34,13 +60,16 @@ export type WalletConnectContextState = {
     orgDid?: string;
     orgName?: string;
     orgAddress?: string;
-    issuerAccountClient?: BiconomySmartAccountV2;
-    orgAccountClient?: BiconomySmartAccountV2;
+    issuerAccountClient?: any;
+    orgAccountClient?: any;
+    orgDelegateClient?: any;
     orgAccountSessionKeyAddress?: any,
     orgAccountSessionStorageClient?: any,
     session?: DIDSession;
     signer?: ethers.JsonRpcSigner,
     selectedSignatory?: SignatoryFactory,
+    signatory?: any,
+    delegation?: Delegation,
     setOrgNameValue: (orgNameValue: string) => Promise<void>,
     
 }
@@ -51,10 +80,13 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
   orgName: undefined,
   orgAddress: undefined,
   orgAccountClient: undefined,
+  orgDelegateClient: undefined,
   orgAccountSessionKeyAddress: undefined,
   orgAccountSessionStorageClient: undefined,
   session: undefined,
   signer: undefined,
+  signatory: undefined,
+  delegation: undefined,
 
   connect: () => {
       throw new Error('WalletConnectContext must be used within a WalletConnectProvider');
@@ -70,12 +102,16 @@ export const useWalletConnect = () => {
     const [orgDid, setOrgDid] = useState<string>();
     const [orgName, setOrgName] = useState<string>();
     const [orgAddress, setOrgAddress] = useState<string>();
-    const [orgAccountClient, setOrgAccountClient] = useState<BiconomySmartAccountV2>();
-    const [issuerAccountClient, setIssuerAccountClient] = useState<BiconomySmartAccountV2>();
+    const [orgAccountClient, setOrgAccountClient] = useState<any>();
+    const [orgDelegateClient, setOrgDelegateClient] = useState<any>();
+    const [issuerAccountClient, setIssuerAccountClient] = useState<any>();
     const [orgAccountSessionKeyAddress, setOrgAccountSessionKeyAddress] = useState<any>();
     const [orgAccountSessionStorageClient, setOrgAccountSessionStorageClient] = useState<any>();
     const [session, setSession] = useState<DIDSession | undefined>();
     const [signer, setSigner] = useState<ethers.JsonRpcSigner>();
+    const [signatory, setSignatory] = useState<any | undefined>();
+    const [owner, setOwner] = useState<any | undefined>();
+    const [delegation, setDelegation] = useState<Delegation | undefined>();
     const {selectedSignatory, setSelectedSignatoryName, selectedSignatoryName } =
       useSelectedSignatory({
         chain: optimism,
@@ -94,9 +130,18 @@ export const useWalletConnect = () => {
     }, []);
 
     const { isConnected, address: web3ModalAddress, chain } = useAccount();
+
     const [connectedAddress, setConnectedAddress] = useState<string | undefined>();
 
+
     useEffect(() => {
+
+        const publicClient = createPublicClient({
+          chain: optimism,
+          transport: http(),
+        });
+      
+
         //console.info("........ if connection to wallet has changed then update info .........")
         if (!chain || !isConnected || (connectedAddress && web3ModalAddress !== connectedAddress)) {
           setConnectedAddress(undefined);
@@ -104,38 +149,57 @@ export const useWalletConnect = () => {
 
         console.info("*************  set signatory to injectedProviderSignatoryFactory ************")
         setSelectedSignatoryName("injectedProviderSignatoryFactory")
-        //setSelectedSignatoryName("web3AuthSignatoryFactory")
+        
+
+        // Build RichCanvas authority Smart Wallet DID
+        console.info("))))))))))))))))) create issuer account client")
+        const issuerOwner = privateKeyToAccount(ISSUER_PRIVATE_KEY);
+        toMetaMaskSmartAccount({
+          client: publicClient,
+          implementation: Implementation.Hybrid,
+          deployParams: [issuerOwner.address, [], [], []],
+          signatory: { account: issuerOwner },
+          deploySalt: toHex(0),
+        }).then((issuerAccountClient) => {
+          console.info("issuerAccountClient: ", issuerAccountClient)
+
+          //const message = "hello world"
+          //const signed = await issuerAccountClient.signMessage({message})
+          //console.info(">>>>>>>>>>>>>>>>>> signed message: ", signed)
+  
+          setIssuerAccountClient(issuerAccountClient)
+        });
+
     }, [chain, isConnected, web3ModalAddress, connectedAddress]);
 
-      
+
+    useEffect(() => {
+
+      if (signatory && owner) {
+
+        // this is hybrid signatory so might have a wallet client
+        const walletClient = signatory.walletClient
+
+        const publicClient = createPublicClient({
+          chain: optimism,
+          transport: http(),
+        });
 
 
-    const connect = async (address: string, walletClient: WalletClient) => {
-    
-      if (address && walletClient) {
+        const getConnected = async () => {
 
-          // Build RichCanvas authority Smart Wallet DID
-          
-          // Initialize Biconomy Smart Account
-          const rpcUrl = "https://opt-mainnet.g.alchemy.com/v2/UXKG7nGL5a0mdDhvP-2ScOaLiRIM0rsW"
-          const provider = new ethers.JsonRpcProvider(rpcUrl);
-
-          const issuerSigner = new ethers.Wallet(ISSUER_PRIVATE_KEY, provider)
-          const issuerAccountClient = await createSmartAccountClient({
-            signer: issuerSigner,
-            bundlerUrl: "https://bundler.biconomy.io/api/v2/10/94d7c93d-8f7c-406f-8b15-dc68ad1bf5a1", 
-            paymasterUrl: "https://paymaster.biconomy.io/api/v1/10/p-KEFt8JW.1da34986-b260-4e01-ad68-af0b953aaa39",
-            rpcUrl: rpcUrl
-          });
-          setIssuerAccountClient(issuerAccountClient)
+          // need to refactor the walletSigner stuff
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          await window.ethereum.request({ method: "eth_requestAccounts" });
+          const walletSigner = await provider.getSigner();
+          setSigner(walletSigner)
 
 
-          
-
+          // not using session for ceramic storage so need to refactor
 
           // Initialize metamask wallet session and give access to ceramic datastore
-          const accountId  = new AccountId({chainId: "eip155:10", address: address})
-          const authMethod = await EthereumWebAuth.getAuthMethod(walletClient, accountId);
+          const accountId  = new AccountId({chainId: "eip155:10", address: owner.address})
+          const authMethod = await EthereumWebAuth.getAuthMethod(publicClient, accountId);
         
           // Authorize DID session
           
@@ -159,12 +223,10 @@ export const useWalletConnect = () => {
             }
           }
           
-
-
-          const ethersProvider = new ethers.BrowserProvider(walletClient.transport);
+          // configure snaps if not already configured
           walletClient.request({
             method: 'wallet_getSnaps',
-            }).then((response) => {
+            }).then((response: any) => {
 
               const snps = response as GetSnapsResponse
             
@@ -178,7 +240,7 @@ export const useWalletConnect = () => {
                   params: {
                     [snapId]: {} ,
                   },
-                }).then((resp) => {
+                }).then((resp: any) => {
                   console.info("snap installed")
                 })
               }
@@ -186,309 +248,219 @@ export const useWalletConnect = () => {
           })
 
 
+          if (publicClient && selectedSignatory) {
 
 
-          const walletSigner = await ethersProvider.getSigner();
-          if (walletSigner) {
-
-              setSigner(walletSigner)
-              const orgAccountClient = await createSmartAccountClient({
-                signer: walletSigner,
-                bundlerUrl: "https://bundler.biconomy.io/api/v2/10/94d7c93d-8f7c-406f-8b15-dc68ad1bf5a1", 
-                paymasterUrl: "https://paymaster.biconomy.io/api/v1/10/p-KEFt8JW.1da34986-b260-4e01-ad68-af0b953aaa39",
-              })
-
+            // create orgAccountClient
+            const orgAccountClient = await toMetaMaskSmartAccount({
+              client: publicClient,
+              implementation: Implementation.Hybrid,
+              deployParams: [owner, [], [], []],
+              signatory: signatory,
+              deploySalt: toHex(0),
+            });
 
 
-              /*
+            // deploy orgAccountClient
+            const bundlerClient = createBundlerClient({
+              transport: http(BUNDLER_URL),
+              paymaster: createPaymasterClient({
+                transport: http(PAYMASTER_URL),
+              }),
+              chain: optimism,
+              paymasterContext: {
+                // at minimum this must be an object; for Biconomy you can use:
+                mode:             'SPONSORED',
+                calculateGasLimits: true,
+                expiryDuration:  300,
+              },
+            });
 
-              NEED TO FIGURE OUT HOW TO CREATE SESSION KEYS THAT ALLOW USER TO SIGN TRANSACTIONS WITHOUT PROMPTING USER EACH TIME
+            /*
+            const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+            let userOpHash = await bundlerClient.sendUserOperation({
+              account: orgAccountClient,
+              calls: [{ to: zeroAddress, data: "0x" }],
+              ...fee
+            });
 
-              https://docs.biconomy.io/modules/validators/smartSessions
-
-
-              import { createSmartAccountClient, toNexusAccount, toSmartSessionsValidator } from "@biconomy/abstractjs";
-              import { createWalletClient, custom, http } from "viem";
-              import { baseSepolia } from "viem/chains";
-              import { hexToBigInt } from "viem/utils";
-
-              // Step 1: Connect to MetaMask
-              const metamaskProvider = window.ethereum;
-              if (!metamaskProvider) {
-                throw new Error("MetaMask is not installed");
-              }
-
-              const walletClient = createWalletClient({
-                chain: baseSepolia,
-                transport: custom(metamaskProvider),
-              });
-
-              const [account] = await walletClient.getAddresses();
-              if (!account) {
-                throw new Error("No MetaMask account found");
-              }
-
-              // Step 2: Initialize the primary smart account
-              const bundlerUrl = "https://bundler.biconomy.io/api/v2/84532/..."; // Replace with your bundler URL
-              const nexusAccount = await toNexusAccount({
-                signer: walletClient,
-                chain: baseSepolia,
-                transport: http(),
-              });
-
-              const nexusClient = await createSmartAccountClient({
-                account: nexusAccount,
-                transport: http(bundlerUrl),
-              });
-
-              const smartAccountAddress = await nexusClient.account.address;
-              console.log("Smart Account Address:", smartAccountAddress);
-
-              // Step 3: Create a session key (new keypair for signing)
-              const sessionOwner = walletClient; // In practice, generate a new keypair securely
-              const sessionPublicKey = account; // Replace with actual session key address if different
-
-              // Define session permissions (e.g., allow transferring up to 100 tokens on an ERC-20 contract)
-              const sessionRequestedInfo = {
-                permissionIds: ["erc20-transfer"], // Example permission ID
-                action: {
-                  contractAddress: "0xYourERC20ContractAddress", // Replace with target contract
-                  maxAmountPerTransfer: hexToBigInt("100000000000000000000"), // 100 tokens (adjust decimals)
-                  validUntil: Math.floor(Date.now() / 1000) + 3600, // Valid for 1 hour
-                  validAfter: Math.floor(Date.now() / 1000),
-                },
-                sessions: [
-                  {
-                    sessionPublicKey,
-                    moduleData: {
-                      // Additional parameters if needed
-                    },
-                  },
-                ],
-              };
-
-              // Step 4: Grant session permissions (requires MetaMask signature)
-              const createSessionsResponse = await nexusClient.grantPermission({ sessionRequestedInfo });
-              const { success } = await nexusClient.waitForUserOperationReceipt({
-                hash: createSessionsResponse.userOpHash,
-              });
-              if (success) {
-                console.log("Session key permissions granted successfully");
-              }
-
-              // Step 5: Create a Nexus client for the session key
-              const sessionData = {
-                granter: nexusClient.account.address,
-                sessionPublicKey,
-                moduleData: {
-                  permissionIds: createSessionsResponse.permissionIds,
-                  action: createSessionsResponse.action,
-                  sessions: createSessionsResponse.sessions,
-                  mode: "USE",
-                },
-              };
-
-              const smartSessionNexusClient = await createSmartAccountClient({
-                chain: baseSepolia,
-                accountAddress: sessionData.granter,
-                signer: sessionOwner, // Session key signer
-                transport: http(),
-                bundlerTransport: http(bundlerUrl),
-              });
-
-              // Step 6: Create a Smart Sessions Module for validation
-              const usePermissionsModule = toSmartSessionsValidator({
-                account: smartSessionNexusClient.account,
-                signer: sessionOwner,
-                moduleData: sessionData.moduleData,
-              });
-
-              const useSmartSessionNexusClient = smartSessionNexusClient.extend(() => ({
-                ...smartSessionNexusClient,
-                account: {
-                  ...smartSessionNexusClient.account,
-                  validateUserOp: usePermissionsModule.validateUserOp,
-                },
-              }));
-
-              // Step 7: Execute a transaction with the session key (no MetaMask prompt)
-              const tx = {
-                to: "0xRecipientAddress",
-                value: BigInt(0),
-                data: "0xa9059cbb000000000000000000000000RecipientAddress0000000000000000000000000000000000000000000000000000000000000064", // ERC-20 transfer (100 tokens)
-              };
-
-
-
-              const { sessionKeyAddress, sessionStorageClient } = await createSessionKeyEOA(
-                orgAccountClient,
-                optimism
-              );
+            bundlerClient.waitForUserOperationReceipt({
+              hash: userOpHash,
+            });
+            */
     
-              console.info("sessionKeyAddress: ", JSON.stringify(sessionKeyAddress))
-              console.info("sessionStorageClient: ", JSON.stringify(sessionStorageClient))
-
-              setOrgAccountSessionKeyAddress(sessionKeyAddress)
-              setOrgAccountSessionStorageClient(sessionStorageClient)
-
-              sessionStorageClient.getAllSessionData
-
-
-
-              // to test the session with metamask
-
-              const BaseSchema = "string entityid, bytes32 hash, uint64 issuedate, uint64 expiredate, string vccomm, string vcsig, string vciss, "
-
-              const SmartWalletSchemaUID = "0x48274e8523e9877690a844299733841575a47a4391d3c31efe94be43336440d6"
-              const SmartWalletSchema = BaseSchema + "string type, string contractaddress"
-
-            console.info("try and create something")
-
-            const add = await orgAccountClient.getAddress()
-            const schemaEncoder = new SchemaEncoder(SmartWalletSchema);
-            const schemaItems = [
-                { name: 'entityid', value: "", type: 'string' },
-                { name: 'hash', value: "", type: 'bytes32' },
-                { name: 'issuedate', value: 1, type: 'uint64' },
-                { name: 'expiredate', value: 1, type: 'uint64' },
-                
-                { name: 'vccomm', value: "", type: 'string' },
-                { name: 'vcsig', value: "", type: 'string' },
-                { name: 'vciss', value: "", type: 'string' },
-
-                { name: 'type', value: "", type: 'string' },
-                { name: 'contractaddress', value: "", type: 'string' },
-                
-              ];
-
             
-            const encodedData = schemaEncoder.encodeData(schemaItems);
+            const swa = await orgAccountClient.getAddress()
+            setOrgAddress(swa as `0x${string}`)
+
+            const did = 'did:pkh:eip155:10:' + swa;
+            setOrgDid(did)
+
+            setOrgAccountClient(orgAccountClient)
+
+            /*
+            walletSigner.provider.getBalance(swa).then((balance) => {
+              console.info("balance: ", balance)
+            })
+            walletSigner.provider.getBalance("0x9Be0417505e235FfFbd995C250e40561847777f3").then((balance) => {
+              console.info("balance: ", balance)
+            })
+            */
+
+
+    
+            const burnerPrivateKey = generatePrivateKey();
+            const burnerOwner = privateKeyToAccount(burnerPrivateKey);
+
+
+            const delegateAccount = await toMetaMaskSmartAccount({
+              client: publicClient,
+              implementation: Implementation.Hybrid,
+              deployParams: [burnerOwner.address, [], [], []],
+              signatory: { account: burnerOwner },
+              deploySalt: toHex(3),
+            });
+            setOrgDelegateClient(delegateAccount)
+
+
+            const saved = sessionStorage.getItem('myOrgDelegation');
+            //if (saved) {
+            //  let delegation = JSON.parse(saved);
+            //  setDelegation(delegation)
+            //}
+            //else {
+              let delegation = createDelegation({
+                to: delegateAccount.address,
+                from: orgAccountClient.address,
+                caveats: [] }
+              );
+
+              const signature = await orgAccountClient.signDelegation({
+                delegation,
+              });
+
+              delegation = {
+                ...delegation,
+                signature,
+              }
+
+              setDelegation(delegation)
+
+              // persist to sessionStorage
+              sessionStorage.setItem(
+                'myOrgDelegation',
+                JSON.stringify(delegation)
+              );
+            //}
+
+
+            /*  test connection to account abstraction and creating attestations
 
             const EAS_CONTRACT_ADDRESS = "0x4200000000000000000000000000000000000021"; 
+            const OrgSchemaUID = "0xb868c40677eb842bcb2275dbaa311232ff8d57d594c15176e4e4d6f6df9902ea"
+            const BaseSchema = "string entityid, bytes32 hash, uint64 issuedate, uint64 expiredate, string vccomm, string vcsig, string vciss, string proof, "
+            const OrgSchema = BaseSchema + "string name"
+        
+            const schemaEncoder = new SchemaEncoder(OrgSchema);
+            const schemaItems = [
+              { name: 'entityid', value: "", type: 'string' },
+              { name: 'hash', value: "", type: 'bytes32' },
+              { name: 'issuedate', value: 1, type: 'uint64' },
+              { name: 'expiredate', value: 1, type: 'uint64' },
+              
+              { name: 'vccomm', value: "", type: 'string' },
+              { name: 'vcsig', value: "", type: 'string' },
+              { name: 'vciss', value: "", type: 'string' },
+        
+              { name: 'proof', value: "", type: 'string' },
+        
+              { name: 'name', value: "", type: 'string' },
+        
+            ];
+        
+            
+            const encodedData = schemaEncoder.encodeData(schemaItems);
+        
             const eas = new EAS(EAS_CONTRACT_ADDRESS);
-            eas.connect(walletSigner)
+        
+            console.info("eas connect")
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            await window.ethereum.request({ method: "eth_requestAccounts" });
+            const walletSigner = await provider.getSigner();
+        
 
+            console.info("...... wallet signer: ", walletSigner)
+            eas.connect(walletSigner)
+        
+        
+            console.info("construct eas.attest tx: ", orgAccountClient.address)
             let tx = await eas.attest({
-              schema: SmartWalletSchemaUID,
+              schema: OrgSchemaUID,
               data: {
-                recipient: add,
+                recipient: orgAccountClient.address,
                 expirationTime: 0n, // BigInt in v6
                 revocable: true,
                 data: encodedData
               }
             })
+        
+      
 
-          
-            console.info("call send transaction")
-            let swTx = await orgAccountClient.sendTransaction(tx.data,  {
-                  
-                    paymasterServiceData: {
-                      mode: PaymasterMode.SPONSORED,
-                      
-                    },
-                  
-                  },
-                { 
-                  leafIndex: "LAST_LEAF",
-                  store: "DEFAULT_STORE",
-                  chain: optimism
-                })
-
-                                          
-            console.info("await for response")
-            let resp = await swTx.wait()
-
-            console.info("done: ", resp)
-            
-
-            console.info("create emulated smart account")
-            const emulatedUsersSmartAccount = await createSessionSmartAccountClient(
+            const executions: ExecutionStruct[] = [
               {
-                accountAddress: add, // Dapp can set the account address on behalf of the user
-                bundlerUrl: "https://bundler.biconomy.io/api/v2/10/94d7c93d-8f7c-406f-8b15-dc68ad1bf5a1", 
-                paymasterUrl: "https://paymaster.biconomy.io/api/v1/10/p-KEFt8JW.1da34986-b260-4e01-ad68-af0b953aaa39",
-                chainId: 10
+                target: tx.data.to,
+                value: 0n,
+                callData: tx.data.data,
               },
-              add // Storage client, full Session or simply the smartAccount address if using default storage for your environment
-            );
+            ];
 
-            console.info("session stuff")
-            const params = await getSingleSessionTxParams(
-              add,
-              optimism,
-              0 // index of the relevant policy leaf to the tx
-            );
+            console.info("redeemDelegations for this transaction delegation: ", delegation)
 
-            const withSponsorship = {
-              paymasterServiceData: { mode: PaymasterMode.SPONSORED },
-            };
-            console.info("send transaction")
-            const { wait } = await emulatedUsersSmartAccount.sendTransaction(tx.data, {
-              ...params,
-              ...withSponsorship,
+            const delegationChain : Delegation[] = [delegation];
+            const data = DelegationFramework.encode.redeemDelegations({
+              delegations: [ delegationChain ],
+              modes: [SINGLE_DEFAULT_MODE],
+              executions: [executions]
             });
-            console.info("holly crap it worked")
+        
 
-            //sessionKeyAddress:  "0x42F121bb72d1d1cb8937aB4775C27Bf363676BA6"
-            //sessionStorageClient:  {"smartAccountAddress":"0x478df0535850b01cbe24aa2dad295b2968d24b67"}
 
+            console.info(">>>>>>>>>>>>>>>>>>>  send user operation to delegate: ", delegateAccount)
+            userOpHash = await bundlerClient.sendUserOperation({
+              account: delegateAccount,
+              calls: [
+                {
+                  to: delegateAccount.address,
+                  data,
+                },
+              ],
+              ...fee,
+            });
+
+        
+            const userOperationReceipt =
+              await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
 
             */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-      
-              setOrgAccountClient(orgAccountClient)
-              const swa = await orgAccountClient.getAccountAddress()
-
-
-              /*
-              walletSigner.provider.getBalance(swa).then((balance) => {
-                console.info("balance: ", balance)
-              })
-              walletSigner.provider.getBalance("0x9Be0417505e235FfFbd995C250e40561847777f3").then((balance) => {
-                console.info("balance: ", balance)
-              })
-              */
-
-
-              
-              setOrgAddress(swa)
-
-              const did = 'did:pkh:eip155:10:' + swa;
-              setOrgDid(did)
           }
-
+        }
+        
+        getConnected()
       }
 
+    }, [signatory, owner]);
+
+
+    const pimlicoClient = createPimlicoClient({
+      transport: http(BUNDLER_URL),
+      //entryPoint: { address: ENTRY_POINT_ADDRESS, version: '0.7' },
+    });
+
+    const connect = async (owner: any, signatory: any) => {
+      console.info("set signatory")
+      setSignatory(signatory)
+      setOwner(owner)
     }
     return {
             issuerAccountClient,
@@ -496,10 +468,13 @@ export const useWalletConnect = () => {
             orgName,
             orgAddress,
             orgAccountClient,
+            orgDelegateClient,
             orgAccountSessionKeyAddress,
             orgAccountSessionStorageClient,
             session,
             signer,
+            signatory,
+            delegation,
             selectedSignatory,
             connect,
             setOrgNameValue,
@@ -516,10 +491,13 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
       orgName,
       orgAddress,
       orgAccountClient,
+      orgDelegateClient,
       connect, 
       session, 
       signer,
       selectedSignatory,
+      signatory,
+      delegation,
       setOrgNameValue
     } =
       useWalletConnect();
@@ -533,9 +511,12 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         orgName,
         orgAddress,
         orgAccountClient,
+        orgDelegateClient,
         session,
         signer,
         selectedSignatory,
+        signatory,
+        delegation,
         connect,
         setOrgNameValue
       }),
@@ -547,9 +528,12 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         orgName,
         orgAddress,
         orgAccountClient,
+        orgDelegateClient,
         session, 
         signer, 
         selectedSignatory,
+        signatory,
+        delegation,
         connect,
         setOrgNameValue]
     );

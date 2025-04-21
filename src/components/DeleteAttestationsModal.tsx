@@ -26,7 +26,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { signer, orgAccountClient, orgAddress } = useWallectConnectContext();
+  const { signer, delegation, orgAccountClient, orgDelegateClient, orgAddress } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
 
@@ -41,7 +41,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
     if (orgAddress && signer && orgAccountClient && walletClient) {
       AttestationService.loadRecentAttestationsTitleOnly(orgAddress).then((attestations) => {
         console.info("delete all attestations ==========> ")
-          AttestationService.deleteAttestations(attestations, signer, orgAccountClient, walletClient).then((rsl) => {
+          AttestationService.deleteAttestations(attestations, signer, delegation, orgAccountClient, orgDelegateClient).then((rsl) => {
             console.info("delete all attestations is done ")
           })
       })

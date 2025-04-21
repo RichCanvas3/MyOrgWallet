@@ -18,7 +18,6 @@ import { WalletConnectContextProvider } from "./context/walletConnectContext"
 
 
 
-
 import LinkedinCallback from './components/LinkedinCallback';
 import LinkedinModal from './components/LinkedinModal';
 import AttestationViewModal from './components/AttestationViewModal';
@@ -29,8 +28,6 @@ import XModal from './components/XModal';
 import ShopifyCallback from './components/ShopifyCallback';
 
 import Header from "./components/Header";
-import { useWallectConnectContext } from "./context/walletConnectContext";
-
 
 import { createAppKit } from "@reown/appkit/react";
 import { http, createStorage, cookieStorage } from '@wagmi/core';
@@ -126,7 +123,6 @@ const App = () => {
   const [isXModalVisible, setXModalVisible] = useState(false);
   const [isAttestationViewModalVisible, setAttestationViewModalVisible] = useState(false);
   
-
 
 
 

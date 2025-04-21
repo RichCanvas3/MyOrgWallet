@@ -1,15 +1,17 @@
 import { VerifiableCredential } from "../models/VerifiableCredential"
 import { WalletClient } from "viem";
-import { BiconomySmartAccountV2, createSmartAccountClient, PaymasterMode } from "@biconomy/account";
 import { ethers, hashMessage } from 'ethers'
 import { DIDSession } from 'did-session';
 import { vs } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { Buffer } from 'buffer';
 
+import { createPimlicoClient } from "permissionless/clients/pimlico";
+
 // @ts-ignore
 window.Buffer = Buffer;
 
 class VerifiableCredentialsService {
+
 
 
     static credentials : VerifiableCredential[] | undefined
@@ -292,7 +294,7 @@ class VerifiableCredentialsService {
       orgDid: string, 
       walletClient: WalletClient, 
 
-      issuerAccountClient: BiconomySmartAccountV2, 
+      issuerAccountClient: any, 
       session: DIDSession): Promise<any | undefined> {
 
 
@@ -352,9 +354,11 @@ class VerifiableCredentialsService {
 
       // Hash data according to EIP-712
       const credentialHash = hashMessage(credentialJSON)
-      const signature = await issuerAccountClient?.signMessage(credentialHash)
 
-      const addr = await issuerAccountClient?.getAccountAddress()
+      console.info("issuerAccountClient: ", issuerAccountClient)
+      const signature = await issuerAccountClient?.signMessage({message: credentialHash})
+
+      const addr = await issuerAccountClient?.getAddress()
       if (addr && signature) {
 
         //const validSignature = await verifyMessageDirect(addr, credentialHash, signature)
@@ -393,7 +397,7 @@ class VerifiableCredentialsService {
           const commitmenthHex = '0x' + BigInt(commitment as any).toString(16)
           const commitmenthHexHash = hashMessage(commitmenthHex)
 
-          const commitmentSignature = await issuerAccountClient?.signMessage(commitment.toString())
+          const commitmentSignature = await issuerAccountClient?.signMessage({message: commitment.toString()})
           if (commitmentSignature && vc.credentialSubject) {
 
             vc.credentialSubject.commitment = commitment.toString()
@@ -421,7 +425,7 @@ class VerifiableCredentialsService {
 
             // save vc to metamask snap storage
             if (walletClient) {
-              //console.info("save credential: ", JSON.stringify(vc))
+              console.info("save credential: ", JSON.stringify(vc))
               await VerifiableCredentialsService.saveCredential(walletClient, vc, entityId)
             }
 
@@ -441,10 +445,10 @@ class VerifiableCredentialsService {
             console.info(" proof id stored on ceramic: ", proofUrl);
 
             // verify if we have access to accountclient
-            const validSigData = await issuerAccountClient?.getIsValidSignatureData(commitmenthHexHash as `0x${string}`, commitmentSignature)
-            if (validSigData) {
-              const valid = validSigData.startsWith("0x1626ba7e"); // ERC-1271 magic value
-            }
+            //const validSigData = await issuerAccountClient?.getIsValidSignatureData(commitmenthHexHash as `0x${string}`, commitmentSignature)
+            //if (validSigData) {
+            //  const valid = validSigData.startsWith("0x1626ba7e"); // ERC-1271 magic value
+            //}
 
             
           }

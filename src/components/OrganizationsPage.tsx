@@ -5,7 +5,7 @@ import {useNavigate} from 'react-router-dom';
 import OrganizationListItem from './OrganizationListItem';
 import AttestationList from "./AttestationList";
 
-import { WalletAuthRef } from "./WalletAuth"
+//import { WalletAuthRef } from "./WalletAuth"
 import { Organization } from "../models/Organization"
 import AttestationService, { attestationsEmitter } from "../service/AttestationService";
 import { Attestation } from "../models/Attestation"

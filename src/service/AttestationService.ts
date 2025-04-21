@@ -9,9 +9,43 @@ import { ethers, formatEther, Interface } from "ethers"; // install alongside EA
 import { EAS, SchemaEncoder, SchemaDecodedItem, SchemaItem } from '@ethereum-attestation-service/eas-sdk';
 import { WalletClient } from "viem";
 import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
-import { BiconomySmartAccountV2, createSmartAccountClient, PaymasterMode, Transaction } from "@biconomy/account";
+
 import { error } from "console";
 
+import {ISSUER_PRIVATE_KEY, WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, BUNDLER_URL, PAYMASTER_URL} from "../config";
+
+
+import { optimism } from "viem/chains";
+
+import {
+  Implementation,
+  toMetaMaskSmartAccount,
+  type MetaMaskSmartAccount,
+  type DelegationStruct,
+  createDelegation,
+  DelegationFramework,
+  SINGLE_DEFAULT_MODE,
+  getExplorerTransactionLink,
+  getExplorerAddressLink,
+  createExecution,
+  Delegation
+} from "@metamask/delegation-toolkit";
+
+import {
+  createBundlerClient,
+  createPaymasterClient,
+  UserOperationReceipt,
+} from "viem/account-abstraction";
+
+import { createPimlicoClient } from "permissionless/clients/pimlico";
+import {
+  Client,
+  createPublicClient,
+  Hex,
+  http,
+  toHex,
+  zeroAddress,
+} from "viem";
 
 export interface AttestationChangeEvent {
   action: 'add' | 'edit' | 'delete' | 'delete-all',
@@ -186,7 +220,7 @@ class AttestationService {
 
   static RevokeSchemaUID = "0x8ced29acd56451bf43c457bd0cc1c13aa213fcdcdbd872ab87674d3fbf9fc218"
   static RevokeSchema = "string vccomm, string proof, uint64 issuedate"
-  static async addRevokeAttestation(vccomm: string, proof: string, signer: ethers.JsonRpcSigner, issuerAccountClient: BiconomySmartAccountV2): Promise<string> {
+  static async addRevokeAttestation(vccomm: string, proof: string, signer: ethers.JsonRpcSigner, issuerAccountClient: any): Promise<string> {
 
     eas.connect(signer)
 
@@ -202,7 +236,7 @@ class AttestationService {
       ];
 
     const encodedData = schemaEncoder.encodeData(schemaItems);
-    let swa = await issuerAccountClient.getAccountAddress()
+    let swa = await issuerAccountClient.getAddress()
 
     let tx = await eas.attest({
       schema: AttestationService.RevokeSchemaUID,
@@ -216,7 +250,7 @@ class AttestationService {
 
     let swTx = await issuerAccountClient.sendTransaction(tx.data, {
             paymasterServiceData: {
-              mode: PaymasterMode.SPONSORED,
+              mode: 'SPONSORED',
             },
           })
 
@@ -301,7 +335,7 @@ class AttestationService {
   /*
   static SmartWalletSchemaUID = "0x48274e8523e9877690a844299733841575a47a4391d3c31efe94be43336440d6"
   static SmartWalletSchema = this.BaseSchema + "string type, string contractaddress"
-  static async addSmartWalletAttestation(attestation: SmartWalletAttestation, signer: ethers.JsonRpcSigner, orgAccountClient: BiconomySmartAccountV2): Promise<string> {
+  static async addSmartWalletAttestation(attestation: SmartWalletAttestation, signer: ethers.JsonRpcSigner, orgAccountClient: any): Promise<string> {
 
     eas.connect(signer)
 
@@ -331,7 +365,7 @@ class AttestationService {
 
     
     const encodedData = schemaEncoder.encodeData(schemaItems);
-    let swa = await orgAccountClient.getAccountAddress()
+    let swa = await orgAccountClient.getAddress()
 
     let tx = await eas.attest({
       schema: AttestationService.SmartWalletSchemaUID,
@@ -347,7 +381,7 @@ class AttestationService {
 
     let swTx = await orgAccountClient.sendTransaction(tx.data, {
             paymasterServiceData: {
-              mode: PaymasterMode.SPONSORED,
+              mode: 'SPONSORED',
             },
           })
         
@@ -376,7 +410,7 @@ class AttestationService {
 
     const userOpResponse = await orgAccountClient.sendTransaction(transaction, {
       paymasterServiceData: {
-        mode: PaymasterMode.SPONSORED, // Gasless transaction
+        mode: 'SPONSORED', // Gasless transaction
       },
     });
 
@@ -486,8 +520,9 @@ class AttestationService {
 
   static OrgSchemaUID = "0xb868c40677eb842bcb2275dbaa311232ff8d57d594c15176e4e4d6f6df9902ea"
   static OrgSchema = this.BaseSchema + "string name"
-  static async addOrgAttestation(attestation: OrgAttestation, signer: ethers.JsonRpcSigner, orgAccountClient: BiconomySmartAccountV2): Promise<string> {
+  static async addOrgAttestation(attestation: OrgAttestation, signer: ethers.JsonRpcSigner, delegation: Delegation, orgAccountClient: any, orgDelegateClient: any): Promise<string> {
 
+    console.info("....... add org attestation signer: ", signer)
     eas.connect(signer)
 
     const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
@@ -516,7 +551,7 @@ class AttestationService {
         ];
 
       const encodedData = schemaEncoder.encodeData(schemaItems);
-      let swa = await orgAccountClient.getAccountAddress()
+      let swa = await orgAccountClient.getAddress()
 
       let tx = await eas.attest({
         schema: AttestationService.OrgSchemaUID,
@@ -528,29 +563,61 @@ class AttestationService {
         }
       })
 
-      let swTx = await orgAccountClient.sendTransaction(tx.data, {
-              paymasterServiceData: {
-                mode: PaymasterMode.SPONSORED,
-              },
-            })
+      const executions: ExecutionStruct[] = [
+        {
+          target: tx.data.to,
+          value: 0n,
+          callData: tx.data.data,
+        },
+      ];
 
-          
-      let resp = await swTx.wait()
 
-      if (resp != undefined) {
+      const pimlicoClient = createPimlicoClient({
+        transport: http(BUNDLER_URL),
+        //entryPoint: { address: ENTRY_POINT_ADDRESS, version: '0.7' },
+      });
+      const bundlerClient = createBundlerClient({
+                      transport: http(BUNDLER_URL),
+                      paymaster: createPaymasterClient({
+                        transport: http(PAYMASTER_URL),
+                      }),
+                      chain: optimism,
+                      paymasterContext: {
+                        // at minimum this must be an object; for Biconomy you can use:
+                        mode:             'SPONSORED',
+                        //calculateGasLimits: true,
+                        //expiryDuration:  300,
+                      },
+                    });
+
+      const delegationChain : Delegation[] = [delegation];
+      const data = DelegationFramework.encode.redeemDelegations({
+        delegations: [ delegationChain ],
+        modes: [SINGLE_DEFAULT_MODE],
+        executions: [executions]
+      });
+
+      const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+      let userOpHash: Hex;
+
+      userOpHash = await bundlerClient.sendUserOperation({
+        account: orgDelegateClient,
+        calls: [
+          {
+            to: orgDelegateClient.address,
+            data,
+          },
+        ],
+        ...fee,
+      });
+
+
+      const userOperationReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
+
+
+      if (userOperationReceipt != undefined) {
         let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
         attestationsEmitter.emit('attestationChangeEvent', event);
-
-        /*
-        let att = await this.getAttestationByAddressAndSchemaId(swa, AttestationService.OrgSchemaUID, attestation.entityId)
-        if (att && att.entityId) {
-          console.info("send change event for att: ", att)
-
-          let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: att};
-          attestationsEmitter.emit('attestationChangeEvent', event);
-          return att.entityId
-        }
-        */
       }
     }
     
@@ -618,7 +685,7 @@ class AttestationService {
 
   static SocialSchemaUID = "0xb05a2a08fd5afb49a338b27bb2e6cf1d8bd37992b23ad38a95f807d19c40782e"
   static SocialSchema = this.BaseSchema + "string name, string url"
-  static async addSocialAttestation(attestation: SocialAttestation, signer: ethers.JsonRpcSigner, orgAccountClient: BiconomySmartAccountV2): Promise<string> {
+  static async addSocialAttestation(attestation: SocialAttestation, signer: ethers.JsonRpcSigner, orgAccountClient: any): Promise<string> {
 
     eas.connect(signer)
 
@@ -645,7 +712,7 @@ class AttestationService {
           { name: 'url', value: attestation.url, type: 'string' },
         ];
       const encodedData = schemaEncoder.encodeData(schemaItems);
-      let swa = await orgAccountClient.getAccountAddress()
+      let swa = await orgAccountClient.getAddress()
 
       let tx = await eas.attest({
         schema: AttestationService.SocialSchemaUID,
@@ -659,7 +726,7 @@ class AttestationService {
 
       let swTx = await orgAccountClient.sendTransaction(tx.data, {
               paymasterServiceData: {
-                mode: PaymasterMode.SPONSORED,
+                mode: 'SPONSORED',
               },
             })
           
@@ -689,7 +756,7 @@ class AttestationService {
 
     return attestation.entityId
   }
-  static async updateSocialAttestation(attestation: SocialAttestation, signer: ethers.JsonRpcSigner, orgAccountClient: BiconomySmartAccountV2, walletClient: WalletClient): Promise<void> {
+  static async updateSocialAttestation(attestation: SocialAttestation, signer: ethers.JsonRpcSigner, orgAccountClient: any, walletClient: WalletClient): Promise<void> {
 
     eas.connect(signer)
 
@@ -698,7 +765,7 @@ class AttestationService {
       let tx = await eas.revoke({ schema: this.SocialSchemaUID, data: { uid: attestation.uid }})
       let trx = await orgAccountClient.sendTransaction(tx.data, {
         paymasterServiceData: {
-          mode: PaymasterMode.SPONSORED,
+          mode: 'SPONSORED',
         },
       })
       let rsl = await trx.wait()
@@ -770,7 +837,7 @@ class AttestationService {
 
   static RegisteredDomainSchemaUID = "0x6a4f62a76d14e37a9885e66fbec0f37562a371ba6eb2e9907a65849ebe4f04f8"
   static RegisteredDomainSchema = this.BaseSchema + "string domain, uint64 domaincreationdate"
-  static async addRegisteredDomainAttestation(attestation: RegisteredDomainAttestation, signer: ethers.JsonRpcSigner, orgAccountClient: BiconomySmartAccountV2): Promise<string> {
+  static async addRegisteredDomainAttestation(attestation: RegisteredDomainAttestation, signer: ethers.JsonRpcSigner, orgAccountClient: any): Promise<string> {
 
     eas.connect(signer)
 
@@ -798,7 +865,7 @@ class AttestationService {
           
         ];
       const encodedData = schemaEncoder.encodeData(schemaItems);
-      let swa = await orgAccountClient.getAccountAddress()
+      let swa = await orgAccountClient.getAddress()
 
       let tx = await eas.attest({
         schema: AttestationService.RegisteredDomainSchemaUID,
@@ -812,7 +879,7 @@ class AttestationService {
 
       let swTx = await orgAccountClient.sendTransaction(tx.data, {
               paymasterServiceData: {
-                mode: PaymasterMode.SPONSORED,
+                mode: 'SPONSORED',
               },
             })
           
@@ -897,7 +964,7 @@ class AttestationService {
 
   static StateRegistrationSchemaUID = "0xbf0c8858b40faa691436c577b53a6cc4789a175268d230b7ea0c572b0f46c62b"
   static StateRegistrationSchema = this.BaseSchema + "string name, string idnumber, string status, uint64 formationdate, string locationaddress" 
-  static async addStateRegistrationAttestation(attestation: StateRegistrationAttestation, signer: ethers.JsonRpcSigner, orgAccountClient: BiconomySmartAccountV2): Promise<string> {
+  static async addStateRegistrationAttestation(attestation: StateRegistrationAttestation, signer: ethers.JsonRpcSigner, orgAccountClient: any): Promise<string> {
 
     eas.connect(signer)
 
@@ -931,7 +998,7 @@ class AttestationService {
       const encodedData = schemaEncoder.encodeData(schemaItems);
 
       console.info("-------------------- construct transation ==============")
-      let swa = await orgAccountClient.getAccountAddress()
+      let swa = await orgAccountClient.getAddress()
       let tx = await eas.attest({
         schema: AttestationService.StateRegistrationSchemaUID,
         data: {
@@ -945,7 +1012,7 @@ class AttestationService {
       console.info("*************** send transaction ************")
       let swTx = await orgAccountClient.sendTransaction(tx.data, {
               paymasterServiceData: {
-                mode: PaymasterMode.SPONSORED,
+                mode: 'SPONSORED',
               },
             })
           
@@ -1050,7 +1117,7 @@ class AttestationService {
 
   static EmailSchemaUID = "0x34c055dd7ac09404aa617dab38193f9fe80ab7f1abafb03cb7e38bee1589e2d0"
   static EmailSchema = this.BaseSchema + "string type, string email" 
-  static async addEmailAttestation(attestation: EmailAttestation, signer: ethers.JsonRpcSigner, orgAccountClient: BiconomySmartAccountV2): Promise<string> {
+  static async addEmailAttestation(attestation: EmailAttestation, signer: ethers.JsonRpcSigner, orgAccountClient: any): Promise<string> {
 
     eas.connect(signer)
 
@@ -1083,7 +1150,7 @@ class AttestationService {
       const encodedData = schemaEncoder.encodeData(schemaItems);
     
 
-      let swa = await orgAccountClient.getAccountAddress()
+      let swa = await orgAccountClient.getAddress()
       let tx = await eas.attest({
         schema: AttestationService.EmailSchemaUID,
         data: {
@@ -1096,7 +1163,7 @@ class AttestationService {
 
       let swTx = await orgAccountClient.sendTransaction(tx.data, {
               paymasterServiceData: {
-                mode: PaymasterMode.SPONSORED,
+                mode: 'SPONSORED',
               },
             })
           
@@ -1212,7 +1279,7 @@ class AttestationService {
 
   static WebsiteSchemaUID = "0x5c209bedd0113303dbdd2cda8e8f9aaca673a567cd6a031cbb8cdaecbe01642b"
   static WebsiteSchema = this.BaseSchema + "string type, string url" 
-  static async addWebsiteAttestation(attestation: WebsiteAttestation, signer: ethers.JsonRpcSigner, orgAccountClient: BiconomySmartAccountV2): Promise<string> {
+  static async addWebsiteAttestation(attestation: WebsiteAttestation, signer: ethers.JsonRpcSigner, orgAccountClient: any): Promise<string> {
 
     eas.connect(signer)
 
@@ -1239,7 +1306,7 @@ class AttestationService {
       const encodedData = schemaEncoder.encodeData(schemaItems);
     
 
-      let swa = await orgAccountClient.getAccountAddress()
+      let swa = await orgAccountClient.getAddress()
       let tx = await eas.attest({
         schema: AttestationService.WebsiteSchemaUID,
         data: {
@@ -1252,7 +1319,7 @@ class AttestationService {
 
       let swTx = await orgAccountClient.sendTransaction(tx.data, {
               paymasterServiceData: {
-                mode: PaymasterMode.SPONSORED,
+                mode: 'SPONSORED',
               },
             })
           
@@ -1347,7 +1414,7 @@ class AttestationService {
 
   static InsuranceSchemaUID = "0xcfca6622a02b4b1d7f49fc4edf63eff73b062b86c25b221e713ee8eea7d37b6f"
   static InsuranceSchema = this.BaseSchema + "string type, string policy" 
-  static async addInsuranceAttestation(attestation: InsuranceAttestation, signer: ethers.JsonRpcSigner, orgAccountClient: BiconomySmartAccountV2, walletClient: WalletClient): Promise<string> {
+  static async addInsuranceAttestation(attestation: InsuranceAttestation, signer: ethers.JsonRpcSigner, orgAccountClient: any, walletClient: WalletClient): Promise<string> {
 
     eas.connect(signer)
 
@@ -1375,7 +1442,7 @@ class AttestationService {
       const encodedData = schemaEncoder.encodeData(schemaItems);
     
 
-      let swa = await orgAccountClient.getAccountAddress()
+      let swa = await orgAccountClient.getAddress()
       let tx = await eas.attest({
         schema: AttestationService.InsuranceSchemaUID,
         data: {
@@ -1388,7 +1455,7 @@ class AttestationService {
 
       let swTx = await orgAccountClient.sendTransaction(tx.data, {
               paymasterServiceData: {
-                mode: PaymasterMode.SPONSORED,
+                mode: 'SPONSORED',
               },
             })
           
@@ -1491,7 +1558,7 @@ class AttestationService {
     }));
   }
 
-  static async deleteIssuerAttestation(uid: string, schemaId: string, signer: ethers.JsonRpcSigner, issuerAccountClient: BiconomySmartAccountV2): Promise<void> {
+  static async deleteIssuerAttestation(uid: string, schemaId: string, signer: ethers.JsonRpcSigner, issuerAccountClient: any): Promise<void> {
 
     eas.connect(signer)
 
@@ -1506,7 +1573,7 @@ class AttestationService {
       console.info("send transactions: ", schemaId, uid)
       const delTx = await issuerAccountClient.sendTransaction(txs, {
         paymasterServiceData: {
-          mode: PaymasterMode.SPONSORED,
+          mode: 'SPONSORED',
         }, 
       })
       const delResp = await delTx.wait()
@@ -1517,12 +1584,13 @@ class AttestationService {
 
   }
 
-  static async deleteAttestations(atts: Attestation[], signer: ethers.JsonRpcSigner, orgAccountClient: BiconomySmartAccountV2, walletClient: WalletClient): Promise<void> {
+  static async deleteAttestations(atts: Attestation[], signer: ethers.JsonRpcSigner, delegation: Delegation, orgAccountClient: any, orgDelegateClient: any): Promise<void> {
 
     eas.connect(signer)
 
     if (orgAccountClient) {
 
+      /*
       //let att = atts[0]
       let txs : Transaction[] = []
 
@@ -1538,11 +1606,86 @@ class AttestationService {
       console.info("send transactions")
       const delTx = await orgAccountClient.sendTransaction(txs, {
         paymasterServiceData: {
-          mode: PaymasterMode.SPONSORED,
+          mode: 'SPONSORED',
         }, 
       })
       const delResp = await delTx.wait()
       console.info("delete done: ", delResp)
+      */
+
+      const pimlicoClient = createPimlicoClient({
+        transport: http(BUNDLER_URL),
+        //entryPoint: { address: ENTRY_POINT_ADDRESS, version: '0.7' },
+      });
+      const bundlerClient = createBundlerClient({
+                      transport: http(BUNDLER_URL),
+                      paymaster: createPaymasterClient({
+                        transport: http(PAYMASTER_URL),
+                      }),
+                      chain: optimism,
+                      paymasterContext: {
+                        // at minimum this must be an object; for Biconomy you can use:
+                        mode:             'SPONSORED',
+                        //calculateGasLimits: true,
+                        //expiryDuration:  300,
+                      },
+                    });
+
+      const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+      let userOpHash: Hex;
+
+      let execution : ExecutionStruct[] = []
+
+      for (const att of atts) {
+        if (att.schemaId && att.uid) {
+          console.info("get tx")
+          const tx = await eas.revoke({ schema: att.schemaId, data: { uid: att.uid }})
+
+          execution = [
+            {
+              target: tx.data.to,
+              value: 0n,
+              callData: tx.data.data,
+            },
+          ];
+
+        }
+      }
+
+      console.info("redeemDelegations ........")
+      const delegationChain : Delegation[] = [delegation];
+      const data = DelegationFramework.encode.redeemDelegations({
+        delegations: [ delegationChain ],
+        modes: [SINGLE_DEFAULT_MODE],
+        executions: [execution]
+      });
+
+
+      console.info("sendUserOperation ........")
+      //const nonce = await entryPoint.getNonce(orgDelegateClient.address, 0);
+      userOpHash = await bundlerClient.sendUserOperation({
+        account: orgDelegateClient,
+        calls: [
+          {
+            to: orgDelegateClient.address,
+            data,
+          },
+        ],
+        ...fee,
+      });
+
+
+      const userOperationReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
+
+      console.info("delete successful")
+
+      
+      
+
+
+
+
+
 
       let event: AttestationChangeEvent = {action: 'delete-all', entityId: ""};
       attestationsEmitter.emit('attestationChangeEvent', event);

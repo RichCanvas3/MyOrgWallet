@@ -32,7 +32,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { issuerAccountClient, signer, orgAccountClient, session, orgDid, setOrgNameValue } = useWallectConnectContext();
+  const { issuerAccountClient, signatory, signer, delegation, orgAccountClient, orgDelegateClient, session, orgDid, setOrgNameValue } = useWallectConnectContext();
   const { data: walletClient }= useWalletClient()
 
   const [name, setName] = useState("");
@@ -49,7 +49,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
 
     const entityId = "org"
 
-    if (signer && orgAccountClient && walletClient) {
+    if (signatory && orgAccountClient && orgDelegateClient && walletClient) {
 
 
       // set the org name locally and in profile
@@ -57,13 +57,13 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
       //setOrgName(orgName)
 
 
-      if (orgDid && walletClient && orgAccountClient && issuerAccountClient && session && signer) {
+      if (orgDid && walletClient && orgAccountClient && issuerAccountClient && session && signatory) {
 
         const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, orgName);
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
         const fullVc = result.vc
         const proofUrl = result.proofUrl
-        if (fullVc && signer && orgAccountClient && walletClient) {
+        if (fullVc && signatory && orgAccountClient && walletClient) {
         
           // now create attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
@@ -78,7 +78,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
             proof: proofUrl
           };
   
-          const uid = await AttestationService.addOrgAttestation(attestation, signer, orgAccountClient)
+          const uid = await AttestationService.addOrgAttestation(attestation, signer, delegation, orgAccountClient, orgDelegateClient)
           setOrgNameValue(orgName)
 
           if (location.pathname.startsWith("/chat/c/")) {
@@ -119,7 +119,8 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
 
 
   const handleSave = () => {
-    if (signer && orgAccountClient && walletClient) {
+    console.info("signatory: ", signatory)
+    if (signatory && orgAccountClient && walletClient) {
       console.info("create org attestation: ", name)
       addOrgAttestation(name)
     };

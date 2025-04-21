@@ -70,7 +70,7 @@ const WalletAuth = forwardRef<WalletAuthRef, WalletAuthProps>((props, ref) => {
     console.info(">>>>>>>>>>>>>> open wallet popup")
     selectedSignatory.login().then(( owner, signatory ) => {
       console.info("owner: ", owner)
-      console.info("signatory: ", signatory)
+      console.info("signatoryaaa: ", signatory)
     })
 
     /*
@@ -107,7 +107,7 @@ const WalletAuth = forwardRef<WalletAuthRef, WalletAuthProps>((props, ref) => {
           console.info("fire connect and configure all the smart wallet stuff")
           connect(address, walletClient).then(() => {
             console.info("done with configuration of wallet so go to chat")
-            navigate('/chat/')
+            //navigate('/chat/')
           })
         }
       }

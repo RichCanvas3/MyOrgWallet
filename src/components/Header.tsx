@@ -2,7 +2,7 @@ import React, {useContext, useEffect, useRef, useState} from 'react';
 import { AppBar, Toolbar, IconButton, Menu, MenuItem, Typography, Box, Button } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import myOrgWalletLogo from "/icon.png"; 
-import { WalletAuthRef } from './WalletAuth';
+//import { WalletAuthRef } from './WalletAuth';
 import UserSettingsModal from './UserSettingsModal';
 import SettingsIcon from "@mui/icons-material/Settings";
 
@@ -12,16 +12,16 @@ import ProfileService, {
   profileEmitter
 } from "../service/ProfileService";
 
-const walletAuthRef = { current: null as WalletAuthRef | null };
+//const walletAuthRef = { current: null as WalletAuthRef | null };
 
 const handleConnect = async () => {
-    try {
-      if (walletAuthRef.current) {
-        walletAuthRef.current.openWalletPopup()
-      }
-    } catch (error) {
-      console.error("Wallet connection failed:", error);
-    }
+    //try {
+    //  if (walletAuthRef.current) {
+    //    walletAuthRef.current.openWalletPopup()
+    //  }
+    //} catch (error) {
+    //  console.error("Wallet connection failed:", error);
+    //}
   };
 
   interface HeaderProps {
