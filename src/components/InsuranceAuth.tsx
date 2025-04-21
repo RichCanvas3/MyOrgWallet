@@ -23,7 +23,7 @@ const entityId = "insurance"
 const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, ref) => {
 
   const { } = props;
-  const { issuerAccountClient, signer, orgAccountClient, session, orgDid } = useWallectConnectContext();
+  const { issuerAccountClient, signer, delegation, orgAccountClient, orgDelegateClient, session, orgDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   
@@ -45,7 +45,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
           console.info("create attestation")
           const hash = keccak256(toUtf8Bytes("hash value"));
           const timestamp = Date.now();
-          const attistation: InsuranceAttestation = {
+          const attestation: InsuranceAttestation = {
             policy: insuranceNumber,
             type: "ecommerce",
             attester: orgDid,
@@ -57,7 +57,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
             proof: proofUrl
           };
 
-          const uid = await AttestationService.addInsuranceAttestation(attistation, signer, orgAccountClient, walletClient)
+          const uid = await AttestationService.addInsuranceAttestation(attestation, signer, delegation, orgAccountClient, orgDelegateClient)
           console.info("add insurance attestation complete")
 
 

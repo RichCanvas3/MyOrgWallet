@@ -31,7 +31,7 @@ const entityId = "shopify"
 const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) => {
 
   const { } = props;
-  const { issuerAccountClient, signer, orgAccountClient, session, orgDid } = useWallectConnectContext();
+  const { issuerAccountClient, signer, delegation, orgAccountClient, orgDelegateClient, session, orgDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   const openShopifyPopup = () => {
@@ -77,7 +77,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
         
           // now create attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
-          const attistation: WebsiteAttestation = {
+          const attestation: WebsiteAttestation = {
             type: websiteType,
             url: res.data.shop.domain,
             attester: orgDid,
@@ -89,7 +89,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
             proof: proofUrl
           };
 
-          const uid = await AttestationService.addWebsiteAttestation(attistation, signer, orgAccountClient)
+          const uid = await AttestationService.addWebsiteAttestation(attestation, signer, delegation, orgAccountClient, orgDelegateClient)
           console.info("add shopify attestation complete")
 
         }

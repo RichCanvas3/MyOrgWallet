@@ -46,7 +46,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
 
   
   const { } = props;
-  const { issuerAccountClient, signer, orgAccountClient, session, orgDid } = useWallectConnectContext();
+  const { issuerAccountClient, signer, delegation, orgAccountClient, orgDelegateClient, session, orgDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
 
@@ -109,7 +109,8 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
             };
   
             console.info("proof url: ", proofUrl)
-            const uid = await AttestationService.addSocialAttestation(attestation, signer, orgAccountClient)
+            const uid = await AttestationService.addSocialAttestation(attestation, signer, delegation, orgAccountClient, orgDelegateClient)
+          
             console.info(">>>>>>>>>>>>>>>>>  added attestation complete: ", uid)
 
             if (location.pathname.startsWith("/chat/c/")) {

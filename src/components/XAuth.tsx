@@ -44,7 +44,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
   const { data: walletClient } = useWalletClient();
 
   const { } = props;
-  const { issuerAccountClient, signer, orgAccountClient, session, orgDid } = useWallectConnectContext();
+  const { issuerAccountClient, signer, delegation, orgAccountClient, orgDelegateClient, session, orgDid } = useWallectConnectContext();
 
   
 
@@ -122,7 +122,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
             url: url
           };
 
-          const uid = AttestationService.addSocialAttestation(attestation, signer, orgAccountClient)
+          const uid = AttestationService.addSocialAttestation(attestation, signer, delegation, orgAccountClient, orgDelegateClient)
           console.info("add social attestation complete")
 
           if (location.pathname.startsWith("/chat/c/")) {

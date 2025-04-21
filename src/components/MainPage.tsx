@@ -126,7 +126,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const { data: walletClient } = useWalletClient();
 
-  const { issuerAccountClient, signer, orgAccountClient, session, orgDid, orgName, setOrgNameValue } = useWallectConnectContext();
+  const { issuerAccountClient, signer, delegation, orgAccountClient, orgDelegateClient, session, orgDid, orgName, setOrgNameValue } = useWallectConnectContext();
 
   const [isDeleteAttestationsModalVisible, setDeleteAttestationsModalVisible] = useState(false);
   const [isOrgModalVisible, setOrgModalVisible] = useState(false);
@@ -695,7 +695,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
               vciss: VerifiableCredentialsService.issuerDid,
               proof: proofUrl
             };
-            const uid = await AttestationService.addStateRegistrationAttestation(attestation, signer, orgAccountClient)
+            const uid = await AttestationService.addStateRegistrationAttestation(attestation, signer, delegation, orgAccountClient, orgDelegateClient)
             console.info("add registration attestation complete")
     
             entities?.forEach((ent) => {
@@ -749,7 +749,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           proof: proofUrl
         };
 
-        const uid = await AttestationService.addRegisteredDomainAttestation(attestation, signer, orgAccountClient)
+        const uid = await AttestationService.addRegisteredDomainAttestation(attestation, signer, delegation, orgAccountClient, orgDelegateClient)
         console.info("add org domain attestation complete")
 
         entities?.forEach((ent) => {
@@ -792,7 +792,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           proof: proofUrl
         };
 
-        const uid = await AttestationService.addWebsiteAttestation(attestation, signer, orgAccountClient)
+        const uid = await AttestationService.addWebsiteAttestation(attestation, signer, delegation, orgAccountClient, orgDelegateClient)
         console.info("add website attestation complete")
 
         entities?.forEach((ent) => {
@@ -837,7 +837,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           proof: proofUrl
         };
 
-        const uid = await AttestationService.addEmailAttestation(attestation, signer, orgAccountClient)
+        const uid = await AttestationService.addEmailAttestation(attestation, signer, delegation, orgAccountClient, orgDelegateClient)
         console.info("add email attestation complete")
 
         entities?.forEach((ent) => {
