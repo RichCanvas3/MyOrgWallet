@@ -37,9 +37,8 @@ const AttestationListItem: React.FC<AttestationListItemProps> = ({
     if (attestation.proof && attestation.vccomm && attestation.vciss && attestation.attester) {
       
       const vcZkProof = await ZkProofService.getVcZkProof(attestation.proof, attestation.vccomm, attestation.vciss, attestation.attester)
-
-      if (vcZkProof.isValid && orgDid) {
-        const attResponse = await AttestationService.getVcRevokedAttestation(orgDid, attestation.vccomm)
+      if (vcZkProof.isValid && attestation.attester) {
+        const attResponse = await AttestationService.getVcRevokedAttestation(attestation.attester, attestation.vccomm)
         const proofUrl = attResponse.proof
         if (proofUrl && proofUrl != "") {
           const vcRevokeZkProof =  await ZkProofService.getVcRevokeZkProof(proofUrl, attestation.vccomm)
@@ -48,11 +47,12 @@ const AttestationListItem: React.FC<AttestationListItemProps> = ({
             setVerified(false)
           }
           else {
-            //console.info("******* valid: ", attestation.entityId)
+            //console.info("******* revoked but proof not valid: ", attestation.entityId)
             setVerified(true)
           }
         }
         else {
+          //console.info("******* valid, and no: ", attestation.entityId)
           setVerified(true)
         }
 
@@ -64,7 +64,7 @@ const AttestationListItem: React.FC<AttestationListItemProps> = ({
 
     }
     else {
-      console.info("******* no proof: ", attestation.entityId, attestation.vccomm, attestation.vciss, attestation.attester)
+      //console.info("******* no proof: ", attestation.entityId, attestation.vccomm, attestation.vciss, attestation.attester)
     }
   }
   

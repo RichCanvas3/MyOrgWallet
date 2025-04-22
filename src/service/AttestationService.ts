@@ -1668,11 +1668,12 @@ class AttestationService {
     try {
 
       let exists = false
+      const schemaId = AttestationService.OrgSchemaUID
       const query = gql`
         query {
           attestations(
             where: {
-              schemaId: { equals: "0x9d708621877d4ef16029da122d538b3fc20be8fb8018e5ed19220778ac066e7d"}
+              schemaId: { equals: "${schemaId}" }
               revoked: { equals: false }
             }
           ) {
@@ -1744,15 +1745,18 @@ class AttestationService {
 
           }
 
-          let org : Organization = {
-            id: id,
-            name: name,
-            hash: hash,
-            orgDid: orgDid,
-            issuedate: issuedate
+          if (name && name != "") {
+            let org : Organization = {
+              id: id,
+              name: name,
+              hash: hash,
+              orgDid: orgDid,
+              issuedate: issuedate
+            }
+            id = id + 1
+            organizations.push(org)
           }
-          id = id + 1
-          organizations.push(org)
+          
         }
         
       }
