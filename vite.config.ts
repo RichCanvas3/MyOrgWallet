@@ -35,6 +35,7 @@ export default defineConfig({
         },
       },
     build: {
+        outDir: 'dist', // Output directory for the build
         chunkSizeWarningLimit: 2000, // in kilobytes
     },
 });
