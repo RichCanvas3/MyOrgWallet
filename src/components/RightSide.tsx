@@ -6,7 +6,7 @@ import {CloseSideBarIcon, iconProps, OpenSideBarIcon} from "../svg";
 import {useTranslation} from 'react-i18next';
 import Tooltip from "./Tooltip";
 
-import AttestationList from "./AttestationList";
+import AttestationSection from "./AttestationSection";
 import { Attestation } from "../models/Attestation"
 import { Command } from "../models/Command"
 
@@ -54,7 +54,7 @@ const RightSide: React.FC<RightSideProps> = ({className, appCommand}) => {
           <div className="scrollbar-trigger relative flex-1 items-start border-white/20">
             <h2 className="sr-only">Attestation history</h2>
             <nav className="flex flex-col p-2" aria-label="Attestation history">
-              <AttestationList orgDid={orgDid} onSelectAttestation={handleSelectAttestation}/>
+              <AttestationSection orgDid={orgDid} onSelectAttestation={handleSelectAttestation}/>
             </nav>
           </div>
       </div>

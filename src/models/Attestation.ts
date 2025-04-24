@@ -3,24 +3,33 @@
 export interface Attestation {
   id?: string | null;
   uid?: string;         // attestation id
+  class?: string;        // organization, individual
   schemaId?: string;    // attestation schema id
   entityId: string;     // entity - shopify, linkedin, ...
+  category?: string;
   attester: string    // attestation attesting org
   hash: string;         // hash 
+  vc?: string;
   vccomm?: string;      // hash           - commitment
   vcsig?: string;     // hash signature - commitment Signature
   vciss?: string;     // hash issuer    - commitment Issuer
   issuedate?: number | null;
   expiredate?: number | null;
   url?: string | null;
-  revoked?: boolean | null;
   proof?: string | null;
+  revoked?: boolean | null;
+  isValidated?: boolean;
+  percentCompleted?: number
 }
 
-export interface SmartWalletAttestation extends Attestation {
-  contractaddress: string,
-  type: string
+export interface AttestationCategory {
+  id?: string;
+  name: string;
+  class: string;
 }
+
+
+
 
 export interface OrgAttestation extends Attestation {
   name: string,

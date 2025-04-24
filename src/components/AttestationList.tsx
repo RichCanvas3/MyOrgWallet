@@ -30,6 +30,7 @@ interface AttestationListProps {
 const AttestationList: React.FC<AttestationListProps> = ({ orgDid, onSelectAttestation }) => {
   const {t} = useTranslation();
   const [attestations, setAttestations] = useState<Attestation[]>([]);
+  const [categories, setCategories] = useState<AttestationCategory[]>([]);
   const [searchInputValue, setSearchInputValue] = useState("");
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -40,6 +41,7 @@ const AttestationList: React.FC<AttestationListProps> = ({ orgDid, onSelectAttes
   useEffect(() => {
     if (orgDid) {
       //console.info("... load attestations: ", orgDid)
+      loadAttestationCategories();
       loadAttestations(orgDid);
     }
     
@@ -52,6 +54,15 @@ const AttestationList: React.FC<AttestationListProps> = ({ orgDid, onSelectAttes
   }, [orgDid]);
 
 
+  const loadAttestationCategories = async () => {
+
+    AttestationService.loadAttestationCategories().then(attestationCategories => {
+      setCategories(attestationCategories);
+    }).catch(error => {
+      console.error("Error loading attestations:", error);
+    });
+
+  };
   const loadAttestations = async (orgDid: string) => {
 
     AttestationService.loadRecentAttestationsTitleOnly(orgDid).then(attestations => {
@@ -92,26 +103,7 @@ const AttestationList: React.FC<AttestationListProps> = ({ orgDid, onSelectAttes
       setAttestations([])
     }
     
-    /*
-    else if (event.action === 'edit') {
-      if (event.id === 0) {
-        console.error("invali state, cannot edit id = 0");
-      } else {
-        setAttestations(prevAttestations => prevAttestations.map(conv => {
-          if (conv.id === event.id && event.attestation) {
-            return event.attestation;
-          }
-          return conv;
-        }));
-      }
-    } else if (event.action === 'delete') {
-      if (event.id === 0) {
-        loadAttestations(orgDid);
-      } else {
-        setAttestations(prevAttestations => prevAttestations.filter(conv => conv.id !== event.id));
-      }
-    }
-      */
+
   };
 
 

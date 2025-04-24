@@ -38,7 +38,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
 
   const handleDelete = () => {
     console.info("delete attestations")
-    if (orgAddress && signer && orgAccountClient && walletClient) {
+    if (orgAddress && signer && orgAccountClient && delegation) {
       AttestationService.loadRecentAttestationsTitleOnly(orgAddress).then((attestations) => {
         console.info("delete all attestations ==========> ")
           AttestationService.deleteAttestations(attestations, signer, delegation, orgAccountClient, orgDelegateClient).then((rsl) => {

@@ -3,7 +3,7 @@ import {EventEmitter} from "./EventEmitter";
 import FileDataService from './FileDataService';
 import { ChatMessage } from '../models/ChatCompletion';
 import { Entity } from '../models/Entity';
-import { Attestation, SmartWalletAttestation, OrgAttestation, SocialAttestation, RegisteredDomainAttestation, WebsiteAttestation, InsuranceAttestation, EmailAttestation, StateRegistrationAttestation} from '../models/Attestation';
+import { Attestation, AttestationCategory, OrgAttestation, SocialAttestation, RegisteredDomainAttestation, WebsiteAttestation, InsuranceAttestation, EmailAttestation, StateRegistrationAttestation} from '../models/Attestation';
 import { Organization } from '../models/Organization';
 import { ethers, formatEther, Interface } from "ethers"; // install alongside EAS
 import { EAS, SchemaEncoder, SchemaDecodedItem, SchemaItem } from '@ethereum-attestation-service/eas-sdk';
@@ -533,7 +533,7 @@ class AttestationService {
       }
     })
 
-    const executions: ExecutionStruct[] = [
+    const executions = [
       {
         target: tx.data.to,
         value: 0n,
@@ -670,6 +670,8 @@ class AttestationService {
       if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && name != undefined) {
         //console.info("set to org attestation with name: ", name)
         const att : OrgAttestation = {
+          class: "organization",
+          category: "profile",
           entityId: entityId,
           attester: attesterDid,
           schemaId: schemaId,
@@ -795,6 +797,8 @@ class AttestationService {
       //console.info("set to social attestation with name: ", name)
       const att : SocialAttestation = {
         entityId: entityId,
+        class: "organization",
+        category: "social",
         attester: attester,
         schemaId: schemaId,
         uid: uid,
@@ -893,6 +897,8 @@ class AttestationService {
         //console.info("set to org attestation with name: ", name)
         const att : RegisteredDomainAttestation = {
           entityId: entityId,
+          class: "organization",
+          category: "domain",
           attester: attesterDid,
           schemaId: schemaId,
           uid: uid,
@@ -1011,6 +1017,8 @@ class AttestationService {
       //console.info("set to social attestation with name: ", name)
       const att : StateRegistrationAttestation = {
         entityId: entityId,
+        class: "organization",
+        category: "registration",
         attester: attesterDid,
         schemaId: schemaId,
         uid: uid,
@@ -1121,6 +1129,8 @@ class AttestationService {
       //console.info("set to social attestation with name: ", name)
       const att : EmailAttestation = {
         entityId: entityId,
+        class: "organization",
+        category: "profile",
         attester: attesterDid,
         schemaId: schemaId,
         uid: uid,
@@ -1258,6 +1268,8 @@ class AttestationService {
         uid: uid,
         schemaId: schemaId,
         entityId: entityId,
+        class: "organization",
+        category: "profile",
         attester: attesterDid,
         hash: hash,
         vccomm: vccomm,
@@ -1364,6 +1376,8 @@ class AttestationService {
         uid: uid,
         schemaId: schemaId,
         entityId: entityId,
+        class: "organization",
+        category: "certificate",
         attester: attesterDid,
         hash: hash,
         vccomm: vccomm,
@@ -1469,14 +1483,14 @@ class AttestationService {
       const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
       let userOpHash: Hex;
 
-      let execution : ExecutionStruct[] = []
+      let calls = []
 
       for (const att of atts) {
         if (att.schemaId && att.uid) {
           console.info("get tx")
           const tx = await eas.revoke({ schema: att.schemaId, data: { uid: att.uid }})
 
-          execution = [
+          let execution = [
             {
               target: tx.data.to,
               value: 0n,
@@ -1484,28 +1498,30 @@ class AttestationService {
             },
           ];
 
+
+          console.info("redeemDelegations ........")
+          const delegationChain : Delegation[] = [delegation];
+          const data = DelegationFramework.encode.redeemDelegations({
+            delegations: [ delegationChain ],
+            modes: [SINGLE_DEFAULT_MODE],
+            executions: [execution]
+          });
+
+          const call = {
+            to: orgDelegateClient.address,
+            data,
+          }
+
+          calls.push(call)
         }
       }
-
-      console.info("redeemDelegations ........")
-      const delegationChain : Delegation[] = [delegation];
-      const data = DelegationFramework.encode.redeemDelegations({
-        delegations: [ delegationChain ],
-        modes: [SINGLE_DEFAULT_MODE],
-        executions: [execution]
-      });
 
 
       console.info("sendUserOperation ........")
       //const nonce = await entryPoint.getNonce(orgDelegateClient.address, 0);
       userOpHash = await bundlerClient.sendUserOperation({
         account: orgDelegateClient,
-        calls: [
-          {
-            to: orgDelegateClient.address,
-            data,
-          },
-        ],
+        calls: calls,
         ...fee,
       });
 
@@ -1534,6 +1550,48 @@ class AttestationService {
     await FileDataService.deleteAllFileData();
     let event: AttestationChangeEvent = {action: 'delete-all', entityId: ""};
     attestationsEmitter.emit('attestationChangeEvent', event);
+  }
+
+  static async loadAttestationCategories(): Promise<AttestationCategory[]> {
+    let attestationCategories : AttestationCategory[] = [
+      {
+        class: "organization",
+        name: "profile",
+        id: "1"
+      },
+      {
+        class: "organization",
+        name: "social",
+        id: "2"
+      },
+      {
+        class: "organization",
+        name: "domain",
+        id: "3"
+      },
+      {
+        class: "organization",
+        name: "registration",
+        id: "4"
+      },
+      {
+        class: "organization",
+        name: "certificate",
+        id: "5"
+      },
+      {
+        class: "individual",
+        name: "profile",
+        id: "6"
+      },
+      {
+        class: "individual",
+        name: "social",
+        id: "7"
+      },
+    ]
+
+    return attestationCategories
   }
 
   static async loadRecentAttestationsTitleOnly(orgdid: string): Promise<Attestation[]> {
