@@ -99,6 +99,8 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
             const attestation: SocialAttestation = {
               attester: orgDid,
               entityId: entityId,
+              class: "organization", 
+              category: "social",
               hash: hash,
               vccomm: (fullVc.credentialSubject as any).commitment.toString(),
               vcsig: (fullVc.credentialSubject as any).commitmentSignature,

@@ -50,6 +50,8 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
             type: "ecommerce",
             attester: orgDid,
             entityId: entityId,
+            class: "organization",
+            category: "certificate",
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,

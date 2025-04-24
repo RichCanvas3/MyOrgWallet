@@ -70,6 +70,8 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
           const attestation: OrgAttestation = {
             name: orgName,
             attester: orgDid,
+            class: "organization",
+            category: "profile",
             entityId: entityId,
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),

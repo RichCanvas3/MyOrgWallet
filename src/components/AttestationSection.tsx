@@ -81,6 +81,7 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
         setAttestations(prev => [att, ...prev]);
       }
       setSelectedId(att.entityId);
+      console.info("***********************  updated ************")
       if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
     } else if (event.action === 'delete-all') {
       setAttestations([]);
@@ -202,8 +203,8 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
           overflowY: 'auto',
           width: '100%',
           minHeight: 0,
-          px: 2,
-          py: 1,
+          px: 1,
+          py: 0,
         }}
       >
         {currentCategories.map(cat => (
@@ -255,7 +256,6 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
                 </Grid>
               ) : (
                 <Typography variant="caption" color="textSecondary">
-                  No {cat.name} attestations found
                 </Typography>
               )}
             </AccordionDetails>
