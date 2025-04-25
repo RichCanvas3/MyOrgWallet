@@ -45,7 +45,6 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
   useEffect(() => {
     // if wallet is defined and we have not defined smart wallet
     if (orgAccountClient) {
-      console.info("**************************** navigate to chat")
       navigate('/chat/')
     } else  {
       //console.info("...... error")

@@ -44,7 +44,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
   const { data: walletClient } = useWalletClient();
 
   const { } = props;
-  const { issuerAccountClient, signer, delegation, orgAccountClient, orgDelegateClient, session, orgDid } = useWallectConnectContext();
+  const { issuerAccountClient, signer, indivIssuerDelegation, orgAccountClient, session, orgDid } = useWallectConnectContext();
 
   
 
@@ -106,14 +106,14 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
         const fullVc = result.vc
         const proofUrl = result.proofUrl
-        if (fullVc && signer && orgAccountClient && walletClient) {
+        if (fullVc && signer && orgAccountClient && indivIssuerDelegation && walletClient) {
         
           // add attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
           const attestation: SocialAttestation = {
             attester: orgDid,
             entityId: entityId,
-            class: "organization", 
+            class: "individual", 
             category: "social",
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
@@ -124,7 +124,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
             url: url
           };
 
-          const uid = AttestationService.addSocialAttestation(attestation, signer, delegation, orgAccountClient, orgDelegateClient)
+          const uid = AttestationService.addSocialAttestation(attestation, signer, indivIssuerDelegation, orgAccountClient, issuerAccountClient)
           console.info("add social attestation complete")
 
           if (location.pathname.startsWith("/chat/c/")) {

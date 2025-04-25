@@ -32,7 +32,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { issuerAccountClient, signatory, signer, delegation, orgAccountClient, orgDelegateClient, session, orgDid, setOrgNameValue } = useWallectConnectContext();
+  const { issuerAccountClient, signatory, signer, orgIssuerDelegation, orgAccountClient, session, orgDid, setOrgNameValue } = useWallectConnectContext();
   const { data: walletClient }= useWalletClient()
 
   const [name, setName] = useState("");
@@ -49,7 +49,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
 
     const entityId = "org"
 
-    if (signatory && orgAccountClient && orgDelegateClient && walletClient) {
+    if (signatory && orgAccountClient && orgIssuerDelegation && walletClient) {
 
 
       // set the org name locally and in profile
@@ -57,7 +57,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
       //setOrgName(orgName)
 
 
-      if (orgDid && walletClient && orgAccountClient && issuerAccountClient && session && signatory) {
+      if (signer && orgDid && walletClient && orgIssuerDelegation && orgAccountClient && issuerAccountClient && session && signatory) {
 
         const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, orgName);
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
@@ -80,7 +80,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
             proof: proofUrl
           };
   
-          const uid = await AttestationService.addOrgAttestation(attestation, signer, delegation, orgAccountClient, orgDelegateClient)
+          const uid = await AttestationService.addOrgAttestation(attestation, signer, orgIssuerDelegation, orgAccountClient, issuerAccountClient)
           setOrgNameValue(orgName)
 
           if (location.pathname.startsWith("/chat/c/")) {

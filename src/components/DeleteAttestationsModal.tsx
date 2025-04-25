@@ -14,6 +14,7 @@ import { useWalletClient } from 'wagmi';
 
 import { TextField, Button, Typography, Box, Paper } from "@mui/material";
 import EditableTextBox from "./EditableTextBox";
+import { TripOriginRounded } from '@mui/icons-material';
 
 interface DeleteAttestationsModalProps {
   isVisible: boolean;
@@ -26,7 +27,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { signer, delegation, orgAccountClient, orgDelegateClient, orgAddress } = useWallectConnectContext();
+  const { signer, orgDid, indivDid, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, issuerAccountClient } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
 
@@ -38,10 +39,16 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
 
   const handleDelete = () => {
     console.info("delete attestations")
-    if (orgAddress && signer && orgAccountClient && delegation) {
-      AttestationService.loadRecentAttestationsTitleOnly(orgAddress).then((attestations) => {
-        console.info("delete all attestations ==========> ")
-          AttestationService.deleteAttestations(attestations, signer, delegation, orgAccountClient, orgDelegateClient).then((rsl) => {
+    if (signer && orgDid && indivDid && orgAccountClient && orgIssuerDelegation && indivIssuerDelegation) {
+      AttestationService.loadRecentAttestationsTitleOnly(orgDid, indivDid).then((attestations) => {
+        
+          console.info("delete org attestations ==========> ", orgAccountClient.address, issuerAccountClient.address)
+          AttestationService.deleteAttestations(attestations, signer, orgIssuerDelegation, orgAccountClient, issuerAccountClient).then((rsl) => {
+            console.info("delete all attestations is done ")
+          })
+
+          console.info("delete indiv attestations ==========> ", indivAccountClient.address, issuerAccountClient.address)
+          AttestationService.deleteAttestations(attestations, signer, indivIssuerDelegation, indivAccountClient, issuerAccountClient).then((rsl) => {
             console.info("delete all attestations is done ")
           })
       })

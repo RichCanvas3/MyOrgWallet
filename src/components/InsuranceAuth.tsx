@@ -23,7 +23,7 @@ const entityId = "insurance"
 const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, ref) => {
 
   const { } = props;
-  const { issuerAccountClient, signer, delegation, orgAccountClient, orgDelegateClient, session, orgDid } = useWallectConnectContext();
+  const { issuerAccountClient, signer, orgIssuerDelegation, orgAccountClient, session, orgDid, issuerDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   
@@ -33,13 +33,13 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
       var insuranceNumber = "10"
       if (orgDid && insuranceNumber && walletClient && orgAccountClient && issuerAccountClient && session && signer) {
 
-        const vc = await VerifiableCredentialsService.createInsuranceVC(orgDid, insuranceNumber);
+        const vc = await VerifiableCredentialsService.createInsuranceVC(orgDid, issuerDid, insuranceNumber);
 
         console.info("vc: ", JSON.stringify(vc))
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
         const fullVc = result.vc
         const proofUrl = result.proofUrl
-        if (fullVc && signer && orgAccountClient && walletClient) {
+        if (fullVc && signer && orgAccountClient && orgIssuerDelegation && walletClient) {
         
           // now create attestation
           console.info("create attestation")
@@ -55,11 +55,11 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-            vciss: VerifiableCredentialsService.issuerDid,
+            vciss: issuerDid,
             proof: proofUrl
           };
 
-          const uid = await AttestationService.addInsuranceAttestation(attestation, signer, delegation, orgAccountClient, orgDelegateClient)
+          const uid = await AttestationService.addInsuranceAttestation(attestation, signer, orgIssuerDelegation, orgAccountClient, issuerAccountClient)
           console.info("add insurance attestation complete")
 
 

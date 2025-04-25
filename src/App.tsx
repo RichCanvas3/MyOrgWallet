@@ -88,7 +88,7 @@ const queryClient = new QueryClient({
 const metadata = {
   name: "RichCanvas",
   description: "RichCanvas Auth",
-  url: "http://localhost:5173/:",
+  url: "http://localhost:5173",
   icons: [],
 };
 
@@ -115,8 +115,7 @@ interface AppKitProviderProps {
 
 const App = () => {
 
-  const [selectedOrgName, setSelectedOrgName] = useState("");
-  const [selectedOrgDid, setSelectedOrgDid] = useState("");
+  const [selectedDid, setSelectedDid] = useState("");
   const [selectedEntityId, setSelectedEntityId] = useState("");
 
   const [isLinkedinModalVisible, setLinkedinModalVisible] = useState(false);
@@ -129,97 +128,97 @@ const App = () => {
   const appCommand = (cmd: Command) => {
 
     
-    if (cmd.action == "edit" && cmd.entityId == "org" && cmd.orgDid) {
+    if (cmd.action == "edit" && cmd.entityId == "org" && cmd.did) {
       console.info("********* set info and popup modal ******")
       setSelectedEntityId("org")
-      setSelectedOrgDid(cmd.orgDid)
+      setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
       console.info("********* done popup modal ******")
     }
-    if (cmd.action == "show" && cmd.entityId == "org" && cmd.orgDid) {
+    if (cmd.action == "show" && cmd.entityId == "org" && cmd.did) {
       setSelectedEntityId("org")
-      setSelectedOrgDid(cmd.orgDid)
+      setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "domain" && cmd.orgDid) {
+    if (cmd.action == "edit" && cmd.entityId == "domain" && cmd.did) {
       setSelectedEntityId("domain")
-      setSelectedOrgDid(cmd.orgDid)
+      setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "domain" && cmd.orgDid) {
+    if (cmd.action == "show" && cmd.entityId == "domain" && cmd.did) {
       setSelectedEntityId("domain")
-      setSelectedOrgDid(cmd.orgDid)
+      setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "state-registration" && cmd.orgDid) {
+    if (cmd.action == "edit" && cmd.entityId == "state-registration" && cmd.did) {
       setSelectedEntityId("state-registration")
-      setSelectedOrgDid(cmd.orgDid)
+      setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "state-registration" && cmd.orgDid) {
+    if (cmd.action == "show" && cmd.entityId == "state-registration" && cmd.did) {
       setSelectedEntityId("state-registration")
-      setSelectedOrgDid(cmd.orgDid)
+      setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
     
-    if (cmd.action == "edit" && cmd.entityId == "linkedin" && cmd.orgDid) {
+    if (cmd.action == "edit" && cmd.entityId == "linkedin" && cmd.did) {
       setSelectedEntityId("linkedin")
-      setSelectedOrgDid(cmd.orgDid)
+      setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "linkedin" && cmd.orgDid) {
+    if (cmd.action == "show" && cmd.entityId == "linkedin" && cmd.did) {
       setSelectedEntityId("linkedin")
-      setSelectedOrgDid(cmd.orgDid)
+      setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "x" && cmd.orgDid) {
+    if (cmd.action == "edit" && cmd.entityId == "x" && cmd.did) {
       setSelectedEntityId("x")
-      setSelectedOrgDid(cmd.orgDid)
+      setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "x" && cmd.orgDid) {
+    if (cmd.action == "show" && cmd.entityId == "x" && cmd.did) {
       setSelectedEntityId("x")
-      setSelectedOrgDid(cmd.orgDid)
+      setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "shopify" && cmd.orgDid) {
+    if (cmd.action == "edit" && cmd.entityId == "shopify" && cmd.did) {
       setSelectedEntityId("shopify")
-      setSelectedOrgDid(cmd.orgDid)
+      setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "shopify" && cmd.orgDid) {
+    if (cmd.action == "show" && cmd.entityId == "shopify" && cmd.did) {
       setSelectedEntityId(cmd.entityId)
-      setSelectedOrgDid(cmd.orgDid)
+      setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "insurance" && cmd.orgDid) {
+    if (cmd.action == "edit" && cmd.entityId == "insurance" && cmd.did) {
       setSelectedEntityId("insurance")
-      setSelectedOrgDid(cmd.orgDid)
+      setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "insurance" && cmd.orgDid) {
+    if (cmd.action == "show" && cmd.entityId == "insurance" && cmd.did) {
       setSelectedEntityId(cmd.entityId)
-      setSelectedOrgDid(cmd.orgDid)
+      setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "website" && cmd.orgDid) {
+    if (cmd.action == "edit" && cmd.entityId == "website" && cmd.did) {
       setSelectedEntityId("website")
-      setSelectedOrgDid(cmd.orgDid)
+      setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "website" && cmd.orgDid) {
+    if (cmd.action == "show" && cmd.entityId == "website" && cmd.did) {
       setSelectedEntityId("website")
-      setSelectedOrgDid(cmd.orgDid)
+      setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "email" && cmd.orgDid) {
+    if (cmd.action == "edit" && cmd.entityId == "email" && cmd.did) {
       setSelectedEntityId("email")
-      setSelectedOrgDid(cmd.orgDid)
+      setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "email" && cmd.orgDid) {
+    if (cmd.action == "show" && cmd.entityId == "email" && cmd.did) {
       setSelectedEntityId("email")
-      setSelectedOrgDid(cmd.orgDid)
+      setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
 
@@ -325,7 +324,7 @@ const App = () => {
                 onClose={handleOnLinkedinModalClose}
               />
               <AttestationViewModal
-                orgDid={selectedOrgDid}
+                did={selectedDid}
                 entityId={selectedEntityId}
                 isVisible={isAttestationViewModalVisible}
                 onClose={handleOnAttestationViewModalClose}

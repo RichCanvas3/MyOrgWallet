@@ -1,35 +1,36 @@
 import { VerifiableCredential } from "../models/VerifiableCredential"
-import { WalletClient } from "viem";
+import { WalletClient, verifyMessage, hexToBytes, bytesToHex } from "viem";
 import { ethers, hashMessage } from 'ethers'
+import { recoverPublicKey } from "@ethersproject/signing-key";
+
+
 import { DIDSession } from 'did-session';
 import { vs } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { Buffer } from 'buffer';
 
+
 import { createPimlicoClient } from "permissionless/clients/pimlico";
+import { MessageHashUtils } from "@metamask/delegation-toolkit";
 
 // @ts-ignore
 window.Buffer = Buffer;
 
 class VerifiableCredentialsService {
 
-
-
     static credentials : VerifiableCredential[] | undefined
     static snapId : string = "local:http://localhost:8080"
-
-    static issuerDid = "did:pkh:eip155:10:0x478df0535850b01cBE24AA2DAd295B2968d24B67" // richcanvas did
-        
 
     static async createWebsiteOwnershipVC(
       entityId: string,
       orgDid: string,
+      issuerDid: string,
       websiteType: string,
       websiteUrl: string
     ): Promise<VerifiableCredential> {
       let vc : VerifiableCredential = {
         "@context": ["https://www.w3.org/2018/credentials/v1"],
         type: ["VerifiableCredential", "WebsiteOwnershipCredential"],
-        issuer: VerifiableCredentialsService.issuerDid, 
+        issuer: issuerDid, 
         issuanceDate: new Date().toISOString(),
         credentialSubject: {
           id: orgDid,
@@ -45,12 +46,13 @@ class VerifiableCredentialsService {
 
     static async createInsuranceVC(
       orgDid: string,
+      issuerDid: string,
       insuranceId: string
     ): Promise<VerifiableCredential> {
       let vc : VerifiableCredential = {
         "@context": ["https://www.w3.org/2018/credentials/v1"],
         type: ["VerifiableCredential", "InsuranceCredential"],
-        issuer: VerifiableCredentialsService.issuerDid, 
+        issuer: issuerDid, 
         issuanceDate: new Date().toISOString(),
         credentialSubject: {
           id: orgDid,
@@ -220,7 +222,7 @@ class VerifiableCredentialsService {
             request: { method: "storeVC", params: { snapVC } }
           },
         }).then((resp) => {
-          console.info("save call successful, ", resp)
+          //console.info("save call successful, ", resp)
         })
 
     }
@@ -244,7 +246,6 @@ class VerifiableCredentialsService {
         
 
         return VerifiableCredentialsService.credentials
-
     }
 
     static async getCredential(walletClient: WalletClient, entityId: string): Promise<VerifiableCredential | undefined> {
@@ -337,9 +338,34 @@ class VerifiableCredentialsService {
       
         const abi = ["function isValidSignature(bytes32 _hash, bytes _signature) external view returns (bytes4)"];
         const contract = new ethers.Contract(smartAccountAddress, abi, provider);
+
+        console.info("******* contract *****: ", contract)
         const result = await contract.isValidSignature(messageHash, signature);
         return result.startsWith("0x1626ba7e");
       }
+
+      // Normalize signature to ensure compatibility with Viem
+function normalizeSignature(signature: string): string {
+  try {
+    // Convert signature to bytes
+    const sigBytes = hexToBytes(signature as `0x${string}`);
+    if (sigBytes.length !== 65) {
+      throw new Error('Invalid signature length');
+    }
+
+    // Extract r, s, v
+    const v = sigBytes[64];
+    // Normalize v to 27 or 28 (some wallets return 0 or 1)
+    const normalizedV = v < 27 ? v + 27 : v;
+    sigBytes[64] = normalizedV;
+
+    // Convert back to hex
+    return bytesToHex(sigBytes) as `0x${string}`;
+  } catch (error) {
+    console.error('Error normalizing signature:', error);
+    throw error;
+  }
+}
 
 
     // create verifiable credential to represent
@@ -400,10 +426,19 @@ class VerifiableCredentialsService {
           const commitmentSignature = await issuerAccountClient?.signMessage({message: commitment.toString()})
           if (commitmentSignature && vc.credentialSubject) {
 
+            console.info("^^^^^^^^^^^^^^^^^^ signature: ", commitmentSignature)
+            //const abc = normalizeSignature(commitmentSignature)
+            //const isValid = await verifyMessage({ address: issuerAccountClient.address, message: commitment.toString(), signature: abc })
+            //console.info("^^^^^^^^^^^^^^^^^^^ isValid: ", isValid)
+
+
             vc.credentialSubject.commitment = commitment.toString()
             vc.credentialSubject.commitmentSignature = commitmentSignature
 
-            const validCommitment = await verifyMessageDirect(addr, commitmenthHexHash, commitmentSignature)
+            console.info("addr: ", addr)
+            console.info("hash: ", commitmenthHexHash)
+            console.info("signature: ", commitmentSignature)
+            //const validCommitment = await verifyMessageDirect(addr, commitmenthHexHash, commitmentSignature)
 
             // console.info("is valid signature for commitment: ", valid)
             // generate Proof
@@ -425,7 +460,6 @@ class VerifiableCredentialsService {
 
             // save vc to metamask snap storage
             if (walletClient) {
-              console.info("save credential: ", JSON.stringify(vc))
               await VerifiableCredentialsService.saveCredential(walletClient, vc, entityId)
             }
 
@@ -441,8 +475,6 @@ class VerifiableCredentialsService {
             })
             const proofResults = await proofResp.json()
             proofUrl = proofResults.proofUrl
-
-            console.info(" proof id stored on ceramic: ", proofUrl);
 
             // verify if we have access to accountclient
             //const validSigData = await issuerAccountClient?.getIsValidSignatureData(commitmenthHexHash as `0x${string}`, commitmentSignature)

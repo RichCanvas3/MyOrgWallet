@@ -20,7 +20,7 @@ import { useWalletClient, useAccount, useConnect, useEnsName, useEnsAvatar, useD
 import { getCachedResponse, putCachedResponse, putCachedValue } from "../service/CachedService"
 
 interface AttestationViewModalProps {
-  orgDid: string;
+  did: string;
   entityId: string;
   isVisible: boolean;
   onClose: () => void;
@@ -28,7 +28,7 @@ interface AttestationViewModalProps {
 
 
 
-const AttestationViewModal: React.FC<AttestationViewModalProps> = ({orgDid, entityId, isVisible, onClose}) => {
+const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityId, isVisible, onClose}) => {
 
   const {t} = useTranslation();
 
@@ -56,16 +56,16 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({orgDid, enti
   
   // Async function defined inside the component
   const handleInitOperations = async () => {
-    if (orgDid) {
+    if (did) {
 
-      const orgAddress = orgDid.replace("did:pkh:eip155:10:", "") as `0x${string}`
+      const address = did.replace("did:pkh:eip155:10:", "") as `0x${string}`
 
-      console.info("org address: ", orgAddress)
+      console.info("org address: ", address)
 
       console.info("call handle init operations")
-      const cacheKey = orgAddress
+      const cacheKey = address
       const cached = await getCachedResponse(cacheKey)
-      if (!cached && orgAddress) {
+      if (!cached && address) {
 
         //   PRIVATE DATA
         const alchemyRpcUrl = "https://eth-mainnet.g.alchemy.com/v2/UXKG7nGL5a0mdDhvP-2ScOaLiRIM0rsW"
@@ -73,14 +73,14 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({orgDid, enti
     
         //  get org account information
         const ACCOUNT_INFO_SMART_CONTRACT = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
-        const accountBalanceUrl = `https://api.etherscan.io/api?module=account&action=balance&address=${orgAddress}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
+        const accountBalanceUrl = `https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
         const res = await fetch(accountBalanceUrl)
         const balance = await res.json()
-        console.info("account balance: ", orgAddress, balance)
+        console.info("account balance: ", address, balance)
 
 
         const provider = new ethers.JsonRpcProvider(alchemyRpcUrl);
-        let name = await provider.lookupAddress(orgAddress)
+        let name = await provider.lookupAddress(address)
         console.info("----------------> lookup address: ", name )
 
         if (name) {
@@ -138,16 +138,16 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({orgDid, enti
 
   useEffect(() => {
     handleInitOperations();
-  }, [orgDid, entityId]);
+  }, [did, entityId]);
 
 
-  const orgAddress = orgDid.replace("did:pkh:eip155:10:", "") as `0x${string}`
+  const address = did.replace("did:pkh:eip155:10:", "") as `0x${string}`
 
 
-  // reverse lookup from orgDid to ens name
+  // reverse lookup from address to ens name
   // lookup from ens name to other info
   // https://api.ensdata.net/richcanvas.eth
-  const { data: name } = useEnsName({ address: orgAddress, chainId: 1 })
+  const { data: name } = useEnsName({ address: address, chainId: 1 })
   if (name) {
     console.info("found eth name: ", name)
   }
@@ -195,7 +195,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({orgDid, enti
   useEffect(() => {
 
     if (isVisible) {
-      if (orgDid) {
+      if (did) {
 
           let schemaUid = ""
           if (entityId == "org") {
@@ -225,9 +225,9 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({orgDid, enti
           if (entityId == "website") {
             schemaUid = AttestationService.WebsiteSchemaUID
           }
-          //console.info("go get shopify attestation: ", orgDid)
-          if (orgDid) {
-            AttestationService.getAttestationByAddressAndSchemaId(orgDid, schemaUid, entityId).then((att) => {
+          //console.info("go get shopify attestation: ", did)
+          if (did) {
+            AttestationService.getAttestationByAddressAndSchemaId(did, schemaUid, entityId).then((att) => {
 
               if (att) {
 
@@ -467,7 +467,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({orgDid, enti
                           </span>
                         </div>
                         <div className="org-details">
-                          <span className="org-did">{orgDid}</span>
+                          <span className="org-did">{did}</span>
                         </div>
                       </div>
                     ) : (

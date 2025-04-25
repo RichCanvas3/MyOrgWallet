@@ -46,7 +46,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
 
   
   const { } = props;
-  const { issuerAccountClient, signer, delegation, orgAccountClient, orgDelegateClient, session, orgDid } = useWallectConnectContext();
+  const { issuerAccountClient, signer, indivIssuerDelegation, indivAccountClient, session, orgDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
 
@@ -86,20 +86,20 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
         console.info(res.data.email)
         console.info(res.data.picture)
 
-        if (orgDid && walletClient && orgAccountClient && issuerAccountClient && session && signer) {
+        if (orgDid && walletClient && indivAccountClient && issuerAccountClient && indivIssuerDelegation && session && signer) {
   
           const vc = await VerifiableCredentialsService.createSocialVC(entityId, orgDid, res.data.sub, "");
           const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
           const fullVc = result.vc
           const proofUrl = result.proofUrl
-          if (fullVc && signer && orgAccountClient) {
+          if (fullVc && signer && indivAccountClient && indivIssuerDelegation) {
           
             // add attestation
             const hash = keccak256(toUtf8Bytes("hash value"));
             const attestation: SocialAttestation = {
               attester: orgDid,
               entityId: entityId,
-              class: "organization", 
+              class: "individual", 
               category: "social",
               hash: hash,
               vccomm: (fullVc.credentialSubject as any).commitment.toString(),
@@ -111,7 +111,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
             };
   
             console.info("proof url: ", proofUrl)
-            const uid = await AttestationService.addSocialAttestation(attestation, signer, delegation, orgAccountClient, orgDelegateClient)
+            const uid = await AttestationService.addSocialAttestation(attestation, signer, indivIssuerDelegation, indivAccountClient, issuerAccountClient)
           
             console.info(">>>>>>>>>>>>>>>>>  added attestation complete: ", uid)
 

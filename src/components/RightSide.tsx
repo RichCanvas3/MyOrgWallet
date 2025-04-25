@@ -21,7 +21,7 @@ const RightSide: React.FC<RightSideProps> = ({className, appCommand}) => {
   const {t} = useTranslation();
   const navigate = useNavigate();
 
-  const { orgDid } = useWallectConnectContext();
+  const { orgDid, indivDid } = useWallectConnectContext();
 
   const [profileData, setProfileData] = useState<{
     companyName: string | null;
@@ -36,7 +36,7 @@ const RightSide: React.FC<RightSideProps> = ({className, appCommand}) => {
   const handleSelectAttestation = (att: Attestation) => {
     const cmd : Command = {
                     action: "edit",
-                    orgDid: att.attester,
+                    did: att.attester,
                     entityId: att.entityId,
                   }
     appCommand(cmd)
@@ -54,7 +54,7 @@ const RightSide: React.FC<RightSideProps> = ({className, appCommand}) => {
           <div className="scrollbar-trigger relative flex-1 items-start border-white/20">
             <h2 className="sr-only">Attestation history</h2>
             <nav className="flex flex-col p-2" aria-label="Attestation history">
-              <AttestationSection orgDid={orgDid} onSelectAttestation={handleSelectAttestation}/>
+              <AttestationSection orgDid={orgDid} indivDid={indivDid} onSelectAttestation={handleSelectAttestation}/>
             </nav>
           </div>
       </div>

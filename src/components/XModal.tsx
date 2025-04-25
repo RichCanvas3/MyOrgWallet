@@ -26,7 +26,7 @@ const XModal: React.FC<XModalProps> = ({isVisible, onClose}) => {
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { signer, orgAddress, orgAccountClient } = useWallectConnectContext();
+  const { signer, indivDid, indivAccountClient } = useWallectConnectContext();
 
   const [attestation, setAttestation] = useState<Attestation | null>(null);
   const [name, setName] = useState("");
@@ -40,14 +40,14 @@ const XModal: React.FC<XModalProps> = ({isVisible, onClose}) => {
 
 
   const handleSave = () => {
-    if (signer && orgAccountClient) {
+    if (signer && indivAccountClient) {
 
       let att = attestation as SocialAttestation
       att.name = name
       att.url = url
 
       console.info("update social attestation: ", att)
-      //AttestationService.updateSocialAttestation(att, signer, orgAccountClient).then((rsl) => {
+      //AttestationService.updateSocialAttestation(att, signer, indivAccountClient).then((rsl) => {
       //})
 
     };
@@ -60,9 +60,9 @@ const XModal: React.FC<XModalProps> = ({isVisible, onClose}) => {
 
     if (isVisible) {
       // get x attestation
-      if (orgAddress) {
+      if (indivDid) {
 
-        AttestationService.getAttestationByAddressAndSchemaId(orgAddress, AttestationService.SocialSchemaUID, "x").then((att) => {
+        AttestationService.getAttestationByAddressAndSchemaId(indivDid, AttestationService.SocialSchemaUID, "x").then((att) => {
           if (att) {
             setAttestation(att)
           }

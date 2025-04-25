@@ -16,7 +16,7 @@ import {NotificationService} from '../service/NotificationService';
 
 interface Props {
   introductionMessage: ChatMessage;
-  chatBlocks: ChatMessage[];
+  chatBlocks: ChatMessage[] | undefined;
   onChatScroll: (isAtBottom: boolean) => void;
   allowAutoScroll: boolean;
   model: string | null;
@@ -116,7 +116,7 @@ const Chat: React.FC<Props> = ({
         isLastBlock={false}
       />
 
-      {chatBlocks.map((block, index) => (
+      {chatBlocks?.map((block, index) => (
         <ChatBlock
           key={`chat-block-${block.id}`}
           block={block}

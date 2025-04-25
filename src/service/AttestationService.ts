@@ -99,18 +99,19 @@ class AttestationService {
 
 
 
-  static async setEntityAttestations(orgDid: string) {
+  static async setEntityAttestations(orgDid: string, indivDid: string) {
 
     let entities = this.DefaultEntities
 
-    const address = orgDid.replace("did:pkh:eip155:10:", "")
+    const orgAddress = orgDid.replace("did:pkh:eip155:10:", "")
+    const indivAddress = indivDid.replace("did:pkh:eip155:10:", "")
 
     let exists = false
     const query = gql`
       query {
         attestations(
           where: {
-            attester: { equals: "${address}"}
+            attester: { in: ["${orgAddress}", "${indivAddress}"] }
             revoked: { equals: false }
           }
         ) {
@@ -186,9 +187,8 @@ class AttestationService {
             //console.info("...... found entity: ", entity.name)
             if (entity.name == "org") {
 
-              let att = this.constructOrgAttestation(item.id, item.schemaId, entityId, address, hash, decodedData)
+              let att = this.constructOrgAttestation(item.id, item.schemaId, entityId, orgAddress, hash, decodedData)
               if (att != undefined) {
-                console.info("################### org name: ", (att as OrgAttestation).name)
                 entity.attestation = att
               }
 
@@ -395,7 +395,7 @@ class AttestationService {
 
 
 
-    const addr2 = "0x478df0535850b01cBE24AA2DAd295B2968d24B67"
+    const addr2 = ""
 
     const reverseRegistrarInterface = new Interface([
       'function setName(string memory name) public',
@@ -797,7 +797,7 @@ class AttestationService {
       //console.info("set to social attestation with name: ", name)
       const att : SocialAttestation = {
         entityId: entityId,
-        class: "organization",
+        class: "individual",
         category: "social",
         attester: attester,
         schemaId: schemaId,
@@ -1433,11 +1433,11 @@ class AttestationService {
 
   }
 
-  static async deleteAttestations(atts: Attestation[], signer: ethers.JsonRpcSigner, delegation: Delegation, orgAccountClient: any, orgDelegateClient: any): Promise<void> {
+  static async deleteAttestations(atts: Attestation[], signer: ethers.JsonRpcSigner, delegation: Delegation, delegatorClient: any, delegateClient: any): Promise<void> {
 
     eas.connect(signer)
 
-    if (orgAccountClient) {
+    if (delegatorClient) {
 
       /*
       //let att = atts[0]
@@ -1453,7 +1453,7 @@ class AttestationService {
       }
 
       console.info("send transactions")
-      const delTx = await orgAccountClient.sendTransaction(txs, {
+      const delTx = await delegatorClient.sendTransaction(txs, {
         paymasterServiceData: {
           mode: 'SPONSORED',
         }, 
@@ -1508,7 +1508,7 @@ class AttestationService {
           });
 
           const call = {
-            to: orgDelegateClient.address,
+            to: delegateClient.address,
             data,
           }
 
@@ -1518,9 +1518,9 @@ class AttestationService {
 
 
       console.info("sendUserOperation ........")
-      //const nonce = await entryPoint.getNonce(orgDelegateClient.address, 0);
+      //const nonce = await entryPoint.getNonce(delegatorClient.address, 0);
       userOpHash = await bundlerClient.sendUserOperation({
-        account: orgDelegateClient,
+        account: delegateClient,
         calls: calls,
         ...fee,
       });
@@ -1594,23 +1594,25 @@ class AttestationService {
     return attestationCategories
   }
 
-  static async loadRecentAttestationsTitleOnly(orgdid: string): Promise<Attestation[]> {
+  static async loadRecentAttestationsTitleOnly(orgDid: string, indivDid: string): Promise<Attestation[]> {
 
-    const address = orgdid.replace("did:pkh:eip155:10:", "")
+    const orgAddress = orgDid.replace("did:pkh:eip155:10:", "")
+    const indivAddress = indivDid.replace("did:pkh:eip155:10:", "")
 
     try {
 
-      //console.info("load attestations")
+      console.info("load attestations for: ", indivAddress)
       let exists = false
       const query = gql`
         query {
           attestations(
             where: {
-              attester: { equals: "${address}"}
+              attester: { in: ["${orgAddress}", "${indivAddress}"] }
               revoked: { equals: false }
             }
           ) {
             id
+            attester
             schemaId
             data
           }
@@ -1663,38 +1665,38 @@ class AttestationService {
             // construct correct attestation
             let att : Attestation | undefined
             if (entityId == "org") {
-              att = this.constructOrgAttestation(item.id, item.schemaId, entityId, address, hash, decodedData)
+              att = this.constructOrgAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "linkedin") {
-              att = this.constructSocialAttestation(item.id, item.schemaId, entityId, address, hash, decodedData)
+              att = this.constructSocialAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "x") {
-              att = this.constructSocialAttestation(item.id, item.schemaId, entityId, address, hash, decodedData)
+              att = this.constructSocialAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "shopify") {
-              att = this.constructWebsiteAttestation(item.id, item.schemaId, entityId, address, hash, decodedData)
+              att = this.constructWebsiteAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "insurance") {
-              att = this.constructInsuranceAttestation(item.id, item.schemaId, entityId, address, hash, decodedData)
+              att = this.constructInsuranceAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "state-registration") {
-              att = this.constructStateRegistrationAttestation(item.id, item.schemaId, entityId, address, hash, decodedData)
+              att = this.constructStateRegistrationAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "domain") {
-              att = this.constructRegisteredDomainAttestation(item.id, item.schemaId, entityId, address, hash, decodedData)
+              att = this.constructRegisteredDomainAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "website") {
-              att = this.constructWebsiteAttestation(item.id, item.schemaId, entityId, address, hash, decodedData)
+              att = this.constructWebsiteAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "email") {
-              att = this.constructEmailAttestation(item.id, item.schemaId, entityId, address, hash, decodedData)
+              att = this.constructEmailAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
 
 
             if (att == undefined) {
               att = {
                 uid: item.id,
-                attester: "did:pkh:eip155:10:" + address,
+                attester: "did:pkh:eip155:10:" + item.attester,
                 schemaId: item.schemaId,
                 entityId: entityId,
                 url: "https://www.richcanvas3.com",
@@ -1703,7 +1705,7 @@ class AttestationService {
             }
             else {
               att.uid = item.id,
-              att.attester = "did:pkh:eip155:10:" + address,
+              att.attester = "did:pkh:eip155:10:" + item.attester,
               att.schemaId = item.schemaId,
               entityId = entityId
             }
@@ -1842,20 +1844,21 @@ class AttestationService {
     return false
   }
 
-  static async getAttestationByAddressAndSchemaId(orgDid: string, schemaId: string, entityId: string): Promise<Attestation | undefined> {
+  static async getAttestationByAddressAndSchemaId(did: string, schemaId: string, entityId: string): Promise<Attestation | undefined> {
 
     //console.info("get attestation by address and schemaId and entityId: ", address, schemaId, entityId)
     let rtnAttestation : Attestation | undefined
 
-    const address = orgDid.replace("did:pkh:eip155:10:", "")
+    const address = did.replace("did:pkh:eip155:10:", "")
+
 
     let exists = false
     const query = gql`
       query {
         attestations(
           where: {
-            attester: { equals: "${address}"}
-            schemaId: { equals: "${schemaId}"}
+            attester: { equals: "${address}" }
+            schemaId: { equals: "${schemaId}" }
             revoked: { equals: false }
           }
         ) {

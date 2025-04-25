@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, useRef, useMemo, useCal
 
 import { useAccount, useWalletClient } from "wagmi";
 
-import { createPublicClient, WalletClient, toHex, http, zeroAddress,  } from "viem";
+import { createPublicClient, createWalletClient, WalletClient, toHex, http, zeroAddress, publicActions, custom, verifyMessage  } from "viem";
 import { privateKeyToAccount, generatePrivateKey } from "viem/accounts";
 import {ISSUER_PRIVATE_KEY, WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, BUNDLER_URL, PAYMASTER_URL} from "../config";
 
@@ -30,6 +30,12 @@ import {
   Delegation
 } from "@metamask/delegation-toolkit";
 
+
+import {
+  DelegationStorageClient
+} from "@metamask/delegation-toolkit/experimental";
+
+
 import {
   createBundlerClient,
   createPaymasterClient,
@@ -43,7 +49,10 @@ import { AccountId } from 'caip';
 import { EthereumWebAuth } from '@didtools/pkh-ethereum';
 import { optimism } from "viem/chains";
 
-import { EAS, SchemaEncoder, SchemaDecodedItem, SchemaItem } from '@ethereum-attestation-service/eas-sdk';
+import DelegationService from "../service/DelegationService"
+
+import { EAS, SchemaEncoder, SchemaDecodedItem, SchemaItem, DelegatedProxyAttestationVersion } from '@ethereum-attestation-service/eas-sdk';
+import { DeveloperBoard } from "@mui/icons-material";
 
 const SESSION_KEY = 'didSession';
 
@@ -57,36 +66,54 @@ export type Snap = {
 
 export type WalletConnectContextState = {
     connect: (orgAddress: string, walletClient: WalletClient) => Promise<void>;
+
     orgDid?: string;
+    indivDid?: string;
+    issuerDid?: string;
+
     orgName?: string;
-    orgAddress?: string;
+
     issuerAccountClient?: any;
     orgAccountClient?: any;
-    orgDelegateClient?: any;
+    indivAccountClient?: any;
+
+    orgIssuerDelegation?: Delegation,
+    indivIssuerDelegation?: Delegation,
+
     orgAccountSessionKeyAddress?: any,
     orgAccountSessionStorageClient?: any,
     session?: DIDSession;
     signer?: ethers.JsonRpcSigner,
     selectedSignatory?: SignatoryFactory,
     signatory?: any,
-    delegation?: Delegation,
+    
     setOrgNameValue: (orgNameValue: string) => Promise<void>,
     
 }
 
 export const WalletConnectContext = createContext<WalletConnectContextState>({
-  issuerAccountClient: undefined,
+  
   orgDid: undefined,
+  indivDid: undefined,
+  issuerDid: undefined,
+
   orgName: undefined,
-  orgAddress: undefined,
+
+
+  issuerAccountClient: undefined,
   orgAccountClient: undefined,
-  orgDelegateClient: undefined,
+  indivAccountClient: undefined,
+
+  orgIssuerDelegation: undefined,
+  indivIssuerDelegation: undefined,
+
   orgAccountSessionKeyAddress: undefined,
   orgAccountSessionStorageClient: undefined,
   session: undefined,
   signer: undefined,
   signatory: undefined,
-  delegation: undefined,
+
+
 
   connect: () => {
       throw new Error('WalletConnectContext must be used within a WalletConnectProvider');
@@ -100,18 +127,27 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
 export const useWalletConnect = () => {
 
     const [orgDid, setOrgDid] = useState<string>();
+    const [indivDid, setIndivDid] = useState<string>();
+    const [issuerDid, setIssuerDid] = useState<string>();
+
     const [orgName, setOrgName] = useState<string>();
-    const [orgAddress, setOrgAddress] = useState<string>();
-    const [orgAccountClient, setOrgAccountClient] = useState<any>();
-    const [orgDelegateClient, setOrgDelegateClient] = useState<any>();
-    const [issuerAccountClient, setIssuerAccountClient] = useState<any>();
+
+
+    
     const [orgAccountSessionKeyAddress, setOrgAccountSessionKeyAddress] = useState<any>();
     const [orgAccountSessionStorageClient, setOrgAccountSessionStorageClient] = useState<any>();
     const [session, setSession] = useState<DIDSession | undefined>();
     const [signer, setSigner] = useState<ethers.JsonRpcSigner>();
     const [signatory, setSignatory] = useState<any | undefined>();
     const [owner, setOwner] = useState<any | undefined>();
-    const [delegation, setDelegation] = useState<Delegation | undefined>();
+
+    const [issuerAccountClient, setIssuerAccountClient] = useState<any>();
+    const [orgAccountClient, setOrgAccountClient] = useState<any>();
+    const [indivAccountClient, setIndivAccountClient] = useState<any>();
+
+    const [orgIssuerDelegation, setOrgIssuerDelegation] = useState<Delegation | undefined>();
+    const [indivIssuerDelegation, setIndivIssuerDelegation] = useState<Delegation | undefined>();
+
     const {selectedSignatory, setSelectedSignatoryName, selectedSignatoryName } =
       useSelectedSignatory({
         chain: optimism,
@@ -123,7 +159,6 @@ export const useWalletConnect = () => {
     const setOrgNameValue = useCallback(async (orgNameValue: string) => {
       try {
         setOrgName(orgNameValue);
-        console.log('************************  Org name set:', orgNameValue);
       } catch (error) {
         console.error('Failed to set org name:', error);
       }
@@ -152,7 +187,7 @@ export const useWalletConnect = () => {
         
 
         // Build RichCanvas authority Smart Wallet DID
-        console.info("))))))))))))))))) create issuer account client")
+        //console.info("))))))))))))))))) create issuer account client: ")
         const issuerOwner = privateKeyToAccount(ISSUER_PRIVATE_KEY);
         toMetaMaskSmartAccount({
           client: publicClient,
@@ -167,6 +202,7 @@ export const useWalletConnect = () => {
           //const signed = await issuerAccountClient.signMessage({message})
           //console.info(">>>>>>>>>>>>>>>>>> signed message: ", signed)
   
+          setIssuerDid('did:pkh:eip155:10:' + issuerAccountClient.address)
           setIssuerAccountClient(issuerAccountClient)
         });
 
@@ -250,8 +286,23 @@ export const useWalletConnect = () => {
 
           if (publicClient && selectedSignatory) {
 
+            const indivAccountClient = await toMetaMaskSmartAccount({
+              client: publicClient,
+              implementation: Implementation.Hybrid,
+              deployParams: [owner, [], [], []],
+              signatory: signatory,
+              deploySalt: toHex(1),
+            });
+
+            const joeAA = await indivAccountClient.getAddress()
+            console.info("joe aa: ", joeAA)
+
 
             // create orgAccountClient
+            console.info("create org smart account: ")
+            console.info("public client: ", publicClient)
+            console.info("owner: ", owner)
+            console.info("signatory: ", signatory)
             const orgAccountClient = await toMetaMaskSmartAccount({
               client: publicClient,
               implementation: Implementation.Hybrid,
@@ -260,6 +311,17 @@ export const useWalletConnect = () => {
               deploySalt: toHex(0),
             });
 
+            /*
+            const message = 'Hello, MetaMask Delegator!';
+            const signature = await orgAccountClient.signMessage({ message });
+
+            console.info("message: ", message)
+            console.info("address: ", orgAccountClient.address)
+            console.info("signature: ", signature)
+
+            const isValid = await verifyMessage({ address: orgAccountClient.address, message, signature })
+            console.info("is valid: ", isValid)
+            */
 
             // deploy orgAccountClient
             const bundlerClient = createBundlerClient({
@@ -276,27 +338,13 @@ export const useWalletConnect = () => {
               },
             });
 
-            /*
-            const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
-            let userOpHash = await bundlerClient.sendUserOperation({
-              account: orgAccountClient,
-              calls: [{ to: zeroAddress, data: "0x" }],
-              ...fee
-            });
 
-            bundlerClient.waitForUserOperationReceipt({
-              hash: userOpHash,
-            });
-            */
-    
-            
-            const swa = await orgAccountClient.getAddress()
-            setOrgAddress(swa as `0x${string}`)
-
-            const did = 'did:pkh:eip155:10:' + swa;
-            setOrgDid(did)
-
+            setOrgDid('did:pkh:eip155:10:' + orgAccountClient.address)
             setOrgAccountClient(orgAccountClient)
+
+
+            setIndivDid('did:pkh:eip155:10:' + indivAccountClient.address)
+            setIndivAccountClient(indivAccountClient)
 
             /*
             walletSigner.provider.getBalance(swa).then((balance) => {
@@ -309,49 +357,160 @@ export const useWalletConnect = () => {
 
 
     
+            /*
             const burnerPrivateKey = generatePrivateKey();
             const burnerOwner = privateKeyToAccount(burnerPrivateKey);
 
-
-            const delegateAccount = await toMetaMaskSmartAccount({
+            const burnerIssuerAccountClient = await toMetaMaskSmartAccount({
               client: publicClient,
               implementation: Implementation.Hybrid,
               deployParams: [burnerOwner.address, [], [], []],
               signatory: { account: burnerOwner },
               deploySalt: toHex(3),
             });
-            setOrgDelegateClient(delegateAccount)
+            setIssuerAccountClient(burnerIssuerAccountClient)
+            */
 
 
-            const saved = sessionStorage.getItem('myOrgDelegation');
-            //if (saved) {
-            //  let delegation = JSON.parse(saved);
-            //  setDelegation(delegation)
-            //}
-            //else {
-              let delegation = createDelegation({
-                to: delegateAccount.address,
+            /*
+            const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+            let userOpHash1 = await bundlerClient.sendUserOperation({
+              account: orgAccountClient,
+              calls: [{ to: zeroAddress, data: "0x" }],
+              ...fee
+            });
+
+            const receipt1 = await bundlerClient.waitForUserOperationReceipt({
+              hash: userOpHash1,
+            });
+            console.info("%%%%%%%%%%%%%%  receipt1: ", receipt1)
+
+            let userOpHash2 = await bundlerClient.sendUserOperation({
+              account: indivAccountClient,
+              calls: [{ to: zeroAddress, data: "0x" }],
+              ...fee
+            });
+
+            const receipt2 = await bundlerClient.waitForUserOperationReceipt({
+              hash: userOpHash2,
+            });
+            console.info("%%%%%%%%%%%%%%  receipt2: ", receipt2)
+
+            let userOpHash3 = await bundlerClient.sendUserOperation({
+              account: issuerAccountClient,
+              calls: [{ to: zeroAddress, data: "0x" }],
+              ...fee
+            });
+
+            const receipt3 = await bundlerClient.waitForUserOperationReceipt({
+              hash: userOpHash3,
+            });
+            console.info("%%%%%%%%%%%%%%  receipt3: ", receipt3)
+            */
+            
+
+
+            // setup delegation for org to issuer delegation
+            let orgIssuerDel = null
+
+            try {
+              //await DelegationService.getDelegations(walletClient)
+              orgIssuerDel = await DelegationService.getDelegation(walletClient, orgAccountClient.address, issuerAccountClient.address)
+            }
+            catch (error) {
+
+            }
+            
+
+
+            if (orgIssuerDel == null) {
+              let orgIssuerDel = createDelegation({
+                to: issuerAccountClient.address,
                 from: orgAccountClient.address,
                 caveats: [] }
               );
 
+              console.info("???????????????? sign orgIssuerDel: ", orgAccountClient.address, issuerAccountClient.address, orgIssuerDel)
               const signature = await orgAccountClient.signDelegation({
-                delegation,
+                delegation: orgIssuerDel,
               });
-
-              delegation = {
-                ...delegation,
+  
+  
+              orgIssuerDel = {
+                ...orgIssuerDel,
                 signature,
               }
 
-              setDelegation(delegation)
+              console.info("save orgIssuerDel: ", orgAccountClient.address, issuerAccountClient.address)
+              await DelegationService.saveDelegation(walletClient, orgAccountClient.address, issuerAccountClient.address, orgIssuerDel)
+            }
 
-              // persist to sessionStorage
-              sessionStorage.setItem(
-                'myOrgDelegation',
-                JSON.stringify(delegation)
+            setOrgIssuerDelegation(orgIssuerDel)
+
+
+            console.info("%%%%%%%%%%%%%%%%%%%%%%%%%5  setup indiv issuer delegation")
+
+
+            // setup delegation for individual to issuer delegation
+            let indivIssuerDel = null
+
+            try {
+              //await DelegationService.getDelegations(walletClient)
+              indivIssuerDel = await DelegationService.getDelegation(walletClient, indivAccountClient.address, issuerAccountClient.address)
+            }
+            catch (error) {
+
+            }
+            
+
+
+            if (indivIssuerDel == null) {
+              indivIssuerDel = createDelegation({
+                from: indivAccountClient.address,
+                to: issuerAccountClient.address,
+                caveats: [] }
               );
-            //}
+
+              console.info("???????????????? sign indivIssuerDel: ", indivAccountClient, indivIssuerDel)
+              const signature = await indivAccountClient.signDelegation({
+                delegation: indivIssuerDel,
+              });
+  
+  
+              indivIssuerDel = {
+                ...indivIssuerDel,
+                signature,
+              }
+
+              console.info("save indivIssuerDel: ", indivAccountClient.address, issuerAccountClient.address)
+              await DelegationService.saveDelegation(walletClient, indivAccountClient.address, issuerAccountClient.address, indivIssuerDel)
+            }
+
+            setIndivIssuerDelegation(indivIssuerDel)
+
+
+
+
+            /*
+
+            console.info("************************* create delegation storage client: ", DelegationStorageEnvironment)
+            const delegationStorageClient = new DelegationStorageClient({
+              apiKey: "47151ebcb9354990941827e05efc536a7d18432a2a9a77502157c877fea82ffb",
+              apiKeyId: "92dda3b7-1842-45c0-a06b-32d9ee08cdb5",
+              environment: DelegationStorageEnvironment.prod
+            });
+
+            console.info("************************* Give storage a try")
+            if (delegationStorageClient) {
+              const delegationHash = await delegationStorageClient.storeDelegation(delegation);
+              console.info("hash: ", delegationHash)
+            }
+            */
+
+
+
+
+
 
 
             /*  test connection to account abstraction and creating attestations
@@ -463,18 +622,27 @@ export const useWalletConnect = () => {
       setOwner(owner)
     }
     return {
-            issuerAccountClient,
+            
             orgDid,
+            indivDid,
+            issuerDid,
+
             orgName,
-            orgAddress,
+
+
+            issuerAccountClient,
             orgAccountClient,
-            orgDelegateClient,
+            indivAccountClient,
+
             orgAccountSessionKeyAddress,
             orgAccountSessionStorageClient,
             session,
             signer,
             signatory,
-            delegation,
+            
+            orgIssuerDelegation,
+            indivIssuerDelegation,
+
             selectedSignatory,
             connect,
             setOrgNameValue,
@@ -484,56 +652,80 @@ export const useWalletConnect = () => {
 
 export const WalletConnectContextProvider = ({ children }: { children: any }) => {
     const {
-      issuerAccountClient,
+      
       orgAccountSessionKeyAddress,
       orgAccountSessionStorageClient,
+
       orgDid, 
+      indivDid,
+      issuerDid,
+
       orgName,
-      orgAddress,
+
+      issuerAccountClient,
       orgAccountClient,
-      orgDelegateClient,
+      indivAccountClient,
+
+      orgIssuerDelegation,
+      indivIssuerDelegation,
+
       connect, 
       session, 
       signer,
       selectedSignatory,
       signatory,
-      delegation,
+      
       setOrgNameValue
     } =
       useWalletConnect();
   
     const providerProps = useMemo(
       () => ({
-        issuerAccountClient,
+        
         orgAccountSessionKeyAddress,
         orgAccountSessionStorageClient,
+
         orgDid,
+        indivDid,
+        issuerDid,
+
         orgName,
-        orgAddress,
+
+        issuerAccountClient,
         orgAccountClient,
-        orgDelegateClient,
+        indivAccountClient,
+
+        orgIssuerDelegation,
+        indivIssuerDelegation,
+
+
         session,
         signer,
         selectedSignatory,
         signatory,
-        delegation,
         connect,
         setOrgNameValue
       }),
       [
-        issuerAccountClient,
         orgAccountSessionKeyAddress,
         orgAccountSessionStorageClient,
-        orgDid,
         orgName,
-        orgAddress,
+
+        orgDid,
+        indivDid, 
+        issuerDid,
+
+        issuerAccountClient,
         orgAccountClient,
-        orgDelegateClient,
+        indivAccountClient,
+
+        orgIssuerDelegation,
+        indivIssuerDelegation,
+
         session, 
         signer, 
         selectedSignatory,
         signatory,
-        delegation,
         connect,
         setOrgNameValue]
     );

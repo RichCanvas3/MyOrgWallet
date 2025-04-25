@@ -37,7 +37,7 @@ RichCanvas Organization
 RichCanvas EAO Owner DID:  
     did:pkh:eip155:10:0x9cfc7e44757529769a28747f86425c682fe64653
 RichCanvas Org (Abstract Account, Smart Wallet) DID: 
-    did:pkh:eip155:10:0x478df0535850b01cBE24AA2DAd295B2968d24B67
+    did:pkh:eip155:10:...
 
 
 ## Contributions

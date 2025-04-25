@@ -31,7 +31,7 @@ const entityId = "shopify"
 const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) => {
 
   const { } = props;
-  const { issuerAccountClient, signer, delegation, orgAccountClient, orgDelegateClient, session, orgDid } = useWallectConnectContext();
+  const { issuerAccountClient, signer, orgIssuerDelegation, orgAccountClient, session, orgDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   const openShopifyPopup = () => {
@@ -67,10 +67,10 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
       var shopifyUrl = res.data.shop.domain
       var websiteType = "commerce"
 
-      if (orgDid && shopifyUrl && walletClient && orgAccountClient && issuerAccountClient && session && signer) {
+      if (orgDid && shopifyUrl && walletClient && orgAccountClient && issuerAccountClient && orgIssuerDelegation && session && signer) {
 
-        const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC(entityId, orgDid, websiteType, shopifyUrl);
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
+        const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC(entityId, orgDid, issuerDid, websiteType, shopifyUrl);
+        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, issuerDid, walletClient, issuerAccountClient, session)
         const fullVc = result.vc
         const proofUrl = result.proofUrl
         if (fullVc && signer && orgAccountClient && walletClient) {
@@ -82,6 +82,8 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
             url: res.data.shop.domain,
             attester: orgDid,
             entityId: entityId,
+            class: "organization", 
+            category: "profile",
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,
@@ -89,7 +91,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
             proof: proofUrl
           };
 
-          const uid = await AttestationService.addWebsiteAttestation(attestation, signer, delegation, orgAccountClient, orgDelegateClient)
+          const uid = await AttestationService.addWebsiteAttestation(attestation, signer, orgIssuerDelegation, orgAccountClient, issuerAccountClient)
           console.info("add shopify attestation complete")
 
         }

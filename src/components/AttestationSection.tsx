@@ -32,11 +32,13 @@ import AttestationService, {
 
 interface AttestationSectionProps {
   orgDid?: string;
+  indivDid?: string;
   onSelectAttestation: (attestation: Attestation) => void;
 }
 
 const AttestationSection: React.FC<AttestationSectionProps> = ({
   orgDid,
+  indivDid,
   onSelectAttestation,
 }) => {
     const [tabValue, setTabValue] = useState<'individual' | 'organization'>('individual');
@@ -81,7 +83,6 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
         setAttestations(prev => [att, ...prev]);
       }
       setSelectedId(att.entityId);
-      console.info("***********************  updated ************")
       if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
     } else if (event.action === 'delete-all') {
       setAttestations([]);
@@ -91,8 +92,8 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
 
   // Load data on orgDid change
   useEffect(() => {
-    if (orgDid && tabValue) {
-      AttestationService.loadRecentAttestationsTitleOnly(orgDid).then((atts) => {
+    if (orgDid && indivDid && tabValue) {
+      AttestationService.loadRecentAttestationsTitleOnly(orgDid, indivDid).then((atts) => {
         setAttestations(atts)
       })
 
@@ -110,9 +111,6 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
       })
     }
 
-    
-
-
 
 
     attestationsEmitter.on('attestationChangeEvent', handleAttestationChange);
@@ -125,8 +123,6 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
   }, [orgDid]);
 
 
-
-  console.info("filtered and groupd: ", attestations)
 
     // Filter and group
     const filtered = attestations.filter(a =>
@@ -234,13 +230,7 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
                 <Grid container spacing={2}>
                   {grouped[cat.name].map(att => (
                     <Grid
-                      item
-                      xs={12}
-                      sm={6}
-                      md={4}
-                      lg={3}
-                      xl={2}
-                      key={att.id}
+                      key={att.entityId}
                     >
                       <AttestationCard
                         attestation={att}

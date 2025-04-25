@@ -96,7 +96,6 @@ export class OrgService {
     }
 
     var res = await response.json()
-    console.info("...... got response from website: ", res)
     return JSON.stringify(res);
   }
 }

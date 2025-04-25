@@ -126,7 +126,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const { data: walletClient } = useWalletClient();
 
-  const { issuerAccountClient, signer, delegation, orgAccountClient, orgDelegateClient, session, orgDid, orgName, setOrgNameValue } = useWallectConnectContext();
+  const { signer, issuerAccountClient, orgAccountClient, orgIssuerDelegation, indivAccountClient, indivIssuerDelegation, session, orgDid, indivDid, orgName, setOrgNameValue } = useWallectConnectContext();
 
   const [isDeleteAttestationsModalVisible, setDeleteAttestationsModalVisible] = useState(false);
   const [isOrgModalVisible, setOrgModalVisible] = useState(false);
@@ -183,8 +183,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   
   useEffect(() => {
-    if (orgAccountClient && orgDid) {
-      AttestationService.setEntityAttestations(orgDid).then((ents) => {
+    if (orgAccountClient && orgDid && indivDid) {
+      AttestationService.setEntityAttestations(orgDid, indivDid).then((ents) => {
         if (ents != undefined) {
 
           setEntities(ents)
@@ -217,7 +217,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     }
     
 
-  }, [orgAccountClient, orgDid]);
+  }, [orgAccountClient, orgDid, indivDid]);
 
 
   useEffect(() => {
@@ -676,7 +676,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
           console.info("************** creating att: ", proofUrl)
 
-          if (fullVc && signer && orgAccountClient && walletClient) {
+          if (fullVc && signer && issuerAccountClient && orgAccountClient && orgIssuerDelegation && walletClient) {
           
             // now create attestation
             const hash = keccak256(toUtf8Bytes("hash value"));
@@ -697,7 +697,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
               vciss: VerifiableCredentialsService.issuerDid,
               proof: proofUrl
             };
-            const uid = await AttestationService.addStateRegistrationAttestation(attestation, signer, delegation, orgAccountClient, orgDelegateClient)
+            const uid = await AttestationService.addStateRegistrationAttestation(attestation, signer, orgIssuerDelegation, orgAccountClient, issuerAccountClient)
             console.info("add registration attestation complete")
     
             entities?.forEach((ent) => {
@@ -735,7 +735,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
       const fullVc = result.vc
       const proofUrl = result.proofUrl
-      if (fullVc && signer && orgAccountClient && walletClient) {
+      if (fullVc && signer && issuerAccountClient && orgAccountClient && orgIssuerDelegation && walletClient) {
       
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -753,7 +753,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           proof: proofUrl
         };
 
-        const uid = await AttestationService.addRegisteredDomainAttestation(attestation, signer, delegation, orgAccountClient, orgDelegateClient)
+        const uid = await AttestationService.addRegisteredDomainAttestation(attestation, signer, orgIssuerDelegation, orgAccountClient, issuerAccountClient)
         console.info("add org domain attestation complete")
 
         entities?.forEach((ent) => {
@@ -776,11 +776,11 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     const entityId = "website"
     if (orgDid && walletClient && orgAccountClient && issuerAccountClient && session && signer) {
 
-      const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC(entityId, orgDid, websiteType, website);
+      const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC(entityId, orgDid, issuerDid, websiteType, website);
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
       const fullVc = result.vc
       const proofUrl = result.proofUrl
-      if (fullVc && signer && orgAccountClient && walletClient) {
+      if (fullVc && signer && issuerAccountClient && orgAccountClient && orgIssuerDelegation && walletClient) {
       
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -798,7 +798,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           proof: proofUrl
         };
 
-        const uid = await AttestationService.addWebsiteAttestation(attestation, signer, delegation, orgAccountClient, orgDelegateClient)
+        const uid = await AttestationService.addWebsiteAttestation(attestation, signer, orgIssuerDelegation, orgAccountClient, issuerAccountClient)
         console.info("add website attestation complete")
 
         entities?.forEach((ent) => {
@@ -827,7 +827,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
       const fullVc = result.vc
       const proofUrl = result.proofUrl
-      if (fullVc && signer && orgAccountClient && walletClient) {
+      if (fullVc && signer && issuerAccountClient && orgAccountClient && orgIssuerDelegation && walletClient) {
       
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -845,7 +845,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           proof: proofUrl
         };
 
-        const uid = await AttestationService.addEmailAttestation(attestation, signer, delegation, orgAccountClient, orgDelegateClient)
+        const uid = await AttestationService.addEmailAttestation(attestation, signer, orgIssuerDelegation, orgAccountClient, issuerAccountClient)
         console.info("add email attestation complete")
 
         entities?.forEach((ent) => {
@@ -1058,9 +1058,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     defaultIntroduction = "How can we help you?"
 
     let defaultInstruction
-
-    console.info("entities: ", entities)
-    console.info("current org: ", org)
     
     if (entities && org) {
       for (const entity of entities) {
@@ -1081,7 +1078,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     }
 
 
-    console.info("^^^^^^^^^^^^^^^ defaultIntroduction: ", defaultIntroduction)
     const updatedMessage2 = {
       ...prevMessages[prevMessages.length - 1],
       content: defaultIntroduction,
@@ -1090,9 +1086,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     let msgs = [...prevMessages.slice(0, -1), updatedMessage2]
     if (msgs != undefined) {
-      console.info("~~~~~~~~~~~~~~~~~~~~~~~~   setMessages: ", msgs)
       setMessages(msgs)
-      console.info("&&&&&&&&&&&&&&&&&&&&&&&&  setMessages done ")
     }
     else {
       msgs = []
@@ -1104,7 +1098,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   function processAssistantMessage(isFirstCall: boolean, content: string, args: string, prevMessages: ChatMessage[], updatedMessage: ChatMessage, fileDataRef: FileDataRef[]) {
 
-    console.info("isFirstCall: ", isFirstCall)
     const result = {
       isToolFunction: false,
       messages: [] as ChatMessage[]
@@ -1118,17 +1111,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         result.isToolFunction = true
         let command = JSON.parse(argsVal)
 
-      
-
-        console.info(">>>>>>>>>>> command: ", command)
-
         if ("edit" in command) {
           let socialCommand = command["edit"]
           if (socialCommand && socialCommand.toLowerCase() == "linkedin") {
             //console.info("....... edit linkedin information .........")
             const cmd : Command = {
               action: "edit",
-              orgDid: orgDid,
+              did: indivDid,
               entityId: "linkedin",
             }
             appCommand(cmd)
@@ -1137,7 +1126,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             //console.info("....... edit x information .........")
             const cmd : Command = {
               action: "edit",
-              orgDid: orgDid,
+              did: indivDid,
               entityId: "linkedin",
             }
             appCommand(cmd)
@@ -1394,13 +1383,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   
   function handleStreamedResponse(content: string, args: string, fileDataRef: FileDataRef[], done: boolean) {
 
-    console.info("...... handleStreamedResponse content: ", content)
-    console.info("...... handleStreamedResponse args: ", args)
+    //console.info("...... handleStreamedResponse content: ", content)
+    //console.info("...... handleStreamedResponse args: ", args)
 
     let isFirstCall = 0
     setMessages(prevMessages => {
 
-      console.info("...... prevMessages: ", prevMessages)
+      //console.info("...... prevMessages: ", prevMessages)
 
 
       // get the latest list of messages,  remember this can be called twice
@@ -1412,8 +1401,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       let isNew: boolean = false;
       try {
         if (prevMessages.length === 0) {
-          console.error('prevMessages should not be empty in handleStreamedResponse.');
-          console.info("~~~~~~~~~~~~~~~~~~~~~~~~ return empty")
+          //console.error('prevMessages should not be empty in handleStreamedResponse.');
+          //console.info("~~~~~~~~~~~~~~~~~~~~~~~~ return empty")
           return [];
         }
         if (prevMessages[prevMessages.length - 1].role === Role.User) {
@@ -1454,7 +1443,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         //console.info("return ...prevMessages, message ")
 
         const msgs = [...prevMessages, message]
-        console.info("~~~~~~~~~~~~~~~~~~~~~~~~ return msgs: ", msgs)
         return msgs;
       } else {
         const updatedMessage = {
@@ -1464,14 +1452,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         };
         // Replace the old last message with the updated one
         if (done == true) {
-          console.info("....process assistant message ......: ", updatedMessage)
-
           // received message from AI Assitant => updatedMessage
           // go do what the AI assistant message told us to do  =>  appCommand
-
           const response = processAssistantMessage(isFirstCall == 1, updatedMessage.content, updatedMessage.args, prevMessages, updatedMessage, fileDataRef);
           if (response.isToolFunction && response.messages) {
-            console.info("prev: ", response.messages)
             return response.messages
           }
           
