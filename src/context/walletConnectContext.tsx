@@ -186,25 +186,7 @@ export const useWalletConnect = () => {
         setSelectedSignatoryName("injectedProviderSignatoryFactory")
         
 
-        // Build RichCanvas authority Smart Wallet DID
-        //console.info("))))))))))))))))) create issuer account client: ")
-        const issuerOwner = privateKeyToAccount(ISSUER_PRIVATE_KEY);
-        toMetaMaskSmartAccount({
-          client: publicClient,
-          implementation: Implementation.Hybrid,
-          deployParams: [issuerOwner.address, [], [], []],
-          signatory: { account: issuerOwner },
-          deploySalt: toHex(0),
-        }).then((issuerAccountClient) => {
-          console.info("issuerAccountClient: ", issuerAccountClient)
 
-          //const message = "hello world"
-          //const signed = await issuerAccountClient.signMessage({message})
-          //console.info(">>>>>>>>>>>>>>>>>> signed message: ", signed)
-  
-          setIssuerDid('did:pkh:eip155:10:' + issuerAccountClient.address)
-          setIssuerAccountClient(issuerAccountClient)
-        });
 
     }, [chain, isConnected, web3ModalAddress, connectedAddress]);
 
@@ -260,32 +242,53 @@ export const useWalletConnect = () => {
           }
           
           // configure snaps if not already configured
-          walletClient.request({
+          const snapResponse = await walletClient.request({
             method: 'wallet_getSnaps',
-            }).then((response: any) => {
-
-              const snps = response as GetSnapsResponse
-            
-              const snapId = "local:http://localhost:8080"
-              const snap = snps?.[snapId]
-
-              if (snap == undefined) {
-                const snapId = "local:http://localhost:8080"
-                walletClient.request({
-                  method: 'wallet_requestSnaps',
-                  params: {
-                    [snapId]: {} ,
-                  },
-                }).then((resp: any) => {
-                  console.info("snap installed")
-                })
-              }
-            
           })
+
+          const snps = snapResponse as GetSnapsResponse
+        
+          const snapId = "local:http://localhost:8080"
+          const snap = snps?.[snapId]
+
+          if (snap == undefined) {
+            const snapId = "local:http://localhost:8080"
+            const snapRequestResponse = await walletClient.request({
+              method: 'wallet_requestSnaps',
+              params: {
+                [snapId]: {} ,
+              },
+            })
+          }
+            
+
 
 
           if (publicClient && selectedSignatory) {
 
+            // connect to issuer account abstraction
+            const issuerOwner = privateKeyToAccount(ISSUER_PRIVATE_KEY);
+            const issuerAccountClient = await toMetaMaskSmartAccount({
+              client: publicClient,
+              implementation: Implementation.Hybrid,
+              deployParams: [issuerOwner.address, [], [], []],
+              signatory: { account: issuerOwner },
+              deploySalt: toHex(0),
+            })
+
+            console.info("issuerAccountClient: ", issuerAccountClient)
+
+            //const message = "hello world"
+            //const signed = await issuerAccountClient.signMessage({message})
+            //console.info(">>>>>>>>>>>>>>>>>> signed message: ", signed)
+    
+            setIssuerDid('did:pkh:eip155:10:' + issuerAccountClient.address)
+            setIssuerAccountClient(issuerAccountClient)
+
+
+
+            // connect to individual account abstraction
+            console.info("individual authenticated owner EOA address: ", owner)
             const indivAccountClient = await toMetaMaskSmartAccount({
               client: publicClient,
               implementation: Implementation.Hybrid,
@@ -294,22 +297,40 @@ export const useWalletConnect = () => {
               deploySalt: toHex(1),
             });
 
-            const joeAA = await indivAccountClient.getAddress()
-            console.info("joe aa: ", joeAA)
+            const indivAddress = await indivAccountClient.getAddress()
+            console.info("individual authenticated owner AA address: ", indivAddress)
 
 
+            // connect to org account abstraction
+            
             // create orgAccountClient
-            console.info("create org smart account: ")
-            console.info("public client: ", publicClient)
-            console.info("owner: ", owner)
-            console.info("signatory: ", signatory)
+            //console.info("create org smart account: ")
+            //console.info("public client: ", publicClient)
+            //console.info("owner: ", owner)
+            //console.info("signatory: ", signatory)
+            console.info("@@@@@@@@@@@@@ create org account with fixed aa address: 0x383668f69e39c5D9Dcb2B4b46112de6D2D727905")
             const orgAccountClient = await toMetaMaskSmartAccount({
+              address: "0x383668f69e39c5D9Dcb2B4b46112de6D2D727905",
               client: publicClient,
               implementation: Implementation.Hybrid,
               deployParams: [owner, [], [], []],
               signatory: signatory,
               deploySalt: toHex(0),
             });
+            console.info("org account client aa address: ", orgAccountClient.address)
+
+
+
+            const samCFOEOA = "0x8272226863aACD003975B5C497E366c14D009605"
+            const otherIndividualAccountClient = await toMetaMaskSmartAccount({
+              client: publicClient,
+              implementation: Implementation.Hybrid,
+              deployParams: [samCFOEOA, [], [], []],
+              signatory: signatory,
+              deploySalt: toHex(1),
+            });
+            console.info("%%%%%%%%% other individual EOA address: ", samCFOEOA)
+            console.info("%%%%%%%%% other individual AA address: ", otherIndividualAccountClient.address)
 
             /*
             const message = 'Hello, MetaMask Delegator!';
@@ -371,19 +392,22 @@ export const useWalletConnect = () => {
             setIssuerAccountClient(burnerIssuerAccountClient)
             */
 
-
-            /*
             const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+            
+            /*
+            
             let userOpHash1 = await bundlerClient.sendUserOperation({
               account: orgAccountClient,
               calls: [{ to: zeroAddress, data: "0x" }],
               ...fee
             });
+            
 
             const receipt1 = await bundlerClient.waitForUserOperationReceipt({
               hash: userOpHash1,
             });
             console.info("%%%%%%%%%%%%%%  receipt1: ", receipt1)
+            */
 
             let userOpHash2 = await bundlerClient.sendUserOperation({
               account: indivAccountClient,
@@ -406,7 +430,7 @@ export const useWalletConnect = () => {
               hash: userOpHash3,
             });
             console.info("%%%%%%%%%%%%%%  receipt3: ", receipt3)
-            */
+
             
 
 
@@ -486,6 +510,7 @@ export const useWalletConnect = () => {
               await DelegationService.saveDelegation(walletClient, indivAccountClient.address, issuerAccountClient.address, indivIssuerDel)
             }
 
+            console.info(">>>>>>>>>>>>>>> setIndivIssuerDelegation: ", indivIssuerDel)
             setIndivIssuerDelegation(indivIssuerDel)
 
 

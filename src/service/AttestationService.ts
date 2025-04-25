@@ -518,11 +518,12 @@ class AttestationService {
   }
   */
 
-  static async storeAttestation(schema: string, encodedData: any, signer: ethers.JsonRpcSigner, delegation: Delegation, orgAccountClient: any, orgDelegateClient: any) {
+  static async storeAttestation(schema: string, encodedData: any, signer: ethers.JsonRpcSigner, delegation: Delegation, delegatorAccountClient: any, issuerAccountClient: any) {
     
 
-    let swa = await orgAccountClient.getAddress()
+    let swa = delegatorAccountClient.address
 
+    console.info("delegator (org or indiv) aa address: ", swa)
     let tx = await eas.attest({
       schema: schema,
       data: {
@@ -542,6 +543,7 @@ class AttestationService {
     ];
 
 
+    console.info("pimlico client configruation for BUNDLER URL")
     const pimlicoClient = createPimlicoClient({
       transport: http(BUNDLER_URL),
       //entryPoint: { address: ENTRY_POINT_ADDRESS, version: '0.7' },
@@ -560,6 +562,7 @@ class AttestationService {
                     },
                   });
 
+    console.info("delegation: ", delegation)
     const delegationChain : Delegation[] = [delegation];
     const data = DelegationFramework.encode.redeemDelegations({
       delegations: [ delegationChain ],
@@ -570,11 +573,13 @@ class AttestationService {
     const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
     let userOpHash: Hex;
 
+    console.info("delegator address: ", delegatorAccountClient.address)
+    console.info("delegate address: ", issuerAccountClient.address)
     userOpHash = await bundlerClient.sendUserOperation({
-      account: orgDelegateClient,
+      account: issuerAccountClient,
       calls: [
         {
-          to: orgDelegateClient.address,
+          to: issuerAccountClient.address,
           data,
         },
       ],
@@ -694,7 +699,7 @@ class AttestationService {
 
   static SocialSchemaUID = "0xb05a2a08fd5afb49a338b27bb2e6cf1d8bd37992b23ad38a95f807d19c40782e"
   static SocialSchema = this.BaseSchema + "string name, string url"
-  static async addSocialAttestation(attestation: SocialAttestation, signer: ethers.JsonRpcSigner, delegation: Delegation, orgAccountClient: any, orgDelegateClient: any): Promise<string> {
+  static async addSocialAttestation(attestation: SocialAttestation, signer: ethers.JsonRpcSigner, delegation: Delegation, indivAccountClient: any, issuerAccountClient: any): Promise<string> {
 
     eas.connect(signer)
 
@@ -722,8 +727,11 @@ class AttestationService {
         ];
 
       const encodedData = schemaEncoder.encodeData(schemaItems);
-      await AttestationService.storeAttestation(this.SocialSchemaUID, encodedData, signer, delegation, orgAccountClient, orgDelegateClient)
 
+      console.info("store attestation")
+      await AttestationService.storeAttestation(this.SocialSchemaUID, encodedData, signer, delegation, indivAccountClient, issuerAccountClient)
+
+      console.info("done")
       let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
       attestationsEmitter.emit('attestationChangeEvent', event);
 

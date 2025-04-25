@@ -126,7 +126,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const { data: walletClient } = useWalletClient();
 
-  const { signer, issuerAccountClient, orgAccountClient, orgIssuerDelegation, indivAccountClient, indivIssuerDelegation, session, orgDid, indivDid, orgName, setOrgNameValue } = useWallectConnectContext();
+  const { signer, issuerAccountClient, orgAccountClient, orgIssuerDelegation, indivAccountClient, indivIssuerDelegation, session, orgDid, indivDid, issuerDid, orgName, setOrgNameValue } = useWallectConnectContext();
 
   const [isDeleteAttestationsModalVisible, setDeleteAttestationsModalVisible] = useState(false);
   const [isOrgModalVisible, setOrgModalVisible] = useState(false);
@@ -667,9 +667,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         const state = orgJson["state"]
         const formationDate = "1/2/2020"
 
-        if (orgDid && walletClient && orgAccountClient && issuerAccountClient && session && signer) {
+        if (orgDid && issuerDid && walletClient && orgAccountClient && issuerAccountClient && session && signer) {
 
-          const vc = await VerifiableCredentialsService.createStateRegistrationVC(entityId, orgDid, idNumber, orgName, status, formationDate, state, locationAddress);
+          const vc = await VerifiableCredentialsService.createStateRegistrationVC(entityId, orgDid, issuerDid, idNumber, orgName, status, formationDate, state, locationAddress);
           const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
           const fullVc = result.vc
           const proofUrl = result.proofUrl
@@ -694,7 +694,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
               hash: hash,
               vccomm: (fullVc.credentialSubject as any).commitment.toString(),
               vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-              vciss: VerifiableCredentialsService.issuerDid,
+              vciss: issuerDid,
               proof: proofUrl
             };
             const uid = await AttestationService.addStateRegistrationAttestation(attestation, signer, orgIssuerDelegation, orgAccountClient, issuerAccountClient)
@@ -729,9 +729,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     const domaincreationdate = new Date("2023-03-10")
     const domaincreationdateSeconds = Math.floor(domaincreationdate.getTime() / 1000); // Convert to seconds
 
-    if (orgDid && walletClient && orgAccountClient && issuerAccountClient && session && signer) {
+    if (orgDid && issuerDid && walletClient && orgAccountClient && issuerAccountClient && session && signer) {
 
-      const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, domain, domaincreationdate.toDateString());
+      const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, issuerDid, domain, domaincreationdate.toDateString());
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
       const fullVc = result.vc
       const proofUrl = result.proofUrl
@@ -749,7 +749,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           hash: hash,
           vccomm: (fullVc.credentialSubject as any).commitment.toString(),
           vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-          vciss: VerifiableCredentialsService.issuerDid,
+          vciss: issuerDid,
           proof: proofUrl
         };
 
@@ -794,7 +794,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           hash: hash,
           vccomm: (fullVc.credentialSubject as any).commitment.toString(),
           vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-          vciss: VerifiableCredentialsService.issuerDid,
+          vciss: issuerDid,
           proof: proofUrl
         };
 
@@ -821,9 +821,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     const emailType = "info"
     
     const entityId = "email"
-    if (orgDid && walletClient && orgAccountClient && issuerAccountClient && session && signer) {
+    if (orgDid && issuerDid && walletClient && orgAccountClient && issuerAccountClient && session && signer) {
 
-      const vc = await VerifiableCredentialsService.createEmailVC(entityId, orgDid, emailType, email);
+      const vc = await VerifiableCredentialsService.createEmailVC(entityId, orgDid, issuerDid, emailType, email);
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
       const fullVc = result.vc
       const proofUrl = result.proofUrl
@@ -841,7 +841,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           hash: hash,
           vccomm: (fullVc.credentialSubject as any).commitment.toString(),
           vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-          vciss: VerifiableCredentialsService.issuerDid,
+          vciss: issuerDid,
           proof: proofUrl
         };
 

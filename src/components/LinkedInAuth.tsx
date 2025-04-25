@@ -46,7 +46,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
 
   
   const { } = props;
-  const { issuerAccountClient, signer, indivIssuerDelegation, indivAccountClient, session, orgDid } = useWallectConnectContext();
+  const { issuerAccountClient, signer, indivIssuerDelegation, indivAccountClient, session, indivDid, issuerDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
 
@@ -86,25 +86,26 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
         console.info(res.data.email)
         console.info(res.data.picture)
 
-        if (orgDid && walletClient && indivAccountClient && issuerAccountClient && indivIssuerDelegation && session && signer) {
+        if (indivDid && issuerDid && walletClient && indivAccountClient && issuerAccountClient && indivIssuerDelegation && session && signer) {
   
-          const vc = await VerifiableCredentialsService.createSocialVC(entityId, orgDid, res.data.sub, "");
-          const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
+          const vc = await VerifiableCredentialsService.createSocialVC(entityId, indivDid, issuerDid, res.data.sub, "");
+          const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, issuerAccountClient, session)
           const fullVc = result.vc
           const proofUrl = result.proofUrl
+
           if (fullVc && signer && indivAccountClient && indivIssuerDelegation) {
           
             // add attestation
             const hash = keccak256(toUtf8Bytes("hash value"));
             const attestation: SocialAttestation = {
-              attester: orgDid,
+              attester: indivDid,
               entityId: entityId,
               class: "individual", 
               category: "social",
               hash: hash,
               vccomm: (fullVc.credentialSubject as any).commitment.toString(),
               vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-              vciss: VerifiableCredentialsService.issuerDid,
+              vciss: issuerDid,
               proof: proofUrl,
               name: "",
               url: ""

@@ -32,7 +32,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { issuerAccountClient, signatory, signer, orgIssuerDelegation, orgAccountClient, session, orgDid, setOrgNameValue } = useWallectConnectContext();
+  const { issuerAccountClient, signatory, signer, orgIssuerDelegation, orgAccountClient, session, orgDid, issuerDid, setOrgNameValue } = useWallectConnectContext();
   const { data: walletClient }= useWalletClient()
 
   const [name, setName] = useState("");
@@ -57,9 +57,9 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
       //setOrgName(orgName)
 
 
-      if (signer && orgDid && walletClient && orgIssuerDelegation && orgAccountClient && issuerAccountClient && session && signatory) {
+      if (signer && orgDid && issuerDid && walletClient && orgIssuerDelegation && orgAccountClient && issuerAccountClient && session && signatory) {
 
-        const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, orgName);
+        const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, issuerDid, orgName);
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
         const fullVc = result.vc
         const proofUrl = result.proofUrl
@@ -76,7 +76,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-            vciss: VerifiableCredentialsService.issuerDid,
+            vciss: issuerDid,
             proof: proofUrl
           };
   

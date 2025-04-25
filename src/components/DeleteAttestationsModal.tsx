@@ -40,17 +40,16 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
   const handleDelete = () => {
     console.info("delete attestations")
     if (signer && orgDid && indivDid && orgAccountClient && orgIssuerDelegation && indivIssuerDelegation) {
-      AttestationService.loadRecentAttestationsTitleOnly(orgDid, indivDid).then((attestations) => {
-        
-          console.info("delete org attestations ==========> ", orgAccountClient.address, issuerAccountClient.address)
+      AttestationService.loadRecentAttestationsTitleOnly(orgDid, "").then((attestations) => {
           AttestationService.deleteAttestations(attestations, signer, orgIssuerDelegation, orgAccountClient, issuerAccountClient).then((rsl) => {
             console.info("delete all attestations is done ")
           })
+        })
+      AttestationService.loadRecentAttestationsTitleOnly("", indivDid).then((attestations) => {
 
-          console.info("delete indiv attestations ==========> ", indivAccountClient.address, issuerAccountClient.address)
-          AttestationService.deleteAttestations(attestations, signer, indivIssuerDelegation, indivAccountClient, issuerAccountClient).then((rsl) => {
-            console.info("delete all attestations is done ")
-          })
+        AttestationService.deleteAttestations(attestations, signer, indivIssuerDelegation, indivAccountClient, issuerAccountClient).then((rsl) => {
+          console.info("delete all attestations is done ")
+        })
       })
     }
 

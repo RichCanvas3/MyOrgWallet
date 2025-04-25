@@ -67,17 +67,18 @@ class VerifiableCredentialsService {
 
     static async createSocialVC(
       entityId: string,
-      orgDid: string,
+      did: string,
+      issuerDid: string,
       socialId: string,
       socialUrl: string
     ): Promise<VerifiableCredential> {
       let vc : VerifiableCredential = {
         "@context": ["https://www.w3.org/2018/credentials/v1"],
         type: ["VerifiableCredential", "SocialCredential"],
-        issuer: VerifiableCredentialsService.issuerDid, 
+        issuer: issuerDid, 
         issuanceDate: new Date().toISOString(),
         credentialSubject: {
-          id: orgDid,
+          id: did,
           socialId: socialId,
           socialUrl: socialUrl,
           verifiedMethod: "OAuth",
@@ -91,13 +92,14 @@ class VerifiableCredentialsService {
     static async createRegisteredDomainVC(
       entityId: string,
       orgDid: string,
+      issuerDid: string,
       domainname: string,
       domaincreationdate: string
     ): Promise<VerifiableCredential> {
       let vc : VerifiableCredential = {
         "@context": ["https://www.w3.org/2018/credentials/v1"],
         type: ["VerifiableCredential", "RegisteredDomainCredential"],
-        issuer: VerifiableCredentialsService.issuerDid, 
+        issuer: issuerDid, 
         issuanceDate: new Date().toISOString(),
         credentialSubject: {
           id: orgDid,
@@ -114,12 +116,13 @@ class VerifiableCredentialsService {
     static async createOrgVC(
       entityId: string,
       orgDid: string,
+      issuerDid: string,
       orgName: string
     ): Promise<VerifiableCredential> {
       let vc : VerifiableCredential = {
         "@context": ["https://www.w3.org/2018/credentials/v1"],
         type: ["VerifiableCredential", "OrgCredential"],
-        issuer: VerifiableCredentialsService.issuerDid, 
+        issuer: issuerDid, 
         issuanceDate: new Date().toISOString(),
         credentialSubject: {
           id: orgDid,
@@ -135,6 +138,7 @@ class VerifiableCredentialsService {
     static async createStateRegistrationVC(
       entityId: string,
       orgDid: string,
+      issuerDid: string,
       idNumber: string,
        orgName: string, 
        status: string, 
@@ -145,7 +149,7 @@ class VerifiableCredentialsService {
       let vc : VerifiableCredential = {
         "@context": ["https://www.w3.org/2018/credentials/v1"],
         type: ["VerifiableCredential", "OrgStateRegistrationCredential"],
-        issuer: VerifiableCredentialsService.issuerDid, 
+        issuer: issuerDid, 
         issuanceDate: new Date().toISOString(),
         credentialSubject: {
           id: orgDid,
@@ -165,13 +169,14 @@ class VerifiableCredentialsService {
     static async createEmailVC(
       entityId: string,
       orgDid: string,
+      issuerDid: string,
       emailType: string,
       email: string
     ): Promise<VerifiableCredential> {
       let vc : VerifiableCredential = {
         "@context": ["https://www.w3.org/2018/credentials/v1"],
         type: ["VerifiableCredential", "EmailCredential"],
-        issuer: VerifiableCredentialsService.issuerDid, 
+        issuer: issuerDid, 
         issuanceDate: new Date().toISOString(),
         credentialSubject: {
           id: orgDid,
@@ -184,31 +189,6 @@ class VerifiableCredentialsService {
     
       return vc;
     }
-    
-    static async createOrgWalletVC(
-      entityId: string,
-      orgDid: string,
-      type: string,
-      contractaddress: string
-    ): Promise<VerifiableCredential> {
-      let vc : VerifiableCredential = {
-        "@context": ["https://www.w3.org/2018/credentials/v1"],
-        type: ["VerifiableCredential", "OrgSmartWalletCredential"],
-        issuer: VerifiableCredentialsService.issuerDid, 
-        issuanceDate: new Date().toISOString(),
-        credentialSubject: {
-          id: orgDid,
-          type: type,
-          contractAddress: contractaddress,
-          verifiedMethod: "check",
-          platform: "richcanvas-" + entityId
-        }
-      }
-    
-      return vc;
-    }
-
-    
 
     static async saveCredential(walletClient: WalletClient, credential: VerifiableCredential, entityId: string) {
         
@@ -292,7 +272,7 @@ class VerifiableCredentialsService {
     static async createCredential(
       vc: VerifiableCredential,
       entityId: string,
-      orgDid: string, 
+      did: string, 
       walletClient: WalletClient, 
 
       issuerAccountClient: any, 
@@ -314,10 +294,10 @@ class VerifiableCredentialsService {
 
       // Finally, create the credential commitment: Poseidon(issuer_DID, leafHash)
       /*
-      function createCredentialCommitment(poseidon: any, orgDid: string, issuerDID: string, credentialHash: string) {
+      function createCredentialCommitment(poseidon: any, did: string, issuerDID: string, credentialHash: string) {
 
         const issuerDIDHash = hashDID(issuerDID)
-        const orgDIDHash = hashDID(orgDid)
+        const orgDIDHash = hashDID(did)
 
 
         console.info("issuerDIDHash: ", issuerDIDHash)
@@ -345,27 +325,27 @@ class VerifiableCredentialsService {
       }
 
       // Normalize signature to ensure compatibility with Viem
-function normalizeSignature(signature: string): string {
-  try {
-    // Convert signature to bytes
-    const sigBytes = hexToBytes(signature as `0x${string}`);
-    if (sigBytes.length !== 65) {
-      throw new Error('Invalid signature length');
-    }
+      function normalizeSignature(signature: string): string {
+        try {
+          // Convert signature to bytes
+          const sigBytes = hexToBytes(signature as `0x${string}`);
+          if (sigBytes.length !== 65) {
+            throw new Error('Invalid signature length');
+          }
 
-    // Extract r, s, v
-    const v = sigBytes[64];
-    // Normalize v to 27 or 28 (some wallets return 0 or 1)
-    const normalizedV = v < 27 ? v + 27 : v;
-    sigBytes[64] = normalizedV;
+          // Extract r, s, v
+          const v = sigBytes[64];
+          // Normalize v to 27 or 28 (some wallets return 0 or 1)
+          const normalizedV = v < 27 ? v + 27 : v;
+          sigBytes[64] = normalizedV;
 
-    // Convert back to hex
-    return bytesToHex(sigBytes) as `0x${string}`;
-  } catch (error) {
-    console.error('Error normalizing signature:', error);
-    throw error;
-  }
-}
+          // Convert back to hex
+          return bytesToHex(sigBytes) as `0x${string}`;
+        } catch (error) {
+          console.error('Error normalizing signature:', error);
+          throw error;
+        }
+      }
 
 
     // create verifiable credential to represent
@@ -403,17 +383,18 @@ function normalizeSignature(signature: string): string {
         }
 
 
-        if (issuerDid && orgDid) {
+        if (issuerDid && did) {
 
+          console.info(">>>>>>>>>>>>> did: ", did)
           const issuerDidHash = hashDID(issuerDid)
-          const orgDidHash = hashDID(orgDid)
+          const didHash = hashDID(did)
 
           const res = await fetch('http://localhost:3051/api/proof/commitment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               issuerDidHash: issuerDidHash.toString(),
-              orgDidHash: orgDidHash.toString(), 
+              didHash: didHash.toString(), 
               vcHash: credentialHash.toString()
             }),
           })
@@ -467,10 +448,10 @@ function normalizeSignature(signature: string): string {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                inputs: { issuerDidHash: issuerDidHash.toString(), orgDidHash: orgDidHash.toString(), vcHash: credentialHash.toString(), commitment: commitment.toString(), commitmentSignature: commitmentSignature.toString() }, // Example inputs
+                inputs: { issuerDidHash: issuerDidHash.toString(), didHash: didHash.toString(), vcHash: credentialHash.toString(), commitment: commitment.toString(), commitmentSignature: commitmentSignature.toString() }, // Example inputs
                 session: serializedSession,
                 commitment: commitment.toString(),
-                orgDid: orgDid
+                did: did
               }),
             })
             const proofResults = await proofResp.json()

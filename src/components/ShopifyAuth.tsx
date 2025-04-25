@@ -31,7 +31,7 @@ const entityId = "shopify"
 const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) => {
 
   const { } = props;
-  const { issuerAccountClient, signer, orgIssuerDelegation, orgAccountClient, session, orgDid } = useWallectConnectContext();
+  const { issuerAccountClient, signer, orgIssuerDelegation, orgAccountClient, session, orgDid, issuerDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   const openShopifyPopup = () => {
@@ -87,7 +87,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-            vciss: VerifiableCredentialsService.issuerDid,
+            vciss: issuerDid,
             proof: proofUrl
           };
 
