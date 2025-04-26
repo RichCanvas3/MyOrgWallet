@@ -58,7 +58,7 @@ class DelegationService {
         return DelegationService.delegations
     }
 
-    static async getDelegation(walletClient: WalletClient, delegator: string, delegate: string): Promise<DelegationStruct | undefined> {
+    static async getDelegationFromSnap(walletClient: WalletClient, delegator: string, delegate: string): Promise<DelegationStruct | undefined> {
     
         let del : DelegationStruct | undefined
 

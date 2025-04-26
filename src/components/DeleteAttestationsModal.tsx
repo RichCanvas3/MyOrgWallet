@@ -37,23 +37,34 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
 
 
 
-  const handleDelete = () => {
+  const handleDeleteOrgAttestations = () => {
     console.info("delete attestations")
-    if (signer && orgDid && indivDid && orgAccountClient && orgIssuerDelegation && indivIssuerDelegation) {
+    if (signer && orgDid && orgIssuerDelegation && indivIssuerDelegation) {
+      console.info("delete org attestations")
       AttestationService.loadRecentAttestationsTitleOnly(orgDid, "").then((attestations) => {
+        if (attestations && attestations.length > 0) {
           AttestationService.deleteAttestations(attestations, signer, orgIssuerDelegation, orgAccountClient, issuerAccountClient).then((rsl) => {
             console.info("delete all attestations is done ")
           })
-        })
-      AttestationService.loadRecentAttestationsTitleOnly("", indivDid).then((attestations) => {
-
-        AttestationService.deleteAttestations(attestations, signer, indivIssuerDelegation, indivAccountClient, issuerAccountClient).then((rsl) => {
-          console.info("delete all attestations is done ")
-        })
+        }
       })
+      onClose()
     }
+  }
 
-    onClose()
+  const handleDeleteIndivAttestations = () => {
+    if (signer && indivDid && indivIssuerDelegation) {
+      console.info("delete indiv attestations")
+      AttestationService.loadRecentAttestationsTitleOnly("", indivDid).then((attestations) => {
+        if (attestations && attestations.length > 0) {
+          AttestationService.deleteAttestations(attestations, signer, indivIssuerDelegation, indivAccountClient, issuerAccountClient).then((rsl) => {
+            console.info("delete all attestations is done ")
+          })
+        }
+      })
+
+      onClose()
+    }
   }
 
 
@@ -98,10 +109,21 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
                     color="primary"
                     size="large"
                     fullWidth
-                    onClick={handleDelete}
+                    onClick={handleDeleteOrgAttestations}
                     sx={{ mb: 3, p: 2, py: 1.5 }}
                   >
-                    Delete All Attestations
+                    Delete Organizations Attestations
+                  </Button>
+
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    fullWidth
+                    onClick={handleDeleteIndivAttestations}
+                    sx={{ mb: 3, p: 2, py: 1.5 }}
+                  >
+                    Delete Individuals Attestations
                   </Button>
       
                   </Paper>

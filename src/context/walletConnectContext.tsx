@@ -89,6 +89,7 @@ export type WalletConnectContextState = {
     
     setOrgNameValue: (orgNameValue: string) => Promise<void>,
     
+    isIndividualConnected: boolean
 }
 
 export const WalletConnectContext = createContext<WalletConnectContextState>({
@@ -113,6 +114,8 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
   signer: undefined,
   signatory: undefined,
 
+  isIndividualConnected: false,
+
 
 
   connect: () => {
@@ -131,6 +134,8 @@ export const useWalletConnect = () => {
     const [issuerDid, setIssuerDid] = useState<string>();
 
     const [orgName, setOrgName] = useState<string>();
+
+    const [isIndividualConnected, setIsIndividualConnected] = useState<boolean>();
 
 
     
@@ -420,6 +425,7 @@ export const useWalletConnect = () => {
             });
             console.info("%%%%%%%%%%%%%%  receipt2: ", receipt2)
 
+            /*
             let userOpHash3 = await bundlerClient.sendUserOperation({
               account: issuerAccountClient,
               calls: [{ to: zeroAddress, data: "0x" }],
@@ -430,7 +436,7 @@ export const useWalletConnect = () => {
               hash: userOpHash3,
             });
             console.info("%%%%%%%%%%%%%%  receipt3: ", receipt3)
-
+            */
             
 
 
@@ -439,7 +445,7 @@ export const useWalletConnect = () => {
 
             try {
               //await DelegationService.getDelegations(walletClient)
-              orgIssuerDel = await DelegationService.getDelegation(walletClient, orgAccountClient.address, issuerAccountClient.address)
+              orgIssuerDel = await DelegationService.getDelegationFromSnap(walletClient, orgAccountClient.address, issuerAccountClient.address)
             }
             catch (error) {
 
@@ -480,7 +486,7 @@ export const useWalletConnect = () => {
 
             try {
               //await DelegationService.getDelegations(walletClient)
-              indivIssuerDel = await DelegationService.getDelegation(walletClient, indivAccountClient.address, issuerAccountClient.address)
+              indivIssuerDel = await DelegationService.getDelegationFromSnap(walletClient, indivAccountClient.address, issuerAccountClient.address)
             }
             catch (error) {
 
@@ -513,6 +519,7 @@ export const useWalletConnect = () => {
             console.info(">>>>>>>>>>>>>>> setIndivIssuerDelegation: ", indivIssuerDel)
             setIndivIssuerDelegation(indivIssuerDel)
 
+            setIsIndividualConnected(true)
 
 
 
@@ -654,6 +661,8 @@ export const useWalletConnect = () => {
 
             orgName,
 
+            isIndividualConnected,
+
 
             issuerAccountClient,
             orgAccountClient,
@@ -687,6 +696,8 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
       orgName,
 
+      isIndividualConnected,
+
       issuerAccountClient,
       orgAccountClient,
       indivAccountClient,
@@ -716,6 +727,8 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
         orgName,
 
+        isIndividualConnected,
+
         issuerAccountClient,
         orgAccountClient,
         indivAccountClient,
@@ -739,6 +752,8 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         orgDid,
         indivDid, 
         issuerDid,
+
+        isIndividualConnected,
 
         issuerAccountClient,
         orgAccountClient,

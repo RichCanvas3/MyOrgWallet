@@ -332,202 +332,13 @@ class AttestationService {
   static BaseSchema = "string entityid, bytes32 hash, uint64 issuedate, uint64 expiredate, string vccomm, string vcsig, string vciss, string proof, "
 
 
-  /*
-  static SmartWalletSchemaUID = "0x48274e8523e9877690a844299733841575a47a4391d3c31efe94be43336440d6"
-  static SmartWalletSchema = this.BaseSchema + "string type, string contractaddress"
-  static async addSmartWalletAttestation(attestation: SmartWalletAttestation, signer: ethers.JsonRpcSigner, orgAccountClient: any): Promise<string> {
 
-    eas.connect(signer)
-
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
-
-
-    //console.info("attestation: ", attestation)
-
-    const schemaEncoder = new SchemaEncoder(this.SmartWalletSchema);
-    const schemaItems = [
-        { name: 'entityid', value: attestation.entityId, type: 'string' },
-        { name: 'hash', value: attestation.hash, type: 'bytes32' },
-        { name: 'issuedate', value: issuedate, type: 'uint64' },
-        { name: 'expiredate', value: expiredate, type: 'uint64' },
-        
-        { name: 'vccomm', value: attestation.vccomm, type: 'string' },
-        { name: 'vcsig', value: attestation.vcsig, type: 'string' },
-        { name: 'vciss', value: attestation.vciss, type: 'string' },
-
-        { name: 'proof', value: attestation.proof, type: 'string' },
-
-        { name: 'type', value: attestation.type, type: 'string' },
-        { name: 'contractaddress', value: attestation.contractaddress, type: 'string' },
-        
-      ];
-
+  static async storeAttestation(schema: string, encodedData: any, delegate: any, delegation: Delegation) {
     
-    const encodedData = schemaEncoder.encodeData(schemaItems);
-    let swa = await orgAccountClient.getAddress()
-
-    let tx = await eas.attest({
-      schema: AttestationService.SmartWalletSchemaUID,
-      data: {
-        recipient: swa,
-        expirationTime: 0n, // BigInt in v6
-        revocable: true,
-        data: encodedData
-      }
-    })
-
-
-
-    let swTx = await orgAccountClient.sendTransaction(tx.data, {
-            paymasterServiceData: {
-              mode: 'SPONSORED',
-            },
-          })
-        
-    let resp = await swTx.wait()
-
-    if (resp != undefined) {
-      let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
-      attestationsEmitter.emit('attestationChangeEvent', event);
-    }
-
-
-
-
-    const addr2 = ""
-
-    const reverseRegistrarInterface = new Interface([
-      'function setName(string memory name) public',
-    ]);
-    const txData = reverseRegistrarInterface.encodeFunctionData('setName', ['richcanvas.eth']);
-
-    const addr = "0x084b1c3C81545d370f3634392De611CaaBFf8148"
-    const transaction = {
-      to: addr,
-      data: txData,
-    };
-
-    const userOpResponse = await orgAccountClient.sendTransaction(transaction, {
-      paymasterServiceData: {
-        mode: 'SPONSORED', // Gasless transaction
-      },
-    });
-
-    const txReceipt = await userOpResponse.wait();
-
-    console.info("txReceipt: ", txReceipt)
-
-
-    const smartWalletAddress = await orgAccountClient.getAddress()
-    console.info("smart wallet address: ", smartWalletAddress)
-    console.info("smart wallet address: ", addr2)
-
-    const rpcUrl = "https://opt-mainnet.g.alchemy.com/v2/UXKG7nGL5a0mdDhvP-2ScOaLiRIM0rsW"
-    const provider = new ethers.JsonRpcProvider(rpcUrl);
-    const name = await provider.lookupAddress(addr2);
-    console.info("name returned: ", name)
-  
-
-
-
-
-
-
-    const rpcUrl = "https://opt-mainnet.g.alchemy.com/v2/UXKG7nGL5a0mdDhvP-2ScOaLiRIM0rsW"
-    const provider = new ethers.JsonRpcProvider(rpcUrl);
-
-    const forwardNode = ethers.namehash('richcanvas.eth');
-    const forwardResolverAddr = await provider.getResolver('richcanvas.eth');
-    if (forwardResolverAddr) {
-      console.info("forward resolver addr: ", forwardResolverAddr)
-      const forwardResolver = new ethers.Contract(
-        forwardResolverAddr.address,
-        ['function addr(bytes32 node) view returns (address)'],
-        provider
-      );
-      const forwardAddr = await forwardResolver.addr(forwardNode);
-      console.log('Forward Address:', forwardAddr);
-      if (forwardAddr.toLowerCase() !== addr2.toLowerCase()) {
-        console.log('Forward record mismatch - update richcanvas.eth ETH record');
-      }
-    }
-
-    return attestation.entityId
-
-  }
-  static constructSmartWalletAttestation(uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
-
-    let vccomm : string | undefined
-    let vcsig : string | undefined
-    let vciss : string | undefined
-    let proof : string | undefined
-    let contractaddress : string | undefined
-    let type : string | undefined
-
-    for (const field of decodedData) {
-      let fieldName = field["name"]
-
-      if (fieldName == "hash") {
-        hash = field["value"].value as string
-      }
-      if (fieldName == "vccomm") {
-        vccomm = field["value"].value as string
-      }
-      if (fieldName == "vcsig") {
-        vcsig = field["value"].value as string
-      }
-      if (fieldName == "vciss") {
-        vciss = field["value"].value as string
-      }
-      if (fieldName == "proof") {
-        proof = field["value"].value as string
-      }
-      if (fieldName == "contractaddress") {
-        contractaddress = field["value"].value as string
-      }
-      if (fieldName == "type") {
-        type = field["value"].value as string
-      }
-    }
-
-
-    const attesterDid = "did:pkh:eip155:10:" + attester
-      if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && contractaddress != undefined && type != undefined) {
-        //console.info("set to org attestation with name: ", name)
-        const att : SmartWalletAttestation = {
-          entityId: entityId,
-          attester: attesterDid,
-          schemaId: schemaId,
-          vccomm: vccomm,
-          vcsig: vcsig,
-          vciss: vciss,
-          proof: proof,
-          uid: uid,
-          hash: hash,
-          type: type,
-          contractaddress: contractaddress
-        }
-  
-        return att
-      }
-    
-    
-
-    return undefined
-  }
-  */
-
-  static async storeAttestation(schema: string, encodedData: any, signer: ethers.JsonRpcSigner, delegation: Delegation, delegatorAccountClient: any, issuerAccountClient: any) {
-    
-
-    let swa = delegatorAccountClient.address
-
-    console.info("delegator (org or indiv) aa address: ", swa)
     let tx = await eas.attest({
       schema: schema,
       data: {
-        recipient: swa,
+        recipient: delegation.delegator,
         expirationTime: 0n, // BigInt in v6
         revocable: true,
         data: encodedData
@@ -573,13 +384,12 @@ class AttestationService {
     const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
     let userOpHash: Hex;
 
-    console.info("delegator address: ", delegatorAccountClient.address)
-    console.info("delegate address: ", issuerAccountClient.address)
+    console.info("delegate address: ", delegate.address)
     userOpHash = await bundlerClient.sendUserOperation({
-      account: issuerAccountClient,
+      account: delegate,
       calls: [
         {
-          to: issuerAccountClient.address,
+          to: delegate.address,
           data,
         },
       ],
@@ -626,7 +436,8 @@ class AttestationService {
         ];
 
         const encodedData = schemaEncoder.encodeData(schemaItems);
-        await AttestationService.storeAttestation(this.OrgSchemaUID, encodedData, signer, delegation, orgAccountClient, orgDelegateClient)
+        console.info(">>>>>>>> store delegation: ", delegation)
+        await AttestationService.storeAttestation(this.OrgSchemaUID, encodedData, orgDelegateClient, delegation)
 
         let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
         attestationsEmitter.emit('attestationChangeEvent', event);
@@ -729,7 +540,7 @@ class AttestationService {
       const encodedData = schemaEncoder.encodeData(schemaItems);
 
       console.info("store attestation")
-      await AttestationService.storeAttestation(this.SocialSchemaUID, encodedData, signer, delegation, indivAccountClient, issuerAccountClient)
+      await AttestationService.storeAttestation(this.SocialSchemaUID, encodedData, issuerAccountClient, delegation )
 
       console.info("done")
       let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
@@ -857,7 +668,7 @@ class AttestationService {
         ];
 
         const encodedData = schemaEncoder.encodeData(schemaItems);
-        await AttestationService.storeAttestation(this.RegisteredDomainSchemaUID, encodedData, signer, delegation, orgAccountClient, orgDelegateClient)
+        await AttestationService.storeAttestation(this.RegisteredDomainSchemaUID, encodedData, orgDelegateClient, delegation)
   
         let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
         attestationsEmitter.emit('attestationChangeEvent', event);
@@ -960,7 +771,7 @@ class AttestationService {
       
       
         const encodedData = schemaEncoder.encodeData(schemaItems);
-        await AttestationService.storeAttestation(this.StateRegistrationSchemaUID, encodedData, signer, delegation, orgAccountClient, orgDelegateClient)
+        await AttestationService.storeAttestation(this.StateRegistrationSchemaUID, encodedData, orgDelegateClient, delegation)
   
         let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
         attestationsEmitter.emit('attestationChangeEvent', event);
@@ -1085,7 +896,7 @@ class AttestationService {
 
       
       const encodedData = schemaEncoder.encodeData(schemaItems);
-      await AttestationService.storeAttestation(this.EmailSchemaUID, encodedData, signer, delegation, orgAccountClient, orgDelegateClient)
+      await AttestationService.storeAttestation(this.EmailSchemaUID, encodedData, orgDelegateClient, delegation)
 
       let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
       attestationsEmitter.emit('attestationChangeEvent', event);
@@ -1214,7 +1025,7 @@ class AttestationService {
         ];
             
       const encodedData = schemaEncoder.encodeData(schemaItems);
-      await AttestationService.storeAttestation(this.WebsiteSchemaUID, encodedData, signer, delegation, orgAccountClient, orgDelegateClient)
+      await AttestationService.storeAttestation(this.WebsiteSchemaUID, encodedData, orgDelegateClient, delegation)
 
       let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
       attestationsEmitter.emit('attestationChangeEvent', event);
@@ -1325,7 +1136,7 @@ class AttestationService {
         ];
 
         const encodedData = schemaEncoder.encodeData(schemaItems);
-        await AttestationService.storeAttestation(this.InsuranceSchemaUID, encodedData, signer, delegation, orgAccountClient, orgDelegateClient)
+        await AttestationService.storeAttestation(this.InsuranceSchemaUID, encodedData, orgDelegateClient, delegation)
   
         let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
         attestationsEmitter.emit('attestationChangeEvent', event);

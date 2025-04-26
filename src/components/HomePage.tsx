@@ -22,7 +22,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
   const { data: walletClient } = useWalletClient();
 
 
-  const { selectedSignatory, signatory, connect, orgAccountClient } = useWallectConnectContext();
+  const { selectedSignatory, signatory, connect, isIndividualConnected } = useWallectConnectContext();
   
 
   useEffect(() => {
@@ -44,21 +44,24 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
 
   useEffect(() => {
     // if wallet is defined and we have not defined smart wallet
-    if (orgAccountClient) {
+    if (isIndividualConnected) {
       navigate('/chat/')
     } else  {
       //console.info("...... error")
     }
-  }, [orgAccountClient]);
+  }, [isIndividualConnected]);
 
   const handleConnect = async () => {
     try {
-      selectedSignatory.login().then(( loginResp ) => {
-        console.info("owner: ", loginResp.owner)
-        console.info("signatory: ", loginResp.signatory)
-        connect(loginResp.owner, loginResp.signatory).then(() => {
-        })
-      })
+      if (selectedSignatory) {
+        const loginResp = await selectedSignatory.login()
+        if (loginResp) {
+          console.info("owner: ", loginResp.owner)
+          console.info("signatory: ", loginResp.signatory)
+          await connect(loginResp.owner, loginResp.signatory)
+        }
+        
+      }
 
       //if (walletAuthRef.current) {
       //  walletAuthRef.current.openWalletPopup()

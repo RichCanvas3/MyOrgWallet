@@ -86,6 +86,8 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
         console.info(res.data.email)
         console.info(res.data.picture)
 
+        console.info("indivIssuerDelegation: ", indivIssuerDelegation)
+        console.info("add social: ", indivDid,issuerDid,walletClient,indivAccountClient,issuerAccountClient,indivIssuerDelegation,session,signer)
         if (indivDid && issuerDid && walletClient && indivAccountClient && issuerAccountClient && indivIssuerDelegation && session && signer) {
   
           const vc = await VerifiableCredentialsService.createSocialVC(entityId, indivDid, issuerDid, res.data.sub, "");
