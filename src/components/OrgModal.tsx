@@ -32,7 +32,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { issuerAccountClient, signatory, signer, orgIssuerDelegation, orgAccountClient, session, orgDid, issuerDid, setOrgNameValue } = useWallectConnectContext();
+  const { issuerAccountClient, signatory, signer, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, session, orgDid, issuerDid, setOrgNameValue } = useWallectConnectContext();
   const { data: walletClient }= useWalletClient()
 
   const [name, setName] = useState("");
@@ -51,15 +51,12 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
 
     if (signatory && orgAccountClient && orgIssuerDelegation && walletClient) {
 
-      console.info(" first checks")
       // set the org name locally and in profile
       //console.info("set org name: ", orgName)
       //setOrgName(orgName)
 
 
-      if (signer && orgDid && issuerDid && walletClient && orgIssuerDelegation && orgAccountClient && issuerAccountClient && session && signatory) {
-
-        console.info(" second checks")
+      if (signer && orgDid && issuerDid && walletClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient && issuerAccountClient && session && signatory) {
 
         const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, issuerDid, orgName);
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
@@ -83,7 +80,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
           };
   
           console.info("AttestationService add org attestation")
-          const uid = await AttestationService.addOrgAttestation(attestation, signer, orgIssuerDelegation, orgAccountClient, issuerAccountClient)
+          const uid = await AttestationService.addOrgAttestation(attestation, signer, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
           setOrgNameValue(orgName)
 
           if (location.pathname.startsWith("/chat/c/")) {

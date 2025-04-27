@@ -126,7 +126,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const { data: walletClient } = useWalletClient();
 
-  const { signer, issuerAccountClient, orgAccountClient, orgIssuerDelegation, indivAccountClient, indivIssuerDelegation, session, orgDid, indivDid, issuerDid, orgName, setOrgNameValue } = useWallectConnectContext();
+  const { signer, issuerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, session, orgDid, indivDid, issuerDid, orgName, setOrgNameValue } = useWallectConnectContext();
 
   const [isDeleteAttestationsModalVisible, setDeleteAttestationsModalVisible] = useState(false);
   const [isOrgModalVisible, setOrgModalVisible] = useState(false);
@@ -676,7 +676,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
           console.info("************** creating att: ", proofUrl)
 
-          if (fullVc && signer && issuerAccountClient && orgAccountClient && orgIssuerDelegation && walletClient) {
+          if (fullVc && signer && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
           
             // now create attestation
             const hash = keccak256(toUtf8Bytes("hash value"));
@@ -697,7 +697,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
               vciss: issuerDid,
               proof: proofUrl
             };
-            const uid = await AttestationService.addStateRegistrationAttestation(attestation, signer, orgIssuerDelegation, orgAccountClient, issuerAccountClient)
+            const uid = await AttestationService.addStateRegistrationAttestation(attestation, signer, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
             console.info("add registration attestation complete")
     
             entities?.forEach((ent) => {
@@ -735,7 +735,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
       const fullVc = result.vc
       const proofUrl = result.proofUrl
-      if (fullVc && signer && issuerAccountClient && orgAccountClient && orgIssuerDelegation && walletClient) {
+      if (fullVc && signer && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
       
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -753,7 +753,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           proof: proofUrl
         };
 
-        const uid = await AttestationService.addRegisteredDomainAttestation(attestation, signer, orgIssuerDelegation, orgAccountClient, issuerAccountClient)
+        const uid = await AttestationService.addRegisteredDomainAttestation(attestation, signer, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
         console.info("add org domain attestation complete")
 
         entities?.forEach((ent) => {
@@ -774,13 +774,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     const websiteType = "public"
 
     const entityId = "website"
-    if (orgDid && walletClient && orgAccountClient && issuerAccountClient && session && signer) {
+    if (orgDid && walletClient && orgAccountClient && issuerAccountClient && session && issuerDid && signer) {
 
       const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC(entityId, orgDid, issuerDid, websiteType, website);
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
       const fullVc = result.vc
       const proofUrl = result.proofUrl
-      if (fullVc && signer && issuerAccountClient && orgAccountClient && orgIssuerDelegation && walletClient) {
+      if (fullVc && signer && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
       
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -798,7 +798,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           proof: proofUrl
         };
 
-        const uid = await AttestationService.addWebsiteAttestation(attestation, signer, orgIssuerDelegation, orgAccountClient, issuerAccountClient)
+        const uid = await AttestationService.addWebsiteAttestation(attestation, signer, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
         console.info("add website attestation complete")
 
         entities?.forEach((ent) => {
@@ -827,7 +827,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
       const fullVc = result.vc
       const proofUrl = result.proofUrl
-      if (fullVc && signer && issuerAccountClient && orgAccountClient && orgIssuerDelegation && walletClient) {
+      if (fullVc && signer && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
       
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -845,7 +845,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           proof: proofUrl
         };
 
-        const uid = await AttestationService.addEmailAttestation(attestation, signer, orgIssuerDelegation, orgAccountClient, issuerAccountClient)
+        const uid = await AttestationService.addEmailAttestation(attestation, signer, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
         console.info("add email attestation complete")
 
         entities?.forEach((ent) => {

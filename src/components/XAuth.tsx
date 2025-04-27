@@ -124,7 +124,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
             url: url
           };
 
-          const uid = AttestationService.addSocialAttestation(attestation, signer, indivIssuerDelegation, orgAccountClient, issuerAccountClient)
+          const uid = AttestationService.addSocialAttestation(attestation, signer, [indivIssuerDelegation], orgAccountClient, issuerAccountClient)
           console.info("add social attestation complete")
 
           if (location.pathname.startsWith("/chat/c/")) {

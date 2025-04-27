@@ -23,7 +23,7 @@ const entityId = "insurance"
 const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, ref) => {
 
   const { } = props;
-  const { issuerAccountClient, signer, orgIssuerDelegation, orgAccountClient, session, orgDid, issuerDid } = useWallectConnectContext();
+  const { issuerAccountClient, signer, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, session, orgDid, issuerDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   
@@ -31,7 +31,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
   const openInsurancePopup = async () => {
 
       var insuranceNumber = "10"
-      if (orgDid && insuranceNumber && walletClient && orgAccountClient && issuerAccountClient && session && signer) {
+      if (orgDid && insuranceNumber && walletClient && orgAccountClient && issuerAccountClient && issuerDid && session && signer) {
 
         const vc = await VerifiableCredentialsService.createInsuranceVC(orgDid, issuerDid, insuranceNumber);
 
@@ -39,7 +39,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
         const fullVc = result.vc
         const proofUrl = result.proofUrl
-        if (fullVc && signer && orgAccountClient && orgIssuerDelegation && walletClient) {
+        if (fullVc && signer && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
         
           // now create attestation
           console.info("create attestation")
@@ -59,7 +59,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
             proof: proofUrl
           };
 
-          const uid = await AttestationService.addInsuranceAttestation(attestation, signer, orgIssuerDelegation, orgAccountClient, issuerAccountClient)
+          const uid = await AttestationService.addInsuranceAttestation(attestation, signer, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
           console.info("add insurance attestation complete")
 
 

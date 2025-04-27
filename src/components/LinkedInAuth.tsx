@@ -114,7 +114,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
             };
   
             console.info("proof url: ", proofUrl)
-            const uid = await AttestationService.addSocialAttestation(attestation, signer, indivIssuerDelegation, indivAccountClient, issuerAccountClient)
+            const uid = await AttestationService.addSocialAttestation(attestation, signer, [indivIssuerDelegation], indivAccountClient, issuerAccountClient)
           
             console.info(">>>>>>>>>>>>>>>>>  added attestation complete: ", uid)
 

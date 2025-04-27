@@ -27,6 +27,7 @@ import {
   getExplorerTransactionLink,
   getExplorerAddressLink,
   createExecution,
+  getDelegationHashOffchain,
   Delegation
 } from "@metamask/delegation-toolkit";
 
@@ -77,6 +78,7 @@ export type WalletConnectContextState = {
     orgAccountClient?: any;
     indivAccountClient?: any;
 
+    orgIndivDelegation?: Delegation,
     orgIssuerDelegation?: Delegation,
     indivIssuerDelegation?: Delegation,
 
@@ -105,6 +107,7 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
   orgAccountClient: undefined,
   indivAccountClient: undefined,
 
+  orgIndivDelegation: undefined,
   orgIssuerDelegation: undefined,
   indivIssuerDelegation: undefined,
 
@@ -150,6 +153,7 @@ export const useWalletConnect = () => {
     const [orgAccountClient, setOrgAccountClient] = useState<any>();
     const [indivAccountClient, setIndivAccountClient] = useState<any>();
 
+    const [orgIndivDelegation, setOrgIndivDelegation] = useState<Delegation | undefined>();
     const [orgIssuerDelegation, setOrgIssuerDelegation] = useState<Delegation | undefined>();
     const [indivIssuerDelegation, setIndivIssuerDelegation] = useState<Delegation | undefined>();
 
@@ -440,28 +444,61 @@ export const useWalletConnect = () => {
             
 
 
-            // setup delegation for org to issuer delegation
-            let orgIssuerDel = null
+            // setup delegation for org to indiv
+            let orgIndivDel = null
 
             try {
-              //await DelegationService.getDelegations(walletClient)
-              orgIssuerDel = await DelegationService.getDelegationFromSnap(walletClient, orgAccountClient.address, issuerAccountClient.address)
+              orgIndivDel = await DelegationService.getDelegationFromSnap(walletClient, orgAccountClient.address, indivAccountClient.address)
             }
             catch (error) {
-
             }
-            
 
+            if (orgIndivDel == null) {
 
-            if (orgIssuerDel == null) {
-              let orgIssuerDel = createDelegation({
-                to: issuerAccountClient.address,
+              orgIndivDel = createDelegation({
+                to: indivAccountClient.address,
                 from: orgAccountClient.address,
                 caveats: [] }
               );
 
-              console.info("???????????????? sign orgIssuerDel: ", orgAccountClient.address, issuerAccountClient.address, orgIssuerDel)
               const signature = await orgAccountClient.signDelegation({
+                delegation: orgIndivDel,
+              });
+  
+  
+              orgIndivDel = {
+                ...orgIndivDel,
+                signature,
+              }
+
+              await DelegationService.saveDelegation(walletClient, orgAccountClient.address, indivAccountClient.address, orgIndivDel)
+            }
+
+            if (orgIndivDel) {
+              setOrgIndivDelegation(orgIndivDel)
+            }
+            
+            
+            // setup delegation for org to issuer -> redelegation of orgIndivDel
+            let orgIssuerDel  = null
+            try {
+              orgIssuerDel = await DelegationService.getDelegationFromSnap(walletClient, orgAccountClient.address, issuerAccountClient.address)
+            }
+            catch (error) {
+            }
+
+            if (orgIssuerDel == null && orgIndivDel) {
+
+              const parentDelegationHash = getDelegationHashOffchain(orgIndivDel);
+              orgIssuerDel = createDelegation({
+                to: issuerAccountClient.address,
+                from: indivAccountClient.address,
+                parentDelegation: parentDelegationHash,
+                caveats: []
+              });
+
+
+              const signature = await indivAccountClient.signDelegation({
                 delegation: orgIssuerDel,
               });
   
@@ -471,11 +508,13 @@ export const useWalletConnect = () => {
                 signature,
               }
 
-              console.info("save orgIssuerDel: ", orgAccountClient.address, issuerAccountClient.address)
               await DelegationService.saveDelegation(walletClient, orgAccountClient.address, issuerAccountClient.address, orgIssuerDel)
             }
 
-            setOrgIssuerDelegation(orgIssuerDel)
+            if (orgIssuerDel) {
+              setOrgIssuerDelegation(orgIssuerDel)
+            }
+            
 
 
             console.info("%%%%%%%%%%%%%%%%%%%%%%%%%5  setup indiv issuer delegation")
@@ -485,7 +524,6 @@ export const useWalletConnect = () => {
             let indivIssuerDel = null
 
             try {
-              //await DelegationService.getDelegations(walletClient)
               indivIssuerDel = await DelegationService.getDelegationFromSnap(walletClient, indivAccountClient.address, issuerAccountClient.address)
             }
             catch (error) {
@@ -501,7 +539,6 @@ export const useWalletConnect = () => {
                 caveats: [] }
               );
 
-              console.info("???????????????? sign indivIssuerDel: ", indivAccountClient, indivIssuerDel)
               const signature = await indivAccountClient.signDelegation({
                 delegation: indivIssuerDel,
               });
@@ -512,11 +549,9 @@ export const useWalletConnect = () => {
                 signature,
               }
 
-              console.info("save indivIssuerDel: ", indivAccountClient.address, issuerAccountClient.address)
               await DelegationService.saveDelegation(walletClient, indivAccountClient.address, issuerAccountClient.address, indivIssuerDel)
             }
 
-            console.info(">>>>>>>>>>>>>>> setIndivIssuerDelegation: ", indivIssuerDel)
             setIndivIssuerDelegation(indivIssuerDel)
 
             setIsIndividualConnected(true)
@@ -674,6 +709,7 @@ export const useWalletConnect = () => {
             signer,
             signatory,
             
+            orgIndivDelegation,
             orgIssuerDelegation,
             indivIssuerDelegation,
 
@@ -702,6 +738,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
       orgAccountClient,
       indivAccountClient,
 
+      orgIndivDelegation,
       orgIssuerDelegation,
       indivIssuerDelegation,
 
@@ -733,6 +770,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         orgAccountClient,
         indivAccountClient,
 
+        orgIndivDelegation,
         orgIssuerDelegation,
         indivIssuerDelegation,
 
@@ -759,6 +797,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         orgAccountClient,
         indivAccountClient,
 
+        orgIndivDelegation,
         orgIssuerDelegation,
         indivIssuerDelegation,
 
