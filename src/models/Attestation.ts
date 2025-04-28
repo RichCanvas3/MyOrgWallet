@@ -35,6 +35,12 @@ export interface OrgAttestation extends Attestation {
   name: string,
 }
 
+export interface IndivAttestation extends Attestation {
+  indivDid: string,
+  name: string,
+  rolecid: string,
+}
+
 export interface SocialAttestation extends Attestation {
   name?: string,
 }

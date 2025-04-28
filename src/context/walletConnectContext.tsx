@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState, useRef, useMemo, useCal
 import { useAccount, useWalletClient } from "wagmi";
 
 import { encodeFunctionData, hashMessage, createPublicClient, createWalletClient, WalletClient, toHex, http, zeroAddress, publicActions, custom, verifyMessage  } from "viem";
-
+import { keccak256, toUtf8Bytes } from 'ethers';
 
 
 import { privateKeyToAccount, generatePrivateKey } from "viem/accounts";
@@ -36,11 +36,6 @@ import {
 
 
 import {
-  DelegationStorageClient
-} from "@metamask/delegation-toolkit/experimental";
-
-
-import {
   createBundlerClient,
   createPaymasterClient,
   UserOperationReceipt,
@@ -57,6 +52,10 @@ import DelegationService from "../service/DelegationService"
 
 import { EAS, SchemaEncoder, SchemaDecodedItem, SchemaItem, DelegatedProxyAttestationVersion } from '@ethereum-attestation-service/eas-sdk';
 import { DeveloperBoard } from "@mui/icons-material";
+
+import { IndivAttestation } from "../models/Attestation";
+import AttestationService from "../service/AttestationService";
+import VerifiableCredentialsService from "../service/VerifiableCredentialsService";
 
 const SESSION_KEY = 'didSession';
 
@@ -179,6 +178,8 @@ export const useWalletConnect = () => {
     const { isConnected, address: web3ModalAddress, chain } = useAccount();
 
     const [connectedAddress, setConnectedAddress] = useState<string | undefined>();
+
+
 
 
     useEffect(() => {
@@ -318,28 +319,61 @@ export const useWalletConnect = () => {
 
 
             // connect to org account abstraction
+            let indivDid = 'did:pkh:eip155:10:' + indivAccountClient.address
+            setIndivDid(indivDid)
+            setIndivAccountClient(indivAccountClient)
+
+            const indivAttestation = await AttestationService.getIndivAttestation(indivDid, AttestationService.IndivSchemaUID, "indiv");
+            console.info("==========> get indiv attestation: ")
+            console.info("==========> indivDid: ", indivDid)
+            console.info("==========> att: ", indivAttestation)
+
+            let orgIndivDel : any | undefined
+            let delegationOrgAddress : `0x${string}` | undefined
+            if (indivAttestation) {
+              orgIndivDel = JSON.parse((indivAttestation as IndivAttestation).rolecid)
+              if (indivAddress == orgIndivDel.delegate) {
+                console.info("*********** valid individual attestation so lets use this org address")
+                // need to validate signature at some point
+                delegationOrgAddress = orgIndivDel.delegator
+              }
+            }
+
             
             // create orgAccountClient
-            //console.info("create org smart account: ")
-            //console.info("public client: ", publicClient)
-            //console.info("owner: ", owner)
-            //console.info("signatory: ", signatory)
-            console.info("@@@@@@@@@@@@@ create org account with fixed aa address: 0x383668f69e39c5D9Dcb2B4b46112de6D2D727905")
-            const orgAccountClient = await toMetaMaskSmartAccount({
-              address: "0x383668f69e39c5D9Dcb2B4b46112de6D2D727905",
-              client: publicClient,
-              implementation: Implementation.Hybrid,
-              deployParams: [owner, [], [], []],
-              signatory: signatory,
-              deploySalt: toHex(0),
-            });
+            let orgAccountClient : any | undefined
+            if (delegationOrgAddress) {
+              console.info("==========>  org address provided: ", delegationOrgAddress)
+              orgAccountClient = await toMetaMaskSmartAccount({
+                address: delegationOrgAddress,
+                client: publicClient,
+                implementation: Implementation.Hybrid,
+                deployParams: [owner, [], [], []],
+                signatory: signatory,
+                deploySalt: toHex(0),
+              });
+            }
+            else {
+              console.info("==========>  org address not defined ")
+              orgAccountClient = await toMetaMaskSmartAccount({
+                client: publicClient,
+                implementation: Implementation.Hybrid,
+                deployParams: [owner, [], [], []],
+                signatory: signatory,
+                deploySalt: toHex(0),
+              });
+            }
+
             console.info("org account client aa address: ", orgAccountClient.address)
 
+            let orgDid = 'did:pkh:eip155:10:' + orgAccountClient.address
+            setOrgDid(orgDid)
+            setOrgAccountClient(orgAccountClient)
 
 
 
 
-
+            /*
             const message = 'Hello, MetaMask Delegator!';
             const signature = await orgAccountClient.signMessage({ message });
 
@@ -378,7 +412,7 @@ export const useWalletConnect = () => {
             console.log("Message signature:", signature);
             console.log("Message hash:", messageHash);
             console.log("isValidSignatureCall:", isValidSignature); // should be EIP1271_MAGIC_VALUE(0x1626ba7e)
-
+            */
 
 
 
@@ -410,13 +444,10 @@ export const useWalletConnect = () => {
             });
 
 
-            let orgDid = 'did:pkh:eip155:10:' + orgAccountClient.address
-            setOrgDid(orgDid)
-            setOrgAccountClient(orgAccountClient)
 
-            let indivDid = 'did:pkh:eip155:10:' + indivAccountClient.address
-            setIndivDid(indivDid)
-            setIndivAccountClient(indivAccountClient)
+
+            
+            
 
             /*
             walletSigner.provider.getBalance(swa).then((balance) => {
@@ -428,37 +459,8 @@ export const useWalletConnect = () => {
             */
 
 
-    
-            /*
-            const burnerPrivateKey = generatePrivateKey();
-            const burnerOwner = privateKeyToAccount(burnerPrivateKey);
-
-            const burnerIssuerAccountClient = await toMetaMaskSmartAccount({
-              client: publicClient,
-              implementation: Implementation.Hybrid,
-              deployParams: [burnerOwner.address, [], [], []],
-              signatory: { account: burnerOwner },
-              deploySalt: toHex(3),
-            });
-            setIssuerAccountClient(burnerIssuerAccountClient)
-            */
-
             const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
             
-            /*
-            
-            let userOpHash1 = await bundlerClient.sendUserOperation({
-              account: orgAccountClient,
-              calls: [{ to: zeroAddress, data: "0x" }],
-              ...fee
-            });
-            
-
-            const receipt1 = await bundlerClient.waitForUserOperationReceipt({
-              hash: userOpHash1,
-            });
-            console.info("%%%%%%%%%%%%%%  receipt1: ", receipt1)
-            */
 
             let userOpHash2 = await bundlerClient.sendUserOperation({
               account: indivAccountClient,
@@ -471,29 +473,6 @@ export const useWalletConnect = () => {
             });
             console.info("%%%%%%%%%%%%%%  receipt2: ", receipt2)
 
-            /*
-            let userOpHash3 = await bundlerClient.sendUserOperation({
-              account: issuerAccountClient,
-              calls: [{ to: zeroAddress, data: "0x" }],
-              ...fee
-            });
-
-            const receipt3 = await bundlerClient.waitForUserOperationReceipt({
-              hash: userOpHash3,
-            });
-            console.info("%%%%%%%%%%%%%%  receipt3: ", receipt3)
-            */
-            
-
-
-            // setup delegation for org to indiv
-            let orgIndivDel = null
-
-            try {
-              orgIndivDel = await DelegationService.getDelegationFromSnap(walletClient, ownerEOAAddress, orgAccountClient.address, indivAccountClient.address)
-            }
-            catch (error) {
-            }
 
             if (indivDid && orgIndivDel == null) {
 
@@ -512,13 +491,11 @@ export const useWalletConnect = () => {
                 delegation: orgIndivDel,
               });
   
-  
               orgIndivDel = {
                 ...orgIndivDel,
                 signature,
               }
 
-              await DelegationService.saveDelegationToSnap(walletClient, ownerEOAAddress, orgAccountClient.address, indivAccountClient.address, orgIndivDel)
             }
             else {
               console.info("indiv delegation already exists")
@@ -529,7 +506,6 @@ export const useWalletConnect = () => {
 
             if (orgIndivDel) {
               setOrgIndivDelegation(orgIndivDel)
-
             }
             
             
@@ -571,9 +547,6 @@ export const useWalletConnect = () => {
             
 
 
-            console.info("%%%%%%%%%%%%%%%%%%%%%%%%%5  setup indiv issuer delegation")
-
-
             // setup delegation for individual to issuer delegation
             let indivIssuerDel = null
 
@@ -581,10 +554,7 @@ export const useWalletConnect = () => {
               indivIssuerDel = await DelegationService.getDelegationFromSnap(walletClient, ownerEOAAddress, indivAccountClient.address, issuerAccountClient.address)
             }
             catch (error) {
-
             }
-            
-
 
             if (indivIssuerDel == null && indivDid) {
               indivIssuerDel = createDelegation({
@@ -607,184 +577,8 @@ export const useWalletConnect = () => {
             }
 
             setIndivIssuerDelegation(indivIssuerDel)
-
             setIsIndividualConnected(true)
 
-
-
-
-
-
-
-            // setup org-individual delegation for sam the CFO
-
-            const samCFOEOA = "0x8272226863aacd003975b5c497e366c14d009605"
-            const samIndivAccountClient = await toMetaMaskSmartAccount({
-              client: publicClient,
-              implementation: Implementation.Hybrid,
-              deployParams: [samCFOEOA, [], [], []],
-              signatory: signatory,
-              deploySalt: toHex(1),
-            });
-            console.info("%%%%%%%%% other individual EOA address: ", samCFOEOA)
-            console.info("%%%%%%%%% other individual AA address: ", samIndivAccountClient.address)
-
-            let samOrgIndivDel = null
-            try {
-              samOrgIndivDel = await DelegationService.getDelegationFromSnap(walletClient, samCFOEOA, orgAccountClient.address, samIndivAccountClient.address)
-            }
-            catch (error) {
-            }
-
-            if (samOrgIndivDel == null) {
-
-              console.info("************************   CREATE DELEGATION FOR SAM ************")
-              console.info("samCFOEOA: ", samCFOEOA)
-              console.info("to: ", samIndivAccountClient.address)
-              console.info("from: ", orgAccountClient.address)
-
-              samOrgIndivDel = createDelegation({
-                to: samIndivAccountClient.address,
-                from: orgAccountClient.address,
-                caveats: [] }
-              );
-
-              const signature = await orgAccountClient.signDelegation({
-                delegation: samOrgIndivDel,
-              });
-  
-  
-              samOrgIndivDel = {
-                ...samOrgIndivDel,
-                signature,
-              }
-
-              await DelegationService.saveDelegationToSnap(walletClient, samCFOEOA, orgAccountClient.address, samIndivAccountClient.address, samOrgIndivDel)
-            }
-            else {
-              console.info("************************   SAM's Delegation ************")
-              console.info("samCFOEOA: ", samCFOEOA)
-              console.info("to: ", samIndivAccountClient.address)
-              console.info("from: ", orgAccountClient.address)
-              console.info(" del: ", samOrgIndivDel)
-            }
-
-
-
-
-
-
-
-            /*
-
-            console.info("************************* create delegation storage client: ", DelegationStorageEnvironment)
-            const delegationStorageClient = new DelegationStorageClient({
-              apiKey: "47151ebcb9354990941827e05efc536a7d18432a2a9a77502157c877fea82ffb",
-              apiKeyId: "92dda3b7-1842-45c0-a06b-32d9ee08cdb5",
-              environment: DelegationStorageEnvironment.prod
-            });
-
-            console.info("************************* Give storage a try")
-            if (delegationStorageClient) {
-              const delegationHash = await delegationStorageClient.storeDelegation(delegation);
-              console.info("hash: ", delegationHash)
-            }
-            */
-
-
-
-
-
-
-
-            /*  test connection to account abstraction and creating attestations
-
-            const EAS_CONTRACT_ADDRESS = "0x4200000000000000000000000000000000000021"; 
-            const OrgSchemaUID = "0xb868c40677eb842bcb2275dbaa311232ff8d57d594c15176e4e4d6f6df9902ea"
-            const BaseSchema = "string entityid, bytes32 hash, uint64 issuedate, uint64 expiredate, string vccomm, string vcsig, string vciss, string proof, "
-            const OrgSchema = BaseSchema + "string name"
-        
-            const schemaEncoder = new SchemaEncoder(OrgSchema);
-            const schemaItems = [
-              { name: 'entityid', value: "", type: 'string' },
-              { name: 'hash', value: "", type: 'bytes32' },
-              { name: 'issuedate', value: 1, type: 'uint64' },
-              { name: 'expiredate', value: 1, type: 'uint64' },
-              
-              { name: 'vccomm', value: "", type: 'string' },
-              { name: 'vcsig', value: "", type: 'string' },
-              { name: 'vciss', value: "", type: 'string' },
-        
-              { name: 'proof', value: "", type: 'string' },
-        
-              { name: 'name', value: "", type: 'string' },
-        
-            ];
-        
-            
-            const encodedData = schemaEncoder.encodeData(schemaItems);
-        
-            const eas = new EAS(EAS_CONTRACT_ADDRESS);
-        
-            console.info("eas connect")
-            const provider = new ethers.BrowserProvider(window.ethereum);
-            await window.ethereum.request({ method: "eth_requestAccounts" });
-            const walletSigner = await provider.getSigner();
-        
-
-            console.info("...... wallet signer: ", walletSigner)
-            eas.connect(walletSigner)
-        
-        
-            console.info("construct eas.attest tx: ", orgAccountClient.address)
-            let tx = await eas.attest({
-              schema: OrgSchemaUID,
-              data: {
-                recipient: orgAccountClient.address,
-                expirationTime: 0n, // BigInt in v6
-                revocable: true,
-                data: encodedData
-              }
-            })
-        
-      
-
-            const executions: ExecutionStruct[] = [
-              {
-                target: tx.data.to,
-                value: 0n,
-                callData: tx.data.data,
-              },
-            ];
-
-            console.info("redeemDelegations for this transaction delegation: ", delegation)
-
-            const delegationChain : Delegation[] = [delegation];
-            const data = DelegationFramework.encode.redeemDelegations({
-              delegations: [ delegationChain ],
-              modes: [SINGLE_DEFAULT_MODE],
-              executions: [executions]
-            });
-        
-
-
-            console.info(">>>>>>>>>>>>>>>>>>>  send user operation to delegate: ", delegateAccount)
-            userOpHash = await bundlerClient.sendUserOperation({
-              account: delegateAccount,
-              calls: [
-                {
-                  to: delegateAccount.address,
-                  data,
-                },
-              ],
-              ...fee,
-            });
-
-        
-            const userOperationReceipt =
-              await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
-
-            */
 
           }
         }
@@ -794,6 +588,64 @@ export const useWalletConnect = () => {
 
     }, [signatory, owner]);
 
+    useEffect(() => {
+  
+      console.info("===========> check to see if we need to add individual attestation")
+      if (signatory && orgDid && indivDid && issuerDid && orgAccountClient && orgIndivDelegation && orgIssuerDelegation) {
+        const addIndivAttestation = async () => {
+
+          console.info("*********** ADD INDIV ATTESTATION ****************")
+      
+          const walletClient = signatory.walletClient
+          const entityId = "indiv"
+      
+          if (signer && walletClient && session) {
+      
+            const indivName = ""
+      
+            const vc = await VerifiableCredentialsService.createIndivVC(entityId, orgDid, issuerDid, indivDid, indivName);
+            const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
+            const fullVc = result.vc
+            const proofUrl = result.proofUrl
+
+            if (fullVc) {
+
+              const indivName = "indiv name"
+            
+              // now create attestation
+              const hash = keccak256(toUtf8Bytes("hash value"));
+              const attestation: IndivAttestation = {
+                indivDid: indivDid,
+                name: indivName,
+                rolecid: JSON.stringify(orgIndivDelegation),
+                attester: orgDid,
+                class: "organization",
+                category: "people",
+                entityId: entityId,
+                hash: hash,
+                vccomm: (fullVc.credentialSubject as any).commitment.toString(),
+                vcsig: (fullVc.credentialSubject as any).commitmentSignature,
+                vciss: issuerDid,
+                proof: proofUrl
+              };
+      
+              console.info("AttestationService add indiv attestation")
+              const uid = await AttestationService.addIndivAttestation(attestation, signer, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+            }
+          }
+        }
+
+        AttestationService.getIndivAttestation(indivDid, AttestationService.IndivSchemaUID, "indiv").then((indivAttestation) => {
+          if (!indivAttestation) {
+            console.info("=============> no indiv attestation so add one")
+            addIndivAttestation()
+          }
+        })
+        
+      }
+      
+      
+    }, [signatory, orgDid, indivDid, issuerDid, orgAccountClient, orgIndivDelegation, orgIssuerDelegation]);
 
     const pimlicoClient = createPimlicoClient({
       transport: http(BUNDLER_URL),

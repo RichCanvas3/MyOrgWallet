@@ -1,5 +1,9 @@
 import * as React from 'react';
 import {useContext, useEffect, useRef, useState} from 'react';
+import { keccak256, toUtf8Bytes } from 'ethers';
+import { encodeFunctionData, hashMessage, createPublicClient, createWalletClient, WalletClient, toHex, http, zeroAddress, publicActions, custom, verifyMessage  } from "viem";
+import { optimism } from "viem/chains";
+
 import {
   XMarkIcon
 } from "@heroicons/react/24/outline";
@@ -7,7 +11,7 @@ import './UserSettingsModal.css';
 import {useTranslation} from 'react-i18next';
 import {Transition} from '@headlessui/react';
 
-import {Attestation} from '../models/Attestation';
+
 import AttestationService from '../service/AttestationService';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import { useWalletClient } from 'wagmi';
@@ -15,6 +19,27 @@ import { useWalletClient } from 'wagmi';
 import { TextField, Button, Typography, Box, Paper } from "@mui/material";
 import EditableTextBox from "./EditableTextBox";
 import { TripOriginRounded } from '@mui/icons-material';
+
+
+import {
+  Implementation,
+  toMetaMaskSmartAccount,
+  type MetaMaskSmartAccount,
+  type DelegationStruct,
+  createDelegation,
+  DelegationFramework,
+  SINGLE_DEFAULT_MODE,
+  getExplorerTransactionLink,
+  getExplorerAddressLink,
+  createExecution,
+  getDelegationHashOffchain,
+  Delegation
+} from "@metamask/delegation-toolkit";
+
+import { IndivAttestation } from "../models/Attestation"
+
+import VerifiableCredentialsService from "../service/VerifiableCredentialsService"
+
 
 interface DeleteAttestationsModalProps {
   isVisible: boolean;
@@ -27,7 +52,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { signer, orgDid, indivDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, issuerAccountClient } = useWallectConnectContext();
+  const { signer, signatory, orgDid, indivDid, issuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, issuerAccountClient, session } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
 
@@ -48,7 +73,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
           })
         }
       })
-      onClose()
+
     }
   }
 
@@ -63,11 +88,139 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
         }
       })
 
-      onClose()
+
     }
   }
 
+  const handleAddSamCFO = async (event: React.MouseEvent<HTMLButtonElement>) => {
 
+    if (signer && signatory && orgDid && issuerDid && indivIssuerDelegation && session) {
+
+      const walletClient = signatory.walletClient
+
+      const publicClient = createPublicClient({
+                chain: optimism,
+                transport: http(),
+              });
+      
+
+      console.info("add sam and send invitation")
+
+      // setup org-individual delegation for sam the CFO
+
+      const samCFOEOA = "0x8272226863aacd003975b5c497e366c14d009605"
+      const samIndivAccountClient = await toMetaMaskSmartAccount({
+        client: publicClient,
+        implementation: Implementation.Hybrid,
+        deployParams: [samCFOEOA, [], [], []],
+        signatory: signatory,
+        deploySalt: toHex(1),
+      });
+      console.info("%%%%%%%%% other individual EOA address: ", samCFOEOA)
+      console.info("%%%%%%%%% other individual AA address: ", samIndivAccountClient.address)
+
+      const samIndivDid = 'did:pkh:eip155:10:' + samIndivAccountClient.address
+
+      //let samOrgIndivDel = null
+      //try {
+      //  samOrgIndivDel = await DelegationService.getDelegationFromSnap(walletClient, samCFOEOA, orgAccountClient.address, samIndivAccountClient.address)
+      //}
+      //catch (error) {
+      //}
+
+      
+      const samIndivAttestation = await AttestationService.getIndivAttestation(samIndivDid, AttestationService.IndivSchemaUID, "indiv");
+
+      let samOrgIndivDel : any | undefined
+      let samDelegationOrgAddress : `0x${string}` | undefined
+      if (samIndivAttestation) {
+        samOrgIndivDel = JSON.parse((samIndivAttestation as IndivAttestation).rolecid)
+        if (samIndivAccountClient.address == samOrgIndivDel.delegate) {
+          console.info("*********** valid individual attestation so lets use this org address")
+          // need to validate signature at some point
+          samDelegationOrgAddress = samOrgIndivDel.delegator
+        }
+      }
+
+      if (!samOrgIndivDel) {
+
+        console.info("************************   CREATE DELEGATION FOR SAM ************")
+        console.info("samCFOEOA: ", samCFOEOA)
+        console.info("to: ", samIndivAccountClient.address)
+        console.info("from: ", orgAccountClient.address)
+
+        samOrgIndivDel = createDelegation({
+          to: samIndivAccountClient.address,
+          from: orgAccountClient.address,
+          caveats: [] }
+        );
+
+        const signature = await orgAccountClient.signDelegation({
+          delegation: samOrgIndivDel,
+        });
+
+
+        samOrgIndivDel = {
+          ...samOrgIndivDel,
+          signature,
+        }
+
+
+
+        //  create delegation to sam attestation
+
+        const samIndivName = ""
+
+        const vc = await VerifiableCredentialsService.createIndivVC("indiv", orgDid, issuerDid, samIndivDid, samIndivName);
+        const result = await VerifiableCredentialsService.createCredential(vc, "indiv", orgDid, walletClient, issuerAccountClient, session)
+
+        console.info("result of create credential: ", result)
+        const fullVc = result.vc
+        const proofUrl = result.proofUrl
+
+        console.info("&&&&&&&&&&&&&&&&&&&&&&& orgIssuerDel && orgIndivDel: ", fullVc, signer, orgIssuerDelegation, orgIndivDelegation)
+        if (fullVc && signer && orgIssuerDelegation && orgIndivDelegation) {
+
+          console.info("&&&&&&&&&&&&&&&&&&&&&&& AttestationService add indiv attestation")
+
+          const indivName = "indiv name"
+        
+          // now create attestation
+          const hash = keccak256(toUtf8Bytes("hash value"));
+          const attestation: IndivAttestation = {
+            indivDid: samIndivDid,
+            name: indivName,
+            rolecid: JSON.stringify(samOrgIndivDel),
+            attester: orgDid,
+            class: "organization",
+            category: "people",
+            entityId: "indiv",
+            hash: hash,
+            vccomm: (fullVc.credentialSubject as any).commitment.toString(),
+            vcsig: (fullVc.credentialSubject as any).commitmentSignature,
+            vciss: issuerDid,
+            proof: proofUrl
+          };
+  
+          
+          const uid = await AttestationService.addIndivAttestation(attestation, signer, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+        }
+
+
+      }
+      else {
+        console.info("************************   SAM's Delegation ************")
+        console.info("samCFOEOA: ", samCFOEOA)
+        console.info("to: ", samIndivAccountClient.address)
+        console.info("from: ", orgAccountClient.address)
+        console.info(" del: ", samOrgIndivDel)
+      }
+
+
+
+    }
+  }
+  
 
   return (
       <Transition show={isVisible} as={React.Fragment}>
@@ -124,6 +277,17 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
                     sx={{ mb: 3, p: 2, py: 1.5 }}
                   >
                     Delete Individuals Attestations
+                  </Button>
+
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    fullWidth
+                    onClick={handleAddSamCFO}
+                    sx={{ mb: 3, p: 2, py: 1.5 }}
+                  >
+                    Add Sam CFO and send invitation
                   </Button>
       
                   </Paper>

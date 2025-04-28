@@ -113,6 +113,30 @@ class VerifiableCredentialsService {
       return vc;
     }
 
+    static async createIndivVC(
+      entityId: string,
+      orgDid: string,
+      issuerDid: string,
+      indivDid: string,
+      indivName: string
+    ): Promise<VerifiableCredential> {
+      let vc : VerifiableCredential = {
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
+        type: ["VerifiableCredential", "OrgCredential"],
+        issuer: issuerDid, 
+        issuanceDate: new Date().toISOString(),
+        credentialSubject: {
+          id: orgDid,
+          indivDid: indivDid,
+          name: indivName,
+          verifiedMethod: "OAuth",
+          platform: "richcanvas-" + entityId
+        }
+      }
+    
+      return vc;
+    }
+
     static async createOrgVC(
       entityId: string,
       orgDid: string,
@@ -140,11 +164,11 @@ class VerifiableCredentialsService {
       orgDid: string,
       issuerDid: string,
       idNumber: string,
-       orgName: string, 
-       status: string, 
-       formationDate: string, 
-       state: string, 
-       locationAddress: string
+      orgName: string, 
+      status: string, 
+      formationDate: string, 
+      state: string, 
+      locationAddress: string
     ): Promise<VerifiableCredential> {
       let vc : VerifiableCredential = {
         "@context": ["https://www.w3.org/2018/credentials/v1"],
@@ -279,7 +303,7 @@ class VerifiableCredentialsService {
       session: DIDSession): Promise<any | undefined> {
 
 
-        let proofUrl = ""
+      let proofUrl = ""
 
       
       const encoder = new TextEncoder();
@@ -444,6 +468,7 @@ class VerifiableCredentialsService {
               await VerifiableCredentialsService.saveCredential(walletClient, vc, entityId)
             }
 
+            console.info("-----------> create proof")
             const proofResp = await fetch('http://localhost:3051/api/proof/create', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -454,8 +479,13 @@ class VerifiableCredentialsService {
                 did: did
               }),
             })
+
+            console.info("get json ", proofResp)
             const proofResults = await proofResp.json()
+            console.info(" get proof url: ", proofResults)
             proofUrl = proofResults.proofUrl
+
+            console.info("proof done: ", proofUrl)
 
             // verify if we have access to accountclient
             //const validSigData = await issuerAccountClient?.getIsValidSignatureData(commitmenthHexHash as `0x${string}`, commitmentSignature)
@@ -469,6 +499,8 @@ class VerifiableCredentialsService {
         }
 
       }
+
+      console.info("done creating vc and return")
       return { vc: vc, proofUrl: proofUrl }
     }
         
