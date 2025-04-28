@@ -545,7 +545,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                   <strong>Entity:</strong> {attestation?.entityId}
                 </p>
                 <p className="panel-text">
-                  <strong>Org DID:</strong>{' '}
+                  <strong>DID:</strong>{' '}
                   <a
                     href={
                       'https://optimistic.etherscan.io/address/' +
@@ -623,7 +623,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                 )}
                 {vcZkProof?.orgDid && (
                   <p className="panel-text">
-                    <strong>Org DID:</strong> {vcZkProof.orgDid}
+                    <strong>DID:</strong> {vcZkProof.orgDid}
                   </p>
                 )}
                 {vcZkProof?.vccomm && (
@@ -680,7 +680,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                 )}
                 {vcRevokeZkProof?.orgDid && (
                   <p className="panel-text">
-                    <strong>Org DID:</strong> {vcRevokeZkProof.orgDid}
+                    <strong>DID:</strong> {vcRevokeZkProof.orgDid}
                   </p>
                 )}
                 {vcRevokeZkProof?.vccomm && (

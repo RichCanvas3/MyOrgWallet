@@ -49,68 +49,67 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
 
     const entityId = "org"
 
-    if (signatory && orgAccountClient && orgIssuerDelegation && walletClient) {
+    //console.info("fields: ", signer, orgDid, issuerDid, walletClient, session, signatory, orgAccountClient, issuerAccountClient, orgIssuerDelegation, orgIndivDelegation, walletClient)
+    console.info("fields: ", orgIssuerDelegation, orgIndivDelegation)
+    if (signer && orgDid && issuerDid && walletClient && session && signatory && orgAccountClient && issuerAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
 
       // set the org name locally and in profile
       //console.info("set org name: ", orgName)
       //setOrgName(orgName)
 
+      const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, issuerDid, orgName);
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
+      const fullVc = result.vc
+      const proofUrl = result.proofUrl
+      if (fullVc && signatory && orgAccountClient && walletClient) {
+      
+        // now create attestation
+        const hash = keccak256(toUtf8Bytes("hash value"));
+        const attestation: OrgAttestation = {
+          name: orgName,
+          attester: orgDid,
+          class: "organization",
+          category: "profile",
+          entityId: entityId,
+          hash: hash,
+          vccomm: (fullVc.credentialSubject as any).commitment.toString(),
+          vcsig: (fullVc.credentialSubject as any).commitmentSignature,
+          vciss: issuerDid,
+          proof: proofUrl
+        };
 
-      if (signer && orgDid && issuerDid && walletClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient && issuerAccountClient && session && signatory) {
+        console.info("AttestationService add org attestation")
+        const uid = await AttestationService.addOrgAttestation(attestation, signer, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+        setOrgNameValue(orgName)
 
-        const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, issuerDid, orgName);
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
-        const fullVc = result.vc
-        const proofUrl = result.proofUrl
-        if (fullVc && signatory && orgAccountClient && walletClient) {
-        
-          // now create attestation
-          const hash = keccak256(toUtf8Bytes("hash value"));
-          const attestation: OrgAttestation = {
-            name: orgName,
-            attester: orgDid,
-            class: "organization",
-            category: "profile",
-            entityId: entityId,
-            hash: hash,
-            vccomm: (fullVc.credentialSubject as any).commitment.toString(),
-            vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-            vciss: issuerDid,
-            proof: proofUrl
-          };
-  
-          console.info("AttestationService add org attestation")
-          const uid = await AttestationService.addOrgAttestation(attestation, signer, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
-          setOrgNameValue(orgName)
+        if (location.pathname.startsWith("/chat/c/")) {
+          let conversationId = location.pathname.replace("/chat/c/", "")
+          let id = parseInt(conversationId)
+          const conversation = await ConversationService.getConversationById(id)
+          if (conversation) {
 
-          if (location.pathname.startsWith("/chat/c/")) {
-            let conversationId = location.pathname.replace("/chat/c/", "")
-            let id = parseInt(conversationId)
-            const conversation = await ConversationService.getConversationById(id)
-            if (conversation) {
+            var currentMsgs: ChatMessage[] = JSON.parse(conversation.messages);
 
-              var currentMsgs: ChatMessage[] = JSON.parse(conversation.messages);
+            const newMsg: ChatMessage = {
+              id: currentMsgs.length + 1,
+              args: "",
+              role: Role.Developer,
+              messageType: MessageType.Normal,
+              content: "I've updated your wallet with a verifiable credential and published your organization attestation.",
+            };
 
-              const newMsg: ChatMessage = {
-                id: currentMsgs.length + 1,
-                args: "",
-                role: Role.Developer,
-                messageType: MessageType.Normal,
-                content: "I've updated your wallet with a verifiable credential and published your organization attestation.",
-              };
+            const msgs: ChatMessage[] = [...currentMsgs.slice(0, -1), newMsg]
+            const msgs2: ChatMessage[] = [...msgs, currentMsgs[currentMsgs.length - 1]]
 
-              const msgs: ChatMessage[] = [...currentMsgs.slice(0, -1), newMsg]
-              const msgs2: ChatMessage[] = [...msgs, currentMsgs[currentMsgs.length - 1]]
-
-              console.info("update conversation message ")
-            
-              ConversationService.updateConversation(conversation, msgs2)
-            }
-          }
+            console.info("update conversation message ")
           
-  
+            ConversationService.updateConversation(conversation, msgs2)
+          }
         }
+        
+
       }
+
 
       return "org attestation"
 
