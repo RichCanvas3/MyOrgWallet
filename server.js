@@ -23,6 +23,7 @@ const port = 4000;
 
 dotenv.config();
 app.use(cors());
+app.use(express.json());
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
@@ -266,11 +267,8 @@ app.get('/linkedin-callback', async (req, res) => {
   });
   
   app.post('/send-verification-email', async (req, res) => {
-    //const { email } = req.body;
+    const { email } = req.body;
     //console.info("send verification email: ", req)
-    //const { email } = req.body;
-    console.info("do it ....................")
-    const email = "richardpedersen3@gmail.com"
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
     }
@@ -302,13 +300,13 @@ app.get('/linkedin-callback', async (req, res) => {
   });
 
   app.post('/verify-code', (req, res) => {
-    //const { email, code } = req.body;
-    //const storedCode = verificationCodes.get(email);
+    const { email, code } = req.body;
+    const storedCode = verificationCodes.get(email);
   
-    //if (code === storedCode) {
-      //verificationCodes.delete(email);
+    if (code === storedCode) {
+      verificationCodes.delete(email);
       res.json({ message: 'Code verified' });
-    //} else {
-    //  res.status(400).json({ error: 'Invalid verification code' });
-    //}
+    } else {
+      res.status(400).json({ error: 'Invalid verification code' });
+    }
   });
