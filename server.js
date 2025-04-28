@@ -2,6 +2,9 @@
 import express from 'express';
 import axios from 'axios';
 import cors from 'cors'
+import sgMail from '@sendgrid/mail'
+import dotenv from 'dotenv'
+
 import querystring from 'querystring';  // For query string parsing
 
 import { generateKeyPairSync, createPrivateKey, createPublicKey } from 'crypto';
@@ -12,26 +15,24 @@ import { createHash, publicDecrypt } from "crypto";
 import * as base64 from "@ethersproject/base64";
 import { publicKeyToAddress } from 'viem/accounts';
 
-
 const app = express();
 const port = 4000;
 
-// Replace with your LinkedIn credentials
-const LINKEDIN_CLIENT_ID = '86qujvwkyvmcpv'; // Replace with your LinkedIn Client ID
-const LINKEDIN_CLIENT_SECRET = 'WPL_AP1.Lhln7C1WcGtiR4eE.Fx/i+Q=='; // Replace with your LinkedIn Client Secret
-const LINKEDIN_REDIRECT_URI = 'http://localhost:5173/linkedincallback';
-
-const X_CLIENT_ID = 'LW1pdG96ZzVwbmlrNkJEXzIyTEo6MTpjaQ'; // Replace with your LinkedIn Client ID
-const X_REDIRECT_URI = 'http://localhost:5173/xcallback';
-const X_CLIENT_SECRET = '0D2ddZGdH3Uk6rKhBC2eHEjYiCGk6LyAZe-sukr_YQgMLBKzry'; // Replace with your LinkedIn Client Secret
-
-const SHOPIFY_SHOP_NAME = "richcanvas"
-const SHOPIFY_CLIENT_ID = '6fba28568597ea67cce09b4ff35f2a8e'; // Replace with your LinkedIn Client ID
-const SHOPIFY_REDIRECT_URI = 'http://localhost:5173/shopifycallback';
-const SHOPIFY_CLIENT_SECRET = 'ca6c3028b2a5e663547b41b871578b8f'; // Replace with your LinkedIn Client Secret
 
 
+
+dotenv.config();
 app.use(cors());
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+const verificationCodes = new Map();
+
+
+
+const generateCode = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
 
 
 /*  use when you need to create encryption keys
@@ -92,9 +93,9 @@ app.get('/linkedin-callback', async (req, res) => {
         querystring.stringify({
           grant_type: 'authorization_code',
           code: code,
-          redirect_uri: LINKEDIN_REDIRECT_URI,
-          client_id: LINKEDIN_CLIENT_ID,
-          client_secret: LINKEDIN_CLIENT_SECRET,
+          redirect_uri: process.env.LINKEDIN_REDIRECT_URI,
+          client_id: process.env.LINKEDIN_CLIENT_ID,
+          client_secret: process.env.LINKEDIN_CLIENT_SECRET,
         }),
         {
           headers: {
@@ -161,7 +162,7 @@ app.get('/linkedin-callback', async (req, res) => {
     console.info("............... give it a go with code: " + code + ", verifier: " + verifier)
     try {
 
-      const credentials = `${X_CLIENT_ID}:${X_CLIENT_SECRET}`;
+      const credentials = `${process.env.X_CLIENT_ID}:${process.env.X_CLIENT_SECRET}`;
       const encodedCredentials = btoa(credentials);
 
       // Create Authorization header
@@ -173,9 +174,9 @@ app.get('/linkedin-callback', async (req, res) => {
         querystring.stringify({
           grant_type: 'authorization_code',
           code: code,
-          redirect_uri: X_REDIRECT_URI,
-          client_id: X_CLIENT_ID,
-          //client_secret: X_CLIENT_SECRET,
+          redirect_uri: process.env.X_REDIRECT_URI,
+          client_id: process.env.X_CLIENT_ID,
+          //client_secret: process.env.X_CLIENT_SECRET,
           code_verifier: verifier
         }),
         {
@@ -222,14 +223,14 @@ app.get('/linkedin-callback', async (req, res) => {
     try {
 
 
-      const tokenUrl = "https://" + SHOPIFY_SHOP_NAME + ".myshopify.com" + "/admin/oauth/access_token"
+      const tokenUrl = "https://" + process.env.SHOPIFY_SHOP_NAME + ".myshopify.com" + "/admin/oauth/access_token"
 
       // Exchange authorization code for an access token
       const response = await axios.post(
         tokenUrl,
         {
-          client_id: SHOPIFY_CLIENT_ID,
-          client_secret: SHOPIFY_CLIENT_SECRET,
+          client_id: process.env.SHOPIFY_CLIENT_ID,
+          client_secret: process.env.SHOPIFY_CLIENT_SECRET,
           code
         },
         {
@@ -245,7 +246,7 @@ app.get('/linkedin-callback', async (req, res) => {
       console.info("......... accessToken ........: ", accessToken)
 
       
-      const requestUrl = "https://" + SHOPIFY_SHOP_NAME + ".myshopify.com" + "/admin/api/2025-01/shop.json"
+      const requestUrl = "https://" + process.env.SHOPIFY_SHOP_NAME + ".myshopify.com" + "/admin/api/2025-01/shop.json"
       const response2 = await axios.get(requestUrl, {
         headers: {
           'X-Shopify-Access-Token': `${accessToken}`,
@@ -262,4 +263,52 @@ app.get('/linkedin-callback', async (req, res) => {
       console.error('Error exchanging authorization code for access token:', error);
       res.status(500).send('Failed to get access token.');
     }
+  });
+  
+  app.post('/send-verification-email', async (req, res) => {
+    //const { email } = req.body;
+    //console.info("send verification email: ", req)
+    //const { email } = req.body;
+    console.info("do it ....................")
+    const email = "richardpedersen3@gmail.com"
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+  
+    const code = generateCode();
+    verificationCodes.set(email, code);
+
+    console.info("code: ", email, code)
+  
+    const msg = {
+      to: email,
+      from: 'r.pedersen@richcanvas.io', 
+      subject: 'Your Verification Code',
+      text: `Your verification code is: ${code}`,
+      html: `<p>Your verification code is: <strong>${code}</strong></p>`,
+    };
+  
+    try {
+      console.info("****************************8 sending it: ")
+
+
+
+      await sgMail.send(msg);
+      res.json({ message: 'Verification email sent' });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      res.st
+    }
+  });
+
+  app.post('/verify-code', (req, res) => {
+    //const { email, code } = req.body;
+    //const storedCode = verificationCodes.get(email);
+  
+    //if (code === storedCode) {
+      //verificationCodes.delete(email);
+      res.json({ message: 'Code verified' });
+    //} else {
+    //  res.status(400).json({ error: 'Invalid verification code' });
+    //}
   });

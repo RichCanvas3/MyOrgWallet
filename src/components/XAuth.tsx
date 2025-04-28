@@ -13,6 +13,7 @@ import AttestationService from '../service/AttestationService';
 import { SocialAttestation } from '../models/Attestation'
 
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService'
+import {X_CLIENT_ID} from "../config";
 
 interface XProfile {
   sub: string; 
@@ -25,10 +26,9 @@ interface XProfile {
 }
 
 
-const CLIENT_ID = 'LW1pdG96ZzVwbmlrNkJEXzIyTEo6MTpjaQ'; // Replace with your LinkedIn Client ID
+
 const REDIRECT_URI = 'http://localhost:5173/xcallback';
-const CLIENT_SECRET = '0D2ddZGdH3Uk6rKhBC2eHEjYiCGk6LyAZe-sukr_YQgMLBKzry'; // Replace with your LinkedIn Client Secret
-const SCOPES = 'profile email openid';
+
 const CALLBACK_URI = 'http://localhost:4000/x-callback'
 
 interface XAuthProps {
@@ -67,7 +67,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
     const codeChallenge = codeVerifier; // For plain method, they’re the same
 
     
-    const authUrl = 'https://x.com/i/oauth2/authorize?response_type=code&client_id=' + CLIENT_ID + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) + '&scope=tweet.read%20users.read%20follows.read%20offline.access&state=state&code_challenge=' + codeChallenge + '&code_challenge_method=plain'
+    const authUrl = 'https://x.com/i/oauth2/authorize?response_type=code&client_id=' + X_CLIENT_ID + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) + '&scope=tweet.read%20users.read%20follows.read%20offline.access&state=state&code_challenge=' + codeChallenge + '&code_challenge_method=plain'
     const width = 600;
     const height = 600;
     const left = window.screenX + (window.outerWidth - width) / 2;

@@ -10,3 +10,7 @@ export const WEB3_AUTH_CLIENT_ID = (env as any).web3_auth_client_id;
 export const RPC_URL = (env as any).rpc_url;
 export const BUNDLER_URL = (env as any).bundler_url;
 export const PAYMASTER_URL = (env as any).paymaster_url;
+export const X_CLIENT_ID = (env as any).x_client_id;
+export const LINKEDIN_CLIENT_ID = (env as any).linkedin_client_id;
+export const SHOPIFY_CLIENT_ID = (env as any).shopify_client_id;
+

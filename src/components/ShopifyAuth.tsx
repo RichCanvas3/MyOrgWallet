@@ -13,9 +13,10 @@ import { useWalletClient } from 'wagmi';
 
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService';
 
+import {SHOPIFY_CLIENT_ID} from "../config";
 
 const SHOP_NAME = "richcanvas"
-const CLIENT_ID = '6fba28568597ea67cce09b4ff35f2a8e'; // Replace with your LinkedIn Client ID
+
 const REDIRECT_URI = 'http://localhost:5173/shopifycallback';
 const CALLBACK_URI = 'http://localhost:4000/shopify-callback'
 
@@ -36,7 +37,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
 
   const openShopifyPopup = () => {
 
-    const authUrl = "https://" + SHOP_NAME + ".myshopify.com" + "/admin/oauth/authorize?response_type=code&client_id=" + CLIENT_ID + "&redirect_uri=" + encodeURIComponent(REDIRECT_URI) + "&scope=&state=state"
+    const authUrl = "https://" + SHOP_NAME + ".myshopify.com" + "/admin/oauth/authorize?response_type=code&client_id=" + SHOPIFY_CLIENT_ID + "&redirect_uri=" + encodeURIComponent(REDIRECT_URI) + "&scope=&state=state"
     const width = 600;
     const height = 600;
     const left = window.screenX + (window.outerWidth - width) / 2;

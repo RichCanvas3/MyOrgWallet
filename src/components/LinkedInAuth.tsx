@@ -25,8 +25,8 @@ interface LinkedInProfile {
   email_verified: boolean;
 }
 
+import {LINKEDIN_CLIENT_ID} from "../config";
 
-const CLIENT_ID = '86qujvwkyvmcpv'; // Replace with your LinkedIn Client ID
 const REDIRECT_URI = 'http://localhost:5173/linkedincallback';
 const SCOPES = 'profile email openid';
 
@@ -53,7 +53,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
   const openLinkedInPopup = () => {
 
   
-    const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}`;
+    const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}`;
     const width = 600;
     const height = 600;
     const left = window.screenX + (window.outerWidth - width) / 2;

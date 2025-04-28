@@ -6,6 +6,7 @@ import {BrowserRouter, Navigate, Route, Routes} from 'react-router-dom';
 import {I18nextProvider} from 'react-i18next';
 import i18n from './i18n';
 import HomePage from "./components/HomePage";
+import WelcomePage from "./components/WelcomePage";
 import OrganizationsPage from "./components/OrganizationsPage";
 import MainPage from "./components/MainPage";
 import './App.css';
@@ -127,13 +128,20 @@ const App = () => {
 
   const appCommand = (cmd: Command) => {
 
-    
+    if (cmd.action == "edit" && cmd.entityId == "indiv" && cmd.did) {
+      setSelectedEntityId("indiv")
+      setSelectedDid(cmd.did)
+      setAttestationViewModalVisible(true)
+    }
+    if (cmd.action == "show" && cmd.entityId == "indiv" && cmd.did) {
+      setSelectedEntityId("indiv")
+      setSelectedDid(cmd.did)
+      setAttestationViewModalVisible(true)
+    }
     if (cmd.action == "edit" && cmd.entityId == "org" && cmd.did) {
-      console.info("********* set info and popup modal ******")
       setSelectedEntityId("org")
       setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
-      console.info("********* done popup modal ******")
     }
     if (cmd.action == "show" && cmd.entityId == "org" && cmd.did) {
       setSelectedEntityId("org")
@@ -284,6 +292,14 @@ const App = () => {
     />
   );
 
+  
+  const WelcomePageWithProps: React.FC<Partial<WelcomePageProps>> = (props) => (
+    <WelcomePage
+        className={'main-content'}
+        {...props}
+    />
+  );
+
   const HeaderWithProps: React.FC<Partial<HeaderProps>> = (props) => (
     <Header
         className={'main-content'}
@@ -335,6 +351,10 @@ const App = () => {
               <div className="grow overflow-hidden">
                 <Routes>
                   <Route path="/" element={<HomePageWithProps />} />
+                  <Route
+                    path="/welcome"
+                    element={<WelcomePageWithProps />}
+                  />
                   <Route
                     path="/organizations"
                     element={<OrganizationsPageWithProps />}
