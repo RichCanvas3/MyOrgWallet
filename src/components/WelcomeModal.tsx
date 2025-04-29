@@ -15,7 +15,7 @@ import {
   Alert,
 } from '@mui/material';
 import { Check, ArrowForward, ArrowBack } from '@mui/icons-material';
-
+import { useWallectConnectContext } from "../context/walletConnectContext";
 interface Step {
   id: number;
   title: string;
@@ -33,6 +33,8 @@ const WelcomeModal: React.FC = () => {
   const [showEmailVerification, setShowEmailVerification] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'info' as 'info' | 'success' | 'error' });
+
+  const { setIndivAndOrgInfo,  } = useWallectConnectContext();
 
   // Flipped step order: Full Name first, then Org Name
   const steps: Step[] = [
@@ -91,6 +93,11 @@ const WelcomeModal: React.FC = () => {
       setTimeout(() => {
         setIsSubmitting(false);
         handleToast('Setup complete! Redirecting...', 'success');
+
+        setIndivAndOrgInfo(fullName, organizationName, email).then((resp) => {
+          
+        })
+
         navigate('/setup');
       }, 1000);
       return;

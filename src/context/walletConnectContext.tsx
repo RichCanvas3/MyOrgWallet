@@ -53,7 +53,7 @@ import DelegationService from "../service/DelegationService"
 import { EAS, SchemaEncoder, SchemaDecodedItem, SchemaItem, DelegatedProxyAttestationVersion } from '@ethereum-attestation-service/eas-sdk';
 import { DeveloperBoard } from "@mui/icons-material";
 
-import { IndivAttestation } from "../models/Attestation";
+import { IndivAttestation, OrgAttestation } from "../models/Attestation";
 import AttestationService from "../service/AttestationService";
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService";
 
@@ -69,6 +69,7 @@ export type Snap = {
 
 export type WalletConnectContextState = {
     connect: (orgAddress: string, walletClient: WalletClient, organizationName: string, fullName: string, email: string) => Promise<void>;
+    setIndivAndOrgInfo: (indivName: string, orgName: string, indivEmail: string) => Promise<void>;
     buildSmartWallet: (owner: any, signatory: any, ) => Promise<void>;
     setupSmartWallet: (owner: any, signatory: any, ) => Promise<void>;
 
@@ -131,6 +132,9 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
   buildSmartWallet: () => {
     throw new Error('WalletConnectContext must be used within a WalletConnectProvider');
   },
+  setIndivAndOrgInfo: () => {
+    throw new Error('WalletConnectContext must be used within a WalletConnectProvider');
+  },
   setupSmartWallet: () => {
     throw new Error('WalletConnectContext must be used within a WalletConnectProvider');
   },
@@ -147,6 +151,8 @@ export const useWalletConnect = () => {
     const [issuerDid, setIssuerDid] = useState<string>();
 
     const [orgName, setOrgName] = useState<string>();
+    const [indivName, setIndivName] = useState<string>();
+    const [indivEmail, setIndivEmail] = useState<string>();
 
     const [isIndividualConnected, setIsIndividualConnected] = useState<boolean>();
 
@@ -660,6 +666,11 @@ export const useWalletConnect = () => {
       //entryPoint: { address: ENTRY_POINT_ADDRESS, version: '0.7' },
     });
 
+    const setIndivAndOrgInfo = async (indivName: string, orgName: string, indivEmail: string ) => {
+      setOrgName(orgName)
+      setIndivName(orgName)
+      setIndivEmail(orgName)
+    }
     const buildSmartWallet = async (owner: any, signatory: any, ) => {
       console.info(".......... build smart wallet ...............")
       console.info("signatory: ", signatory)
@@ -976,6 +987,56 @@ export const useWalletConnect = () => {
 
 
 
+        // add new org attestation
+        const addOrgAttestation = async () => {
+
+          console.info("*********** ADD ORG ATTESTATION ****************")
+      
+          const walletClient = signatory.walletClient
+          const entityId = "org"
+      
+          if (signer && walletClient && session && orgName && orgDid && orgIssuerDel) {
+      
+            const indivName = ""
+      
+            const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, issuerDid, orgName);
+            const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
+            const fullVc = result.vc
+            const proofUrl = result.proofUrl
+
+            if (fullVc) {
+            
+              // now create attestation
+              const hash = keccak256(toUtf8Bytes("hash value"));
+              const attestation: OrgAttestation = {
+                name: orgName,
+                attester: orgDid,
+                class: "organization",
+                category: "profile",
+                entityId: entityId,
+                hash: hash,
+                vccomm: (fullVc.credentialSubject as any).commitment.toString(),
+                vcsig: (fullVc.credentialSubject as any).commitmentSignature,
+                vciss: issuerDid,
+                proof: proofUrl
+              };
+      
+              console.info("AttestationService add indiv attestation")
+              const uid = await AttestationService.addOrgAttestation(attestation, signer, [orgIssuerDel, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+            }
+          }
+        }
+
+        if (indivDid && orgDid) {
+          AttestationService.getAttestationByAddressAndSchemaId(orgDid, AttestationService.OrgSchemaUID, "org").then((orgAttestation) => {
+            if (!orgAttestation) {
+              console.info("=============> no org attestation so add one")
+              addOrgAttestation()
+            }
+          })
+        }
+        
+
         // add new org indiv attestation
         const addIndivAttestation = async () => {
 
@@ -995,13 +1056,16 @@ export const useWalletConnect = () => {
 
             if (fullVc) {
 
-              const indivName = "indiv name"
+              let indName = "indiv name"
+              if (indivName) {
+                indName = indivName
+              }
             
               // now create attestation
               const hash = keccak256(toUtf8Bytes("hash value"));
               const attestation: IndivAttestation = {
                 indivDid: indivDid,
-                name: indivName,
+                name: indName,
                 rolecid: JSON.stringify(orgIndivDelegation),
                 attester: orgDid,
                 class: "organization",
@@ -1065,6 +1129,7 @@ export const useWalletConnect = () => {
 
             selectedSignatory,
             connect,
+            setIndivAndOrgInfo,
             buildSmartWallet,
             setupSmartWallet,
             setOrgNameValue,
@@ -1095,6 +1160,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
       indivIssuerDelegation,
 
       connect, 
+      setIndivAndOrgInfo,
       buildSmartWallet,
       setupSmartWallet,
 
@@ -1135,6 +1201,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         selectedSignatory,
         signatory,
         connect,
+        setIndivAndOrgInfo,
         buildSmartWallet,
         setupSmartWallet,
         setOrgNameValue
@@ -1163,6 +1230,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         selectedSignatory,
         signatory,
         connect,
+        setIndivAndOrgInfo,
         buildSmartWallet,
         setupSmartWallet,
         setOrgNameValue]
