@@ -49,9 +49,9 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
 
     const entityId = "org"
 
-    //console.info("fields: ", signer, orgDid, issuerDid, walletClient, session, signatory, orgAccountClient, issuerAccountClient, orgIssuerDelegation, orgIndivDelegation, walletClient)
+    //console.info("fields: ", signer, orgDid, issuerDid, walletClient, signatory, orgAccountClient, issuerAccountClient, orgIssuerDelegation, orgIndivDelegation, walletClient)
     console.info("fields: ", orgIssuerDelegation, orgIndivDelegation)
-    if (signer && orgDid && issuerDid && walletClient && session && signatory && orgAccountClient && issuerAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+    if (signer && orgDid && issuerDid && walletClient && signatory && orgAccountClient && issuerAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
 
       // set the org name locally and in profile
       //console.info("set org name: ", orgName)

@@ -4,7 +4,7 @@ import { ethers, hashMessage } from 'ethers'
 import { recoverPublicKey } from "@ethersproject/signing-key";
 
 
-import { DIDSession } from 'did-session';
+//import { DIDSession } from 'did-session';
 import { vs } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { Buffer } from 'buffer';
 
@@ -323,9 +323,7 @@ class VerifiableCredentialsService {
       entityId: string,
       did: string, 
       walletClient: WalletClient, 
-
-      issuerAccountClient: any, 
-      session: DIDSession): Promise<any | undefined> {
+      issuerAccountClient: any): Promise<any | undefined> {
 
 
       let proofUrl = ""
@@ -499,7 +497,7 @@ class VerifiableCredentialsService {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 inputs: { issuerDidHash: issuerDidHash.toString(), didHash: didHash.toString(), vcHash: credentialHash.toString(), commitment: commitment.toString(), commitmentSignature: commitmentSignature.toString() }, // Example inputs
-                session: serializedSession,
+                session: "",
                 commitment: commitment.toString(),
                 did: did
               }),

@@ -68,10 +68,10 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
       var shopifyUrl = res.data.shop.domain
       var websiteType = "commerce"
 
-      if (orgDid && shopifyUrl && walletClient && orgAccountClient && issuerAccountClient && orgIssuerDelegation && orgIndivDelegation && issuerDid && session && signer) {
+      if (orgDid && shopifyUrl && walletClient && orgAccountClient && issuerAccountClient && orgIssuerDelegation && orgIndivDelegation && issuerDid && signer) {
 
         const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC(entityId, orgDid, issuerDid, websiteType, shopifyUrl);
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
+        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
         const fullVc = result.vc
         const proofUrl = result.proofUrl
         if (fullVc && signer && orgAccountClient && walletClient) {

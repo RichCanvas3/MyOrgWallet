@@ -87,11 +87,11 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
         console.info(res.data.picture)
 
         console.info("indivIssuerDelegation: ", indivIssuerDelegation)
-        console.info("add social: ", indivDid,issuerDid,walletClient,indivAccountClient,issuerAccountClient,indivIssuerDelegation,session,signer)
-        if (indivDid && issuerDid && walletClient && indivAccountClient && issuerAccountClient && indivIssuerDelegation && session && signer) {
+        console.info("add social: ", indivDid,issuerDid,walletClient,indivAccountClient,issuerAccountClient,indivIssuerDelegation,signer)
+        if (indivDid && issuerDid && walletClient && indivAccountClient && issuerAccountClient && indivIssuerDelegation  && signer) {
   
           const vc = await VerifiableCredentialsService.createSocialVC(entityId, indivDid, issuerDid, res.data.sub, "");
-          const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, issuerAccountClient, session)
+          const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, issuerAccountClient)
           const fullVc = result.vc
           const proofUrl = result.proofUrl
 

@@ -100,10 +100,10 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
       let url = "https://x.com/" + res["data"]["data"]["username"]
 
 
-      if (orgDid && issuerDid && walletClient && orgAccountClient && issuerAccountClient && session && signer) {
+      if (orgDid && issuerDid && walletClient && orgAccountClient && issuerAccountClient && signer) {
   
         const vc = await VerifiableCredentialsService.createSocialVC(entityId, orgDid, issuerDid, name, url);
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
+        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
         const fullVc = result.vc
         const proofUrl = result.proofUrl
         if (fullVc && signer && orgAccountClient && indivIssuerDelegation && walletClient) {

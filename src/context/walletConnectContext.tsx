@@ -248,6 +248,7 @@ export const useWalletConnect = () => {
           let ownerEOAAddress = owner
           console.info("ownerEOAAddress: ", ownerEOAAddress)
 
+          /*
           console.info("............. new AccountId ............... ")
           const accountId  = new AccountId({chainId: "eip155:10", address: owner})
           const authMethod = await EthereumWebAuth.getAuthMethod(publicClient, accountId);
@@ -273,6 +274,7 @@ export const useWalletConnect = () => {
               //console.log('Authorized DID 1:', JSON.stringify(ss.did));
             }
           }
+          */
           
           // configure snaps if not already configured
           const snapResponse = await walletClient.request({
@@ -620,12 +622,12 @@ export const useWalletConnect = () => {
           const walletClient = signatory.walletClient
           const entityId = "indiv"
       
-          if (signer && walletClient && session) {
+          if (signer && walletClient) {
       
             const indivName = ""
       
             const vc = await VerifiableCredentialsService.createIndivVC(entityId, orgDid, issuerDid, indivDid, indivName);
-            const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
+            const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
             const fullVc = result.vc
             const proofUrl = result.proofUrl
 
@@ -1010,7 +1012,7 @@ export const useWalletConnect = () => {
           if (signer && walletClient && session && orgName && orgDid && orgIssuerDel) {
       
             const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, issuerDid, orgName);
-            const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
+            const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
             const fullVc = result.vc
             const proofUrl = result.proofUrl
 
@@ -1064,7 +1066,7 @@ export const useWalletConnect = () => {
             
       
             const vc = await VerifiableCredentialsService.createIndivVC(entityId, orgDid, issuerDid, indivDid, indName);
-            const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
+            const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
             const fullVc = result.vc
             const proofUrl = result.proofUrl
 
@@ -1121,7 +1123,7 @@ export const useWalletConnect = () => {
             }
       
             const vc = await VerifiableCredentialsService.createIndivEmailVC(entityId, indivDid, issuerDid, "business", indEmail);
-            const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
+            const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
             const fullVc = result.vc
             const proofUrl = result.proofUrl
 

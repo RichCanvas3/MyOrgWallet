@@ -23,7 +23,7 @@ const entityId = "insurance"
 const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, ref) => {
 
   const { } = props;
-  const { issuerAccountClient, signer, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, session, orgDid, issuerDid } = useWallectConnectContext();
+  const { issuerAccountClient, signer, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, issuerDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   
@@ -31,12 +31,12 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
   const openInsurancePopup = async () => {
 
       var insuranceNumber = "10"
-      if (orgDid && insuranceNumber && walletClient && orgAccountClient && issuerAccountClient && issuerDid && session && signer) {
+      if (orgDid && insuranceNumber && walletClient && orgAccountClient && issuerAccountClient && issuerDid  && signer) {
 
         const vc = await VerifiableCredentialsService.createInsuranceVC(orgDid, issuerDid, insuranceNumber);
 
         console.info("vc: ", JSON.stringify(vc))
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
+        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
         const fullVc = result.vc
         const proofUrl = result.proofUrl
         if (fullVc && signer && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
