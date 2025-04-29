@@ -200,7 +200,7 @@ export const useWalletConnect = () => {
 
         const publicClient = createPublicClient({
           chain: optimism,
-          transport: http(),
+          transport: http('https://mainnet.optimism.io/'),
         });
       
 
@@ -225,15 +225,17 @@ export const useWalletConnect = () => {
         // this is hybrid signatory so might have a wallet client
         const walletClient = signatory.walletClient
 
+        console.info("............. publicClient = createPublicClient 1 ............... ")
         const publicClient = createPublicClient({
           chain: optimism,
-          transport: http(),
+          transport: http('https://mainnet.optimism.io/'),
         });
 
 
         const getConnected = async () => {
 
           // need to refactor the walletSigner stuff
+          console.info("............. new ethers.BrowserProvider(window.ethereum) ............... ")
           const provider = new ethers.BrowserProvider(window.ethereum);
           await window.ethereum.request({ method: "eth_requestAccounts" });
           const walletSigner = await provider.getSigner();
@@ -246,6 +248,7 @@ export const useWalletConnect = () => {
           let ownerEOAAddress = owner
           console.info("ownerEOAAddress: ", ownerEOAAddress)
 
+          console.info("............. new AccountId ............... ")
           const accountId  = new AccountId({chainId: "eip155:10", address: owner})
           const authMethod = await EthereumWebAuth.getAuthMethod(publicClient, accountId);
         
@@ -276,6 +279,7 @@ export const useWalletConnect = () => {
             method: 'wallet_getSnaps',
           })
 
+          console.info("............. const snapId = ............... ")
           const snps = snapResponse as GetSnapsResponse
         
           const snapId = "local:http://localhost:8080"
@@ -295,6 +299,8 @@ export const useWalletConnect = () => {
 
 
           if (publicClient && selectedSignatory) {
+
+            console.info("............. privateKeyToAccount(ISSUER_PRIVATE_KEY) ............... ")
 
             // connect to issuer account abstraction
             const issuerOwner = privateKeyToAccount(ISSUER_PRIVATE_KEY);
@@ -683,13 +689,14 @@ export const useWalletConnect = () => {
         // this is hybrid signatory so might have a wallet client
         const walletClient = signatory.walletClient
 
+        console.info(" ............. create public client ............")
         const publicClient = createPublicClient({
           chain: optimism,
-          transport: http(),
+          transport: http('https://mainnet.optimism.io/'),
         });
 
 
-
+        console.info(" ............. ethers.BrowserProvider ............")
         // need to refactor the walletSigner stuff
         const provider = new ethers.BrowserProvider(window.ethereum);
         await window.ethereum.request({ method: "eth_requestAccounts" });
@@ -703,6 +710,8 @@ export const useWalletConnect = () => {
         const accountId  = new AccountId({chainId: "eip155:10", address: owner})
         const authMethod = await EthereumWebAuth.getAuthMethod(publicClient, accountId);
       
+
+        console.info(" ............. create session stuff ............")
         // Authorize DID session
         let thisSession = session
         if (session === undefined) {
@@ -724,9 +733,11 @@ export const useWalletConnect = () => {
           }
         }
         
-
+        console.info(" if public client ..........")
         if (publicClient) {
 
+
+          console.info(" start aa stuff ..........")
           // build individuals AA for EOA Connected Wallet
           const indivAccountClient = await toMetaMaskSmartAccount({
             client: publicClient,
@@ -859,7 +870,7 @@ export const useWalletConnect = () => {
 
         const publicClient = createPublicClient({
           chain: optimism,
-          transport: http(),
+          transport: http('https://mainnet.optimism.io/'),
         });
 
         const bundlerClient = createBundlerClient({
