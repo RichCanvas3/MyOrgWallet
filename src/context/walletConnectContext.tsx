@@ -68,7 +68,9 @@ export type Snap = {
 };
 
 export type WalletConnectContextState = {
-    connect: (orgAddress: string, walletClient: WalletClient) => Promise<void>;
+    connect: (orgAddress: string, walletClient: WalletClient, organizationName: string, fullName: string, email: string) => Promise<void>;
+    buildSmartWallet: (owner: any, signatory: any, ) => Promise<void>;
+    setupSmartWallet: (owner: any, signatory: any, ) => Promise<void>;
 
     orgDid?: string;
     indivDid?: string;
@@ -124,8 +126,14 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
 
 
   connect: () => {
-      throw new Error('WalletConnectContext must be used within a WalletConnectProvider');
-    },
+    throw new Error('WalletConnectContext must be used within a WalletConnectProvider');
+  },
+  buildSmartWallet: () => {
+    throw new Error('WalletConnectContext must be used within a WalletConnectProvider');
+  },
+  setupSmartWallet: () => {
+    throw new Error('WalletConnectContext must be used within a WalletConnectProvider');
+  },
   setOrgNameValue: async (orgNameValue: string) => {},
 
 })
@@ -652,7 +660,380 @@ export const useWalletConnect = () => {
       //entryPoint: { address: ENTRY_POINT_ADDRESS, version: '0.7' },
     });
 
-    const connect = async (owner: any, signatory: any) => {
+    const buildSmartWallet = async (owner: any, signatory: any, ) => {
+      console.info(".......... build smart wallet ...............")
+      console.info("signatory: ", signatory)
+      console.info("owner: ", owner)
+      if (signatory && owner) {
+
+        console.info(" ........  everything is ready .........")
+
+        // this is hybrid signatory so might have a wallet client
+        const walletClient = signatory.walletClient
+
+        const publicClient = createPublicClient({
+          chain: optimism,
+          transport: http(),
+        });
+
+
+
+        // need to refactor the walletSigner stuff
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        const walletSigner = await provider.getSigner();
+        setSigner(walletSigner)
+
+        // Initialize metamask wallet session and give access to ceramic datastore
+        let ownerEOAAddress = owner
+        console.info("ownerEOAAddress: ", ownerEOAAddress)
+
+        const accountId  = new AccountId({chainId: "eip155:10", address: owner})
+        const authMethod = await EthereumWebAuth.getAuthMethod(publicClient, accountId);
+      
+        // Authorize DID session
+        let thisSession = session
+        if (session === undefined) {
+          const sessionStr = localStorage.getItem(SESSION_KEY);
+          if (sessionStr) {
+            thisSession = await DIDSession.fromSession(sessionStr);
+            setSession(thisSession);
+            //console.log('Authorized DID 2:', JSON.stringify(ss.did));
+          }
+          else {
+            thisSession = await DIDSession.authorize(authMethod, {
+              resources: [`ceramic://*`],
+              expiresInSecs: 60 * 60 * 24 * 7
+            });
+
+            localStorage.setItem(SESSION_KEY, thisSession.serialize());
+            setSession(thisSession);
+            //console.log('Authorized DID 1:', JSON.stringify(ss.did));
+          }
+        }
+        
+
+        if (publicClient) {
+
+          // build individuals AA for EOA Connected Wallet
+          const indivAccountClient = await toMetaMaskSmartAccount({
+            client: publicClient,
+            implementation: Implementation.Hybrid,
+            deployParams: [owner, [], [], []],
+            signatory: signatory,
+            deploySalt: toHex(1),
+          });
+
+          const indivAddress = await indivAccountClient.getAddress()
+          let indivDid = 'did:pkh:eip155:10:' + indivAccountClient.address
+          setIndivDid(indivDid)
+          setIndivAccountClient(indivAccountClient)
+
+          // get attestation for individual account abstraction address
+          const indivAttestation = await AttestationService.getIndivAttestation(indivDid, AttestationService.IndivSchemaUID, "indiv");
+
+
+          // if it exists then lets find org name from the associated org delegation in attestation
+          let orgIndivDel : any | undefined
+          let delegationOrgAddress : `0x${string}` | undefined
+          if (indivAttestation) {
+            orgIndivDel = JSON.parse((indivAttestation as IndivAttestation).rolecid)
+            setOrgIndivDelegation(orgIndivDel)
+
+            if (indivAddress == orgIndivDel.delegate) {
+              console.info("*********** valid individual attestation so lets use this org address")
+              // need to validate signature at some point
+              delegationOrgAddress = orgIndivDel.delegator
+            }
+          }
+
+            
+          // build orgs AA associated with individual, connect to existing if already built
+          let orgAccountClient : any | undefined
+          if (delegationOrgAddress) {
+            orgAccountClient = await toMetaMaskSmartAccount({
+              address: delegationOrgAddress,
+              client: publicClient,
+              implementation: Implementation.Hybrid,
+              deployParams: [owner, [], [], []],
+              signatory: signatory,
+              deploySalt: toHex(0),
+            });
+          }
+          else {
+            console.info("==========>  org address not defined ")
+            orgAccountClient = await toMetaMaskSmartAccount({
+              client: publicClient,
+              implementation: Implementation.Hybrid,
+              deployParams: [owner, [], [], []],
+              signatory: signatory,
+              deploySalt: toHex(0),
+            });
+          }
+
+          let orgDid = 'did:pkh:eip155:10:' + orgAccountClient.address
+          setOrgDid(orgDid)
+          setOrgAccountClient(orgAccountClient)
+
+          // deploy these two AA's and setup delegation between org and individual if it is not already defined
+          if (!orgIndivDel) {
+
+            const bundlerClient = createBundlerClient({
+              transport: http(BUNDLER_URL),
+              paymaster: createPaymasterClient({
+                transport: http(PAYMASTER_URL),
+              }),
+              chain: optimism,
+              paymasterContext: {
+                // at minimum this must be an object; for Biconomy you can use:
+                mode:             'SPONSORED',
+                calculateGasLimits: true,
+                expiryDuration:  300,
+              },
+            });
+    
+    
+            // this is probably not needed to setup delegation
+            // deploy individual AA
+            const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+            let userOpHash1 = await bundlerClient.sendUserOperation({
+              account: indivAccountClient,
+              calls: [{ to: zeroAddress, data: "0x" }],
+              ...fee
+            });
+            const receipt1 = await bundlerClient.waitForUserOperationReceipt({
+              hash: userOpHash1,
+            });
+
+            // deploy organization AA
+            let userOpHash2 = await bundlerClient.sendUserOperation({
+              account: indivAccountClient,
+              calls: [{ to: zeroAddress, data: "0x" }],
+              ...fee
+            });
+            const receipt2 = await bundlerClient.waitForUserOperationReceipt({
+              hash: userOpHash2,
+            });
+            
+
+            // setup delegation between them
+            let orgIndivDel = createDelegation({
+              to: indivAccountClient.address,
+              from: orgAccountClient.address,
+              caveats: [] }
+            );
+  
+            const signature = await orgAccountClient.signDelegation({
+              delegation: orgIndivDel,
+            });
+  
+            orgIndivDel = {
+              ...orgIndivDel,
+              signature,
+            }
+  
+            setOrgIndivDelegation(orgIndivDel)
+
+          }
+
+        }
+
+      }
+    }
+
+    const setupSmartWallet = async (owner: any, signatory: any, ) => {
+
+      if (owner && signatory && orgIndivDelegation) {
+
+        const publicClient = createPublicClient({
+          chain: optimism,
+          transport: http(),
+        });
+
+        const bundlerClient = createBundlerClient({
+          transport: http(BUNDLER_URL),
+          paymaster: createPaymasterClient({
+            transport: http(PAYMASTER_URL),
+          }),
+          chain: optimism,
+          paymasterContext: {
+            // at minimum this must be an object; for Biconomy you can use:
+            mode:             'SPONSORED',
+            calculateGasLimits: true,
+            expiryDuration:  300,
+          },
+        });
+
+
+        // configure snaps if not already configured
+        const walletClient = signatory.walletClient
+        const snapResponse = await walletClient.request({
+          method: 'wallet_getSnaps',
+        })
+
+        const snps = snapResponse as GetSnapsResponse
+      
+        const snapId = "local:http://localhost:8080"
+        const snap = snps?.[snapId]
+
+        if (snap == undefined) {
+          const snapId = "local:http://localhost:8080"
+          const snapRequestResponse = await walletClient.request({
+            method: 'wallet_requestSnaps',
+            params: {
+              [snapId]: {} ,
+            },
+          })
+        }
+
+
+        // connect to issuer account abstraction
+        const issuerOwner = privateKeyToAccount(ISSUER_PRIVATE_KEY);
+        const issuerAccountClient = await toMetaMaskSmartAccount({
+          client: publicClient,
+          implementation: Implementation.Hybrid,
+          deployParams: [issuerOwner.address, [], [], []],
+          signatory: { account: issuerOwner },
+          deploySalt: toHex(0),
+        })
+
+        console.info("issuerAccountClient: ", issuerAccountClient)
+
+        let issuerDid = 'did:pkh:eip155:10:' + issuerAccountClient.address
+        setIssuerDid(issuerDid)
+        setIssuerAccountClient(issuerAccountClient)
+
+
+
+        // setup delegation for org to issuer -> redelegation of orgIndivDel
+        let orgIssuerDel  = null
+        try {
+          orgIssuerDel = await DelegationService.getDelegationFromSnap(walletClient, owner, orgAccountClient.address, issuerAccountClient.address)
+        }
+        catch (error) {
+        }
+
+        if (orgIssuerDel == null && orgIndivDelegation && indivDid) {
+
+          const parentDelegationHash = getDelegationHashOffchain(orgIndivDelegation);
+          orgIssuerDel = createDelegation({
+            to: issuerAccountClient.address,
+            from: indivAccountClient.address,
+            parentDelegation: parentDelegationHash,
+            caveats: []
+          });
+
+
+          const signature = await indivAccountClient.signDelegation({
+            delegation: orgIssuerDel,
+          });
+
+
+          orgIssuerDel = {
+            ...orgIssuerDel,
+            signature,
+          }
+
+          await DelegationService.saveDelegationToSnap(walletClient, owner, orgAccountClient.address, issuerAccountClient.address, orgIssuerDel)
+        }
+
+        if (orgIssuerDel) {
+          setOrgIssuerDelegation(orgIssuerDel)
+        }
+        
+
+
+        // setup delegation for individual to issuer delegation
+        let indivIssuerDel = null
+
+        try {
+          indivIssuerDel = await DelegationService.getDelegationFromSnap(walletClient, owner, indivAccountClient.address, issuerAccountClient.address)
+        }
+        catch (error) {
+        }
+
+        if (indivIssuerDel == null && indivDid) {
+          indivIssuerDel = createDelegation({
+            from: indivAccountClient.address,
+            to: issuerAccountClient.address,
+            caveats: [] }
+          );
+
+          const signature = await indivAccountClient.signDelegation({
+            delegation: indivIssuerDel,
+          });
+
+
+          indivIssuerDel = {
+            ...indivIssuerDel,
+            signature,
+          }
+
+          await DelegationService.saveDelegationToSnap(walletClient, owner, indivAccountClient.address, issuerAccountClient.address, indivIssuerDel)
+        }
+
+        setIndivIssuerDelegation(indivIssuerDel)
+
+
+
+        // add new org indiv attestation
+        const addIndivAttestation = async () => {
+
+          console.info("*********** ADD INDIV ATTESTATION ****************")
+      
+          const walletClient = signatory.walletClient
+          const entityId = "indiv"
+      
+          if (signer && walletClient && session && indivDid && orgDid && orgIssuerDel) {
+      
+            const indivName = ""
+      
+            const vc = await VerifiableCredentialsService.createIndivVC(entityId, orgDid, issuerDid, indivDid, indivName);
+            const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
+            const fullVc = result.vc
+            const proofUrl = result.proofUrl
+
+            if (fullVc) {
+
+              const indivName = "indiv name"
+            
+              // now create attestation
+              const hash = keccak256(toUtf8Bytes("hash value"));
+              const attestation: IndivAttestation = {
+                indivDid: indivDid,
+                name: indivName,
+                rolecid: JSON.stringify(orgIndivDelegation),
+                attester: orgDid,
+                class: "organization",
+                category: "people",
+                entityId: entityId,
+                hash: hash,
+                vccomm: (fullVc.credentialSubject as any).commitment.toString(),
+                vcsig: (fullVc.credentialSubject as any).commitmentSignature,
+                vciss: issuerDid,
+                proof: proofUrl
+              };
+      
+              console.info("AttestationService add indiv attestation")
+              const uid = await AttestationService.addIndivAttestation(attestation, signer, [orgIssuerDel, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+            }
+          }
+        }
+
+        if (indivDid && orgDid) {
+          AttestationService.getIndivAttestation(indivDid, AttestationService.IndivSchemaUID, "indiv").then((indivAttestation) => {
+            if (!indivAttestation) {
+              console.info("=============> no indiv attestation so add one")
+              addIndivAttestation()
+            }
+          })
+        }
+        
+      }
+
+    }
+
+    const connect = async (owner: any, signatory: any, organizationName: string, fullName: string, email: string) => {
       console.info("set signatory")
       setSignatory(signatory)
       setOwner(owner)
@@ -684,6 +1065,8 @@ export const useWalletConnect = () => {
 
             selectedSignatory,
             connect,
+            buildSmartWallet,
+            setupSmartWallet,
             setOrgNameValue,
     }
         
@@ -712,6 +1095,9 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
       indivIssuerDelegation,
 
       connect, 
+      buildSmartWallet,
+      setupSmartWallet,
+
       session, 
       signer,
       selectedSignatory,
@@ -749,6 +1135,8 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         selectedSignatory,
         signatory,
         connect,
+        buildSmartWallet,
+        setupSmartWallet,
         setOrgNameValue
       }),
       [
@@ -775,6 +1163,8 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         selectedSignatory,
         signatory,
         connect,
+        buildSmartWallet,
+        setupSmartWallet,
         setOrgNameValue]
     );
   

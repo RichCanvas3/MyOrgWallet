@@ -7,6 +7,7 @@ import {I18nextProvider} from 'react-i18next';
 import i18n from './i18n';
 import HomePage from "./components/HomePage";
 import WelcomePage from "./components/WelcomePage";
+import SetupSmartWalletPage from "./components/SetupSmartWalletPage";
 import OrganizationsPage from "./components/OrganizationsPage";
 import MainPage from "./components/MainPage";
 import './App.css';
@@ -284,6 +285,15 @@ const App = () => {
   interface HeaderProps {
     className: string;
   }
+  interface WelcomePageProps {
+    className: string;
+    appCommand: (cmd: Command) => void;
+  }
+  interface SetupWalletPageProps {
+    className: string;
+    appCommand: (cmd: Command) => void;
+  }
+
 
   const HomePageWithProps: React.FC<Partial<HomePageProps>> = (props) => (
     <HomePage
@@ -296,6 +306,15 @@ const App = () => {
   const WelcomePageWithProps: React.FC<Partial<WelcomePageProps>> = (props) => (
     <WelcomePage
         className={'main-content'}
+        appCommand={appCommand}
+        {...props}
+    />
+  );
+
+  const SetupWalletPageWithProps: React.FC<Partial<SetupWalletPageProps>> = (props) => (
+    <SetupSmartWalletPage
+        className={'main-content'}
+        appCommand={appCommand}
         {...props}
     />
   );
@@ -354,6 +373,10 @@ const App = () => {
                   <Route
                     path="/welcome"
                     element={<WelcomePageWithProps />}
+                  />
+                  <Route
+                    path="/setup"
+                    element={<SetupWalletPageWithProps />}
                   />
                   <Route
                     path="/organizations"

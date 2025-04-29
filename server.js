@@ -304,7 +304,7 @@ app.get('/linkedin-callback', async (req, res) => {
     const storedCode = verificationCodes.get(email);
   
     if (code === storedCode) {
-      verificationCodes.delete(email);
+      //verificationCodes.delete(email);
       res.json({ message: 'Code verified' });
     } else {
       res.status(400).json({ error: 'Invalid verification code' });

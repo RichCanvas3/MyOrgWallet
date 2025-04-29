@@ -14,7 +14,7 @@ import { useWallectConnectContext } from "../context/walletConnectContext";
 import { Command } from "../models/Command"
 import {MagnifyingGlassIcon} from "@heroicons/react/24/outline";
 
-import OnboardingModal from './OnboardingModal';  
+import WelcomeModal from './WelcomeModal';  
 
 interface WelcomePageProps {
   className: string;
@@ -64,7 +64,7 @@ const WelcomePage: React.FC<WelcomePageProps> = ({className, appCommand}) => {
     const onSelectAttestation = async(att: Attestation) => {
       const cmd : Command = {
                       action: "show",
-                      orgDid: att.attester,
+                      did: att.attester,
                       entityId: att.entityId,
                     }
       appCommand(cmd)
@@ -87,8 +87,8 @@ const WelcomePage: React.FC<WelcomePageProps> = ({className, appCommand}) => {
     const OrganizationListItemMemo = React.memo(OrganizationListItem);
   
     return (
-      <div className="onboarding-page flex h-screen">
-        <OnboardingModal />
+      <div className="welcome-page flex h-screen">
+        <WelcomeModal />
       </div>
       
     );

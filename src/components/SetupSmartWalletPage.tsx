@@ -14,13 +14,15 @@ import { useWallectConnectContext } from "../context/walletConnectContext";
 import { Command } from "../models/Command"
 import {MagnifyingGlassIcon} from "@heroicons/react/24/outline";
 
-interface OrganizationsPageProps {
+import SetupSmartWalletModal from './SetupSmartWalletModal';  
+
+interface SetupSmartWalletPageProps {
   className: string;
   appCommand: (cmd: Command) => void;
 }
 
 
-const OrganizationsPage: React.FC<OrganizationsPageProps> = ({className, appCommand}) => {
+const SetupSmartWalletPage: React.FC<SetupSmartWalletPageProps> = ({className, appCommand}) => {
 
     const [organizations, setOrganizations] = useState<Organization[]>([]);
     const [searchInputValue, setSearchInputValue] = useState("");
@@ -85,70 +87,11 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({className, appComm
     const OrganizationListItemMemo = React.memo(OrganizationListItem);
   
     return (
-      <div className="organization-page flex h-screen">
-        <div className="organization-list-container shrink-0">
-          <div id="organization-search" className="search-container flex flex-row items-center relative">
-              <input
-                id="attestationSearchInput"
-                className="search-input"
-                type="text"
-                autoComplete="off"
-                placeholder={'search'}
-                value={searchInputValue}
-                onFocus={() => setShowSearchOptions(true)}
-                onBlur={() => setTimeout(() => setShowSearchOptions(false), 200)}
-                onChange={(e) => setSearchInputValue(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSearch(searchInputValue);
-                    setShowSearchOptions(false);
-                  }
-                }}
-              />
-              <button
-                className="search-button"
-                onClick={() => {
-                  handleSearch(searchInputValue);
-                  setShowSearchOptions(false);
-                }}
-              >
-              <MagnifyingGlassIcon className="search-icon" />
-            </button>
-          </div>
-          <div
-            id="organization-list"
-            ref={scrollContainerRef}
-            className="flex-col flex-1 transition-opacity duration-500 -mr-2 pr-2 overflow-y-auto"
-          >
-            <div className="flex flex-col gap-2 pb-2 text-sm">
-              <div className="relative overflow-x-hidden" style={{ height: "auto", opacity: 1 }}>
-                <ol>
-                  {organizations.map((organization, index) => (
-                    <OrganizationListItemMemo
-                      key={organization.id}
-                      organization={organization}
-                      isSelected={selectedId === organization.id}
-                      onSelectOrganization={onSelectOrganization}
-                      className="organization-list-item" /* Add class */
-                    />
-                  ))}
-                </ol>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="attestation-list-container flex-1 p-6 flex-1 p-6">
-          <AttestationList
-            key={refreshAttestations}
-            orgDid={orgDid}
-            onSelectAttestation={onSelectAttestation}
-            className="attestation-list" /* Add class */
-          />
-        </div>
+      <div className="onboarding-page flex h-screen">
+        <SetupSmartWalletModal />
       </div>
       
     );
 };
 
-export default OrganizationsPage;
+export default SetupSmartWalletPage;

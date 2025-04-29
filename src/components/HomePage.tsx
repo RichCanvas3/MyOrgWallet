@@ -5,7 +5,7 @@ import { WagmiProvider, useAccount, useConnect, useWalletClient } from 'wagmi';
 import { Typography, Card, Button, Box, Paper } from "@mui/material";
 
 import { useWallectConnectContext } from "../context/walletConnectContext";
-//import WalletAuth, { WalletAuthRef } from './WalletAuth';
+
 import { useNavigate } from "react-router-dom";
 
 interface HomePageProps {
@@ -34,7 +34,8 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
       selectedSignatory.login().then(( loginResp ) => {
         console.info("owner: ", loginResp.owner)
         console.info("signatory: ", loginResp.signatory)
-        connect(loginResp.owner, loginResp.signatory).then(() => {
+        connect(loginResp.owner, loginResp.signatory, "", "", "").then(() => {
+          console.info("connected ...................")
         })
       })
     } else  {
@@ -45,6 +46,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
   useEffect(() => {
     // if wallet is defined and we have not defined smart wallet
     if (isIndividualConnected) {
+      console.info("........... individual is connected ...............")
       navigate('/chat/')
     } else  {
       //console.info("...... error")
@@ -112,10 +114,10 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
         }}
       >
         <Typography variant="subtitle1" color="text.secondary">
-          Sign in
+          Sign in:
         </Typography>
         <Button variant="contained" size="small" onClick={handleConnect}>
-          Connect MetaMask
+          Connect Wallet
         </Button>
       </Box>
 
