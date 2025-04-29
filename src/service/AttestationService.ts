@@ -3,12 +3,14 @@ import {EventEmitter} from "./EventEmitter";
 import FileDataService from './FileDataService';
 import { ChatMessage } from '../models/ChatCompletion';
 import { Entity } from '../models/Entity';
-import { Attestation, AttestationCategory, IndivAttestation, OrgAttestation, SocialAttestation, RegisteredDomainAttestation, WebsiteAttestation, InsuranceAttestation, EmailAttestation, StateRegistrationAttestation} from '../models/Attestation';
+import { Attestation, AttestationCategory, IndivAttestation, OrgAttestation, SocialAttestation, RegisteredDomainAttestation, WebsiteAttestation, InsuranceAttestation, EmailAttestation, StateRegistrationAttestation, IndivEmailAttestation} from '../models/Attestation';
 import { Organization } from '../models/Organization';
 import { ethers, formatEther, Interface } from "ethers"; // install alongside EAS
 import { EAS, SchemaEncoder, SchemaDecodedItem, SchemaItem } from '@ethereum-attestation-service/eas-sdk';
 import { WalletClient } from "viem";
 import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
+
+import { encodeNonce } from "permissionless/utils"
 
 import { error } from "console";
 
@@ -335,6 +337,9 @@ class AttestationService {
 
   static async storeAttestation(schema: string, encodedData: any, delegator: any, delegate: any, delegationChain: Delegation[]) {
     
+    const key1 = BigInt(Date.now())      // or some secure random
+    const nonce1 = encodeNonce({ key: key1, sequence: 0n })
+
     let tx = await eas.attest({
       schema: schema,
       data: {
@@ -390,6 +395,7 @@ class AttestationService {
           data,
         },
       ],
+      nonce: nonce1,
       ...fee,
     });
 
@@ -1329,6 +1335,141 @@ class AttestationService {
 
 
 
+  static IndivEmailSchemaUID = "0x0679112c62bedf14255c9b20b07486233f25e98505e1a8adb270e20c17893baf"
+  static IndivEmailSchema = this.BaseSchema + "string class, string email" 
+  static async addIndivEmailAttestation(attestation: IndivEmailAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], indivAccountClient: any, issuerAccountClient: any): Promise<string> {
+
+    eas.connect(signer)
+
+    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+
+    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof) {
+
+      //console.info("add email attestation: ", attestation)
+      const schemaEncoder = new SchemaEncoder(this.IndivEmailSchema);
+      const schemaItems : SchemaItem[] = [
+
+          { name: 'entityid', value: attestation.entityId, type: 'string' },
+          { name: 'hash', value: attestation.hash, type: 'bytes32' },
+          { name: 'issuedate', value: issuedate, type: 'uint64' },
+          { name: 'expiredate', value: expiredate, type: 'uint64' },
+
+          { name: 'vccomm', value: attestation.vccomm, type: 'string' },
+          { name: 'vcsig', value: attestation.vcsig, type: 'string' },
+          { name: 'vciss', value: attestation.vciss, type: 'string' },
+
+          { name: 'proof', value: attestation.proof, type: 'string' },
+
+          { name: 'class', value: attestation.type, type: 'string' },
+          { name: 'email', value: attestation.email, type: 'string' },
+          
+        ];
+
+
+      
+      const encodedData = schemaEncoder.encodeData(schemaItems);
+      await AttestationService.storeAttestation(this.IndivEmailSchemaUID, encodedData, indivAccountClient, issuerAccountClient, delegationChain)
+
+      let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
+      attestationsEmitter.emit('attestationChangeEvent', event);
+  
+      
+    }
+
+    return attestation.entityId
+  }
+  static constructIndivEmailAttestation(uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
+
+    let vccomm : string | undefined
+    let vcsig : string | undefined
+    let vciss : string | undefined
+    let proof : string | undefined
+    let type : string | undefined
+    let email : string | undefined
+
+    
+    for (const field of decodedData) {
+      let fieldName = field["name"]
+
+      if (fieldName == "hash") {
+        hash = field["value"].value as string
+      }
+      if (fieldName == "vccomm") {
+        vccomm = field["value"].value as string
+      }
+      if (fieldName == "vcsig") {
+        vcsig = field["value"].value as string
+      }
+      if (fieldName == "vciss") {
+        vciss = field["value"].value as string
+      }
+      if (fieldName == "proof") {
+        proof = field["value"].value as string
+      }
+      if (fieldName == "class") {
+        type = field["value"].value as string
+      }
+      if (fieldName == "email") {
+        email = field["value"].value as string
+      }
+    }
+
+
+    const attesterDid = "did:pkh:eip155:10:" + attester
+    if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && type && email) {
+      //console.info("set to social attestation with name: ", name)
+      const att : EmailAttestation = {
+        entityId: entityId,
+        class: "individual",
+        category: "profile",
+        attester: attesterDid,
+        schemaId: schemaId,
+        uid: uid,
+        hash: hash,
+        vccomm: vccomm,
+        vcsig: vcsig,
+        vciss: vciss,
+        proof: proof,
+        type: type,
+        email: email
+      }
+
+      return att
+    }
+
+
+
+    for (const field of decodedData) {
+      let fieldName = field["name"]
+
+      if (fieldName == "type") {
+        type = field["value"].value as string
+      }
+      if (fieldName == "email") {
+        email = field["value"].value as string
+      }
+
+    }
+
+
+    if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && type != undefined && email != undefined) {
+      const att : IndivEmailAttestation = {
+        uid: uid,
+        schemaId: schemaId,
+        entityId: entityId,
+        attester: attester,
+        hash: hash,
+        type: type,
+        email: email,
+      }
+
+      return att
+    }
+
+    return undefined
+  }
+
 
   static deepCopyChatMessages(messages: ChatMessage[]): ChatMessage[] {
     return messages.map(msg => ({
@@ -1595,6 +1736,10 @@ class AttestationService {
             }
             if (entityId == "email") {
               att = this.constructEmailAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+            }
+            if (entityId == "indiv-email") {
+              console.info(".................. found indiv-email")
+              att = this.constructIndivEmailAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
 
 
@@ -1911,6 +2056,12 @@ class AttestationService {
       schemaId: this.IndivSchemaUID,
       schema: this.IndivSchema,
       priority: 10
+    },
+    {
+      name: "indiv-email",
+      schemaId: this.IndivEmailSchemaUID,
+      schema: this.IndivEmailSchema,
+      priority: 1000
     },
     {
       name: "org",

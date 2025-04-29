@@ -53,7 +53,7 @@ import DelegationService from "../service/DelegationService"
 import { EAS, SchemaEncoder, SchemaDecodedItem, SchemaItem, DelegatedProxyAttestationVersion } from '@ethereum-attestation-service/eas-sdk';
 import { DeveloperBoard } from "@mui/icons-material";
 
-import { IndivAttestation, OrgAttestation } from "../models/Attestation";
+import { IndivAttestation, IndivEmailAttestation, OrgAttestation } from "../models/Attestation";
 import AttestationService from "../service/AttestationService";
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService";
 
@@ -475,6 +475,7 @@ export const useWalletConnect = () => {
 
             const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
             
+            /*
 
             let userOpHash2 = await bundlerClient.sendUserOperation({
               account: indivAccountClient,
@@ -486,7 +487,7 @@ export const useWalletConnect = () => {
               hash: userOpHash2,
             });
             console.info("%%%%%%%%%%%%%%  receipt2: ", receipt2)
-
+            */
 
             if (indivDid && orgIndivDel == null) {
 
@@ -997,8 +998,6 @@ export const useWalletConnect = () => {
       
           if (signer && walletClient && session && orgName && orgDid && orgIssuerDel) {
       
-            const indivName = ""
-      
             const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, issuerDid, orgName);
             const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
             const fullVc = result.vc
@@ -1046,21 +1045,21 @@ export const useWalletConnect = () => {
           const entityId = "indiv"
       
           if (signer && walletClient && session && indivDid && orgDid && orgIssuerDel) {
+
+            let indName = "indiv name"
+              if (indivName) {
+                indName = indivName
+              }
+            
       
-            const indivName = ""
-      
-            const vc = await VerifiableCredentialsService.createIndivVC(entityId, orgDid, issuerDid, indivDid, indivName);
+            const vc = await VerifiableCredentialsService.createIndivVC(entityId, orgDid, issuerDid, indivDid, indName);
             const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
             const fullVc = result.vc
             const proofUrl = result.proofUrl
 
             if (fullVc) {
 
-              let indName = "indiv name"
-              if (indivName) {
-                indName = indivName
-              }
-            
+              
               // now create attestation
               const hash = keccak256(toUtf8Bytes("hash value"));
               const attestation: IndivAttestation = {
@@ -1089,6 +1088,61 @@ export const useWalletConnect = () => {
             if (!indivAttestation) {
               console.info("=============> no indiv attestation so add one")
               addIndivAttestation()
+            }
+          })
+        }
+
+
+        
+        // add indiv email attestation
+        const addIndivEmailAttestation = async () => {
+
+          console.info("*********** ADD INDIV EMAIL ATTESTATION ****************")
+      
+          const walletClient = signatory.walletClient
+          const entityId = "indiv-email"
+      
+          if (signer && walletClient && session && indivDid && orgDid && orgIssuerDel) {
+
+            let indEmail = "email";
+            if (indivEmail) {
+              indEmail = indivEmail
+            }
+      
+            const vc = await VerifiableCredentialsService.createIndivEmailVC(entityId, indivDid, issuerDid, "business", indEmail);
+            const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
+            const fullVc = result.vc
+            const proofUrl = result.proofUrl
+
+            if (fullVc) {
+            
+              // now create attestation
+              const hash = keccak256(toUtf8Bytes("hash value"));
+              const attestation: IndivEmailAttestation = {
+                type: "business",
+                email: indEmail,
+                attester: indivDid,
+                class: "individual",
+                category: "profile",
+                entityId: entityId,
+                hash: hash,
+                vccomm: (fullVc.credentialSubject as any).commitment.toString(),
+                vcsig: (fullVc.credentialSubject as any).commitmentSignature,
+                vciss: issuerDid,
+                proof: proofUrl
+              };
+      
+              console.info("AttestationService add indiv attestation")
+              const uid = await AttestationService.addIndivEmailAttestation(attestation, signer, [indivIssuerDel], orgAccountClient, issuerAccountClient)
+            }
+          }
+        }
+
+        if (indivDid && orgDid) {
+          AttestationService.getAttestationByAddressAndSchemaId(indivDid, AttestationService.IndivEmailSchemaUID, "indiv-email").then((indivEmailAttestation) => {
+            if (!indivEmailAttestation) {
+              console.info("=============> no indiv email attestation so add one")
+              addIndivEmailAttestation()
             }
           })
         }

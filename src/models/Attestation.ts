@@ -71,3 +71,8 @@ export interface StateRegistrationAttestation extends Attestation {
   formationdate: number,
   locationaddress: string
 }
+
+export interface IndivEmailAttestation extends Attestation {
+  type: string 
+  email: string,
+}

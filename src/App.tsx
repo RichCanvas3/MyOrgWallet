@@ -230,6 +230,16 @@ const App = () => {
       setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
+    if (cmd.action == "edit" && cmd.entityId == "indiv-email" && cmd.did) {
+      setSelectedEntityId("indiv-email")
+      setSelectedDid(cmd.did)
+      setAttestationViewModalVisible(true)
+    }
+    if (cmd.action == "show" && cmd.entityId == "indiv-email" && cmd.did) {
+      setSelectedEntityId("indiv-email")
+      setSelectedDid(cmd.did)
+      setAttestationViewModalVisible(true)
+    }
 
     
     //console.info("app command: ", cmd)

@@ -214,6 +214,31 @@ class VerifiableCredentialsService {
       return vc;
     }
 
+    
+    static async createIndivEmailVC(
+      entityId: string,
+      indivDid: string,
+      issuerDid: string,
+      emailType: string,
+      email: string
+    ): Promise<VerifiableCredential> {
+      let vc : VerifiableCredential = {
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
+        type: ["VerifiableCredential", "EmailCredential"],
+        issuer: issuerDid, 
+        issuanceDate: new Date().toISOString(),
+        credentialSubject: {
+          id: indivDid,
+          type: emailType,
+          email: email,
+          verifiedMethod: "oAuth",
+          platform: "richcanvas-" + entityId
+        }
+      }
+    
+      return vc;
+    }
+
     static async saveCredential(walletClient: WalletClient, credential: VerifiableCredential, entityId: string) {
         
         const credentialJSON = JSON.stringify(credential);
