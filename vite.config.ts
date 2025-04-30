@@ -24,6 +24,7 @@ export default defineConfig({
         },
       }),],
     server: {
+        port: 5173,
         // Proxy API requests to the backend server
         proxy: {
           '/api': {
@@ -31,6 +32,18 @@ export default defineConfig({
             changeOrigin: true,
             secure: false, // Disable SSL verification (useful in development)
             rewrite: (path) => path.replace(/^\/api/, ''), // Remove `/api` prefix
+          },
+          '/linkedin-callback': {
+            target: 'http://localhost:4000',
+            changeOrigin: true,
+          },
+          '/x-callback': {
+            target: 'http://localhost:4000',
+            changeOrigin: true,
+          },
+          '/shopify-callback': {
+            target: 'http://localhost:4000',
+            changeOrigin: true,
           },
         },
       },
