@@ -89,6 +89,11 @@ app.get('/linkedin-callback', async (req, res) => {
   
     try {
       // Exchange authorization code for an access token
+
+      console.info("process.env.LINKEDIN_REDIRECT_URI: ", process.env.LINKEDIN_REDIRECT_URI)
+      console.info("process.env.LINKEDIN_CLIENT_ID: ", process.env.LINKEDIN_CLIENT_ID)
+      console.info("process.env.LINKEDIN_CLIENT_SECRET: ", process.env.LINKEDIN_CLIENT_SECRET)
+
       const response = await axios.post(
         'https://www.linkedin.com/oauth/v2/accessToken',
         querystring.stringify({

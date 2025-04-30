@@ -35,8 +35,6 @@ const SetupSmartWalletPage: React.FC<SetupSmartWalletPageProps> = ({className, a
 
     const encoder = new TextEncoder();
 
-    const { issuerAccountClient, signer, orgAccountClient, session } = useWallectConnectContext();
-
     const [refreshAttestations, setRefreshAttestations] = useState(0);
 
     useEffect(() => {

@@ -1,6 +1,7 @@
 
 import axios from 'axios';
 import { useImperativeHandle, forwardRef, useEffect  } from 'react';
+import { ethers } from 'ethers';
 
 import { useWallectConnectContext } from "../context/walletConnectContext";
 
@@ -44,7 +45,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
   const { data: walletClient } = useWalletClient();
 
   const { } = props;
-  const { issuerAccountClient, signer, indivIssuerDelegation, orgAccountClient, session, orgDid, issuerDid } = useWallectConnectContext();
+  const { issuerAccountClient, indivIssuerDelegation, orgAccountClient, orgDid, issuerDid } = useWallectConnectContext();
 
   
 
@@ -100,13 +101,13 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
       let url = "https://x.com/" + res["data"]["data"]["username"]
 
 
-      if (orgDid && issuerDid && walletClient && orgAccountClient && issuerAccountClient && signer) {
+      if (orgDid && issuerDid && walletClient && orgAccountClient && issuerAccountClient) {
   
         const vc = await VerifiableCredentialsService.createSocialVC(entityId, orgDid, issuerDid, name, url);
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
         const fullVc = result.vc
         const proofUrl = result.proofUrl
-        if (fullVc && signer && orgAccountClient && indivIssuerDelegation && walletClient) {
+        if (fullVc && orgAccountClient && indivIssuerDelegation && walletClient) {
         
           // add attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
@@ -124,7 +125,11 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
             url: url
           };
 
-          const uid = AttestationService.addSocialAttestation(attestation, signer, [indivIssuerDelegation], orgAccountClient, issuerAccountClient)
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          await window.ethereum.request({ method: "eth_requestAccounts" });
+          const walletSigner = await provider.getSigner()
+
+          const uid = AttestationService.addSocialAttestation(attestation, walletSigner, [indivIssuerDelegation], orgAccountClient, issuerAccountClient)
           console.info("add social attestation complete")
 
           if (location.pathname.startsWith("/chat/c/")) {

@@ -43,7 +43,6 @@ import {
 
 import { createPimlicoClient } from "permissionless/clients/pimlico";
 
-import { DIDSession } from 'did-session';
 import { AccountId } from 'caip';
 import { EthereumWebAuth } from '@didtools/pkh-ethereum';
 import { optimism } from "viem/chains";
@@ -57,7 +56,6 @@ import { IndivAttestation, IndivEmailAttestation, OrgAttestation } from "../mode
 import AttestationService from "../service/AttestationService";
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService";
 
-const SESSION_KEY = 'didSession';
 
 export type GetSnapsResponse = Record<string, Snap>;
 export type Snap = {
@@ -87,9 +85,6 @@ export type WalletConnectContextState = {
     orgIssuerDelegation?: Delegation,
     indivIssuerDelegation?: Delegation,
 
-    orgAccountSessionKeyAddress?: any,
-    orgAccountSessionStorageClient?: any,
-    session?: DIDSession;
     selectedSignatory?: SignatoryFactory,
     signatory?: any,
     
@@ -115,9 +110,6 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
   orgIssuerDelegation: undefined,
   indivIssuerDelegation: undefined,
 
-  orgAccountSessionKeyAddress: undefined,
-  orgAccountSessionStorageClient: undefined,
-  session: undefined,
   signatory: undefined,
 
   isIndividualConnected: false,
@@ -154,11 +146,6 @@ export const useWalletConnect = () => {
 
     const [isIndividualConnected, setIsIndividualConnected] = useState<boolean>();
 
-
-    
-    const [orgAccountSessionKeyAddress, setOrgAccountSessionKeyAddress] = useState<any>();
-    const [orgAccountSessionStorageClient, setOrgAccountSessionStorageClient] = useState<any>();
-    const [session, setSession] = useState<DIDSession | undefined>();
     const [signatory, setSignatory] = useState<any | undefined>();
     const [owner, setOwner] = useState<any | undefined>();
 
@@ -231,16 +218,10 @@ export const useWalletConnect = () => {
 
         const getConnected = async () => {
 
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          await window.ethereum.request({ method: "eth_requestAccounts" });
-          const walletSigner = await provider.getSigner();
-
-
-          // Initialize metamask wallet session and give access to ceramic datastore
+          // Initialize metamask wallet and give access to ceramic datastore
           let ownerEOAAddress = owner
           console.info("ownerEOAAddress: ", ownerEOAAddress)
           
-
 
           /*
           // configure snaps if not already configured
@@ -649,35 +630,13 @@ export const useWalletConnect = () => {
         });
 
 
-        // Initialize metamask wallet session and give access to ceramic datastore
+        // Initialize metamask wallet and give access to ceramic datastore
         let ownerEOAAddress = owner
         console.info("ownerEOAAddress: ", ownerEOAAddress)
 
         const accountId  = new AccountId({chainId: "eip155:10", address: owner})
         const authMethod = await EthereumWebAuth.getAuthMethod(publicClient, accountId);
       
-
-        console.info(" ............. create session stuff ............")
-        // Authorize DID session
-        let thisSession = session
-        if (session === undefined) {
-          const sessionStr = localStorage.getItem(SESSION_KEY);
-          if (sessionStr) {
-            thisSession = await DIDSession.fromSession(sessionStr);
-            setSession(thisSession);
-            //console.log('Authorized DID 2:', JSON.stringify(ss.did));
-          }
-          else {
-            thisSession = await DIDSession.authorize(authMethod, {
-              resources: [`ceramic://*`],
-              expiresInSecs: 60 * 60 * 24 * 7
-            });
-
-            localStorage.setItem(SESSION_KEY, thisSession.serialize());
-            setSession(thisSession);
-            //console.log('Authorized DID 1:', JSON.stringify(ss.did));
-          }
-        }
         
         console.info(" if public client ..........")
         if (publicClient) {
@@ -1117,8 +1076,6 @@ export const useWalletConnect = () => {
             orgAccountClient,
             indivAccountClient,
 
-            orgAccountSessionKeyAddress,
-            orgAccountSessionStorageClient,
             signatory,
             
             orgIndivDelegation,
@@ -1126,6 +1083,7 @@ export const useWalletConnect = () => {
             indivIssuerDelegation,
 
             selectedSignatory,
+
             connect,
             setIndivAndOrgInfo,
             buildSmartWallet,
@@ -1137,9 +1095,6 @@ export const useWalletConnect = () => {
 
 export const WalletConnectContextProvider = ({ children }: { children: any }) => {
     const {
-      
-      orgAccountSessionKeyAddress,
-      orgAccountSessionStorageClient,
 
       orgDid, 
       indivDid,
@@ -1162,7 +1117,6 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
       buildSmartWallet,
       setupSmartWallet,
 
-      session, 
       selectedSignatory,
       signatory,
       
@@ -1172,9 +1126,6 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
   
     const providerProps = useMemo(
       () => ({
-        
-        orgAccountSessionKeyAddress,
-        orgAccountSessionStorageClient,
 
         orgDid,
         indivDid,
@@ -1192,8 +1143,6 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         orgIssuerDelegation,
         indivIssuerDelegation,
 
-
-        session,
         selectedSignatory,
         signatory,
         connect,
@@ -1203,8 +1152,6 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         setOrgNameValue
       }),
       [
-        orgAccountSessionKeyAddress,
-        orgAccountSessionStorageClient,
         orgName,
 
         orgDid,
@@ -1221,7 +1168,6 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         orgIssuerDelegation,
         indivIssuerDelegation,
 
-        session,  
         selectedSignatory,
         signatory,
         connect,

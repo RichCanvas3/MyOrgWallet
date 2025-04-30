@@ -3,6 +3,7 @@ import {useContext, useEffect, useRef, useState} from 'react';
 import { keccak256, toUtf8Bytes } from 'ethers';
 import { encodeFunctionData, hashMessage, createPublicClient, createWalletClient, WalletClient, toHex, http, zeroAddress, publicActions, custom, verifyMessage  } from "viem";
 import { optimism } from "viem/chains";
+import { ethers } from 'ethers';
 
 import {
   XMarkIcon
@@ -52,7 +53,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { signer, signatory, orgDid, indivDid, issuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, issuerAccountClient, session } = useWallectConnectContext();
+  const { signatory, orgDid, indivDid, issuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, issuerAccountClient } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
 
@@ -62,31 +63,40 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
 
 
 
-  const handleDeleteOrgAttestations = () => {
+  const handleDeleteOrgAttestations = async () => {
     console.info("delete attestations")
-    if (signer && orgDid && orgIndivDelegation && orgIssuerDelegation && indivIssuerDelegation) {
+    if (orgDid && orgIndivDelegation && orgIssuerDelegation && indivIssuerDelegation) {
       console.info("delete org attestations")
-      AttestationService.loadRecentAttestationsTitleOnly(orgDid, "").then((attestations) => {
-        if (attestations && attestations.length > 0) {
-          AttestationService.deleteAttestations(attestations, signer, [orgIssuerDelegation, orgIndivDelegation], issuerAccountClient).then((rsl) => {
-            console.info("delete all attestations is done ")
-          })
-        }
-      })
+      const attestations = await AttestationService.loadRecentAttestationsTitleOnly(orgDid, "")
+      if (attestations && attestations.length > 0) {
+
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        const walletSigner = await provider.getSigner()
+
+        const rslt = await AttestationService.deleteAttestations(attestations, walletSigner, [orgIssuerDelegation, orgIndivDelegation], issuerAccountClient)
+        console.info("delete all attestations is done ")
+      }
+
 
     }
   }
 
-  const handleDeleteIndivAttestations = () => {
-    if (signer && indivDid && indivIssuerDelegation) {
+  const handleDeleteIndivAttestations = async () => {
+    if (indivDid && indivIssuerDelegation) {
       console.info("delete indiv attestations")
-      AttestationService.loadRecentAttestationsTitleOnly("", indivDid).then((attestations) => {
-        if (attestations && attestations.length > 0) {
-          AttestationService.deleteAttestations(attestations, signer, [indivIssuerDelegation], issuerAccountClient).then((rsl) => {
-            console.info("delete all attestations is done ")
-          })
-        }
-      })
+      const attestations = await AttestationService.loadRecentAttestationsTitleOnly("", indivDid)
+      if (attestations && attestations.length > 0) {
+
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        const walletSigner = await provider.getSigner()
+
+        const rsl = await AttestationService.deleteAttestations(attestations, walletSigner, [indivIssuerDelegation], issuerAccountClient)
+        console.info("delete all attestations is done ")
+
+      }
+
 
 
     }
@@ -94,7 +104,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
 
   const handleAddSamCFO = async (event: React.MouseEvent<HTMLButtonElement>) => {
 
-    if (signer && signatory && orgDid && issuerDid && indivIssuerDelegation && session) {
+    if (signatory && orgDid && issuerDid && indivIssuerDelegation) {
 
       const walletClient = signatory.walletClient
 

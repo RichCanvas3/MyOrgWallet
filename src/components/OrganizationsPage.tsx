@@ -31,10 +31,6 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({className, appComm
 
     const [orgDid, setOrgDid] = useState<string>();
 
-    const encoder = new TextEncoder();
-
-    const { issuerAccountClient, signer, orgAccountClient, session } = useWallectConnectContext();
-
     const [refreshAttestations, setRefreshAttestations] = useState(0);
 
     useEffect(() => {

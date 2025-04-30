@@ -18,7 +18,7 @@ import { TextField, Button, Typography, Box, Paper } from "@mui/material";
 import { keccak256, toUtf8Bytes } from 'ethers';
 import ConversationService from "../service/ConversationService"
 import {ChatMessage, MessageType, Role} from "../models/ChatCompletion";
-
+import { ethers } from 'ethers';
 
 interface OrgModalProps {
   orgName: string
@@ -32,7 +32,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { issuerAccountClient, signatory, signer, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, session, orgDid, issuerDid, setOrgNameValue } = useWallectConnectContext();
+  const { issuerAccountClient, signatory, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, issuerDid, setOrgNameValue } = useWallectConnectContext();
   const { data: walletClient }= useWalletClient()
 
   const [name, setName] = useState("");
@@ -49,16 +49,16 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
 
     const entityId = "org"
 
-    //console.info("fields: ", signer, orgDid, issuerDid, walletClient, signatory, orgAccountClient, issuerAccountClient, orgIssuerDelegation, orgIndivDelegation, walletClient)
+    //console.info("fields: ", orgDid, issuerDid, walletClient, signatory, orgAccountClient, issuerAccountClient, orgIssuerDelegation, orgIndivDelegation, walletClient)
     console.info("fields: ", orgIssuerDelegation, orgIndivDelegation)
-    if (signer && orgDid && issuerDid && walletClient && signatory && orgAccountClient && issuerAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+    if (orgDid && issuerDid && walletClient && signatory && orgAccountClient && issuerAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
 
       // set the org name locally and in profile
       //console.info("set org name: ", orgName)
       //setOrgName(orgName)
 
       const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, issuerDid, orgName);
-      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient, session)
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
       const fullVc = result.vc
       const proofUrl = result.proofUrl
       if (fullVc && signatory && orgAccountClient && walletClient) {
@@ -78,8 +78,12 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
           proof: proofUrl
         };
 
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        const walletSigner = await provider.getSigner()
+
         console.info("AttestationService add org attestation")
-        const uid = await AttestationService.addOrgAttestation(attestation, signer, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+        const uid = await AttestationService.addOrgAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
         setOrgNameValue(orgName)
 
         if (location.pathname.startsWith("/chat/c/")) {

@@ -35,8 +35,6 @@ const WelcomePage: React.FC<WelcomePageProps> = ({className, appCommand}) => {
 
     const encoder = new TextEncoder();
 
-    const { issuerAccountClient, signer, orgAccountClient, session } = useWallectConnectContext();
-
     const [refreshAttestations, setRefreshAttestations] = useState(0);
 
     useEffect(() => {

@@ -7,6 +7,7 @@ import VerifiableCredentialsService from '../service/VerifiableCredentialsServic
 import AttestationService from '../service/AttestationService';
 import {SocialAttestation} from '../models/Attestation';
 import { useWalletClient } from 'wagmi';
+import { ethers } from 'ethers';
 
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import ConversationService from "../service/ConversationService"
@@ -46,7 +47,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
 
   
   const { } = props;
-  const { issuerAccountClient, signer, indivIssuerDelegation, indivAccountClient, session, indivDid, issuerDid } = useWallectConnectContext();
+  const { issuerAccountClient, indivIssuerDelegation, indivAccountClient, indivDid, issuerDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
 
@@ -87,15 +88,15 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
         console.info(res.data.picture)
 
         console.info("indivIssuerDelegation: ", indivIssuerDelegation)
-        console.info("add social: ", indivDid,issuerDid,walletClient,indivAccountClient,issuerAccountClient,indivIssuerDelegation,signer)
-        if (indivDid && issuerDid && walletClient && indivAccountClient && issuerAccountClient && indivIssuerDelegation  && signer) {
+        console.info("add social: ", indivDid,issuerDid,walletClient,indivAccountClient,issuerAccountClient,indivIssuerDelegation)
+        if (indivDid && issuerDid && walletClient && indivAccountClient && issuerAccountClient && indivIssuerDelegation) {
   
           const vc = await VerifiableCredentialsService.createSocialVC(entityId, indivDid, issuerDid, res.data.sub, "");
           const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, issuerAccountClient)
           const fullVc = result.vc
           const proofUrl = result.proofUrl
 
-          if (fullVc && signer && indivAccountClient && indivIssuerDelegation) {
+          if (fullVc && indivAccountClient && indivIssuerDelegation) {
           
             // add attestation
             const hash = keccak256(toUtf8Bytes("hash value"));
@@ -112,9 +113,13 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
               name: "",
               url: ""
             };
+
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            await window.ethereum.request({ method: "eth_requestAccounts" });
+            const walletSigner = await provider.getSigner()
   
             console.info("proof url: ", proofUrl)
-            const uid = await AttestationService.addSocialAttestation(attestation, signer, [indivIssuerDelegation], indivAccountClient, issuerAccountClient)
+            const uid = await AttestationService.addSocialAttestation(attestation, walletSigner, [indivIssuerDelegation], indivAccountClient, issuerAccountClient)
           
             console.info(">>>>>>>>>>>>>>>>>  added attestation complete: ", uid)
 

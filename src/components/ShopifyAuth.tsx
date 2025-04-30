@@ -4,7 +4,7 @@ import axios from 'axios';
 
 
 import { keccak256, toUtf8Bytes } from 'ethers';
-
+import { ethers } from 'ethers';
 
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import AttestationService from '../service/AttestationService';
@@ -32,7 +32,7 @@ const entityId = "shopify"
 const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) => {
 
   const { } = props;
-  const { issuerAccountClient, signer, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, session, orgDid, issuerDid } = useWallectConnectContext();
+  const { issuerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, issuerDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   const openShopifyPopup = () => {
@@ -68,13 +68,17 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
       var shopifyUrl = res.data.shop.domain
       var websiteType = "commerce"
 
-      if (orgDid && shopifyUrl && walletClient && orgAccountClient && issuerAccountClient && orgIssuerDelegation && orgIndivDelegation && issuerDid && signer) {
+      if (orgDid && shopifyUrl && walletClient && orgAccountClient && issuerAccountClient && orgIssuerDelegation && orgIndivDelegation && issuerDid) {
+
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        const walletSigner = await provider.getSigner()
 
         const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC(entityId, orgDid, issuerDid, websiteType, shopifyUrl);
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
         const fullVc = result.vc
         const proofUrl = result.proofUrl
-        if (fullVc && signer && orgAccountClient && walletClient) {
+        if (fullVc && walletSigner && orgAccountClient && walletClient) {
         
           // now create attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
@@ -92,7 +96,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
             proof: proofUrl
           };
 
-          const uid = await AttestationService.addWebsiteAttestation(attestation, signer, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+          const uid = await AttestationService.addWebsiteAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
           console.info("add shopify attestation complete")
 
         }
