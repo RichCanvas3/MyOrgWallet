@@ -1738,7 +1738,6 @@ class AttestationService {
               att = this.constructEmailAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "indiv-email") {
-              console.info(".................. found indiv-email")
               att = this.constructIndivEmailAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
 
@@ -1988,6 +1987,14 @@ class AttestationService {
           if (this.checkEntity(entityId, decodedData)) {
             console.info(">>>>>>>>>>>>>>> construct email attestation: ", entityId)
             rtnAttestation = this.constructEmailAttestation(item.id, item.schemaId, entityId, address, "", decodedData)
+          }
+        }
+        if (schemaId == this.IndivEmailSchemaUID) {
+          const schemaEncoder = new SchemaEncoder(this.IndivEmailSchema);
+          const decodedData = schemaEncoder.decodeData(item.data);
+          if (this.checkEntity(entityId, decodedData)) {
+            console.info(">>>>>>>>>>>>>>> construct indiv email attestation: ", entityId)
+            rtnAttestation = this.constructIndivEmailAttestation(item.id, item.schemaId, entityId, address, "", decodedData)
           }
         }
       }

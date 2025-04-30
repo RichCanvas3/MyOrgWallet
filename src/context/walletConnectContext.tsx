@@ -90,7 +90,6 @@ export type WalletConnectContextState = {
     orgAccountSessionKeyAddress?: any,
     orgAccountSessionStorageClient?: any,
     session?: DIDSession;
-    signer?: ethers.JsonRpcSigner,
     selectedSignatory?: SignatoryFactory,
     signatory?: any,
     
@@ -119,7 +118,6 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
   orgAccountSessionKeyAddress: undefined,
   orgAccountSessionStorageClient: undefined,
   session: undefined,
-  signer: undefined,
   signatory: undefined,
 
   isIndividualConnected: false,
@@ -161,7 +159,6 @@ export const useWalletConnect = () => {
     const [orgAccountSessionKeyAddress, setOrgAccountSessionKeyAddress] = useState<any>();
     const [orgAccountSessionStorageClient, setOrgAccountSessionStorageClient] = useState<any>();
     const [session, setSession] = useState<DIDSession | undefined>();
-    const [signer, setSigner] = useState<ethers.JsonRpcSigner>();
     const [signatory, setSignatory] = useState<any | undefined>();
     const [owner, setOwner] = useState<any | undefined>();
 
@@ -200,7 +197,7 @@ export const useWalletConnect = () => {
 
         const publicClient = createPublicClient({
           chain: optimism,
-          transport: http('https://mainnet.optimism.io/'),
+          transport: http(),
         });
       
 
@@ -228,60 +225,31 @@ export const useWalletConnect = () => {
         console.info("............. publicClient = createPublicClient 1 ............... ")
         const publicClient = createPublicClient({
           chain: optimism,
-          transport: http('https://mainnet.optimism.io/'),
+          transport: http(),
         });
 
 
         const getConnected = async () => {
 
-          // need to refactor the walletSigner stuff
-          console.info("............. new ethers.BrowserProvider(window.ethereum) ............... ")
           const provider = new ethers.BrowserProvider(window.ethereum);
           await window.ethereum.request({ method: "eth_requestAccounts" });
           const walletSigner = await provider.getSigner();
-          setSigner(walletSigner)
 
-
-          // not using session for ceramic storage so need to refactor
 
           // Initialize metamask wallet session and give access to ceramic datastore
           let ownerEOAAddress = owner
           console.info("ownerEOAAddress: ", ownerEOAAddress)
+          
+
 
           /*
-          console.info("............. new AccountId ............... ")
-          const accountId  = new AccountId({chainId: "eip155:10", address: owner})
-          const authMethod = await EthereumWebAuth.getAuthMethod(publicClient, accountId);
-        
-          // Authorize DID session
-          
-          let thisSession = session
-          if (session === undefined) {
-            const sessionStr = localStorage.getItem(SESSION_KEY);
-            if (sessionStr) {
-              thisSession = await DIDSession.fromSession(sessionStr);
-              setSession(thisSession);
-              //console.log('Authorized DID 2:', JSON.stringify(ss.did));
-            }
-            else {
-              thisSession = await DIDSession.authorize(authMethod, {
-                resources: [`ceramic://*`],
-                expiresInSecs: 60 * 60 * 24 * 7
-              });
-
-              localStorage.setItem(SESSION_KEY, thisSession.serialize());
-              setSession(thisSession);
-              //console.log('Authorized DID 1:', JSON.stringify(ss.did));
-            }
-          }
-          */
-          
           // configure snaps if not already configured
           const snapResponse = await walletClient.request({
             method: 'wallet_getSnaps',
           })
 
           console.info("............. const snapId = ............... ")
+          
           const snps = snapResponse as GetSnapsResponse
         
           const snapId = "local:http://localhost:8080"
@@ -296,13 +264,11 @@ export const useWalletConnect = () => {
               },
             })
           }
-            
+          */
 
 
 
           if (publicClient && selectedSignatory) {
-
-            console.info("............. privateKeyToAccount(ISSUER_PRIVATE_KEY) ............... ")
 
             // connect to issuer account abstraction
             const issuerOwner = privateKeyToAccount(ISSUER_PRIVATE_KEY);
@@ -314,12 +280,6 @@ export const useWalletConnect = () => {
               deploySalt: toHex(0),
             })
 
-            console.info("issuerAccountClient: ", issuerAccountClient)
-
-            //const message = "hello world"
-            //const signed = await issuerAccountClient.signMessage({message})
-            //console.info(">>>>>>>>>>>>>>>>>> signed message: ", signed)
-    
             let issuerDid = 'did:pkh:eip155:10:' + issuerAccountClient.address
             setIssuerDid(issuerDid)
             setIssuerAccountClient(issuerAccountClient)
@@ -466,21 +426,6 @@ export const useWalletConnect = () => {
             });
 
 
-
-
-            
-            
-
-            /*
-            walletSigner.provider.getBalance(swa).then((balance) => {
-              console.info("balance: ", balance)
-            })
-            walletSigner.provider.getBalance("0x9Be0417505e235FfFbd995C250e40561847777f3").then((balance) => {
-              console.info("balance: ", balance)
-            })
-            */
-
-
             const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
             
             /*
@@ -611,6 +556,7 @@ export const useWalletConnect = () => {
 
     }, [signatory, owner]);
 
+    /*
     useEffect(() => {
   
       console.info("===========> check to see if we need to add individual attestation")
@@ -618,11 +564,16 @@ export const useWalletConnect = () => {
         const addIndivAttestation = async () => {
 
           console.info("*********** ADD INDIV ATTESTATION ****************")
+
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          await window.ethereum.request({ method: "eth_requestAccounts" });
+          const walletSigner = await provider.getSigner()
+
       
           const walletClient = signatory.walletClient
           const entityId = "indiv"
       
-          if (signer && walletClient) {
+          if (walletSigner && walletClient) {
       
             const indivName = ""
       
@@ -653,7 +604,7 @@ export const useWalletConnect = () => {
               };
       
               console.info("AttestationService add indiv attestation")
-              const uid = await AttestationService.addIndivAttestation(attestation, signer, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+              const uid = await AttestationService.addIndivAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
             }
           }
         }
@@ -669,7 +620,7 @@ export const useWalletConnect = () => {
       
       
     }, [signatory, orgDid, indivDid, issuerDid, orgAccountClient, orgIndivDelegation, orgIssuerDelegation]);
-
+    */
     const pimlicoClient = createPimlicoClient({
       transport: http(BUNDLER_URL),
       //entryPoint: { address: ENTRY_POINT_ADDRESS, version: '0.7' },
@@ -677,8 +628,8 @@ export const useWalletConnect = () => {
 
     const setIndivAndOrgInfo = async (indivName: string, orgName: string, indivEmail: string ) => {
       setOrgName(orgName)
-      setIndivName(orgName)
-      setIndivEmail(orgName)
+      setIndivName(indivName)
+      setIndivEmail(indivEmail)
     }
     const buildSmartWallet = async (owner: any, signatory: any, ) => {
       console.info(".......... build smart wallet ...............")
@@ -694,16 +645,9 @@ export const useWalletConnect = () => {
         console.info(" ............. create public client ............")
         const publicClient = createPublicClient({
           chain: optimism,
-          transport: http('https://mainnet.optimism.io/'),
+          transport: http(),
         });
 
-
-        console.info(" ............. ethers.BrowserProvider ............")
-        // need to refactor the walletSigner stuff
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        const walletSigner = await provider.getSigner();
-        setSigner(walletSigner)
 
         // Initialize metamask wallet session and give access to ceramic datastore
         let ownerEOAAddress = owner
@@ -868,28 +812,17 @@ export const useWalletConnect = () => {
 
     const setupSmartWallet = async (owner: any, signatory: any, ) => {
 
+      console.info("&&&&&&&&&&: ", owner, signatory, orgIndivDelegation)
       if (owner && signatory && orgIndivDelegation) {
 
         const publicClient = createPublicClient({
           chain: optimism,
-          transport: http('https://mainnet.optimism.io/'),
+          transport: http(),
         });
 
-        const bundlerClient = createBundlerClient({
-          transport: http(BUNDLER_URL),
-          paymaster: createPaymasterClient({
-            transport: http(PAYMASTER_URL),
-          }),
-          chain: optimism,
-          paymasterContext: {
-            // at minimum this must be an object; for Biconomy you can use:
-            mode:             'SPONSORED',
-            calculateGasLimits: true,
-            expiryDuration:  300,
-          },
-        });
+        const walletClient = signatory.walletClient
 
-
+        /*
         // configure snaps if not already configured
         const walletClient = signatory.walletClient
         const snapResponse = await walletClient.request({
@@ -910,7 +843,7 @@ export const useWalletConnect = () => {
             },
           })
         }
-
+        */
 
         // connect to issuer account abstraction
         const issuerOwner = privateKeyToAccount(ISSUER_PRIVATE_KEY);
@@ -932,12 +865,7 @@ export const useWalletConnect = () => {
 
         // setup delegation for org to issuer -> redelegation of orgIndivDel
         let orgIssuerDel  = null
-        try {
-          orgIssuerDel = await DelegationService.getDelegationFromSnap(walletClient, owner, orgAccountClient.address, issuerAccountClient.address)
-        }
-        catch (error) {
-        }
-
+        orgIssuerDel = await DelegationService.getDelegationFromSnap(walletClient, owner, orgAccountClient.address, issuerAccountClient.address)
         if (orgIssuerDel == null && orgIndivDelegation && indivDid) {
 
           const parentDelegationHash = getDelegationHashOffchain(orgIndivDelegation);
@@ -970,13 +898,7 @@ export const useWalletConnect = () => {
 
         // setup delegation for individual to issuer delegation
         let indivIssuerDel = null
-
-        try {
-          indivIssuerDel = await DelegationService.getDelegationFromSnap(walletClient, owner, indivAccountClient.address, issuerAccountClient.address)
-        }
-        catch (error) {
-        }
-
+        indivIssuerDel = await DelegationService.getDelegationFromSnap(walletClient, owner, indivAccountClient.address, issuerAccountClient.address)
         if (indivIssuerDel == null && indivDid) {
           indivIssuerDel = createDelegation({
             from: indivAccountClient.address,
@@ -1005,17 +927,21 @@ export const useWalletConnect = () => {
         const addOrgAttestation = async () => {
 
           console.info("*********** ADD ORG ATTESTATION ****************")
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          await window.ethereum.request({ method: "eth_requestAccounts" });
+          const walletSigner = await provider.getSigner()
       
           const walletClient = signatory.walletClient
           const entityId = "org"
       
-          if (signer && walletClient && session && orgName && orgDid && orgIssuerDel) {
+          console.info(".........1 ", walletSigner, walletClient, orgName, orgDid, orgIssuerDel)
+          if (walletSigner && walletClient && orgName && orgDid && orgIssuerDel) {
       
             const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, issuerDid, orgName);
             const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
             const fullVc = result.vc
             const proofUrl = result.proofUrl
-
+            console.info(".........2 ")
             if (fullVc) {
             
               // now create attestation
@@ -1034,18 +960,19 @@ export const useWalletConnect = () => {
               };
       
               console.info("AttestationService add indiv attestation")
-              const uid = await AttestationService.addOrgAttestation(attestation, signer, [orgIssuerDel, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+              const uid = await AttestationService.addOrgAttestation(attestation, walletSigner, [orgIssuerDel, orgIndivDelegation], orgAccountClient, issuerAccountClient)
             }
           }
         }
 
+        console.info("===========> : ", indivDid, orgDid)
         if (indivDid && orgDid) {
-          AttestationService.getAttestationByAddressAndSchemaId(orgDid, AttestationService.OrgSchemaUID, "org").then((orgAttestation) => {
-            if (!orgAttestation) {
-              console.info("=============> no org attestation so add one")
-              addOrgAttestation()
-            }
-          })
+          console.info(" get att")
+          const orgAttestation = await AttestationService.getAttestationByAddressAndSchemaId(orgDid, AttestationService.OrgSchemaUID, "org")
+          if (!orgAttestation) {
+            console.info("=============> no org attestation so add one")
+            addOrgAttestation()
+          }
         }
         
 
@@ -1053,16 +980,20 @@ export const useWalletConnect = () => {
         const addIndivAttestation = async () => {
 
           console.info("*********** ADD INDIV ATTESTATION ****************")
+
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          await window.ethereum.request({ method: "eth_requestAccounts" });
+          const walletSigner = await provider.getSigner()
       
           const walletClient = signatory.walletClient
           const entityId = "indiv"
       
-          if (signer && walletClient && session && indivDid && orgDid && orgIssuerDel) {
+          if (walletSigner && walletClient && indivDid && orgDid && orgIssuerDel) {
 
             let indName = "indiv name"
-              if (indivName) {
-                indName = indivName
-              }
+            if (indivName) {
+              indName = indivName
+            }
             
       
             const vc = await VerifiableCredentialsService.createIndivVC(entityId, orgDid, issuerDid, indivDid, indName);
@@ -1091,18 +1022,17 @@ export const useWalletConnect = () => {
               };
       
               console.info("AttestationService add indiv attestation")
-              const uid = await AttestationService.addIndivAttestation(attestation, signer, [orgIssuerDel, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+              const uid = await AttestationService.addIndivAttestation(attestation, walletSigner, [orgIssuerDel, orgIndivDelegation], orgAccountClient, issuerAccountClient)
             }
           }
         }
 
         if (indivDid && orgDid) {
-          AttestationService.getIndivAttestation(indivDid, AttestationService.IndivSchemaUID, "indiv").then((indivAttestation) => {
-            if (!indivAttestation) {
-              console.info("=============> no indiv attestation so add one")
-              addIndivAttestation()
-            }
-          })
+          const indivAttestation = await AttestationService.getIndivAttestation(indivDid, AttestationService.IndivSchemaUID, "indiv")
+          if (!indivAttestation) {
+            console.info("=============> no indiv attestation so add one")
+            addIndivAttestation()
+          }
         }
 
 
@@ -1111,11 +1041,14 @@ export const useWalletConnect = () => {
         const addIndivEmailAttestation = async () => {
 
           console.info("*********** ADD INDIV EMAIL ATTESTATION ****************")
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          await window.ethereum.request({ method: "eth_requestAccounts" });
+          const walletSigner = await provider.getSigner()
       
           const walletClient = signatory.walletClient
           const entityId = "indiv-email"
       
-          if (signer && walletClient && session && indivDid && orgDid && orgIssuerDel) {
+          if (walletSigner && walletClient && indivDid && orgDid && orgIssuerDel) {
 
             let indEmail = "email";
             if (indivEmail) {
@@ -1146,22 +1079,22 @@ export const useWalletConnect = () => {
               };
       
               console.info("AttestationService add indiv attestation")
-              const uid = await AttestationService.addIndivEmailAttestation(attestation, signer, [indivIssuerDel], orgAccountClient, issuerAccountClient)
+              const uid = await AttestationService.addIndivEmailAttestation(attestation, walletSigner, [indivIssuerDel], orgAccountClient, issuerAccountClient)
             }
           }
         }
 
         if (indivDid && orgDid) {
-          AttestationService.getAttestationByAddressAndSchemaId(indivDid, AttestationService.IndivEmailSchemaUID, "indiv-email").then((indivEmailAttestation) => {
-            if (!indivEmailAttestation) {
-              console.info("=============> no indiv email attestation so add one")
-              addIndivEmailAttestation()
-            }
-          })
+          const indivEmailAttestation = await AttestationService.getAttestationByAddressAndSchemaId(indivDid, AttestationService.IndivEmailSchemaUID, "indiv-email")
+          console.info(".................. indiv email attestation: ", indivEmailAttestation)
+          if (!indivEmailAttestation) {
+            console.info("=============> no indiv email attestation so add one")
+            addIndivEmailAttestation()
+          }
         }
         
-      }
 
+      }
     }
 
     const connect = async (owner: any, signatory: any, organizationName: string, fullName: string, email: string) => {
@@ -1186,8 +1119,6 @@ export const useWalletConnect = () => {
 
             orgAccountSessionKeyAddress,
             orgAccountSessionStorageClient,
-            session,
-            signer,
             signatory,
             
             orgIndivDelegation,
@@ -1232,7 +1163,6 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
       setupSmartWallet,
 
       session, 
-      signer,
       selectedSignatory,
       signatory,
       
@@ -1264,7 +1194,6 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
 
         session,
-        signer,
         selectedSignatory,
         signatory,
         connect,
@@ -1292,8 +1221,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         orgIssuerDelegation,
         indivIssuerDelegation,
 
-        session, 
-        signer, 
+        session,  
         selectedSignatory,
         signatory,
         connect,

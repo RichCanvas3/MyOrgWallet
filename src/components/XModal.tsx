@@ -26,7 +26,7 @@ const XModal: React.FC<XModalProps> = ({isVisible, onClose}) => {
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { signer, indivDid, indivAccountClient } = useWallectConnectContext();
+  const { indivDid, indivAccountClient } = useWallectConnectContext();
 
   const [attestation, setAttestation] = useState<Attestation | null>(null);
   const [name, setName] = useState("");
@@ -40,7 +40,7 @@ const XModal: React.FC<XModalProps> = ({isVisible, onClose}) => {
 
 
   const handleSave = () => {
-    if (signer && indivAccountClient) {
+    if (indivAccountClient) {
 
       let att = attestation as SocialAttestation
       att.name = name

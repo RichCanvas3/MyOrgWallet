@@ -4,7 +4,6 @@ import { ethers, hashMessage } from 'ethers'
 import { recoverPublicKey } from "@ethersproject/signing-key";
 
 
-//import { DIDSession } from 'did-session';
 import { vs } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { Buffer } from 'buffer';
 
@@ -18,7 +17,7 @@ window.Buffer = Buffer;
 class VerifiableCredentialsService {
 
     static credentials : VerifiableCredential[] | undefined
-    static snapId : string = "local:http://localhost:8080"
+    //static snapId : string = "local:http://localhost:8080"
 
     static async createWebsiteOwnershipVC(
       entityId: string,
@@ -242,6 +241,10 @@ class VerifiableCredentialsService {
     static async saveCredential(walletClient: WalletClient, credential: VerifiableCredential, entityId: string) {
         
         const credentialJSON = JSON.stringify(credential);
+
+        localStorage.setItem(entityId, credentialJSON)
+
+        /*
         const snapVC = { id: entityId, credential: credentialJSON}
 
         walletClient.request({
@@ -253,34 +256,31 @@ class VerifiableCredentialsService {
         }).then((resp) => {
           //console.info("save call successful, ", resp)
         })
+          */
 
-    }
-
-    static async getCredentials(walletClient: WalletClient): Promise<VerifiableCredential[]> {
-
-        if (VerifiableCredentialsService.credentials == undefined) {
-            VerifiableCredentialsService.credentials = []
-
-            let credentials : VerifiableCredential[] = []
-            walletClient.request({
-            method: 'wallet_invokeSnap',
-            params: {
-                snapId: VerifiableCredentialsService.snapId,
-                request: { method: "getVCs", params: {}},
-            },
-            }).then((response) => {
-                console.info("got all credentials response: ", JSON.stringify(response))
-            });
-        }
-        
-
-        return VerifiableCredentialsService.credentials
     }
 
     static async getCredential(walletClient: WalletClient, entityId: string): Promise<VerifiableCredential | undefined> {
 
         let credential : VerifiableCredential | undefined
 
+        const credStr = localStorage.getItem(entityId)
+
+        if (credStr) {
+          const credJson = JSON.parse(credStr)
+          credential = {
+              '@context': credJson['@context'],
+              id: credJson['id'],
+              type: credJson['type'],
+              issuer: credJson['issuer'],
+              issuanceDate: credJson['issuanceDate'],
+              expirationDate: credJson['expirationDate'],
+              credentialSubject: credJson['credentialSubject'],
+              proof: credJson['proof']
+          }
+        }
+
+        /*
         const response : any = await walletClient.request({
             method: 'wallet_invokeSnap',
             params: {
@@ -288,8 +288,7 @@ class VerifiableCredentialsService {
                 request: { method: "getVC", params: {id: entityId}},
             },
         })
-        //console.info(" id: ", response?.id)
-        //console.info(" credential: ", response?.credential)
+
         if (response?.id && response?.id == entityId) {
             if (response?.credential) {
 
@@ -309,10 +308,7 @@ class VerifiableCredentialsService {
 
             }
         }
-        //console.info("got  credential response: ", JSON.stringify(response))
-
-        
-        
+        */
 
         return credential
 
@@ -339,25 +335,6 @@ class VerifiableCredentialsService {
       }
 
 
-      // Finally, create the credential commitment: Poseidon(issuer_DID, leafHash)
-      /*
-      function createCredentialCommitment(poseidon: any, did: string, issuerDID: string, credentialHash: string) {
-
-        const issuerDIDHash = hashDID(issuerDID)
-        const orgDIDHash = hashDID(did)
-
-
-        console.info("issuerDIDHash: ", issuerDIDHash)
-        console.info("orgDIDHash: ", orgDIDHash)
-        console.info("credentialHash: ", credentialHash)
-
-        const leafHash = poseidon.F.toObject(poseidon([orgDIDHash, credentialHash]));
-        const commitmentHash = poseidon.F.toObject(poseidon([issuerDIDHash, leafHash]));
-
-        return commitmentHash
-      }
-        */
-
       async function verifyMessageDirect(smartAccountAddress: string, messageHash: string, signature: string) {
 
         const rpcUrl = "https://opt-mainnet.g.alchemy.com/v2/UXKG7nGL5a0mdDhvP-2ScOaLiRIM0rsW"
@@ -371,35 +348,13 @@ class VerifiableCredentialsService {
         return result.startsWith("0x1626ba7e");
       }
 
-      // Normalize signature to ensure compatibility with Viem
-      function normalizeSignature(signature: string): string {
-        try {
-          // Convert signature to bytes
-          const sigBytes = hexToBytes(signature as `0x${string}`);
-          if (sigBytes.length !== 65) {
-            throw new Error('Invalid signature length');
-          }
-
-          // Extract r, s, v
-          const v = sigBytes[64];
-          // Normalize v to 27 or 28 (some wallets return 0 or 1)
-          const normalizedV = v < 27 ? v + 27 : v;
-          sigBytes[64] = normalizedV;
-
-          // Convert back to hex
-          return bytesToHex(sigBytes) as `0x${string}`;
-        } catch (error) {
-          console.error('Error normalizing signature:', error);
-          throw error;
-        }
-      }
 
 
-    // create verifiable credential to represent
-    //   - organization DID
-    //   - organization domain
-    //   - commitment
-    //   - verifier DID (richcanvas)
+      // create verifiable credential to represent
+      //   - organization DID
+      //   - organization domain
+      //   - commitment
+      //   - verifier DID (richcanvas)
 
 
       const issuerDid = vc.issuer
@@ -470,7 +425,7 @@ class VerifiableCredentialsService {
 
             // console.info("is valid signature for commitment: ", valid)
             // generate Proof
-            const serializedSession = session?.serialize()
+  
 
             //console.info("issuerDid: ", issuerDid)
             //console.info("issuerDidHash: ", issuerDidHash) 
@@ -497,7 +452,6 @@ class VerifiableCredentialsService {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 inputs: { issuerDidHash: issuerDidHash.toString(), didHash: didHash.toString(), vcHash: credentialHash.toString(), commitment: commitment.toString(), commitmentSignature: commitmentSignature.toString() }, // Example inputs
-                session: "",
                 commitment: commitment.toString(),
                 did: did
               }),

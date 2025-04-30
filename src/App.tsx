@@ -231,6 +231,7 @@ const App = () => {
       setAttestationViewModalVisible(true)
     }
     if (cmd.action == "edit" && cmd.entityId == "indiv-email" && cmd.did) {
+      console.info("************************** edit indiv email")
       setSelectedEntityId("indiv-email")
       setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)

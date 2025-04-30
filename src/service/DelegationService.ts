@@ -18,14 +18,18 @@ import {
 class DelegationService {
 
     static delegations : DelegationStruct[] | undefined
-    static snapId : string = "local:http://localhost:8080"
+    //static snapId : string = "local:http://localhost:8080"
 
 
     static async saveDelegationToSnap(walletClient: WalletClient, owner: string, delegator: string, delegate: string, delegation: DelegationStruct) {
         
+        const id = owner + "-" + delegator + "-" + delegate
         const delegationJSON = JSON.stringify(delegation);
-        const snapDel = { id: owner + "-" + delegator + "-" + delegate, delegation: delegationJSON}
 
+        localStorage.setItem(id, delegationJSON)
+
+        /*
+        const snapDel = { id: id, delegation: delegationJSON}
         walletClient.request({
             method: 'wallet_invokeSnap',
             params: {
@@ -35,28 +39,10 @@ class DelegationService {
         }).then((resp) => {
             //console.info("save call successful, ", resp)
         })
+        */
 
     }
 
-    static async getDelegations(walletClient: WalletClient): Promise<DelegationStruct[]> {
-
-        console.info("......... get delegations ......")
-        if (DelegationService.delegations == undefined) {
-            DelegationService.delegations = []
-
-            let delegations : DelegationStruct[] = []
-            const resp = await walletClient.request({
-                method: 'wallet_invokeSnap',
-                params: {
-                    snapId: DelegationService.snapId,
-                    request: { method: "getDels", params: {}},
-                }
-            })
-        }
-        
-
-        return DelegationService.delegations
-    }
 
     static async getDelegationFromSnap(walletClient: WalletClient, owner: string, delegator: string, delegate: string): Promise<DelegationStruct | undefined> {
     
@@ -65,6 +51,12 @@ class DelegationService {
         const id = owner + "-" + delegator + "-" + delegate
         console.info("get del: ", id)
 
+        const store = localStorage.getItem(id)
+        if (store) {
+            del = JSON.parse(store)
+        }
+
+        /*
         const response : any = await walletClient.request({
             method: 'wallet_invokeSnap',
             params: {
@@ -72,19 +64,14 @@ class DelegationService {
                 request: { method: "getDel", params: {id: id}},
             },
         })
-        console.info(">>>>>>>>>>>> response for get delegation: ", response)
-        //console.info(" id: ", response?.id)
-        //console.info(" credential: ", response?.credential)
+
         if (response?.id && response?.id == id) {
             if (response?.delegation) {
-
                 const delStr = response?.delegation
                 del = JSON.parse(delStr)
-
-
-
             }
         }
+        */
 
         return del
 
