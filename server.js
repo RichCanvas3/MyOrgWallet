@@ -14,47 +14,22 @@ import { keccak256, toUtf8Bytes } from 'ethers';
 import { createHash, publicDecrypt } from "crypto";
 import * as base64 from "@ethersproject/base64";
 import { publicKeyToAddress } from 'viem/accounts';
-import path from 'path'; // Add path for static file serving
 
 const app = express();
-//const port = 4000;
+const port = 4000;
+
 
 
 
 dotenv.config();
-
-// Configure CORS for production
-app.use(cors({
-  origin: [
-    'http://localhost:5173', // Local Vite dev server
-    process.env.FRONTEND_URL || 'https://wallet.myorgwallet.io/' // Azure frontend URL
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  credentials: true // If needed for auth
-}));
-
+app.use(cors());
 app.use(express.json());
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const verificationCodes = new Map();
 
-// Serve Vite frontend static files (production only)
-app.use(express.static(path.join(__dirname, 'dist')));
 
-// API routes (your existing routes: /linkedin-callback, /x-callback, /shopify-callback, etc.)
-// ... (keep your existing routes unchanged)
-
-// Handle SPA routing: Serve index.html for all non-API routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
-});
-
-// Use Azure's dynamic PORT or fallback to 4000 for local dev
-const port = process.env.PORT || 4000;
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
 
 const generateCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -99,7 +74,9 @@ export const objToSortedArray = (obj) => {
 // Serve the Vite development build
 app.use(express.static('dist'));
 
-
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
 
 
 app.get('/linkedin-callback', async (req, res) => {
