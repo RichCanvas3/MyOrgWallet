@@ -86,3 +86,4 @@ Minimum version required to store current data is: `+E+`.
         color="inherit"
         name="farcaster"
       ></wui-icon>`:j`<wui-icon size="inherit" color="inherit" name="walletConnect"></wui-icon>`}};v.styles=[ge,He];U([z()],v.prototype,"uri",void 0);U([z({type:Number})],v.prototype,"size",void 0);U([z()],v.prototype,"theme",void 0);U([z()],v.prototype,"imageSrc",void 0);U([z()],v.prototype,"alt",void 0);U([z()],v.prototype,"color",void 0);U([z({type:Boolean})],v.prototype,"arenaClear",void 0);U([z({type:Boolean})],v.prototype,"farcaster",void 0);v=U([we("wui-qr-code")],v);
+//# sourceMappingURL=index-DuQu-nCm.js.map

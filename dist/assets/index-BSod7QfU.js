@@ -19,3 +19,4 @@ import{U as re,c as de}from"./if-defined-BqkV9v01.js";import{A as ee,a as le,r a
         <wui-shimmer width="24px" height="12px" borderRadius="5xs"></wui-shimmer>
       </wui-flex>
     `}};te.styles=[he,Ye];te=Ue([de("wui-transaction-list-item-loader")],te);export{ae as D,ce as T};
+//# sourceMappingURL=index-BSod7QfU.js.map

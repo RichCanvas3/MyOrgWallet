@@ -15,3 +15,4 @@ import{b as l}from"./index-CiJGokSj.js";const i=l`<svg fill="none" viewBox="0 0 
     <clipPath id="b"><path fill="#fff" d="M0 0h40v40H0z" /></clipPath>
   </defs>
 </svg>`;export{i as discordSvg};
+//# sourceMappingURL=discord-Cthsc4j0.js.map

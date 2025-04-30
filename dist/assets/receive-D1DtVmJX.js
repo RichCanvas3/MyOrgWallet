@@ -81,3 +81,4 @@ import{a as x,r as $,e as A,d as k,x as l,D as w,F as u,G as h,I as g,T as v,W a
       text="Only receive assets on these networks"
       .networkImages=${t}
     ></wui-compatible-network>`}onReceiveClick(){T.push("WalletCompatibleNetworks")}onCopyClick(){try{this.address&&(I.copyToClopboard(this.address),h.showSuccess("Address copied"))}catch{h.showError("Failed to copy")}}};c.styles=E;p([m()],c.prototype,"address",void 0);p([m()],c.prototype,"profileName",void 0);p([m()],c.prototype,"network",void 0);p([m()],c.prototype,"preferredAccountTypes",void 0);c=p([N("w3m-wallet-receive-view")],c);export{c as W3mWalletReceiveView};
+//# sourceMappingURL=receive-D1DtVmJX.js.map

@@ -14,3 +14,4 @@ import{b as t}from"./index-CiJGokSj.js";const l=t`<svg width="32" height="32" fi
     </clipPath>
   </defs>
 </svg>`;export{l as telegramSvg};
+//# sourceMappingURL=telegram-A8Rm4car.js.map

@@ -23,3 +23,4 @@ import{a as u,r as b,e as p,d as f,x as v}from"./index-CiJGokSj.js";import{n as 
         <slot name="iconRight"></slot>
       </button>
     `}};e.styles=[b,p,g];l([d()],e.prototype,"tabIdx",void 0);l([d({type:Boolean})],e.prototype,"disabled",void 0);l([d()],e.prototype,"color",void 0);e=l([m("wui-link")],e);
+//# sourceMappingURL=index-CwDekEsE.js.map

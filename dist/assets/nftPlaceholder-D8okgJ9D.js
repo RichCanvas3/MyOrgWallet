@@ -6,3 +6,4 @@ import{b as c}from"./index-CiJGokSj.js";const a=c`<svg fill="none" viewBox="0 0 
     clip-rule="evenodd"
   />
 </svg>`;export{a as nftPlaceholderSvg};
+//# sourceMappingURL=nftPlaceholder-D8okgJ9D.js.map

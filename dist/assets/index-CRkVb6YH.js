@@ -43,3 +43,4 @@ import{a as d,d as g,x as h}from"./index-CiJGokSj.js";import{n,c as b}from"./if-
       height: ${this.height};
       border-radius: ${`clamp(0px,var(--wui-border-radius-${this.borderRadius}), 40px)`};
     `,h`<slot></slot>`}};o.styles=[p];t([n()],o.prototype,"width",void 0);t([n()],o.prototype,"height",void 0);t([n()],o.prototype,"borderRadius",void 0);t([n()],o.prototype,"variant",void 0);o=t([b("wui-shimmer")],o);
+//# sourceMappingURL=index-CRkVb6YH.js.map

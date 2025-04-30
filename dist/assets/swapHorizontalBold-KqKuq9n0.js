@@ -6,3 +6,4 @@ import{b as C}from"./index-CiJGokSj.js";const e=C`<svg width="10" height="10" vi
     clip-rule="evenodd"
   />
 </svg>`;export{e as swapHorizontalBoldSvg};
+//# sourceMappingURL=swapHorizontalBold-KqKuq9n0.js.map

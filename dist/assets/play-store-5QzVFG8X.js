@@ -30,3 +30,4 @@ import{b as a}from"./index-CiJGokSj.js";const t=a` <svg
     stroke-opacity=".05"
   />
 </svg>`;export{t as playStoreSvg};
+//# sourceMappingURL=play-store-5QzVFG8X.js.map

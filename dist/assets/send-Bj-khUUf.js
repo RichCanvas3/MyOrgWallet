@@ -536,3 +536,4 @@ ${this.value??""}</textarea
     >`}sendValueTemplate(){if(this.token&&this.sendTokenAmount){const i=this.token.price*this.sendTokenAmount;return u`<wui-text variant="paragraph-400" color="fg-100"
         >$${i.toFixed(2)}</wui-text
       >`}return null}onSendClick(){a.sendToken()}onCancelClick(){b.goBack()}};h.styles=ne;x([c()],h.prototype,"token",void 0);x([c()],h.prototype,"sendTokenAmount",void 0);x([c()],h.prototype,"receiverAddress",void 0);x([c()],h.prototype,"receiverProfileName",void 0);x([c()],h.prototype,"receiverProfileImageUrl",void 0);x([c()],h.prototype,"gasPriceInUSD",void 0);x([c()],h.prototype,"caipNetwork",void 0);h=x([m("w3m-wallet-send-preview-view")],h);export{y as W3mSendSelectTokenView,h as W3mWalletSendPreviewView,p as W3mWalletSendView};
+//# sourceMappingURL=send-Bj-khUUf.js.map

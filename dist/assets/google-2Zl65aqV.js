@@ -16,3 +16,4 @@ import{b as l}from"./index-CiJGokSj.js";const o=l`<svg fill="none" viewBox="0 0 
     d="M20.26 12.18a7.1 7.1 0 0 1 4.98 1.93l3.72-3.72A12.47 12.47 0 0 0 20.26 7c-5.08 0-9.47 2.92-11.6 7.17l4.32 3.36a7.76 7.76 0 0 1 7.28-5.35Z"
   />
 </svg>`;export{o as googleSvg};
+//# sourceMappingURL=google-2Zl65aqV.js.map

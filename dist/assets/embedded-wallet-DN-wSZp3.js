@@ -192,3 +192,4 @@ import{a as x,d as f,M as R,R as I,x as l,Y as W,T as E,a1 as D,X as A,r as M,P 
         >Let's Go!
       </wui-button>
     </wui-flex>`}redirectToAccount(){I.replace("Account")}};C.styles=K;C=X([g("w3m-register-account-name-success-view")],C);export{v as W3mApproveTransactionView,C as W3mRegisterAccountNameSuccess,u as W3mRegisterAccountNameView,_ as W3mUpgradeWalletView};
+//# sourceMappingURL=embedded-wallet-DN-wSZp3.js.map

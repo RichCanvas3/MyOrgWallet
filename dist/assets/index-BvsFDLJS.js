@@ -17,3 +17,4 @@ import{a as d,r as u,h as p,d as m,x as f}from"./index-CiJGokSj.js";import{n as 
       --local-width: ${this.size?`var(--wui-icon-size-${this.size});`:"100%"};
       --local-height: ${this.size?`var(--wui-icon-size-${this.size});`:"100%"};
       `,f`<img src=${this.src} alt=${this.alt} @error=${this.handleImageError} />`}handleImageError(){this.dispatchEvent(new CustomEvent("onLoadError",{bubbles:!0,composed:!0}))}};i.styles=[u,p,v];c([h()],i.prototype,"src",void 0);c([h()],i.prototype,"alt",void 0);c([h()],i.prototype,"size",void 0);i=c([g("wui-image")],i);
+//# sourceMappingURL=index-BvsFDLJS.js.map

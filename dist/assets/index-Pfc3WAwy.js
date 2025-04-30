@@ -128,3 +128,4 @@ import{a as v,r as b,e as g,d as h,x as l}from"./index-CiJGokSj.js";import{n as 
         <wui-icon name=${this.icon} color="inherit" size="inherit"></wui-icon>
       </button>
     `}};a.styles=[b,g,p];i([r()],a.prototype,"variant",void 0);i([r()],a.prototype,"imageSrc",void 0);i([r({type:Boolean})],a.prototype,"disabled",void 0);i([r()],a.prototype,"icon",void 0);i([r()],a.prototype,"size",void 0);i([r()],a.prototype,"text",void 0);a=i([w("wui-chip-button")],a);
+//# sourceMappingURL=index-Pfc3WAwy.js.map

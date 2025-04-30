@@ -13,3 +13,4 @@ import{b as C}from"./index-CiJGokSj.js";const o=C`<svg
     fill="#788181"
   /></svg
 >`;export{o as copySvg};
+//# sourceMappingURL=copy-BRAPnloG.js.map

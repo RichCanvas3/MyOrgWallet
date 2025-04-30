@@ -12,3 +12,4 @@ import{b as l}from"./index-CiJGokSj.js";const a=l`<svg fill="none" viewBox="0 0 
     clip-rule="evenodd"
   />
 </svg>`;export{a as browserSvg};
+//# sourceMappingURL=browser-D-Zds_tj.js.map

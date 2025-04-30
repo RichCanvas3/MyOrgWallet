@@ -14,3 +14,4 @@ import{a as f,d as a,x as m}from"./index-CiJGokSj.js";import{c as p}from"./if-de
         <w3m-activity-list page="activity"></w3m-activity-list>
       </wui-flex>
     `}};c.styles=d;c=u([p("w3m-transactions-view")],c);export{c as W3mTransactionsView};
+//# sourceMappingURL=transactions-BkGyiNNj.js.map

@@ -6,3 +6,4 @@ import{b as c}from"./index-CiJGokSj.js";const v=c`<svg fill="none" viewBox="0 0 
     clip-rule="evenodd"
   />
 </svg>`;export{v as walletSvg};
+//# sourceMappingURL=wallet-BghMs5M-.js.map

@@ -10,3 +10,4 @@ import{b as l}from"./index-CiJGokSj.js";const h=l`<svg fill="none" viewBox="0 0 
     <clipPath id="a"><path fill="#fff" d="M.8 20a20 20 0 1 1 40 0 20 20 0 0 1-40 0Z" /></clipPath>
   </defs>
 </svg>`;export{h as xSvg};
+//# sourceMappingURL=x-BEtMXc5i.js.map

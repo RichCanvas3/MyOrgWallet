@@ -132,3 +132,4 @@ import{a as h,r as f,e as y,d as g,x as u}from"./index-CiJGokSj.js";import{n as 
     --local-height: var(--wui-icon-box-size-${this.size});
     `,u`${this.visualTemplate()}`}visualTemplate(){if(this.imageSrc)return this.dataset.variant="image",u`<wui-image src=${this.imageSrc} alt=${this.alt??"avatar"}></wui-image>`;if(this.address){this.dataset.variant="generated";const o=w.generateAvatarColors(this.address);return this.style.cssText+=`
  ${o}`,null}return this.dataset.variant="default",null}};d.styles=[f,j];v([c()],d.prototype,"imageSrc",void 0);v([c()],d.prototype,"alt",void 0);v([c()],d.prototype,"address",void 0);v([c()],d.prototype,"size",void 0);d=v([x("wui-avatar")],d);
+//# sourceMappingURL=index-CNMw0fAI.js.map

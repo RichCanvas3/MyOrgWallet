@@ -9,3 +9,4 @@ import{b as e}from"./index-CiJGokSj.js";const o=e`<svg
     fill="currentColor"/>
 </svg>
 `;export{o as checkmarkSvg};
+//# sourceMappingURL=checkmark-DhMeCvzU.js.map

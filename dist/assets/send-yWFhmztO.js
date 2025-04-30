@@ -13,3 +13,4 @@ import{b as C}from"./index-CiJGokSj.js";const l=C`<svg fill="none" viewBox="0 0 
     fill="none"
   ></svg></svg
 >`;export{l as sendSvg};
+//# sourceMappingURL=send-yWFhmztO.js.map

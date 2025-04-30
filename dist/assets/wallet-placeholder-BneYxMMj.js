@@ -12,3 +12,4 @@ import{b as a}from"./index-CiJGokSj.js";const v=a`
     />
   </svg>
 `;export{v as walletPlaceholderSvg};
+//# sourceMappingURL=wallet-placeholder-BneYxMMj.js.map

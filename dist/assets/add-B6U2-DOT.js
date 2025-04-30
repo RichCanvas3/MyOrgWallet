@@ -13,3 +13,4 @@ import{b as l}from"./index-CiJGokSj.js";const o=l`<svg
     fill="#667dff"
   /></svg
 >`;export{o as addSvg};
+//# sourceMappingURL=add-B6U2-DOT.js.map

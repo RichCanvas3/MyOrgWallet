@@ -259,3 +259,4 @@ import{a as E,d as P,Y as S,a0 as b,R as g,X as W,x as c,D as u,f as D,F as O,O 
       <wui-icon size="xs" color="fg-200" slot="iconLeft" name="copy"></wui-icon>
       Copy link
     </wui-link>`}onCopyUri(){try{this.uri&&(k.copyToClopboard(this.uri),C.showSuccess("Link copied"))}catch{C.showError("Failed to copy")}}};f.styles=N;v([l()],f.prototype,"socialProvider",void 0);v([l()],f.prototype,"uri",void 0);v([l()],f.prototype,"ready",void 0);v([l()],f.prototype,"loading",void 0);f=v([_("w3m-connecting-farcaster-view")],f);export{$ as W3mConnectSocialsView,f as W3mConnectingFarcasterView,h as W3mConnectingSocialView};
+//# sourceMappingURL=socials-BVVQ-6KA.js.map

@@ -98,7 +98,7 @@
   "scripts": {
     "build:css": "postcss src/index.css -o src/tailwind.css",
     "dev": "vite",
-    "build": "vite build",
+    "build": "node --max-old-space-size=8192 ./node_modules/.bin/vite build",
     "preview": "vite preview",
     "start": "node server.js"
   },

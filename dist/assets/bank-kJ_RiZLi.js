@@ -12,3 +12,4 @@ import{b as e}from"./index-CiJGokSj.js";const o=e`<svg
     fill="currentColor"
   /></svg
 >`;export{o as bankSvg};
+//# sourceMappingURL=bank-kJ_RiZLi.js.map

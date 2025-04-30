@@ -33,3 +33,4 @@ import{F as p,D as b,K as A,L as v,N as d,v as q,W as C,R as P,G as g,O as D,J a
         icon="networkPlaceholder"
       ></wui-icon-box>
     `}};N.styles=[J,X,ne];G([V()],N.prototype,"imageSrc",void 0);G([V()],N.prototype,"text",void 0);N=G([ee("wui-token-button")],N);export{M as S};
+//# sourceMappingURL=index-B4f4qQbH.js.map

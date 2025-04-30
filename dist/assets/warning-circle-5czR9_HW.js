@@ -10,3 +10,4 @@ import{b as l}from"./index-CiJGokSj.js";const e=l`<svg fill="none" viewBox="0 0 
     clip-rule="evenodd"
   />
 </svg>`;export{e as warningCircleSvg};
+//# sourceMappingURL=warning-circle-5czR9_HW.js.map

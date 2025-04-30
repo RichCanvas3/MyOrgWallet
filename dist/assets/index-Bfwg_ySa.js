@@ -20,3 +20,4 @@ import{a as c,r as m,d as f,x as d}from"./index-CiJGokSj.js";import{n as u,c as 
       ></wui-input-text>
       ${this.templateError()}
     `}templateError(){return this.errorMessage?d`<wui-text variant="tiny-500" color="error-100">${this.errorMessage}</wui-text>`:null}};t.styles=[m,x];a([u()],t.prototype,"errorMessage",void 0);a([u({type:Boolean})],t.prototype,"disabled",void 0);a([u()],t.prototype,"value",void 0);a([u()],t.prototype,"tabIdx",void 0);t=a([v("wui-email-input")],t);
+//# sourceMappingURL=index-Bfwg_ySa.js.map

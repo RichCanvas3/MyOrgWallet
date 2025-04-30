@@ -62,3 +62,4 @@ import{D as d,F as w,O as _,R as p,Y as v,G as m,J as c,Z as $,a as y,r as b,d a
         ${this.templatePlacement()}
       </button>
     `}templatePlacement(){return this.align==="center"?h` <wui-logo class="invisible" logo=${this.logo}></wui-logo>`:null}};l.styles=[b,E,U];g([u()],l.prototype,"logo",void 0);g([u()],l.prototype,"name",void 0);g([u()],l.prototype,"align",void 0);g([u()],l.prototype,"tabIdx",void 0);g([u({type:Boolean})],l.prototype,"disabled",void 0);l=g([C("wui-list-social")],l);export{P as e};
+//# sourceMappingURL=index-kJzWZTeM.js.map

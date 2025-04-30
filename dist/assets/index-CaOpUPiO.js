@@ -27,3 +27,4 @@ import{a as h,r as g,e as p,d as v,x}from"./index-CiJGokSj.js";import{n as c,c a
        --local-size: var(--wui-icon-box-size-${this.size});
        --local-border: ${this.borderColor==="wui-color-bg-125"?"2px":"1px"} solid ${this.border?`var(--${this.borderColor})`:"transparent"}
    `,x` <wui-icon color=${this.iconColor} size=${e} name=${this.icon}></wui-icon> `}};o.styles=[g,p,y];i([c()],o.prototype,"size",void 0);i([c()],o.prototype,"backgroundColor",void 0);i([c()],o.prototype,"iconColor",void 0);i([c()],o.prototype,"iconSize",void 0);i([c()],o.prototype,"background",void 0);i([c({type:Boolean})],o.prototype,"border",void 0);i([c()],o.prototype,"borderColor",void 0);i([c()],o.prototype,"icon",void 0);o=i([f("wui-icon-box")],o);
+//# sourceMappingURL=index-CaOpUPiO.js.map

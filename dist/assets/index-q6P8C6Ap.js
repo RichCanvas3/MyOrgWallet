@@ -199,3 +199,4 @@ import{a as v,r as g,e as h,d as p,x as u}from"./index-CiJGokSj.js";import{n as 
         size=${this.imageIconSize}
         class="image-icon"
       ></wui-icon>`:null}};a.styles=[g,h,f];r([t()],a.prototype,"variant",void 0);r([t()],a.prototype,"imageSrc",void 0);r([t()],a.prototype,"imageIcon",void 0);r([t()],a.prototype,"imageIconSize",void 0);r([t({type:Boolean})],a.prototype,"disabled",void 0);r([t()],a.prototype,"icon",void 0);r([t()],a.prototype,"href",void 0);r([t()],a.prototype,"text",void 0);a=r([w("wui-chip")],a);export{S as N};
+//# sourceMappingURL=index-q6P8C6Ap.js.map

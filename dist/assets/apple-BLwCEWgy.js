@@ -16,3 +16,4 @@ import{b as l}from"./index-CiJGokSj.js";const f=l`<svg fill="none" viewBox="0 0 
     <clipPath id="c"><path fill="#fff" d="M8 7.89h24v24H8z" /></clipPath>
   </defs>
 </svg>`;export{f as appleSvg};
+//# sourceMappingURL=apple-BLwCEWgy.js.map

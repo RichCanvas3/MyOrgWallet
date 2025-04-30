@@ -11,3 +11,4 @@ import{a as p,d as u,R as f,M as b,x as d}from"./index-CiJGokSj.js";import{n as 
         ${this.renderChildren()}
       </div>
     `}renderChildren(){return d`<slot></slot> `}onMouseEnter(){const e=this.getBoundingClientRect();this.open||l.showTooltip({message:this.text,triggerRect:{width:e.width,height:e.height,left:e.left,top:e.top},variant:"shade"})}onMouseLeave(e){this.contains(e.relatedTarget)||l.hide()}};h.styles=[v];c([g()],h.prototype,"text",void 0);c([m()],h.prototype,"open",void 0);h=c([M("w3m-tooltip-trigger")],h);export{x as M};
+//# sourceMappingURL=index-Beet7Of3.js.map

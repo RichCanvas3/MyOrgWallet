@@ -69,3 +69,4 @@ import{a as c,r as f,d as p,x as g}from"./index-CiJGokSj.js";import{n as l,c as 
 `;var d=function(o,t,s,r){var a=arguments.length,e=a<3?t:r===null?r=Object.getOwnPropertyDescriptor(t,s):r,n;if(typeof Reflect=="object"&&typeof Reflect.decorate=="function")e=Reflect.decorate(o,t,s,r);else for(var h=o.length-1;h>=0;h--)(n=o[h])&&(e=(a<3?n(e):a>3?n(t,s,e):n(t,s))||e);return a>3&&e&&Object.defineProperty(t,s,e),e};let i=class extends p{constructor(){super(...arguments),this.color="accent-100",this.size="lg"}render(){return this.style.cssText=`--local-color: ${this.color==="inherit"?"inherit":`var(--wui-color-${this.color})`}`,this.dataset.size=this.size,g`<svg viewBox="25 25 50 50">
       <circle r="20" cy="50" cx="50"></circle>
     </svg>`}};i.styles=[f,x];d([l()],i.prototype,"color",void 0);d([l()],i.prototype,"size",void 0);i=d([u("wui-loading-spinner")],i);
+//# sourceMappingURL=index-DfM28ypw.js.map

@@ -28,3 +28,4 @@ import{b as l}from"./index-CiJGokSj.js";const C=l`<svg fill="none" viewBox="0 0 
 <path d="M15.0199 14.067L12 11.0656L8.98 14.067L5.96004 11.0656L4.66663 12.3511L8.98 16.6393L12 13.638L15.0199 16.6393L19.3333 12.3511L18.0399 11.0656L15.0199 14.067Z" fill="#C7B994"/>
 </svg>
 `;export{L as walletConnectBrownSvg,a as walletConnectLightBrownSvg,C as walletConnectSvg};
+//# sourceMappingURL=walletconnect-BaL9xRKN.js.map

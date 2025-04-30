@@ -10,3 +10,4 @@ import{b as o}from"./index-CiJGokSj.js";const l=o`<svg fill="none" viewBox="0 0 
     d="M1.25.71h11.5L9.21 3.88a3.31 3.31 0 0 1-4.49 0L1.25.71Z"
   />
 </svg> `;export{l as cursorTransparentSvg};
+//# sourceMappingURL=cursor-transparent-CNzBgvly.js.map

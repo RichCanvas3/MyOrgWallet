@@ -59,3 +59,4 @@ import{b as t}from"./index-CiJGokSj.js";const o=t`<svg width="36" height="36" fi
     </linearGradient>
   </defs>
 </svg>`;export{o as chromeStoreSvg};
+//# sourceMappingURL=chrome-store-COSFahUn.js.map

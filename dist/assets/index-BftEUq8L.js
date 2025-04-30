@@ -200,3 +200,4 @@ import{a as w,r as g,e as h,d as v,x as l}from"./index-CiJGokSj.js";import{n as 
         color="inherit"
         name=${this.icon}
       ></wui-icon>`:null}dispatchInputChangeEvent(){var t;this.dispatchEvent(new CustomEvent("inputChange",{detail:(t=this.inputElementRef.value)==null?void 0:t.value,bubbles:!0,composed:!0}))}};i.styles=[g,h,y];e([a()],i.prototype,"size",void 0);e([a()],i.prototype,"icon",void 0);e([a({type:Boolean})],i.prototype,"disabled",void 0);e([a()],i.prototype,"placeholder",void 0);e([a()],i.prototype,"type",void 0);e([a()],i.prototype,"keyHint",void 0);e([a()],i.prototype,"value",void 0);e([a()],i.prototype,"inputRightPadding",void 0);e([a()],i.prototype,"tabIdx",void 0);i=e([x("wui-input-text")],i);
+//# sourceMappingURL=index-BftEUq8L.js.map

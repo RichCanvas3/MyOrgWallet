@@ -72,3 +72,4 @@ import{v as h,w,y as m,a as f,d as v,x as b}from"./index-CiJGokSj.js";import{r a
       <wui-icon data-placement="top" color="fg-100" size="inherit" name="cursor"></wui-icon>
       <wui-text color="inherit" variant="small-500">${this.message}</wui-text>
     </wui-flex>`}};a.styles=[x];n([u()],a.prototype,"open",void 0);n([u()],a.prototype,"message",void 0);n([u()],a.prototype,"triggerRect",void 0);n([u()],a.prototype,"variant",void 0);a=n([g("w3m-tooltip"),g("w3m-tooltip")],a);export{s as T};
+//# sourceMappingURL=index-Chtj3_kB.js.map

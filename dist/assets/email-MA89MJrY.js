@@ -235,3 +235,4 @@ import{a as E,r as N,e as U,d as w,x as u,ae as _,R as l,Y as h,J as x,G as v,O 
     >
       <w3m-email-login-widget></w3m-email-login-widget>
     </wui-flex> `}checkIfAuthEnabled(e){const t=e.filter(o=>o.type===M.CONNECTOR_TYPE_AUTH).map(o=>o.chain);return B.AUTH_CONNECTOR_SUPPORTED_CHAINS.some(o=>t.includes(o))}};j([m()],R.prototype,"connectors",void 0);R=j([d("w3m-email-login-view")],R);export{R as W3mEmailLoginView,y as W3mEmailVerifyDeviceView,P as W3mEmailVerifyOtpView,V as W3mUpdateEmailPrimaryOtpView,L as W3mUpdateEmailSecondaryOtpView,b as W3mUpdateEmailWalletView};
+//# sourceMappingURL=email-MA89MJrY.js.map

@@ -79,3 +79,4 @@ import{a as v,r as b,e as f,h as m,d as g,x as h}from"./index-CiJGokSj.js";impor
         <slot></slot>
       </wui-text>
     `}};d.styles=[b,y];p([l()],d.prototype,"variant",void 0);p([l()],d.prototype,"size",void 0);d=p([w("wui-tag")],d);
+//# sourceMappingURL=index-BmolkG9s.js.map
