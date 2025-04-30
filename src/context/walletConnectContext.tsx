@@ -1021,6 +1021,7 @@ export const useWalletConnect = () => {
               signature,
             }
 
+            console.info("&&&&&&&&&&&&&& Save indIssuerDelegation: ", indivIssuerDel)
             await DelegationService.saveDelegationToStorage(walletClient, owner, indivAccountClient.address, issuerAccountClient.address, indivIssuerDel)
           }
 
@@ -1037,7 +1038,7 @@ export const useWalletConnect = () => {
             const walletClient = signatory.walletClient
             const entityId = "indiv-email"
         
-            if (walletSigner && walletClient && indivDid && orgDid) {
+            if (walletSigner && walletClient && indivDid) {
 
               let indEmail = "email";
               if (indivEmail) {
@@ -1045,7 +1046,7 @@ export const useWalletConnect = () => {
               }
         
               const vc = await VerifiableCredentialsService.createIndivEmailVC(entityId, indivDid, issuerDid, "business", indEmail);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, issuerAccountClient)
               const fullVc = result.vc
               const proofUrl = result.proofUrl
 
