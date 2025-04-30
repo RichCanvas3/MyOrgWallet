@@ -37,5 +37,8 @@ export default defineConfig({
     build: {
         outDir: 'dist', // Output directory for the build
         chunkSizeWarningLimit: 2000, // in kilobytes
+        sourcemap: true,
     },
+    // Add base path for Azure if app is hosted under a subdirectory
+    base: process.env.VITE_BASE_PATH || '/', // Use env var for flexibility
 });
