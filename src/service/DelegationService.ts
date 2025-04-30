@@ -21,7 +21,7 @@ class DelegationService {
     //static snapId : string = "local:http://localhost:8080"
 
 
-    static async saveDelegationToSnap(walletClient: WalletClient, owner: string, delegator: string, delegate: string, delegation: DelegationStruct) {
+    static async saveDelegationToStorage(walletClient: WalletClient, owner: string, delegator: string, delegate: string, delegation: DelegationStruct) {
         
         const id = owner + "-" + delegator + "-" + delegate
         const delegationJSON = JSON.stringify(delegation);
@@ -44,7 +44,7 @@ class DelegationService {
     }
 
 
-    static async getDelegationFromSnap(walletClient: WalletClient, owner: string, delegator: string, delegate: string): Promise<DelegationStruct | undefined> {
+    static async getDelegationFromStorage(walletClient: WalletClient, owner: string, delegator: string, delegate: string): Promise<DelegationStruct | undefined> {
     
         let del : DelegationStruct | undefined
 
@@ -53,6 +53,7 @@ class DelegationService {
 
         const store = localStorage.getItem(id)
         if (store) {
+            console.info("got delegation from store")
             del = JSON.parse(store)
         }
 

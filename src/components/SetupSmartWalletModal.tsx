@@ -25,7 +25,7 @@ interface Step {
 const SetupSmartWalletModal: React.FC = () => {
   const navigate = useNavigate();
 
-  const { selectedSignatory, buildSmartWallet, setupSmartWallet, } = useWallectConnectContext();
+  const { selectedSignatory, buildSmartWallet, setupSmartWallet, orgName, orgDid } = useWallectConnectContext();
 
 
   const [currentStep, setCurrentStep] = useState(1);

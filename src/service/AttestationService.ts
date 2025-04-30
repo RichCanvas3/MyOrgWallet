@@ -500,7 +500,7 @@ class AttestationService {
       //console.info("set to indiv attestation with name: ", name)
       const att : IndivAttestation = {
         class: "organization",
-        category: "people",
+        category: "leaders",
         entityId: entityId,
         attester: attesterDid,
         schemaId: schemaId,
@@ -1592,7 +1592,7 @@ class AttestationService {
     let attestationCategories : AttestationCategory[] = [
       {
         class: "organization",
-        name: "people",
+        name: "leaders",
         id: "0"
       },
       {
@@ -2005,7 +2005,50 @@ class AttestationService {
     return rtnAttestation;
   }
 
+  static async getRegisteredDomainAttestation(domain: string, schemaId: string, entityId: string): Promise<Attestation | undefined> {
 
+    //console.info("get attestation by address and schemaId and entityId: ", address, schemaId, entityId)
+    let rtnAttestation : Attestation | undefined
+
+    let exists = false
+    const query = gql`
+      query {
+        attestations(
+          where: {
+            schemaId: { equals: "${schemaId}" }
+            revoked: { equals: false }
+          }
+        ) {
+          id
+          attester
+          schemaId
+          data
+        }
+      }`;
+
+    const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
+    //console.info(">>>>>>>>>>>>>>>>>>> data: ", data)
+
+    // cycle through aes attestations and update entity with attestation info
+    for (const item of data.attestations) {
+      if (schemaId == this.RegisteredDomainSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.RegisteredDomainSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          const orgAddress = item.attester
+          const att = this.constructRegisteredDomainAttestation(item.id, item.schemaId, entityId, orgAddress, "", decodedData)
+          if ((att as RegisteredDomainAttestation).domain.toLowerCase() == domain.toLowerCase()) {
+            rtnAttestation = att
+            break
+          }
+        }
+      }
+      
+    }
+
+    return rtnAttestation;
+}
+  
 
   static async getIndivAttestation(indivDid: string, schemaId: string, entityId: string): Promise<Attestation | undefined> {
 

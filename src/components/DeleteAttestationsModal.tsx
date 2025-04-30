@@ -203,7 +203,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
             rolecid: JSON.stringify(samOrgIndivDel),
             attester: orgDid,
             class: "organization",
-            category: "people",
+            category: "leaders",
             entityId: "indiv",
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),

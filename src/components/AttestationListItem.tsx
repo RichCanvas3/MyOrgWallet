@@ -27,7 +27,7 @@ const AttestationListItem: React.FC<AttestationListItemProps> = ({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const navigate = useNavigate();
   const acceptButtonRef = useRef<HTMLButtonElement | null>(null);
-  const { issuerAccountClient, signer, session, orgDid } = useWallectConnectContext();
+  const { issuerAccountClient, orgDid } = useWallectConnectContext();
 
   const [verified, setVerified] = useState(false);
 
@@ -78,33 +78,35 @@ const AttestationListItem: React.FC<AttestationListItemProps> = ({
   };
 
 
-  const revokeAttestation = () => {
+  const revokeAttestation = async () => {
 
-      const serializedSession = session?.serialize()
       if (verified) {
         console.info(">>>>>>>>>>>>>>>>>>>  add revoked key: ", attestation.vccomm)
         setVerified(false)
         if (attestation.vccomm) {
 
-          fetch('http://localhost:3051/api/proof/revoke', {
+          const proofUrlResponse= await fetch('http://localhost:3051/api/proof/revoke', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               commitment: attestation.vccomm.toString()
             }),
-          }).then((proofUrlResponse) => {
-            proofUrlResponse.json().then((proofResponse) => {
-              const proofUrl = proofResponse.proofUrl
-              console.info("proofResponse: ", proofResponse)
-              console.info("proofUrl: ", proofUrl)
-              if (attestation.vccomm && signer && issuerAccountClient && proofUrl) {
-                console.info("add revoke attestation => proofUrl: ", proofUrl)
-                AttestationService.addRevokeAttestation(attestation.vccomm, proofUrl, signer, issuerAccountClient).then((resp) => {
-
-                })
-              }
-            })
           })
+          const proofResponse = await proofUrlResponse.json()
+          const proofUrl = proofResponse.proofUrl
+          console.info("proofResponse: ", proofResponse)
+          console.info("proofUrl: ", proofUrl)
+          if (attestation.vccomm && issuerAccountClient && proofUrl) {
+            console.info("add revoke attestation => proofUrl: ", proofUrl)
+
+            
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            await window.ethereum.request({ method: "eth_requestAccounts" });
+            const walletSigner = await provider.getSigner()
+
+            const resp = await AttestationService.addRevokeAttestation(attestation.vccomm, proofUrl, walletSigner, issuerAccountClient)
+          }
+
         }
       }
       else {

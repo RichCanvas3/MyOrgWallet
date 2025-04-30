@@ -90,6 +90,12 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({isVisible, onClose
     })
   };
 
+
+  const handleDeleteAllStorage = async () => {
+    localStorage.clear();
+    console.info("clear all local storage")
+  };
+
   const handleDeleteAllAttestations = async () => {
     showConfirmDialog({
       message: 'Are you sure you want to delete all attestations? This action cannot be undone.',
@@ -380,6 +386,12 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({isVisible, onClose
                       <div>
                         <button onClick={handleDeleteAllAttestations}
                                 className="mt-4 py-2 px-4 bg-red-500 text-white rounded-sm hover:bg-red-700">{t('delete-all-attestations-button')}
+                        </button>
+                        {ConfirmDialog}
+                      </div>
+                      <div>
+                        <button onClick={handleDeleteAllStorage}
+                                className="mt-4 py-2 px-4 bg-red-500 text-white rounded-sm hover:bg-red-700">{"delete all local storage"}
                         </button>
                         {ConfirmDialog}
                       </div>
