@@ -21,12 +21,7 @@ dotenv.config();
 // Set SendGrid API key
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// Handle preflight requests explicitly
-app.options('*', cors());
-
 // Middleware
-app.use(helmet()); // Add security headers
-app.use(express.json());
 
 // Configure CORS to allow requests from the production client
 const allowedOrigins = [
@@ -45,6 +40,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'], // Allow common headers
   credentials: true,
 }));
+
+
+app.use(helmet()); // Add security headers
+app.use(express.json());
 
 const verificationCodes = new Map();
 
