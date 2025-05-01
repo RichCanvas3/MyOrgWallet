@@ -188,8 +188,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
         const fullVc = result.vc
         const proofUrl = result.proofUrl
 
-        console.info("&&&&&&&&&&&&&&&&&&&&&&& orgIssuerDel && orgIndivDel: ", fullVc, orgIssuerDelegation, orgIndivDelegation)
-        if (fullVc && signer && orgIssuerDelegation && orgIndivDelegation) {
+        if (fullVc && orgIssuerDelegation && orgIndivDelegation) {
 
           console.info("&&&&&&&&&&&&&&&&&&&&&&& AttestationService add indiv attestation")
 
@@ -306,7 +305,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
                   </Paper>
              
               </div>
-            </div>
+              </div>
             </div>
           </Transition.Child>
         </div>

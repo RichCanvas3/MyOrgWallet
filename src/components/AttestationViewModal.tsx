@@ -119,11 +119,11 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
               setOrgEthAvatar(orgInfo.avatar)
             }
             if (orgInfo.twitter) {
-              console.info("x account: ", orgInfo.twitter)
+              //console.info("x account: ", orgInfo.twitter)
 
             }
             if (orgInfo.url) {
-              console.info("website: ", orgInfo.url)
+              //console.info("website: ", orgInfo.url)
             }
           }
         }
@@ -236,7 +236,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
           }
           //console.info("go get shopify attestation: ", did)
           if (did) {
-            console.info(">>>>>>>>>>>>>>>>>>>>> get attestation")
+            //console.info(">>>>>>>>>>>>>>>>>>>>> get attestation")
             AttestationService.getAttestationByAddressAndSchemaId(did, schemaUid, entityId).then((att) => {
 
               console.info("att: ", att)
@@ -293,18 +293,17 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                   ZkProofService.getVcZkProof(att.proof, att.vccomm, att.vciss, att.attester).then((vcZkProof) => {
                     setVcZkProof(vcZkProof)
                     if (vcZkProof.isValid && att.vccomm) {
-                      console.info("@@@@@@@@@@@@@@@@@@ find revoke attestation")
+                      
                       AttestationService.getVcRevokedAttestation(att.attester, att.vccomm).then((revokeResponse) => {
 
                         if (revokeResponse.proof && revokeResponse.proof != "" && att.vccomm) {
-                          console.info("@@@@@@@@@@@@@@@@@@ revoke attestation found")
+
                           ZkProofService.getVcRevokeZkProof(revokeResponse.proof, att.vccomm).then((vcRevokeZkProof) => {
                             if (vcRevokeZkProof.isValid && revokeResponse.proof) {
                               setVcRevokeZkProof(vcRevokeZkProof)
                               setVerified(false)
                             }
                             else {
-                              console.info("@@@@@@@@@@@@@@@@@@ valid: ")
                               setVerified(true)
                             }
                           })

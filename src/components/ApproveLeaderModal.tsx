@@ -17,7 +17,23 @@ import AttestationService from '../service/AttestationService';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import { useWalletClient } from 'wagmi';
 
-import { TextField, Button, Typography, Box, Paper } from "@mui/material";
+import { IndivAttestation } from "../models/Attestation"
+
+import {AttestationCard } from "./AttestationCard"
+
+import { 
+  TextField, 
+  Button, 
+  Typography, 
+  Box, 
+  Paper,
+  InputAdornment,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Grid,
+  Tab, 
+  Tabs as MuiTabs } from "@mui/material";
 import EditableTextBox from "./EditableTextBox";
 import { TripOriginRounded } from '@mui/icons-material';
 
@@ -56,6 +72,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
   const { signatory, orgDid, indivDid, issuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, issuerAccountClient } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
+  const [attestations, setAttestations] = useState<IndivAttestation[]>([]);
 
   const handleClose = () => {
     onClose();
@@ -63,176 +80,95 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
 
 
 
-  const handleDeleteOrgAttestations = async () => {
-    console.info("delete attestations")
-    if (orgDid && orgIndivDelegation && orgIssuerDelegation && indivIssuerDelegation) {
-      console.info("delete org attestations")
-      const attestations = await AttestationService.loadRecentAttestationsTitleOnly(orgDid, "")
-      if (attestations && attestations.length > 0) {
+  const handleSelectedAttestation = async (att: IndivAttestation) => {
 
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        const walletSigner = await provider.getSigner()
+    // if this user has been granted permissions through orgIndivDelegation
+    console.info("need these values: ", orgIndivDelegation, orgDid, issuerDid, walletClient)
+    if (orgIndivDelegation && orgDid && issuerDid && walletClient) {
 
-        const rslt = await AttestationService.deleteAttestations(attestations, walletSigner, [orgIssuerDelegation, orgIndivDelegation], issuerAccountClient)
-        console.info("delete organization attestations is done ")
-      }
+      console.info("approve it: ", att)
 
+      console.info("************************   CREATE DELEGATION FOR: ", att.name)
+      const leaderIndivAddress = att.attester as `0x${string}`
+      const leaderIndivDid = 'did:pkh:eip155:10:' + leaderIndivAddress
 
-    }
-  }
+      console.info("samCFOEOA: ", att.name)
+      console.info("to: ", leaderIndivAddress)
+      console.info("from: ", orgAccountClient.address)
 
-  const handleDeleteIndivAttestations = async () => {
-    if (indivDid && indivIssuerDelegation) {
-      console.info("delete indiv attestations")
-      const attestations = await AttestationService.loadRecentAttestationsTitleOnly("", indivDid)
-      if (attestations && attestations.length > 0) {
+      let leaderOrgIndivDel = createDelegation({
+        to: leaderIndivAddress,
+        from: orgAccountClient.address,
+        caveats: [] }
+      );
 
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        const walletSigner = await provider.getSigner()
-
-        const rsl = await AttestationService.deleteAttestations(attestations, walletSigner, [indivIssuerDelegation], issuerAccountClient)
-        console.info("delete all individual attestations is done ")
-
-      }
-
-
-
-    }
-  }
-
-  const handleAddSamCFO = async (event: React.MouseEvent<HTMLButtonElement>) => {
-
-    if (signatory && orgDid && issuerDid && indivIssuerDelegation) {
-
-      const walletClient = signatory.walletClient
-
-      const publicClient = createPublicClient({
-                chain: optimism,
-                transport: http(),
-              });
-      
-
-      console.info("add sam and send invitation")
-
-      // setup org-individual delegation for sam the CFO
-
-      const samCFOEOA = "0x8272226863aacd003975b5c497e366c14d009605"
-      const samIndivAccountClient = await toMetaMaskSmartAccount({
-        client: publicClient,
-        implementation: Implementation.Hybrid,
-        deployParams: [samCFOEOA, [], [], []],
-        signatory: signatory,
-        deploySalt: toHex(1),
+      const signature = await orgAccountClient.signDelegation({
+        delegation: leaderOrgIndivDel,
       });
-      console.info("%%%%%%%%% other individual EOA address: ", samCFOEOA)
-      console.info("%%%%%%%%% other individual AA address: ", samIndivAccountClient.address)
 
-      const samIndivDid = 'did:pkh:eip155:10:' + samIndivAccountClient.address
 
-      //let samOrgIndivDel = null
-      //try {
-      //  samOrgIndivDel = await DelegationService.getDelegationFromSnap(walletClient, samCFOEOA, orgAccountClient.address, samIndivAccountClient.address)
-      //}
-      //catch (error) {
-      //}
+      leaderOrgIndivDel = {
+        ...leaderOrgIndivDel,
+        signature,
+      }
 
+
+      const vc = await VerifiableCredentialsService.createIndivOrgVC("indiv-org", orgDid, issuerDid, leaderIndivDid, att.name);
+      const result = await VerifiableCredentialsService.createCredential(vc, "indiv-org", orgDid, walletClient, issuerAccountClient)
+
+      console.info("result of create credential: ", result)
+      const fullVc = result.vc
+      const proofUrl = result.proofUrl
+
+      if (fullVc && orgIssuerDelegation && orgIndivDelegation) {
+
+        console.info("&&&&&&&&&&&&&&&&&&&&&&& AttestationService add indiv attestation")
+
+        const indivName = "indiv name"
       
-      const samIndivAttestation = await AttestationService.getIndivOrgAttestation(samIndivDid, AttestationService.IndivOrgSchemaUID, "indiv-org");
+        // now create attestation
+        const hash = keccak256(toUtf8Bytes("hash value"));
+        const attestation: IndivOrgAttestation = {
+          indivDid: leaderIndivDid,
+          name: indivName,
+          rolecid: JSON.stringify(leaderOrgIndivDel),
+          attester: orgDid,
+          class: "organization",
+          category: "leaders",
+          entityId: "indiv-org",
+          hash: hash,
+          vccomm: (fullVc.credentialSubject as any).commitment.toString(),
+          vcsig: (fullVc.credentialSubject as any).commitmentSignature,
+          vciss: issuerDid,
+          proof: proofUrl
+        };
 
-      let samOrgIndivDel : any | undefined
-      let samDelegationOrgAddress : `0x${string}` | undefined
-      if (samIndivAttestation) {
-        samOrgIndivDel = JSON.parse((samIndivAttestation as IndivOrgAttestation).rolecid)
-        if (samIndivAccountClient.address == samOrgIndivDel.delegate) {
-          console.info("*********** valid individual attestation so lets use this org address")
-          // need to validate signature at some point
-          samDelegationOrgAddress = samOrgIndivDel.delegator
-        }
-      }
-
-      if (!samOrgIndivDel) {
-
-        console.info("************************   CREATE DELEGATION FOR SAM ************")
-        console.info("samCFOEOA: ", samCFOEOA)
-        console.info("to: ", samIndivAccountClient.address)
-        console.info("from: ", orgAccountClient.address)
-
-        samOrgIndivDel = createDelegation({
-          to: samIndivAccountClient.address,
-          from: orgAccountClient.address,
-          caveats: [] }
-        );
-
-        const signature = await orgAccountClient.signDelegation({
-          delegation: samOrgIndivDel,
-        });
-
-
-        samOrgIndivDel = {
-          ...samOrgIndivDel,
-          signature,
-        }
-
-
-
-        //  create delegation to sam attestation
-
-        const samIndivName = ""
-
-        const vc = await VerifiableCredentialsService.createIndivOrgVC("indiv-org", orgDid, issuerDid, samIndivDid, samIndivName);
-        const result = await VerifiableCredentialsService.createCredential(vc, "indiv-org", orgDid, walletClient, issuerAccountClient)
-
-        console.info("result of create credential: ", result)
-        const fullVc = result.vc
-        const proofUrl = result.proofUrl
-
-        console.info("&&&&&&&&&&&&&&&&&&&&&&& orgIssuerDel && orgIndivDel: ", fullVc, orgIssuerDelegation, orgIndivDelegation)
-        if (fullVc && signer && orgIssuerDelegation && orgIndivDelegation) {
-
-          console.info("&&&&&&&&&&&&&&&&&&&&&&& AttestationService add indiv attestation")
-
-          const indivName = "indiv name"
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        const walletSigner = await provider.getSigner()
         
-          // now create attestation
-          const hash = keccak256(toUtf8Bytes("hash value"));
-          const attestation: IndivOrgAttestation = {
-            indivDid: samIndivDid,
-            name: indivName,
-            rolecid: JSON.stringify(samOrgIndivDel),
-            attester: orgDid,
-            class: "organization",
-            category: "leaders",
-            entityId: "indiv-org",
-            hash: hash,
-            vccomm: (fullVc.credentialSubject as any).commitment.toString(),
-            vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-            vciss: issuerDid,
-            proof: proofUrl
-          };
-
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          await window.ethereum.request({ method: "eth_requestAccounts" });
-          const walletSigner = await provider.getSigner()
-          
-          const uid = await AttestationService.addIndivOrgAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
-        }
-
-
+        const uid = await AttestationService.addIndivOrgAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
       }
-      else {
-        console.info("************************   SAM's Delegation ************")
-        console.info("samCFOEOA: ", samCFOEOA)
-        console.info("to: ", samIndivAccountClient.address)
-        console.info("from: ", orgAccountClient.address)
-        console.info(" del: ", samOrgIndivDel)
-      }
-
-
-
     }
+    else {
+      console.info(">>>>>>>>>>  YOU DO NOT HAVE PERMISSIONS TO ADD FOLKS >>>>>>>>>>")
+    }
+
+    
   }
+
+  useEffect(() => {
+    console.info("populate indiv atts")
+    if (orgDid) {
+      console.info("got did")
+      AttestationService.getIndivsNotApprovedAttestations(orgDid).then((atts) => {
+        if (atts) {
+          setAttestations(atts)
+        }
+      })
+    }
+    
+  }, [orgDid]);
   
 
   return (
@@ -249,65 +185,61 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
           >
             <div ref={dialogRef}
                  className="flex flex-col bg-white  rounded-lg w-full max-w-md mx-auto overflow-hidden"
-                 style={{zIndex: 100000000, minHeight: "640px", minWidth: "43em"}}>
+                 style={{ zIndex: 100000000, maxHeight: "90vh", minWidth: "43em", overflowY: "auto" }}>
               <div id='modal-header'
                    className="flex justify-between items-center border-b border-gray-200 p-4">
-                <h1 className="modal-title text-lg font-semibold">{('Delete Attestations')}</h1>
+                <h1 className="modal-title text-lg font-semibold">{('Approve Leaders')}</h1>
                 <button onClick={handleClose}
                         className="text-gray-700 hover:text-gray-900">
                   <XMarkIcon className="h-8 w-8" aria-hidden="true"/>
                 </button>
               </div>
-              <div id='delete-content' className="flex flex-1">
+              <div id='approve-content' className="flex flex-1">
                 <div className="flex flex-col flex-1">
 
-                <Paper
-                  elevation={4}
-                  sx={{
-                    width: "100%",
-                    height: "100%",
-                    p: 4,
-                  }}
-                >
-                  
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    size="large"
-                    fullWidth
-                    onClick={handleDeleteOrgAttestations}
-                    sx={{ mb: 3, p: 2, py: 1.5 }}
+                  <Paper
+                    elevation={4}
+                    sx={{
+                      width: "100%",
+                      height: "100%",
+                      p: 4,
+                    }}
                   >
-                    Delete Organizations Attestations
-                  </Button>
-
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    size="large"
-                    fullWidth
-                    onClick={handleDeleteIndivAttestations}
-                    sx={{ mb: 3, p: 2, py: 1.5 }}
-                  >
-                    Delete Individuals Attestations
-                  </Button>
-
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    size="large"
-                    fullWidth
-                    onClick={handleAddSamCFO}
-                    sx={{ mb: 3, p: 2, py: 1.5 }}
-                  >
-                    Add Sam CFO and send invitation
-                  </Button>
-      
+                    
+                    <Box
+                      display="flex"
+                      flexDirection="column"
+                      justifyContent="flex-start"
+                      alignItems="flex-start"
+                      bgcolor="grey.50"
+                      minHeight="100vh"
+                      width="100%"
+                    >
+                      
+                      <Grid container spacing={2}>
+                        {attestations.map(att => (
+                          <Grid
+                            key={att.entityId}
+                          >
+                            <AttestationCard
+                              attestation={att}
+                              selected={false}
+                              onSelect={() => {
+                                handleSelectedAttestation(att);
+                              }}
+                              hoverable
+                            />
+                          </Grid>
+                        ))}
+                      </Grid>
+              
+                                
+                      </Box>
                   </Paper>
-             
+                </div>
               </div>
             </div>
-            </div>
+
           </Transition.Child>
         </div>
       </Transition>

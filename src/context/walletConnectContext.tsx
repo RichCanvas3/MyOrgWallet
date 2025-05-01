@@ -261,7 +261,7 @@ export const useWalletConnect = () => {
             setIndivAccountClient(indivAccountClient)
 
             const indivOrgAttestation = await AttestationService.getIndivOrgAttestation(indivDid, AttestationService.IndivSchemaUID, "indiv");
-
+            console.info("&&&&&&&&&&&&&&&&& indivOrgAttestation: ", indivOrgAttestation)
 
 
             let orgIndivDel : any | undefined
@@ -272,6 +272,8 @@ export const useWalletConnect = () => {
                 console.info("*********** valid individual attestation so lets use this org address")
                 // need to validate signature at some point
                 delegationOrgAddress = orgIndivDel.delegator
+
+                setOrgIndivDelegation(orgIndivDel)
               }
             }
 

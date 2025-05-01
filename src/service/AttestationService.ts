@@ -1835,7 +1835,7 @@ class AttestationService {
               console.info("error schemaId: ", item.schemaId)
             }
 
-            console.info("attestation: ", entityId)
+            //console.info("attestation: ", entityId)
 
             // construct correct attestation
             let att : Attestation | undefined
@@ -2192,6 +2192,52 @@ class AttestationService {
     return rtnAttestation;
 }
   
+static async getIndivsNotApprovedAttestations(orgDid: string): Promise<IndivAttestation[] | undefined> {
+
+  const entityId = "indiv"
+  const schemaId = AttestationService.IndivSchemaUID
+
+  //console.info("get attestation by address and schemaId and entityId: ", address, schemaId, entityId)
+  let rtnAttestations : IndivAttestation[] = []
+
+  let exists = false
+  const query = gql`
+    query {
+      attestations(
+        where: {
+          schemaId: { equals: "${schemaId}" }
+          revoked: { equals: false }
+        }
+      ) {
+        id
+        attester
+        schemaId
+        data
+      }
+    }`;
+
+  const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
+
+  // cycle through aes attestations and update entity with attestation info
+  for (const item of data.attestations) {
+    const schemaEncoder = new SchemaEncoder(this.IndivSchema);
+    const decodedData = schemaEncoder.decodeData(item.data);
+    if (this.checkEntity(entityId, decodedData)) {
+      const indAtt = this.constructIndivAttestation(item.id, item.schemaId, entityId, item.attester, "", decodedData)
+      if (indAtt && (indAtt as IndivAttestation).orgDid.toLowerCase() == orgDid.toLowerCase()) {
+        const indivDid = indAtt.attester
+        const indOrgAtt = await this.getIndivOrgAttestation(indivDid, this.IndivOrgSchemaUID, "indiv-org")
+        if (!indOrgAtt) {
+          rtnAttestations.push(indAtt as IndivAttestation)
+        }
+      }
+      
+    }
+    
+  }
+
+  return rtnAttestations;
+}
 
   static async getIndivOrgAttestation(indivDid: string, schemaId: string, entityId: string): Promise<Attestation | undefined> {
 
