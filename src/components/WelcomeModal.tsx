@@ -54,7 +54,7 @@ const WelcomeModal: React.FC = () => {
 
   const sendVerificationEmail = async () => {
     try {
-      const resp = await axios.post('http://localhost:4000/send-verification-email', { email });
+      const resp = await axios.post(`${import.meta.env.VITE_API_URL}/send-verification-email`, { email });
       handleToast(resp.data.message, 'info');
       setShowEmailVerification(true);
     } catch (err: any) {
@@ -64,7 +64,7 @@ const WelcomeModal: React.FC = () => {
 
   const verifyCode = async () => {
     try {
-      const resp = await axios.post('http://localhost:4000/verify-code', { email, code: verificationCode });
+      const resp = await axios.post(`${import.meta.env.VITE_API_URL}/verify-code`, { email, code: verificationCode });
       handleToast(resp.data.message, 'success');
       return true;
     } catch (err: any) {
@@ -72,7 +72,7 @@ const WelcomeModal: React.FC = () => {
       return false;
     }
   };
-
+  
   const handleNextStep = async () => {
 
     function getDomainFromEmail(email: string): string | null {
