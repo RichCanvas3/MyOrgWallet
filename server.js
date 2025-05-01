@@ -4,6 +4,7 @@ import cors from 'cors';
 import sgMail from '@sendgrid/mail';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
+
 import querystring from 'querystring'; // For query string parsing
 import { generateKeyPairSync, createPrivateKey, createPublicKey } from 'crypto';
 import * as jose from 'jose';
@@ -19,6 +20,9 @@ dotenv.config();
 
 // Set SendGrid API key
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+// Handle preflight requests explicitly
+app.options('*', cors());
 
 // Middleware
 app.use(helmet()); // Add security headers
@@ -37,7 +41,9 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true, // Support cookies/auth headers if needed
+  methods: ['GET', 'POST', 'OPTIONS'], // Explicitly allow methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allow common headers
+  credentials: true,
 }));
 
 const verificationCodes = new Map();
