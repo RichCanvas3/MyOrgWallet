@@ -22,7 +22,9 @@ dotenv.config();
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // Middleware
-
+app.options('*', (req, res) => {
+  res.sendStatus(200);
+});
 // Configure CORS to allow requests from the production client
 const allowedOrigins = [
   'http://localhost:5173', // For local development
