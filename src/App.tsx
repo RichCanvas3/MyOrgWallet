@@ -139,6 +139,16 @@ const App = () => {
       setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
+    if (cmd.action == "edit" && cmd.entityId == "indiv-org" && cmd.did) {
+      setSelectedEntityId("indiv-org")
+      setSelectedDid(cmd.did)
+      setAttestationViewModalVisible(true)
+    }
+    if (cmd.action == "show" && cmd.entityId == "indiv-org" && cmd.did) {
+      setSelectedEntityId("indiv-org")
+      setSelectedDid(cmd.did)
+      setAttestationViewModalVisible(true)
+    }
     if (cmd.action == "edit" && cmd.entityId == "org" && cmd.did) {
       setSelectedEntityId("org")
       setSelectedDid(cmd.did)

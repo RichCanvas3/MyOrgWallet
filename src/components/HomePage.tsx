@@ -26,16 +26,10 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
   
 
   useEffect(() => {
-    console.info("**************  check if selected signatory ************")
-
     // if wallet is defined and we have not defined smart wallet
     if (selectedSignatory) {
-      console.info("**************  yes try to login ************")
       selectedSignatory.login().then(( loginResp ) => {
-        console.info("owner: ", loginResp.owner)
-        console.info("signatory: ", loginResp.signatory)
         connect(loginResp.owner, loginResp.signatory, "", "", "").then(() => {
-          console.info("connected ...................")
         })
       })
     } else  {
@@ -46,7 +40,6 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
   useEffect(() => {
     // if wallet is defined and we have not defined smart wallet
     if (isIndividualConnected) {
-      console.info("........... individual is connected ...............")
       navigate('/chat/')
     } else  {
       //console.info("...... error")
@@ -58,9 +51,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
       if (selectedSignatory) {
         const loginResp = await selectedSignatory.login()
         if (loginResp) {
-          console.info("owner: ", loginResp.owner)
-          console.info("signatory: ", loginResp.signatory)
-          await connect(loginResp.owner, loginResp.signatory)
+          await connect(loginResp.owner, loginResp.signatory, "", "", "")
         }
         
       }

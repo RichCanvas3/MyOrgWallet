@@ -42,13 +42,13 @@ import { IndivOrgAttestation } from "../models/Attestation"
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService"
 
 
-interface DeleteAttestationsModalProps {
+interface ApproveLeaderModalProps {
   isVisible: boolean;
   onClose: () => void;
 }
 
 
-const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisible, onClose}) => {
+const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClose}) => {
 
   const {t} = useTranslation();
 
@@ -314,4 +314,4 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
   );
 };
 
-export default DeleteAttestationsModal;
+export default ApproveLeaderModal;
