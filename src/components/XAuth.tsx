@@ -28,9 +28,11 @@ interface XProfile {
 
 
 
-const REDIRECT_URI = 'http://localhost:5173/xcallback';
+// const REDIRECT_URI = 'http://localhost:5173/xcallback';
 
-const CALLBACK_URI = 'http://localhost:4000/x-callback'
+// const CALLBACK_URI = 'http://localhost:4000/x-callback'
+const REDIRECT_URI = import.meta.env.VITE_X_REDIRECT_URI || 'http://localhost:5173/xcallback';
+const CALLBACK_URI = `${import.meta.env.VITE_API_URL}/x-callback` || 'http://localhost:4000/x-callback';
 
 interface XAuthProps {
 }

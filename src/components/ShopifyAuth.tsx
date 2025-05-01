@@ -17,9 +17,10 @@ import {SHOPIFY_CLIENT_ID} from "../config";
 
 const SHOP_NAME = "richcanvas"
 
-const REDIRECT_URI = 'http://localhost:5173/shopifycallback';
-const CALLBACK_URI = 'http://localhost:4000/shopify-callback'
-
+// const REDIRECT_URI = 'http://localhost:5173/shopifycallback';
+// const CALLBACK_URI = 'http://localhost:4000/shopify-callback'
+const REDIRECT_URI = import.meta.env.VITE_SHOPIFY_REDIRECT_URI || 'http://localhost:5173/shopifycallback';
+const CALLBACK_URI = `${import.meta.env.VITE_API_URL}/shopify-callback` || 'http://localhost:4000/shopify-callback';
 
 interface ShopifyAuthProps {
 }

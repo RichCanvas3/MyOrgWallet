@@ -87,13 +87,18 @@ const queryClient = new QueryClient({
   },
 });
 
+// const metadata = {
+//   name: "RichCanvas",
+//   description: "RichCanvas Auth",
+//   url: "http://localhost:5173",
+//   icons: [],
+// };
 const metadata = {
   name: "RichCanvas",
   description: "RichCanvas Auth",
-  url: "http://localhost:5173",
-  icons: [],
+  url: import.meta.env.VITE_APP_URL || 'http://localhost:5173',
+  icons: [], // Add icon URLs if needed, e.g., ['/favicon.ico']
 };
-
 
 
 const modal = createAppKit({

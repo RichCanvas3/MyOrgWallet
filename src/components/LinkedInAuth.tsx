@@ -28,12 +28,15 @@ interface LinkedInProfile {
 
 import {LINKEDIN_CLIENT_ID} from "../config";
 
-const REDIRECT_URI = 'http://localhost:5173/linkedincallback';
+// const REDIRECT_URI = 'http://localhost:5173/linkedincallback';
+// const SCOPES = 'profile email openid';
+
+// const CALLBACK_URI = 'http://localhost:4000/linkedin-callback'
+
+// Use environment variables for redirect URIs
+const REDIRECT_URI = import.meta.env.VITE_LINKEDIN_REDIRECT_URI || 'http://localhost:5173/linkedincallback';
 const SCOPES = 'profile email openid';
-
-const CALLBACK_URI = 'http://localhost:4000/linkedin-callback'
-
-
+const CALLBACK_URI = `${import.meta.env.VITE_API_URL}/linkedin-callback` || 'http://localhost:4000/linkedin-callback';
 
 interface LinkedInAuthProps {
 }
