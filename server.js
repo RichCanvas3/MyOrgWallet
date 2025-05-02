@@ -303,3 +303,19 @@ const port = process.env.PORT || 4000;
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
+// Health check
+app.get('/', (req, res) => {
+  res.status(200).send('🚀 Server is up and running');
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal Server Error' });
+});
+
+// Example API route
+app.get('/api/ping', (req, res) => {
+  res.json({ message: 'pong' });
+});
