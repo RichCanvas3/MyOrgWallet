@@ -21,7 +21,6 @@ export const useSelectedSignatory = (config: SignatoryFactoryConfig) => {
     useState<SignatoryFactoryName>("burnerSignatoryFactory");
 
   useEffect(() => {
-    console.info("-----------> config: ", config)
     const factoriesByName = {
       burnerSignatoryFactory: createBurnerSignatoryFactory(config),
       web3AuthSignatoryFactory: createWeb3AuthSignatoryFactory(config),

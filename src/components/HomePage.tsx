@@ -23,44 +23,24 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
 
 
   const { selectedSignatory, signatory, connect, isIndividualConnected } = useWallectConnectContext();
-  
-
-  useEffect(() => {
-    console.info("**************  check if selected signatory ************")
-
-    // if wallet is defined and we have not defined smart wallet
-    if (selectedSignatory) {
-      console.info("**************  yes try to login ************")
-      selectedSignatory.login().then(( loginResp ) => {
-        console.info("owner: ", loginResp.owner)
-        console.info("signatory: ", loginResp.signatory)
-        connect(loginResp.owner, loginResp.signatory, "", "", "").then(() => {
-          console.info("connected ...................")
-        })
-      })
-    } else  {
-      //console.info("...... error")
-    }
-  }, [walletClient]);
+  const { isConnected } = useAccount();
 
   useEffect(() => {
     // if wallet is defined and we have not defined smart wallet
-    if (isIndividualConnected) {
-      console.info("........... individual is connected ...............")
+    if (isConnected && isIndividualConnected) {
+      console.info(".......... navigate to chat")
       navigate('/chat/')
     } else  {
       //console.info("...... error")
     }
-  }, [isIndividualConnected]);
+  }, [isConnected, isIndividualConnected]);
 
   const handleConnect = async () => {
     try {
       if (selectedSignatory) {
         const loginResp = await selectedSignatory.login()
         if (loginResp) {
-          console.info("owner: ", loginResp.owner)
-          console.info("signatory: ", loginResp.signatory)
-          await connect(loginResp.owner, loginResp.signatory)
+          await connect(loginResp.owner, loginResp.signatory, "", "", "")
         }
         
       }
@@ -165,7 +145,25 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
             Organizations
           </Typography>
           <Button variant="outlined" size="medium" onClick={handleOrg}>
-            Explore Organization's
+            Explore Organizations
+          </Button>
+        </Box>
+
+        {/* Leadership Card */}
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 2,
+          }}
+        >
+          <Typography variant="h6" color="text.primary">
+            Leaders
+          </Typography>
+          <Button variant="outlined" size="medium" onClick={handleOrg}>
+            Explore Leaders
           </Button>
         </Box>
       </Card>

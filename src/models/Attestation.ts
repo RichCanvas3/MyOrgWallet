@@ -19,7 +19,9 @@ export interface Attestation {
   proof?: string | null;
   revoked?: boolean | null;
   isValidated?: boolean;
-  percentCompleted?: number
+  percentCompleted?: number;
+  displayName?: string | null;
+
 }
 
 export interface AttestationCategory {
@@ -36,6 +38,11 @@ export interface OrgAttestation extends Attestation {
 }
 
 export interface IndivAttestation extends Attestation {
+  orgDid: string,
+  name: string
+}
+
+export interface IndivOrgAttestation extends Attestation {
   indivDid: string,
   name: string,
   rolecid: string,

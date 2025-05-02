@@ -69,8 +69,6 @@ const WalletAuth = forwardRef<WalletAuthRef, WalletAuthProps>((props, ref) => {
   const openWalletPopup = () => {
     console.info(">>>>>>>>>>>>>> open wallet popup")
     selectedSignatory.login().then(( owner, signatory ) => {
-      console.info("owner: ", owner)
-      console.info("signatoryaaa: ", signatory)
     })
 
     /*

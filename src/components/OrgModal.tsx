@@ -69,7 +69,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
           name: orgName,
           attester: orgDid,
           class: "organization",
-          category: "profile",
+          category: "wallet",
           entityId: entityId,
           hash: hash,
           vccomm: (fullVc.credentialSubject as any).commitment.toString(),
@@ -124,20 +124,15 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
 
 
   const handleSave = () => {
-    console.info("signatory: ", signatory)
     if (signatory && orgAccountClient && walletClient) {
-      console.info("create org attestation: ", name)
       addOrgAttestation(name)
     };
-
     onClose()
   }
 
 
   useEffect(() => {
-
       setName(orgName)
-
   }, [isVisible]);
 
   return (

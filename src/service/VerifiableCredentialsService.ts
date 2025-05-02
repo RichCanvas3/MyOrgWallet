@@ -114,9 +114,9 @@ class VerifiableCredentialsService {
 
     static async createIndivVC(
       entityId: string,
-      orgDid: string,
-      issuerDid: string,
       indivDid: string,
+      issuerDid: string,
+      orgDid: string,
       indivName: string
     ): Promise<VerifiableCredential> {
       let vc : VerifiableCredential = {
@@ -125,8 +125,8 @@ class VerifiableCredentialsService {
         issuer: issuerDid, 
         issuanceDate: new Date().toISOString(),
         credentialSubject: {
-          id: orgDid,
-          indivDid: indivDid,
+          id: indivDid,
+          org: orgDid,
           name: indivName,
           verifiedMethod: "OAuth",
           platform: "richcanvas-" + entityId
@@ -215,6 +215,32 @@ class VerifiableCredentialsService {
 
     
     static async createIndivEmailVC(
+      entityId: string,
+      indivDid: string,
+      issuerDid: string,
+      emailType: string,
+      email: string
+    ): Promise<VerifiableCredential> {
+      let vc : VerifiableCredential = {
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
+        type: ["VerifiableCredential", "EmailCredential"],
+        issuer: issuerDid, 
+        issuanceDate: new Date().toISOString(),
+        credentialSubject: {
+          id: indivDid,
+          type: emailType,
+          email: email,
+          verifiedMethod: "oAuth",
+          platform: "richcanvas-" + entityId
+        }
+      }
+    
+      return vc;
+    }
+
+
+    
+    static async createIndivOrgVC(
       entityId: string,
       indivDid: string,
       issuerDid: string,

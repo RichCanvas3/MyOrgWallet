@@ -49,9 +49,11 @@ import RightSide from "./RightSide";
 import { useWallectConnectContext } from "../context/walletConnectContext";
 
 import { keccak256, toUtf8Bytes } from 'ethers';
-import { useWalletClient } from 'wagmi';
+import { useAccount, useWalletClient } from 'wagmi';
+
 
 import DeleteAttestationsModal from './DeleteAttestationsModal';
+import ApproveLeaderModal from './ApproveLeaderModal';
 import OrgModal from './OrgModal';  
 
 
@@ -130,12 +132,18 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const { issuerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, issuerDid, orgName, setOrgNameValue } = useWallectConnectContext();
 
   const [isDeleteAttestationsModalVisible, setDeleteAttestationsModalVisible] = useState(false);
+  const [isApproveLeaderModalVisible, setApproveLeaderModalVisible] = useState(false);
   const [isOrgModalVisible, setOrgModalVisible] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
+
+  const { isConnected, address: web3ModalAddress, chain } = useAccount();
 
 
   const handleOnDeleteAttestationsModalClose = () => {
     setDeleteAttestationsModalVisible(false);
+  }
+  const handleOnApproveLeaderModalClose = () => {
+    setApproveLeaderModalVisible(false);
   }
 
   const handleOnOrgModalClose = () => {
@@ -214,12 +222,19 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     else {
       
       console.info("------------> org is not defined")
-      //navigate("/")
+      navigate("/")
     }
     
 
   }, [orgAccountClient, orgDid, indivDid]);
 
+  useEffect(() => {
+    console.info("........ is connected: ", isConnected)
+    if (isConnected == false) {
+      navigate('/')
+    }
+
+  }, [isConnected]);
 
   useEffect(() => {
     conversationsEmitter.on('conversationChangeEvent', handleConversationChange);
@@ -627,18 +642,20 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   
 
-  async function checkDeleteAll(lastAssistantResponse: string, lastUserResponse: string) {
+  async function checkAllDirectActions(lastAssistantResponse: string, lastUserResponse: string) {
 
     try {
       if (lastUserResponse.toLowerCase().includes("delete all") ||
           lastUserResponse.toLowerCase().includes("delete attestations")) {
-
         setDeleteAttestationsModalVisible(true)
-
       }
-      
-      } catch (error)
-      {
+      if (lastUserResponse.toLowerCase().includes("approve leader")) {
+        console.info("approve leader ...")
+        setApproveLeaderModalVisible(true)
+      }
+    
+    } catch (error)
+    {
 
     }
     
@@ -1038,7 +1055,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     //console.info(" >>>>>>>>>>>  introduction: ", introduction)
 
-    checkDeleteAll(introduction, lastUserResponse).then((data) => {
+    checkAllDirectActions(introduction, lastUserResponse).then((data) => {
       
     })
  
@@ -1588,6 +1605,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         <DeleteAttestationsModal
           isVisible={isDeleteAttestationsModalVisible}
           onClose={handleOnDeleteAttestationsModalClose}
+        />
+        <ApproveLeaderModal
+          isVisible={isApproveLeaderModalVisible}
+          onClose={handleOnApproveLeaderModalClose}
         />
         <OrgModal
           orgName={newOrgName?newOrgName:""}

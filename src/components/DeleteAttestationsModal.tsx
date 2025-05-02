@@ -37,7 +37,7 @@ import {
   Delegation
 } from "@metamask/delegation-toolkit";
 
-import { IndivAttestation } from "../models/Attestation"
+import { IndivOrgAttestation } from "../models/Attestation"
 
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService"
 
@@ -75,7 +75,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
         const walletSigner = await provider.getSigner()
 
         const rslt = await AttestationService.deleteAttestations(attestations, walletSigner, [orgIssuerDelegation, orgIndivDelegation], issuerAccountClient)
-        console.info("delete all attestations is done ")
+        console.info("delete organization attestations is done ")
       }
 
 
@@ -93,7 +93,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
         const walletSigner = await provider.getSigner()
 
         const rsl = await AttestationService.deleteAttestations(attestations, walletSigner, [indivIssuerDelegation], issuerAccountClient)
-        console.info("delete all attestations is done ")
+        console.info("delete all individual attestations is done ")
 
       }
 
@@ -139,12 +139,12 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
       //}
 
       
-      const samIndivAttestation = await AttestationService.getIndivAttestation(samIndivDid, AttestationService.IndivSchemaUID, "indiv");
+      const samIndivAttestation = await AttestationService.getIndivOrgAttestation(samIndivDid, AttestationService.IndivOrgSchemaUID, "indiv-org");
 
       let samOrgIndivDel : any | undefined
       let samDelegationOrgAddress : `0x${string}` | undefined
       if (samIndivAttestation) {
-        samOrgIndivDel = JSON.parse((samIndivAttestation as IndivAttestation).rolecid)
+        samOrgIndivDel = JSON.parse((samIndivAttestation as IndivOrgAttestation).rolecid)
         if (samIndivAccountClient.address == samOrgIndivDel.delegate) {
           console.info("*********** valid individual attestation so lets use this org address")
           // need to validate signature at some point
@@ -181,15 +181,14 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
 
         const samIndivName = ""
 
-        const vc = await VerifiableCredentialsService.createIndivVC("indiv", orgDid, issuerDid, samIndivDid, samIndivName);
-        const result = await VerifiableCredentialsService.createCredential(vc, "indiv", orgDid, walletClient, issuerAccountClient)
+        const vc = await VerifiableCredentialsService.createIndivOrgVC("indiv-org", orgDid, issuerDid, samIndivDid, samIndivName);
+        const result = await VerifiableCredentialsService.createCredential(vc, "indiv-org", orgDid, walletClient, issuerAccountClient)
 
         console.info("result of create credential: ", result)
         const fullVc = result.vc
         const proofUrl = result.proofUrl
 
-        console.info("&&&&&&&&&&&&&&&&&&&&&&& orgIssuerDel && orgIndivDel: ", fullVc, signer, orgIssuerDelegation, orgIndivDelegation)
-        if (fullVc && signer && orgIssuerDelegation && orgIndivDelegation) {
+        if (fullVc && orgIssuerDelegation && orgIndivDelegation) {
 
           console.info("&&&&&&&&&&&&&&&&&&&&&&& AttestationService add indiv attestation")
 
@@ -197,23 +196,26 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
         
           // now create attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
-          const attestation: IndivAttestation = {
+          const attestation: IndivOrgAttestation = {
             indivDid: samIndivDid,
             name: indivName,
             rolecid: JSON.stringify(samOrgIndivDel),
             attester: orgDid,
             class: "organization",
             category: "leaders",
-            entityId: "indiv",
+            entityId: "indiv-org",
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,
             vciss: issuerDid,
             proof: proofUrl
           };
-  
+
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          await window.ethereum.request({ method: "eth_requestAccounts" });
+          const walletSigner = await provider.getSigner()
           
-          const uid = await AttestationService.addIndivAttestation(attestation, signer, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+          const uid = await AttestationService.addIndivOrgAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
         }
 
 
@@ -303,7 +305,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
                   </Paper>
              
               </div>
-            </div>
+              </div>
             </div>
           </Transition.Child>
         </div>
