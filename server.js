@@ -306,6 +306,11 @@ app.get('/', (req, res) => {
   res.status(200).send('🚀 Server is up and running');
 });
 
+// Example API route
+app.get('/api/ping', (req, res) => {
+  res.json({ message: 'pong' });
+});
+
 // Error handler
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
