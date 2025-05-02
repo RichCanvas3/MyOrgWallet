@@ -22,9 +22,6 @@ dotenv.config();
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // Middleware
-app.options('*', (req, res) => {
-  res.sendStatus(200);
-});
 // Configure CORS to allow requests from the production client
 const allowedOrigins = [
   'http://localhost:5173', // For local development
@@ -313,9 +310,4 @@ app.get('/', (req, res) => {
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ error: 'Internal Server Error' });
-});
-
-// Example API route
-app.get('/api/ping', (req, res) => {
-  res.json({ message: 'pong' });
 });
