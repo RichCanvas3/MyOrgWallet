@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useRef, useMemo, useCallback, ReactNode } from "react";
 
 import { useAccount, useWalletClient } from "wagmi";
+import { useNavigate } from 'react-router-dom';
 
 import { encodeFunctionData, hashMessage, createPublicClient, createWalletClient, WalletClient, toHex, http, zeroAddress, publicActions, custom, verifyMessage  } from "viem";
 import { keccak256, toUtf8Bytes } from 'ethers';
@@ -54,6 +55,7 @@ import { DeveloperBoard } from "@mui/icons-material";
 import { IndivOrgAttestation, IndivEmailAttestation, IndivAttestation, OrgAttestation } from "../models/Attestation";
 import AttestationService from "../service/AttestationService";
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService";
+import { Navigate } from "react-router-dom";
 
 
 export type GetSnapsResponse = Record<string, Snap>;
@@ -75,6 +77,7 @@ export type WalletConnectContextState = {
     issuerDid?: string;
 
     orgName?: string;
+    indivName?: string;
 
     issuerAccountClient?: any;
     orgAccountClient?: any;
@@ -100,6 +103,7 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
   issuerDid: undefined,
 
   orgName: undefined,
+  indivName: undefined,
 
 
   issuerAccountClient: undefined,
@@ -157,6 +161,8 @@ export const useWalletConnect = () => {
     const [orgIssuerDelegation, setOrgIssuerDelegation] = useState<Delegation | undefined>();
     const [indivIssuerDelegation, setIndivIssuerDelegation] = useState<Delegation | undefined>();
 
+
+
     const {selectedSignatory, setSelectedSignatoryName, selectedSignatoryName } =
       useSelectedSignatory({
         chain: optimism,
@@ -190,20 +196,18 @@ export const useWalletConnect = () => {
 
     useEffect(() => {
 
-        const publicClient = createPublicClient({
-          chain: optimism,
-          transport: http(),
-        });
-      
-
         //console.info("........ if connection to wallet has changed then update info .........")
         if (!chain || !isConnected || (connectedAddress && web3ModalAddress !== connectedAddress)) {
+          console.info("****************** is disconnected")
           setConnectedAddress(undefined);
         }
 
+        console.info(".......... setSelectedSignatoryName .............")
         setSelectedSignatoryName("injectedProviderSignatoryFactory")
 
     }, [chain, isConnected, web3ModalAddress, connectedAddress]);
+
+    
 
 
     useEffect(() => {
@@ -260,8 +264,12 @@ export const useWalletConnect = () => {
             setIndivDid(indivDid)
             setIndivAccountClient(indivAccountClient)
 
-            const indivOrgAttestation = await AttestationService.getIndivOrgAttestation(indivDid, AttestationService.IndivSchemaUID, "indiv");
-            console.info("&&&&&&&&&&&&&&&&& indivOrgAttestation: ", indivOrgAttestation)
+            const indivOrgAttestation = await AttestationService.getIndivOrgAttestation(indivDid, AttestationService.IndivOrgSchemaUID, "indiv-org");
+            const indivAttestation = await AttestationService.getAttestationByAddressAndSchemaId(indivDid, AttestationService.IndivSchemaUID, "indiv")
+            if (indivAttestation) {
+              setIndivName((indivAttestation as IndivAttestation).name)
+            }
+              
 
 
             let orgIndivDel : any | undefined
@@ -293,7 +301,6 @@ export const useWalletConnect = () => {
             }
             else {
 
-              const indivAttestation = await AttestationService.getAttestationByAddressAndSchemaId(indivDid, AttestationService.IndivSchemaUID, "indiv")
               if (indivAttestation) {
                 const orgDidValue = (indivAttestation as IndivAttestation).orgDid
                 const orgAddressValue = orgDidValue.replace('did:pkh:eip155:10:', '') as `0x${string}`
@@ -815,7 +822,7 @@ export const useWalletConnect = () => {
                   name: orgName,
                   attester: orgDid,
                   class: "organization",
-                  category: "profile",
+                  category: "wallet",
                   entityId: entityId,
                   hash: hash,
                   vccomm: (fullVc.credentialSubject as any).commitment.toString(),
@@ -1057,7 +1064,7 @@ export const useWalletConnect = () => {
                   name: indName,
                   attester: indivDid,
                   class: "individual",
-                  category: "profile",
+                  category: "wallet",
                   entityId: entityId,
                   hash: hash,
                   vccomm: (fullVc.credentialSubject as any).commitment.toString(),
@@ -1158,6 +1165,7 @@ export const useWalletConnect = () => {
             indivDid,
             issuerDid,
 
+            indivName,
             orgName,
 
             isIndividualConnected,
@@ -1193,6 +1201,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
       indivDid,
       issuerDid,
 
+      indivName,
       orgName,
 
       isIndividualConnected,
@@ -1225,6 +1234,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         indivDid,
         issuerDid,
 
+        indivName,
         orgName,
 
         isIndividualConnected,
@@ -1247,6 +1257,8 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         setOrgDidValue
       }),
       [
+        
+        indivName,
         orgName,
 
         orgDid,

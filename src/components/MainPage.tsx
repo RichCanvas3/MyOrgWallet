@@ -49,7 +49,8 @@ import RightSide from "./RightSide";
 import { useWallectConnectContext } from "../context/walletConnectContext";
 
 import { keccak256, toUtf8Bytes } from 'ethers';
-import { useWalletClient } from 'wagmi';
+import { useAccount, useWalletClient } from 'wagmi';
+
 
 import DeleteAttestationsModal from './DeleteAttestationsModal';
 import ApproveLeaderModal from './ApproveLeaderModal';
@@ -135,6 +136,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const [isOrgModalVisible, setOrgModalVisible] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
 
+  const { isConnected, address: web3ModalAddress, chain } = useAccount();
+
 
   const handleOnDeleteAttestationsModalClose = () => {
     setDeleteAttestationsModalVisible(false);
@@ -219,12 +222,19 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     else {
       
       console.info("------------> org is not defined")
-      //navigate("/")
+      navigate("/")
     }
     
 
   }, [orgAccountClient, orgDid, indivDid]);
 
+  useEffect(() => {
+    console.info("........ is connected: ", isConnected)
+    if (isConnected == false) {
+      navigate('/')
+    }
+
+  }, [isConnected]);
 
   useEffect(() => {
     conversationsEmitter.on('conversationChangeEvent', handleConversationChange);

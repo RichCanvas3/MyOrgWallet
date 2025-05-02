@@ -19,7 +19,9 @@ export interface Attestation {
   proof?: string | null;
   revoked?: boolean | null;
   isValidated?: boolean;
-  percentCompleted?: number
+  percentCompleted?: number;
+  displayName?: string | null;
+
 }
 
 export interface AttestationCategory {

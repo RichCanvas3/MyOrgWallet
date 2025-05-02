@@ -515,8 +515,9 @@ class AttestationService {
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && orgdid != undefined && name != undefined) {
       //console.info("set to indiv attestation with name: ", name)
       const att : IndivAttestation = {
+        displayName: name,
         class: "individual",
-        category: "profile",
+        category: "wallet",
         entityId: entityId,
         attester: attesterDid,
         schemaId: schemaId,
@@ -594,7 +595,6 @@ class AttestationService {
     let name : string | undefined
     let rolecid : string | undefined
 
-
     for (const field of decodedData) {
       let fieldName = field["name"]
 
@@ -627,8 +627,8 @@ class AttestationService {
 
     const attesterDid = "did:pkh:eip155:10:" + attester
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && indivdid != undefined && name != undefined && rolecid != undefined) {
-      //console.info("set to indiv attestation with name: ", name)
       const att : IndivOrgAttestation = {
+        displayName: name,
         class: "organization",
         category: "leaders",
         entityId: entityId,
@@ -644,6 +644,8 @@ class AttestationService {
         name: name,
         rolecid: rolecid
       }
+
+      console.info("IndivOrgAttestation: ", att)
 
       return att
     }
@@ -736,8 +738,9 @@ class AttestationService {
       if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && name != undefined) {
         //console.info("set to org attestation with name: ", name)
         const att : OrgAttestation = {
+          displayName: name,
           class: "organization",
-          category: "profile",
+          category: "wallet",
           entityId: entityId,
           attester: attesterDid,
           schemaId: schemaId,
@@ -865,6 +868,7 @@ class AttestationService {
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && name != undefined) {
       //console.info("set to social attestation with name: ", name)
       const att : SocialAttestation = {
+        displayName: name,
         entityId: entityId,
         class: "individual",
         category: "social",
@@ -965,6 +969,7 @@ class AttestationService {
       if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && domain != undefined) {
         //console.info("set to org attestation with name: ", name)
         const att : RegisteredDomainAttestation = {
+          displayName: domain,
           entityId: entityId,
           class: "organization",
           category: "domain",
@@ -1085,6 +1090,7 @@ class AttestationService {
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && proof != undefined && name != undefined && idnumber && status && formationdate && locationaddress) {
       //console.info("set to social attestation with name: ", name)
       const att : StateRegistrationAttestation = {
+        displayName: name,
         entityId: entityId,
         class: "organization",
         category: "registration",
@@ -1197,6 +1203,7 @@ class AttestationService {
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && type && email) {
       //console.info("set to social attestation with name: ", name)
       const att : EmailAttestation = {
+        displayName: email,
         entityId: entityId,
         class: "organization",
         category: "profile",
@@ -1334,6 +1341,7 @@ class AttestationService {
       
       const attesterDid = "did:pkh:eip155:10:" + attester
       const att : WebsiteAttestation = {
+        displayName: url,
         uid: uid,
         schemaId: schemaId,
         entityId: entityId,
@@ -1442,6 +1450,7 @@ class AttestationService {
 
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && vccomm != undefined && vcsig != undefined && vciss != undefined  && policy != undefined && type != undefined) {
       const att : InsuranceAttestation = {
+        displayName: entityId,
         uid: uid,
         schemaId: schemaId,
         entityId: entityId,
@@ -1550,6 +1559,7 @@ class AttestationService {
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && type && email) {
       //console.info("set to social attestation with name: ", name)
       const att : EmailAttestation = {
+        displayName: email,
         entityId: entityId,
         class: "individual",
         category: "profile",
@@ -1724,43 +1734,53 @@ class AttestationService {
     let attestationCategories : AttestationCategory[] = [
       {
         class: "organization",
+        name: "wallet",
+        id: "10"
+      },
+      {
+        class: "organization",
         name: "leaders",
-        id: "0"
+        id: "20"
       },
       {
         class: "organization",
         name: "profile",
-        id: "1"
+        id: "30"
       },
       {
         class: "organization",
         name: "social",
-        id: "2"
+        id: "40"
       },
       {
         class: "organization",
         name: "domain",
-        id: "3"
+        id: "50"
       },
       {
         class: "organization",
         name: "registration",
-        id: "4"
+        id: "60"
       },
       {
         class: "organization",
         name: "certificate",
-        id: "5"
+        id: "70"
+      },
+      {
+        class: "individual",
+        name: "wallet",
+        id: "80"
       },
       {
         class: "individual",
         name: "profile",
-        id: "6"
+        id: "90"
       },
       {
         class: "individual",
         name: "social",
-        id: "7"
+        id: "100"
       },
     ]
 
@@ -1894,6 +1914,7 @@ class AttestationService {
               entityId = entityId
             }
 
+            console.info("push att on list: ", att)
             attestations.push(att)
           }
       
@@ -2068,11 +2089,13 @@ class AttestationService {
           }
         }
         if (schemaId == this.IndivOrgSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.IndivSchema);
+          console.info(">>>>>>>>>>> CONSTRUCT INDIV ORG ATTESTATION")
+          const schemaEncoder = new SchemaEncoder(this.IndivOrgSchema);
           const decodedData = schemaEncoder.decodeData(item.data);
           if (this.checkEntity(entityId, decodedData)) {
             console.info("construct indiv org attestation")
             rtnAttestation = this.constructIndivOrgAttestation(item.id, item.schemaId, entityId, address, "", decodedData)
+            console.info("returned att: ", rtnAttestation)
           }
         }
         if (schemaId == this.OrgSchemaUID) {

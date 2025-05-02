@@ -60,7 +60,9 @@ export function AttestationCard({
   onSelect,
   hoverable = false,
 }: AttestationCardProps) {
-  const { entityId, category, isValidated } = attestation;
+  const { entityId, displayName, category, isValidated } = attestation;
+
+  console.info("att card: ", attestation.entityId, attestation.displayName)
 
   // Icon component for category
   const Icon = categoryIcons[category ?? "default"] || categoryIcons.default;
@@ -96,7 +98,7 @@ export function AttestationCard({
   >
     <CardActionArea onClick={onSelect} sx={{ p: 0 }}>
       <CardContent sx={{ display: "flex", flexDirection: "column", p: 0 }}>
-        {/* 1️⃣ First row: icon, entityId, verified badge */}
+        {/* 1️⃣ First row: icon, displayName, verified badge */}
         <Box
           sx={{
             display: "flex",
@@ -134,7 +136,7 @@ export function AttestationCard({
             noWrap
             sx={{ lineHeight: 1.2 }}
           >
-            {description}
+            {displayName}
           </Typography>
         </Box>
       </CardContent>

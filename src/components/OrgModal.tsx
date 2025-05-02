@@ -69,7 +69,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
           name: orgName,
           attester: orgDid,
           class: "organization",
-          category: "profile",
+          category: "wallet",
           entityId: entityId,
           hash: hash,
           vccomm: (fullVc.credentialSubject as any).commitment.toString(),

@@ -236,7 +236,6 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
           }
           //console.info("go get shopify attestation: ", did)
           if (did) {
-            //console.info(">>>>>>>>>>>>>>>>>>>>> get attestation")
             AttestationService.getAttestationByAddressAndSchemaId(did, schemaUid, entityId).then((att) => {
 
               console.info("att: ", att)

@@ -7,6 +7,7 @@ import Tooltip from "./Tooltip";
 import UserSettingsModal from './UserSettingsModal';
 import ChatShortcuts from './ChatShortcuts';
 import ConversationList from "./ConversationList";
+import { useAccount, useWalletClient } from 'wagmi';
 
 interface SidebarProps {
   className: string;
@@ -18,9 +19,13 @@ const Sidebar: React.FC<SidebarProps> = ({className, isSidebarCollapsed, toggleS
   const {t} = useTranslation();
   const navigate = useNavigate();
   const [isSettingsModalVisible, setSettingsModalVisible] = useState(false);
+  const { isConnected, address: web3ModalAddress, chain } = useAccount();
 
   const handleNewChat = () => {
-    navigate('/chat/', {state: {reset: Date.now()}});
+    if (isConnected) {
+      navigate('/chat/', {state: {reset: Date.now()}});
+    }
+    
   }
 
 

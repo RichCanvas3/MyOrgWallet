@@ -89,10 +89,10 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
       console.info("approve it: ", att)
 
       console.info("************************   CREATE DELEGATION FOR: ", att.name)
-      const leaderIndivAddress = att.attester as `0x${string}`
-      const leaderIndivDid = 'did:pkh:eip155:10:' + leaderIndivAddress
+      const leaderIndivAddress = att.attester.replace('did:pkh:eip155:10:', '') as `0x${string}`
+      const leaderIndivDid = att.attester
 
-      console.info("samCFOEOA: ", att.name)
+      console.info("Selected Person to add: ", att.name)
       console.info("to: ", leaderIndivAddress)
       console.info("from: ", orgAccountClient.address)
 
@@ -124,13 +124,11 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
 
         console.info("&&&&&&&&&&&&&&&&&&&&&&& AttestationService add indiv attestation")
 
-        const indivName = "indiv name"
-      
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
         const attestation: IndivOrgAttestation = {
           indivDid: leaderIndivDid,
-          name: indivName,
+          name: att.name,
           rolecid: JSON.stringify(leaderOrgIndivDel),
           attester: orgDid,
           class: "organization",

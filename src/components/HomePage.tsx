@@ -23,28 +23,17 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
 
 
   const { selectedSignatory, signatory, connect, isIndividualConnected } = useWallectConnectContext();
-  
+  const { isConnected } = useAccount();
 
   useEffect(() => {
     // if wallet is defined and we have not defined smart wallet
-    if (selectedSignatory) {
-      selectedSignatory.login().then(( loginResp ) => {
-        connect(loginResp.owner, loginResp.signatory, "", "", "").then(() => {
-        })
-      })
-    } else  {
-      //console.info("...... error")
-    }
-  }, [walletClient]);
-
-  useEffect(() => {
-    // if wallet is defined and we have not defined smart wallet
-    if (isIndividualConnected) {
+    if (isConnected && isIndividualConnected) {
+      console.info(".......... navigate to chat")
       navigate('/chat/')
     } else  {
       //console.info("...... error")
     }
-  }, [isIndividualConnected]);
+  }, [isConnected, isIndividualConnected]);
 
   const handleConnect = async () => {
     try {
@@ -156,7 +145,25 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
             Organizations
           </Typography>
           <Button variant="outlined" size="medium" onClick={handleOrg}>
-            Explore Organization's
+            Explore Organizations
+          </Button>
+        </Box>
+
+        {/* Leadership Card */}
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 2,
+          }}
+        >
+          <Typography variant="h6" color="text.primary">
+            Leaders
+          </Typography>
+          <Button variant="outlined" size="medium" onClick={handleOrg}>
+            Explore Leaders
           </Button>
         </Box>
       </Card>
