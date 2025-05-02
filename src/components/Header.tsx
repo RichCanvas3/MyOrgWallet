@@ -2,9 +2,12 @@ import React, {useContext, useEffect, useRef, useState} from 'react';
 import { AppBar, Toolbar, IconButton, Menu, MenuItem, Typography, Box, Button } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import myOrgWalletLogo from "/icon.png"; 
-//import { WalletAuthRef } from './WalletAuth';
+import { useDisconnect } from 'wagmi';
 import UserSettingsModal from './UserSettingsModal';
 import SettingsIcon from "@mui/icons-material/Settings";
+import { useAccount, useWalletClient } from 'wagmi';
+import { useWallectConnectContext } from "../context/walletConnectContext";
+import { Link } from 'react-router-dom';
 
 import ProfileService, {
   Profile,
@@ -12,7 +15,7 @@ import ProfileService, {
   profileEmitter
 } from "../service/ProfileService";
 
-//const walletAuthRef = { current: null as WalletAuthRef | null };
+
 
 const handleConnect = async () => {
     //try {
@@ -30,17 +33,12 @@ const handleConnect = async () => {
 
 const Header: React.FC<HeaderProps> = ({className}) => {
 
+  const { disconnect } = useDisconnect();
+  const { isConnected } = useAccount();
+
   const [anchorEl, setAnchorEl] = React.useState(null);
 
-  const [profile, setProfile] = useState<Profile | null>(null);
-
-    useEffect(() => {
-        ProfileService.getProfile().then((profile) => {
-            let prof = profile ? profile : null
-            setProfile(prof)
-        })
-
-    }, []);
+  const { orgName, indivName } = useWallectConnectContext();
   
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -69,22 +67,33 @@ const Header: React.FC<HeaderProps> = ({className}) => {
   />
   <Toolbar className="toolbar">
     <div className="logo-container">
-      <img src={myOrgWalletLogo} alt="myOrgWallet Logo" className="logo" />
-      <Typography variant="h6" className="title">
-        myOrgWallet
-      </Typography>
+      <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
+        <img src={myOrgWalletLogo} alt="myOrgWallet Logo" className="logo" />
+        <Typography variant="h6" className="title">
+          myOrgWallet
+        </Typography>
+      </Link>
     </div>
     <div className="actions-container">
+
+    {isConnected && (
+      <>
       <div className="profile-box">
         <Typography variant="subtitle2" className="profile-text">
-          {profile?.companyName}
+          {orgName}
         </Typography>
       </div>
       <div className="profile-box">
         <Typography variant="subtitle2" className="profile-text">
-          {profile?.fullName}
+          {indivName}
         </Typography>
       </div>
+      <button
+        onClick={() => disconnect()}
+        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+      >
+        Disconnect Wallet
+      </button>
       <IconButton
         aria-label="settings"
         onClick={openSettingsDialog}
@@ -92,6 +101,9 @@ const Header: React.FC<HeaderProps> = ({className}) => {
       >
         <SettingsIcon />
       </IconButton>
+      </>)}
+
+
       <IconButton
         edge="end"
         onClick={handleMenuOpen}

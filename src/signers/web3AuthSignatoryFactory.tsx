@@ -12,9 +12,6 @@ export const createWeb3AuthSignatoryFactory: SignatoryFactoryConfigurator = (
 ) => {
   const { chain, rpcUrl } = config;
 
-  console.info("---------> chain: ", chain)
-  console.info("rpcUrl: ", rpcUrl)
-
   const chainConfig = {
     chainNamespace: CHAIN_NAMESPACES.EIP155,
     chainId: toHex(chain.id),

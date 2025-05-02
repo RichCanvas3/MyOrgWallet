@@ -94,6 +94,7 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
   useEffect(() => {
     if (orgDid && indivDid && tabValue) {
       AttestationService.loadRecentAttestationsTitleOnly(orgDid, indivDid).then((atts) => {
+        console.info("set attestations in Attestation Section: ", atts)
         setAttestations(atts)
       })
 
@@ -128,11 +129,15 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
     const filtered = attestations.filter(a =>
         a.entityId?.toLowerCase().includes(searchTerm.toLowerCase()),
     );
+    console.info("filtered: ", filtered, attestations)
     const grouped = currentCategories.reduce((acc, cat) => {
         acc[cat.name] = filtered.filter(a => a.category === cat.name && a.class === cat.class);
         
+        console.info("return acc: ", acc)
         return acc;
     }, {} as Record<string, Attestation[]>);
+
+    console.info("groupd: ", grouped)
 
   return (
 <Box
