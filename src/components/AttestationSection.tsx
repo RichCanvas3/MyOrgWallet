@@ -234,7 +234,7 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
                 <Grid container spacing={2}>
                   {grouped[cat.name].map(att => (
                     <Grid
-                      key={att.entityId}
+                      key={att.uid}
                     >
                       <AttestationCard
                         attestation={att}

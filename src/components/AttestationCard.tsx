@@ -62,7 +62,7 @@ export function AttestationCard({
 }: AttestationCardProps) {
   const { entityId, displayName, category, isValidated } = attestation;
 
-  console.info("att card: ", attestation.entityId, attestation.displayName)
+  //console.info("att card: ", attestation.entityId, attestation.displayName)
 
   // Icon component for category
   const Icon = categoryIcons[category ?? "default"] || categoryIcons.default;
