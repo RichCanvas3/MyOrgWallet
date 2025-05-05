@@ -54,6 +54,7 @@ const WelcomeModal: React.FC = () => {
 
   const sendVerificationEmail = async () => {
     try {
+      console.info("send verification ..........: ", import.meta.env.VITE_API_URL)
       const resp = await axios.post(`${import.meta.env.VITE_API_URL}/send-verification-email`, { email });
       handleToast(resp.data.message, 'info');
       setShowEmailVerification(true);
