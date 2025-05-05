@@ -79,9 +79,9 @@ export type WalletConnectContextState = {
     orgName?: string;
     indivName?: string;
 
-    issuerAccountClient?: any;
-    orgAccountClient?: any;
-    indivAccountClient?: any;
+    issuerAccountClient?: MetaMaskSmartAccount;
+    orgAccountClient?: MetaMaskSmartAccount;
+    indivAccountClient?: MetaMaskSmartAccount;
 
     orgIndivDelegation?: Delegation,
     orgIssuerDelegation?: Delegation,
@@ -153,9 +153,9 @@ export const useWalletConnect = () => {
     const [signatory, setSignatory] = useState<any | undefined>();
     const [owner, setOwner] = useState<any | undefined>();
 
-    const [issuerAccountClient, setIssuerAccountClient] = useState<any>();
-    const [orgAccountClient, setOrgAccountClient] = useState<any>();
-    const [indivAccountClient, setIndivAccountClient] = useState<any>();
+    const [issuerAccountClient, setIssuerAccountClient] = useState<MetaMaskSmartAccount>();
+    const [orgAccountClient, setOrgAccountClient] = useState<MetaMaskSmartAccount>();
+    const [indivAccountClient, setIndivAccountClient] = useState<MetaMaskSmartAccount>();
 
     const [orgIndivDelegation, setOrgIndivDelegation] = useState<Delegation | undefined>();
     const [orgIssuerDelegation, setOrgIssuerDelegation] = useState<Delegation | undefined>();
@@ -238,7 +238,7 @@ export const useWalletConnect = () => {
               implementation: Implementation.Hybrid,
               deployParams: [issuerOwner.address, [], [], []],
               signatory: { account: issuerOwner },
-              deploySalt: toHex(0),
+              deploySalt: toHex(10),
             })
 
             let issuerDid = 'did:pkh:eip155:10:' + issuerAccountClient.address
@@ -252,7 +252,7 @@ export const useWalletConnect = () => {
               implementation: Implementation.Hybrid,
               deployParams: [owner, [], [], []],
               signatory: signatory,
-              deploySalt: toHex(1),
+              deploySalt: toHex(11),
             });
 
             const indivAddress = await indivAccountClient.getAddress()
@@ -287,7 +287,7 @@ export const useWalletConnect = () => {
 
             
             // create orgAccountClient
-            let orgAccountClient : any | undefined
+            let orgAccountClient : MetaMaskSmartAccount | undefined
             if (delegationOrgAddress) {
               console.info("==========>  valid delegation in attestation so use it and define orgAccountClient: ", delegationOrgAddress)
               orgAccountClient = await toMetaMaskSmartAccount({
@@ -296,7 +296,7 @@ export const useWalletConnect = () => {
                 implementation: Implementation.Hybrid,
                 deployParams: [owner, [], [], []],
                 signatory: signatory,
-                deploySalt: toHex(0),
+                deploySalt: toHex(10),
               });
             }
             else {
@@ -314,7 +314,7 @@ export const useWalletConnect = () => {
                   implementation: Implementation.Hybrid,
                   deployParams: [owner, [], [], []],
                   signatory: signatory,
-                  deploySalt: toHex(0),
+                  deploySalt: toHex(10),
                 });
 
               }
@@ -322,15 +322,17 @@ export const useWalletConnect = () => {
                 console.info("=================> no individual attestation")
                 console.info("let's go ahead and create org account client")
 
-                console.info("==========>  this is first time through so create new org AA and deploy it ")
+                console.info("==========>  this is first time through so create new org AA and deploy it 1 ")
                 orgAccountClient = await toMetaMaskSmartAccount({
                   client: publicClient,
                   implementation: Implementation.Hybrid,
                   deployParams: [owner, [], [], []],
                   signatory: signatory,
-                  deploySalt: toHex(0),
+                  deploySalt: toHex(10),
                 });
 
+                console.info("orgAccount AA: ", orgAccountClient.address)
+                console.info("indAccount AA: ", indivAccountClient.address)
 
                 // setup delegation between them
                 orgIndivDel = createDelegation({
@@ -407,6 +409,7 @@ export const useWalletConnect = () => {
 
 
 
+
             if (orgIndivDel) {
               setOrgIndivDelegation(orgIndivDel)
             }
@@ -423,6 +426,7 @@ export const useWalletConnect = () => {
             if (orgIssuerDel == null && orgIndivDel && indivDid) {
 
               const parentDelegationHash = getDelegationHashOffchain(orgIndivDel);
+              console.info("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX5")
               orgIssuerDel = createDelegation({
                 to: issuerAccountClient.address,
                 from: indivAccountClient.address,
@@ -435,7 +439,6 @@ export const useWalletConnect = () => {
                 delegation: orgIssuerDel,
               });
   
-  
               orgIssuerDel = {
                 ...orgIssuerDel,
                 signature,
@@ -447,7 +450,7 @@ export const useWalletConnect = () => {
             if (orgIssuerDel) {
               setOrgIssuerDelegation(orgIssuerDel)
             }
-            
+
 
 
             // setup delegation for individual to issuer delegation
@@ -460,6 +463,9 @@ export const useWalletConnect = () => {
             }
 
             if (indivIssuerDel == null && indivDid) {
+              console.info("************ CREATE INDIV ISSUER DELEGATE ********")
+              console.info("delegate: ", issuerAccountClient.address)
+              console.info("delegator: ", indivAccountClient.address)
               indivIssuerDel = createDelegation({
                 from: indivAccountClient.address,
                 to: issuerAccountClient.address,
@@ -483,6 +489,114 @@ export const useWalletConnect = () => {
             setIsIndividualConnected(true)
 
 
+ 
+            /*
+            console.info("*********** ADD INDIV ATTESTATION 6666 ****************")
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            await window.ethereum.request({ method: "eth_requestAccounts" });
+            const walletSigner = await provider.getSigner()
+        
+            const walletClient = signatory.walletClient
+            const entityId = "indiv"
+        
+            if (walletSigner && walletClient && indivDid && orgDid) {
+
+              let indName = "name";
+              if (indivName) {
+                indName = indivName
+              }
+        
+              const vc = await VerifiableCredentialsService.createIndivVC(entityId, indivDid, issuerDid, orgDid, indName);
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, issuerAccountClient)
+              const fullVc = result.vc
+              const proofUrl = result.proofUrl
+
+              if (fullVc) {
+              
+                // now create attestation
+                const hash = keccak256(toUtf8Bytes("hash value"));
+                const attestation: IndivAttestation = {
+                  orgDid: orgDid,
+                  name: indName,
+                  attester: indivDid,
+                  class: "individual",
+                  category: "wallet",
+                  entityId: entityId,
+                  hash: hash,
+                  vccomm: (fullVc.credentialSubject as any).commitment.toString(),
+                  vcsig: (fullVc.credentialSubject as any).commitmentSignature,
+                  vciss: issuerDid,
+                  proof: proofUrl
+                };
+
+                const isDeployed1 = await indivAccountClient.isDeployed()
+                console.info(" is indiv AA address: ", indivAccountClient.address)
+                console.info(" is indiv AA deployed: ", isDeployed1)
+            
+                const isDeployed2 = await issuerAccountClient.isDeployed()
+                console.info(" is issuer AA address: ", issuerAccountClient.address)
+                console.info(" is issuer AA deployed: ", isDeployed2)
+
+                if (isDeployed1 == false) {
+
+                  console.info("send user operation")
+
+                  const pimlicoClient = createPimlicoClient({
+                    transport: http(BUNDLER_URL),
+                    //entryPoint: { address: ENTRY_POINT_ADDRESS, version: '0.7' },
+                  });
+                    const paymasterClient = createPaymasterClient({
+                      transport: http(PAYMASTER_URL),
+                    });
+                  const bundlerClient = createBundlerClient({
+                                  transport: http(BUNDLER_URL),
+                                  paymaster: paymasterClient,
+                                  chain: optimism,
+                                  paymasterContext: {
+                                    // at minimum this must be an object; for Biconomy you can use:
+                                    mode:             'SPONSORED',
+                                    //calculateGasLimits: true,
+                                    //expiryDuration:  300,
+                                  },
+                                });
+  
+  
+                  const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+                  const userOperationHash = await bundlerClient!.sendUserOperation({
+                    account: indivAccountClient,
+                    calls: [
+                      {
+                        to: zeroAddress,
+                      },
+                    ],
+                    paymaster: paymasterClient,
+                    ...fee,
+                  });
+  
+                  console.info("send user operation - done")
+                  const { receipt } = await bundlerClient!.waitForUserOperationReceipt({
+                    hash: userOperationHash,
+                  });
+
+                }
+
+                
+            
+
+
+
+
+
+
+
+                const uid = await AttestationService.addIndivAttestation(attestation, walletSigner, [indivIssuerDel], indivAccountClient, issuerAccountClient)
+              }
+            }
+
+            */
+
+
+
           }
         }
         
@@ -492,6 +606,7 @@ export const useWalletConnect = () => {
     }, [signatory, owner]);
 
 
+    /*
     useEffect(() => {
   
       console.info("===========> check to see if we need to add individual attestation")
@@ -552,10 +667,14 @@ export const useWalletConnect = () => {
         })
         
       }
+      else {
+        console.info(".... fields not setup")
+      }
       
       
     }, [signatory, orgDid, indivDid, issuerDid, orgAccountClient, orgIndivDelegation, orgIssuerDelegation]);
-    
+    */
+
     const pimlicoClient = createPimlicoClient({
       transport: http(BUNDLER_URL),
       //entryPoint: { address: ENTRY_POINT_ADDRESS, version: '0.7' },
@@ -586,7 +705,7 @@ export const useWalletConnect = () => {
             implementation: Implementation.Hybrid,
             deployParams: [owner, [], [], []],
             signatory: signatory,
-            deploySalt: toHex(1),
+            deploySalt: toHex(11),
           });
 
           const indivAddress = await indivAccountClient.getAddress()
@@ -594,8 +713,59 @@ export const useWalletConnect = () => {
           setIndivDid(indivDid)
           setIndivAccountClient(indivAccountClient)
 
+          // if indivAccountClient is not deployed then deploy it
+          const isDeployed = await indivAccountClient.isDeployed()
+          console.info("is indivAccountClient deployed: ", isDeployed)
+          if (isDeployed == false) {
+
+            const pimlicoClient = createPimlicoClient({
+              transport: http(BUNDLER_URL),
+            });
+              const paymasterClient = createPaymasterClient({
+                transport: http(PAYMASTER_URL),
+              });
+            const bundlerClient = createBundlerClient({
+                            transport: http(BUNDLER_URL),
+                            paymaster: paymasterClient,
+                            chain: optimism,
+                            paymasterContext: {
+                              // at minimum this must be an object; for Biconomy you can use:
+                              mode:             'SPONSORED',
+                              //calculateGasLimits: true,
+                              //expiryDuration:  300,
+                            },
+                          });
+
+
+            const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+            const userOperationHash = await bundlerClient!.sendUserOperation({
+              account: indivAccountClient,
+              calls: [
+                {
+                  to: zeroAddress,
+                },
+              ],
+              paymaster: paymasterClient,
+              ...fee,
+            });
+
+            console.info("send user operation - done")
+            const { receipt } = await bundlerClient!.waitForUserOperationReceipt({
+              hash: userOperationHash,
+            });
+          }
+  
+
           // get attestation for individual account abstraction address
           const indivOrgAttestation = await AttestationService.getIndivOrgAttestation(indivDid, AttestationService.IndivOrgSchemaUID, "indiv-org");
+
+
+
+
+
+
+
+
 
           let orgAddressValue : `0x${string}` | undefined
           let orgDidValue : string | undefined
@@ -630,8 +800,13 @@ export const useWalletConnect = () => {
 
             
           // build orgs AA associated with individual, connect to existing if already built
-          let orgAccountClient : any | undefined
+          let orgAccountClient : MetaMaskSmartAccount | undefined
           if (orgAddressValue) {
+
+            console.info("&&&&&&&&&& check owner info ")
+            const checkIsDeployed = await orgAccountClient?.isDeployed();
+            console.info("check is deployed: ", checkIsDeployed)
+              
 
             let isOwner = false
             const code = await publicClient.getCode({ address: orgAddressValue });
@@ -643,6 +818,9 @@ export const useWalletConnect = () => {
               const coder = new AbiCoder();
               const [onChainOwner] = coder.decode(['address'], returnData);
               isOwner = onChainOwner.toLowerCase() == owner.toLowerCase()
+
+              console.info("owner: ", onChainOwner)
+              console.info("orgAccountClient: ", orgAccountClient)
             }
 
             
@@ -658,7 +836,7 @@ export const useWalletConnect = () => {
                 implementation: Implementation.Hybrid,
                 deployParams: [owner, [], [], []],
                 signatory: signatory,
-                deploySalt: toHex(0),
+                deploySalt: toHex(10),
               });
 
               orgDidValue = 'did:pkh:eip155:10:' + orgAddressValue
@@ -672,13 +850,13 @@ export const useWalletConnect = () => {
           }
           else {
             // this is first time through so create new org AA and deploy it
-            console.info("==========>  this is first time through so create new org AA and deploy it ")
+            console.info("==========>  this is first time through so create new org AA and deploy it 2 ")
             orgAccountClient = await toMetaMaskSmartAccount({
               client: publicClient,
               implementation: Implementation.Hybrid,
               deployParams: [owner, [], [], []],
               signatory: signatory,
-              deploySalt: toHex(0),
+              deploySalt: toHex(10),
             });
             orgAddressValue = orgAccountClient.address
             orgDidValue = 'did:pkh:eip155:10:' + orgAddressValue
@@ -700,11 +878,54 @@ export const useWalletConnect = () => {
                 expiryDuration:  300,
               },
             });
+
+
+            const isDeployed = await orgAccountClient.isDeployed()
+            console.info("is orgAccountClient deployed: ", isDeployed)
+            if (isDeployed == false) {
+
+              const pimlicoClient = createPimlicoClient({
+                transport: http(BUNDLER_URL),
+              });
+                const paymasterClient = createPaymasterClient({
+                  transport: http(PAYMASTER_URL),
+                });
+              const bundlerClient = createBundlerClient({
+                              transport: http(BUNDLER_URL),
+                              paymaster: paymasterClient,
+                              chain: optimism,
+                              paymasterContext: {
+                                // at minimum this must be an object; for Biconomy you can use:
+                                mode:             'SPONSORED',
+                                //calculateGasLimits: true,
+                                //expiryDuration:  300,
+                              },
+                            });
+
+
+              const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+              const userOperationHash = await bundlerClient!.sendUserOperation({
+                account: orgAccountClient,
+                calls: [
+                  {
+                    to: zeroAddress,
+                  },
+                ],
+                paymaster: paymasterClient,
+                ...fee,
+              });
+
+              console.info("send user operation - done")
+              const { receipt } = await bundlerClient!.waitForUserOperationReceipt({
+                hash: userOperationHash,
+              });
+            }
   
             
 
 
             // setup delegation between them
+            console.info("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
             orgIndivDel = createDelegation({
               to: indivAccountClient.address,
               from: orgAccountClient.address,
@@ -739,28 +960,6 @@ export const useWalletConnect = () => {
         });
         const walletClient = signatory.walletClient
 
-        /*
-          // configure snaps if not already configured
-          const walletClient = signatory.walletClient
-          const snapResponse = await walletClient.request({
-            method: 'wallet_getSnaps',
-          })
-
-          const snps = snapResponse as GetSnapsResponse
-        
-          const snapId = "local:http://localhost:8080"
-          const snap = snps?.[snapId]
-
-          if (snap == undefined) {
-            const snapId = "local:http://localhost:8080"
-            const snapRequestResponse = await walletClient.request({
-              method: 'wallet_requestSnaps',
-              params: {
-                [snapId]: {} ,
-              },
-            })
-          }
-          */
 
         // connect to issuer account abstraction
         const issuerOwner = privateKeyToAccount(ISSUER_PRIVATE_KEY);
@@ -769,16 +968,19 @@ export const useWalletConnect = () => {
           implementation: Implementation.Hybrid,
           deployParams: [issuerOwner.address, [], [], []],
           signatory: { account: issuerOwner },
-          deploySalt: toHex(0),
+          deploySalt: toHex(10),
         })
 
         console.info("issuerAccountClient: ", issuerAccountClient)
+        
+        const isDeployed = await issuerAccountClient.isDeployed()
+        console.info("is issuerAccount deployed: ", isDeployed)
 
         let issuerDid = 'did:pkh:eip155:10:' + issuerAccountClient.address
         setIssuerDid(issuerDid)
         setIssuerAccountClient(issuerAccountClient)
 
-        if (orgIndivDelegation) {
+        if (orgIndivDelegation && orgAccountClient) {
 
           console.info("user has orgIndivDelegation to manage org")
 
@@ -788,6 +990,7 @@ export const useWalletConnect = () => {
           if (orgIssuerDel == null && indivDid) {
 
             const parentDelegationHash = getDelegationHashOffchain(orgIndivDelegation);
+            console.info("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX2")
             orgIssuerDel = createDelegation({
               to: issuerAccountClient.address,
               from: indivAccountClient.address,
@@ -938,6 +1141,7 @@ export const useWalletConnect = () => {
           if (indivIssuerDel == null && indivDid) {
 
             console.info("delegation does not exist for indiv-issuer so create one")
+            console.info("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX3")
             indivIssuerDel = createDelegation({
               from: indivAccountClient.address,
               to: issuerAccountClient.address,
@@ -953,95 +1157,6 @@ export const useWalletConnect = () => {
               ...indivIssuerDel,
               signature,
             }
-
-
-
-
-
-            /*
-            const code1 = await publicClient.getCode({ address: indivAccountClient.address });
-            const isDeployed1 = code1 !== '0x';
-            console.info(" is indiv AA address: ", indivAccountClient.address)
-            console.info(" is indiv AA deployed: ", isDeployed1)
-
-            const code2 = await publicClient.getCode({ address: issuerAccountClient.address });
-            const isDeployed2 = code2 !== '0x';
-            console.info(" is issuer AA address: ", issuerAccountClient.address)
-            console.info(" is issuer AA deployed: ", isDeployed2)
-            */
-
-
-
-
-
-    
-            /*
-            console.info("test send on indiv user to issuer delegation")
-            const pimlicoClient = createPimlicoClient({
-              transport: http(BUNDLER_URL),
-              //entryPoint: { address: ENTRY_POINT_ADDRESS, version: '0.7' },
-            });
-            const bundlerClient = createBundlerClient({
-                            transport: http(BUNDLER_URL),
-                            paymaster: createPaymasterClient({
-                              transport: http(PAYMASTER_URL),
-                            }),
-                            chain: optimism,
-                            paymasterContext: {
-                              // at minimum this must be an object; for Biconomy you can use:
-                              mode:             'SPONSORED',
-                              //calculateGasLimits: true,
-                              //expiryDuration:  300,
-                            },
-                          });
-
-            console.info("set execution")
-            const executions = [
-              {
-                target: zeroAddress,
-                value: 0n,
-                callData: "0x",
-              },
-            ];
-
-            console.info("redeemDelegations")
-            const delegationChain = [indivIssuerDel]
-            const data = DelegationFramework.encode.redeemDelegations({
-                  delegations: [ delegationChain ],
-                  modes: [SINGLE_DEFAULT_MODE],
-                  executions: [executions]
-                });
-            
-            console.info("get fee")
-            const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
-
-            try {
-              console.info("fee: ", fee)
-              console.info("issuerAccountClient: ", issuerAccountClient)
-              console.info("delegation: ", indivIssuerDel)
-              let userOpHash = await bundlerClient.sendUserOperation({
-                account: issuerAccountClient,
-                calls: [
-                  {
-                    to: getDeleGatorEnvironment(optimism.id).DelegationManager.
-                    data,
-                  },
-                ],
-                ...fee,
-              });
-        
-        
-            
-              console.info("wait for receipt")
-              const userOperationReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
-              console.info("user op receipt: ", userOperationReceipt)
-            }
-            catch (error) {
-              console.info("error: ", error)
-            }
-            */
-
-
 
 
             console.info("&&&&&&&&&&&&&& Save indIssuerDelegation: ", indivIssuerDel)
@@ -1143,13 +1258,6 @@ export const useWalletConnect = () => {
                 console.info("+++++++++++++ indivAccountClient: ", indivAccountClient)
                 console.info("+++++++++++++ issuerAccountClient: ", issuerAccountClient)
 
-                const code1 = await publicClient.getCode({ address: indivAccountClient.address });
-                const isDeployed1 = code1 !== '0x';
-                console.info(" is indiv AA deployed: ", isDeployed1)
-
-                const code2 = await publicClient.getCode({ address: issuerAccountClient.address });
-                const isDeployed2 = code2 !== '0x';
-                console.info(" is issuer AA deployed: ", isDeployed2)
 
                 const uid = await AttestationService.addIndivEmailAttestation(attestation, walletSigner, [indivIssuerDel], indivAccountClient, issuerAccountClient)
               }

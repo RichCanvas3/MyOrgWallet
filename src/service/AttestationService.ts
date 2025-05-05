@@ -5,7 +5,7 @@ import { ChatMessage } from '../models/ChatCompletion';
 import { Entity } from '../models/Entity';
 import { Attestation, AttestationCategory, IndivAttestation, IndivOrgAttestation, OrgAttestation, SocialAttestation, RegisteredDomainAttestation, WebsiteAttestation, InsuranceAttestation, EmailAttestation, StateRegistrationAttestation, IndivEmailAttestation} from '../models/Attestation';
 import { Organization } from '../models/Organization';
-import { ethers, formatEther, Interface } from "ethers"; // install alongside EAS
+import { ethers, formatEther, Interface, ZeroAddress } from "ethers"; // install alongside EAS
 import { EAS, SchemaEncoder, SchemaDecodedItem, SchemaItem } from '@ethereum-attestation-service/eas-sdk';
 import { WalletClient } from "viem";
 import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
@@ -223,7 +223,7 @@ class AttestationService {
 
   static RevokeSchemaUID = "0x8ced29acd56451bf43c457bd0cc1c13aa213fcdcdbd872ab87674d3fbf9fc218"
   static RevokeSchema = "string vccomm, string proof, uint64 issuedate"
-  static async addRevokeAttestation(vccomm: string, proof: string, signer: ethers.JsonRpcSigner, issuerAccountClient: any): Promise<string> {
+  static async addRevokeAttestation(vccomm: string, proof: string, signer: ethers.JsonRpcSigner, issuerAccountClient: MetaMaskSmartAccount): Promise<string> {
 
     eas.connect(signer)
 
@@ -336,7 +336,7 @@ class AttestationService {
 
 
 
-  static async storeAttestation(schema: string, encodedData: any, delegator: any, delegate: any, delegationChain: Delegation[]) {
+  static async storeAttestation(schema: string, encodedData: any, delegator: MetaMaskSmartAccount, delegate: MetaMaskSmartAccount, delegationChain: Delegation[]) {
     
     const key1 = BigInt(Date.now())      // or some secure random
     const nonce1 = encodeNonce({ key: key1, sequence: 0n })
@@ -351,6 +351,7 @@ class AttestationService {
       }
     })
 
+    
     const executions = [
       {
         target: tx.data.to,
@@ -360,6 +361,11 @@ class AttestationService {
     ];
 
 
+    const paymasterClient = createPaymasterClient({
+      transport: http(PAYMASTER_URL),
+    });
+
+
     console.info("pimlico client configruation for BUNDLER URL")
     const pimlicoClient = createPimlicoClient({
       transport: http(BUNDLER_URL),
@@ -367,9 +373,7 @@ class AttestationService {
     });
     const bundlerClient = createBundlerClient({
                     transport: http(BUNDLER_URL),
-                    paymaster: createPaymasterClient({
-                      transport: http(PAYMASTER_URL),
-                    }),
+                    paymaster: paymasterClient,
                     chain: optimism,
                     paymasterContext: {
                       // at minimum this must be an object; for Biconomy you can use:
@@ -385,6 +389,7 @@ class AttestationService {
       executions: [executions]
     });
 
+    
     const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
     let userOpHash: Hex;
 
@@ -399,13 +404,17 @@ class AttestationService {
           },
         ],
         nonce: nonce1,
-        ...fee,
+        paymaster: paymasterClient,
+        ...fee
+        
       });
     }
     catch (error) {
       console.info(">>>>>>>>>>>> error trying to save using delegate address: ", delegate.address)
       console.info(">>>>>>>>>>>>>> try saving with Delegation Manager")
+      console.error("......... error: ", error)
 
+      /*
       userOpHash = await bundlerClient.sendUserOperation({
         account: delegate,
         calls: [
@@ -417,6 +426,7 @@ class AttestationService {
         nonce: nonce1,
         ...fee,
       });
+      */
     }
 
 
@@ -428,7 +438,7 @@ class AttestationService {
 
   static IndivSchemaUID = "0x1212f2d47d77afd21f5fdb69e51c8d1898842b8e767417bc1681997bdf6900aa"
   static IndivSchema = this.BaseSchema + "string orgdid, string name"
-  static async addIndivAttestation(attestation: IndivAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], indivAccountClient: any, indivDelegateClient: any): Promise<string> {
+  static async addIndivAttestation(attestation: IndivAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], indivAccountClient: MetaMaskSmartAccount, indivDelegateClient: MetaMaskSmartAccount): Promise<string> {
 
     console.info("....... add indiv attestation signer: ", signer)
     eas.connect(signer)
@@ -541,7 +551,7 @@ class AttestationService {
 
   static IndivOrgSchemaUID = "0x5c577b4315551f1b68e2a505e49545b447aef03befc0d0cfcb2a8bfac34dba3b"
   static IndivOrgSchema = this.BaseSchema + "string indivdid, string name, string rolecid"
-  static async addIndivOrgAttestation(attestation: IndivOrgAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: any, orgDelegateClient: any): Promise<string> {
+  static async addIndivOrgAttestation(attestation: IndivOrgAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {
 
     eas.connect(signer)
 
@@ -645,7 +655,7 @@ class AttestationService {
         rolecid: rolecid
       }
 
-      console.info("IndivOrgAttestation: ", att)
+      //console.info("IndivOrgAttestation: ", att)
 
       return att
     }
@@ -658,7 +668,7 @@ class AttestationService {
 
   static OrgSchemaUID = "0xb868c40677eb842bcb2275dbaa311232ff8d57d594c15176e4e4d6f6df9902ea"
   static OrgSchema = this.BaseSchema + "string name"
-  static async addOrgAttestation(attestation: OrgAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: any, orgDelegateClient: any): Promise<string> {
+  static async addOrgAttestation(attestation: OrgAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {
 
     console.info("....... add org attestation signer: ", signer)
     eas.connect(signer)
@@ -763,7 +773,7 @@ class AttestationService {
 
   static SocialSchemaUID = "0xb05a2a08fd5afb49a338b27bb2e6cf1d8bd37992b23ad38a95f807d19c40782e"
   static SocialSchema = this.BaseSchema + "string name, string url"
-  static async addSocialAttestation(attestation: SocialAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], indivAccountClient: any, issuerAccountClient: any): Promise<string> {
+  static async addSocialAttestation(attestation: SocialAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], indivAccountClient: MetaMaskSmartAccount, issuerAccountClient: MetaMaskSmartAccount): Promise<string> {
 
     eas.connect(signer)
 
@@ -809,7 +819,7 @@ class AttestationService {
 
     return attestation.entityId
   }
-  static async updateSocialAttestation(attestation: SocialAttestation, signer: ethers.JsonRpcSigner, orgAccountClient: any, walletClient: WalletClient): Promise<void> {
+  static async updateSocialAttestation(attestation: SocialAttestation, signer: ethers.JsonRpcSigner, orgAccountClient: MetaMaskSmartAccount, walletClient: WalletClient): Promise<void> {
 
     eas.connect(signer)
 
@@ -893,7 +903,7 @@ class AttestationService {
 
   static RegisteredDomainSchemaUID = "0x6a4f62a76d14e37a9885e66fbec0f37562a371ba6eb2e9907a65849ebe4f04f8"
   static RegisteredDomainSchema = this.BaseSchema + "string domain, uint64 domaincreationdate"
-  static async addRegisteredDomainAttestation(attestation: RegisteredDomainAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: any, orgDelegateClient: any): Promise<string> {
+  static async addRegisteredDomainAttestation(attestation: RegisteredDomainAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {
 
     eas.connect(signer)
 
@@ -994,7 +1004,7 @@ class AttestationService {
 
   static StateRegistrationSchemaUID = "0xbf0c8858b40faa691436c577b53a6cc4789a175268d230b7ea0c572b0f46c62b"
   static StateRegistrationSchema = this.BaseSchema + "string name, string idnumber, string status, uint64 formationdate, string locationaddress" 
-  static async addStateRegistrationAttestation(attestation: StateRegistrationAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: any, orgDelegateClient: any): Promise<string> {
+  static async addStateRegistrationAttestation(attestation: StateRegistrationAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {
 
     eas.connect(signer)
 
@@ -1120,7 +1130,7 @@ class AttestationService {
 
   static EmailSchemaUID = "0x34c055dd7ac09404aa617dab38193f9fe80ab7f1abafb03cb7e38bee1589e2d0"
   static EmailSchema = this.BaseSchema + "string type, string email" 
-  static async addEmailAttestation(attestation: EmailAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: any, orgDelegateClient: any): Promise<string> {
+  static async addEmailAttestation(attestation: EmailAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {
 
     eas.connect(signer)
 
@@ -1256,7 +1266,7 @@ class AttestationService {
 
   static WebsiteSchemaUID = "0x5c209bedd0113303dbdd2cda8e8f9aaca673a567cd6a031cbb8cdaecbe01642b"
   static WebsiteSchema = this.BaseSchema + "string type, string url" 
-  static async addWebsiteAttestation(attestation: WebsiteAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: any, orgDelegateClient: any): Promise<string> {
+  static async addWebsiteAttestation(attestation: WebsiteAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {
 
     eas.connect(signer)
 
@@ -1367,7 +1377,7 @@ class AttestationService {
 
   static InsuranceSchemaUID = "0xcfca6622a02b4b1d7f49fc4edf63eff73b062b86c25b221e713ee8eea7d37b6f"
   static InsuranceSchema = this.BaseSchema + "string type, string policy" 
-  static async addInsuranceAttestation(attestation: InsuranceAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: any, orgDelegateClient: any): Promise<string> {
+  static async addInsuranceAttestation(attestation: InsuranceAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {
 
     eas.connect(signer)
 
@@ -1476,7 +1486,7 @@ class AttestationService {
 
   static IndivEmailSchemaUID = "0x0679112c62bedf14255c9b20b07486233f25e98505e1a8adb270e20c17893baf"
   static IndivEmailSchema = this.BaseSchema + "string class, string email" 
-  static async addIndivEmailAttestation(attestation: IndivEmailAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], indivAccountClient: any, issuerAccountClient: any): Promise<string> {
+  static async addIndivEmailAttestation(attestation: IndivEmailAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], indivAccountClient: MetaMaskSmartAccount, issuerAccountClient: MetaMaskSmartAccount): Promise<string> {
 
     eas.connect(signer)
 
@@ -1621,7 +1631,7 @@ class AttestationService {
     }));
   }
 
-  static async deleteIssuerAttestation(uid: string, schemaId: string, signer: ethers.JsonRpcSigner, issuerAccountClient: any): Promise<void> {
+  static async deleteIssuerAttestation(uid: string, schemaId: string, signer: ethers.JsonRpcSigner, issuerAccountClient: MetaMaskSmartAccount): Promise<void> {
 
     eas.connect(signer)
 
@@ -1647,7 +1657,7 @@ class AttestationService {
 
   }
 
-  static async deleteAttestations(atts: Attestation[], signer: ethers.JsonRpcSigner, delegationChain: Delegation[], delegateClient: any): Promise<void> {
+  static async deleteAttestations(atts: Attestation[], signer: ethers.JsonRpcSigner, delegationChain: Delegation[], delegateClient: MetaMaskSmartAccount): Promise<void> {
 
     eas.connect(signer)
 
@@ -1863,6 +1873,7 @@ class AttestationService {
               att = this.constructIndivAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "indiv-org") {
+              console.info("********* load attestations ***************")
               att = this.constructIndivOrgAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "org") {
@@ -2264,7 +2275,7 @@ static async getIndivsNotApprovedAttestations(orgDid: string): Promise<IndivAtte
 
   static async getIndivOrgAttestation(indivDid: string, schemaId: string, entityId: string): Promise<Attestation | undefined> {
 
-    //console.info("get attestation by address and schemaId and entityId: ", address, schemaId, entityId)
+    console.info("get indiv attestation by address and schemaId and entityId: ", indivDid, schemaId, entityId)
     let rtnAttestation : Attestation | undefined
 
     let exists = false
@@ -2295,6 +2306,7 @@ static async getIndivsNotApprovedAttestations(orgDid: string): Promise<IndivAtte
           const orgAddress = item.attester
           const att = this.constructIndivOrgAttestation(item.id, item.schemaId, entityId, orgAddress, "", decodedData)
           if ((att as IndivOrgAttestation).indivDid.toLowerCase() == indivDid.toLowerCase()) {
+            console.info("found attestation for indivOrg: ", att)
             rtnAttestation = att
             break
           }
