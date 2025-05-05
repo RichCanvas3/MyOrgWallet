@@ -202,7 +202,7 @@ export const useWalletConnect = () => {
           setConnectedAddress(undefined);
         }
 
-        console.info(".......... setSelectedSignatoryName .............")
+        //console.info(".......... setSelectedSignatoryName .............")
         setSelectedSignatoryName("injectedProviderSignatoryFactory")
 
     }, [chain, isConnected, web3ModalAddress, connectedAddress]);
@@ -289,7 +289,7 @@ export const useWalletConnect = () => {
             // create orgAccountClient
             let orgAccountClient : any | undefined
             if (delegationOrgAddress) {
-              console.info("==========>  org address provided: ", delegationOrgAddress)
+              console.info("==========>  valid delegation in attestation so use it and define orgAccountClient: ", delegationOrgAddress)
               orgAccountClient = await toMetaMaskSmartAccount({
                 address: delegationOrgAddress,
                 client: publicClient,
@@ -300,8 +300,10 @@ export const useWalletConnect = () => {
               });
             }
             else {
-
+              console.info("========== no valid delegation in attestation so see if we have valid indiv attestation that points to existing org account client ")
               if (indivAttestation) {
+
+                console.info("=============> yes we have an individual attestation that points to org account")
                 const orgDidValue = (indivAttestation as IndivAttestation).orgDid
                 const orgAddressValue = orgDidValue.replace('did:pkh:eip155:10:', '') as `0x${string}`
 
@@ -316,31 +318,46 @@ export const useWalletConnect = () => {
                 });
 
               }
-              
-              /*
-              // remove this
-              // setup delegation between them
-              orgIndivDel = createDelegation({
-                to: indivAccountClient.address,
-                from: orgAccountClient.address,
-                caveats: [] }
-              );
-    
-              const signature = await orgAccountClient.signDelegation({
-                delegation: orgIndivDel,
-              });
-    
-              orgIndivDel = {
-                ...orgIndivDel,
-                signature,
+              else {
+                console.info("=================> no individual attestation")
+                console.info("let's go ahead and create org account client")
+
+                console.info("==========>  this is first time through so create new org AA and deploy it ")
+                orgAccountClient = await toMetaMaskSmartAccount({
+                  client: publicClient,
+                  implementation: Implementation.Hybrid,
+                  deployParams: [owner, [], [], []],
+                  signatory: signatory,
+                  deploySalt: toHex(0),
+                });
+
+
+                // setup delegation between them
+                orgIndivDel = createDelegation({
+                  to: indivAccountClient.address,
+                  from: orgAccountClient.address,
+                  caveats: [] }
+                );
+      
+                const signature = await orgAccountClient.signDelegation({
+                  delegation: orgIndivDel,
+                });
+      
+                orgIndivDel = {
+                  ...orgIndivDel,
+                  signature,
+                }
+      
+                setOrgIndivDelegation(orgIndivDel)
+
               }
-    
-              setOrgIndivDelegation(orgIndivDel)
-              */
+
             }
 
-
+            
             let orgDid = 'did:pkh:eip155:10:' + orgAccountClient.address
+            console.info(".......... org did: ", orgDid)
+
             setOrgDid(orgDid)
             setOrgAccountClient(orgAccountClient)
 
@@ -387,6 +404,7 @@ export const useWalletConnect = () => {
             console.log("Message hash:", messageHash);
             console.log("isValidSignatureCall:", isValidSignature); // should be EIP1271_MAGIC_VALUE(0x1626ba7e)
             */
+
 
 
             if (orgIndivDel) {
@@ -473,7 +491,7 @@ export const useWalletConnect = () => {
 
     }, [signatory, owner]);
 
-    /*
+
     useEffect(() => {
   
       console.info("===========> check to see if we need to add individual attestation")
@@ -537,7 +555,7 @@ export const useWalletConnect = () => {
       
       
     }, [signatory, orgDid, indivDid, issuerDid, orgAccountClient, orgIndivDelegation, orgIssuerDelegation]);
-    */
+    
     const pimlicoClient = createPimlicoClient({
       transport: http(BUNDLER_URL),
       //entryPoint: { address: ENTRY_POINT_ADDRESS, version: '0.7' },

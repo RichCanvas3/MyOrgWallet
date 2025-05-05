@@ -1794,7 +1794,7 @@ class AttestationService {
 
     try {
 
-      console.info("load attestations for: ", indivAddress)
+      //console.info("load attestations for: ", indivAddress)
       let exists = false
       const query = gql`
         query {
@@ -1914,12 +1914,12 @@ class AttestationService {
               entityId = entityId
             }
 
-            console.info("push att on list: ", att)
+            //console.info("push att on list: ", att)
             attestations.push(att)
           }
       
       }
-      console.info("return attestations: ", attestations)
+      //console.info("return attestations: ", attestations)
       return attestations;
       
     } catch (error) {

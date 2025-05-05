@@ -153,7 +153,7 @@ export class ChatService {
       "Authorization": `Bearer ${OPENAI_API_KEY}`
     };
 
-    console.info("...... tools: ", tools)
+    //console.info("...... tools: ", tools)
 
     let model = 'gpt-4-turbo'
     const requestBody: ChatCompletionRequest = {
@@ -182,7 +182,7 @@ export class ChatService {
     const mappedMessages = await ChatService.mapChatMessagesToCompletionMessages(requestBody.model,messages);
     requestBody.messages = mappedMessages;
 
-    console.info(">>>>>>> calling openai with messages: ", mappedMessages)
+    //console.info(">>>>>>> calling openai with messages: ", mappedMessages)
 
     let response: Response;
     try {

@@ -156,9 +156,9 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
   }
 
   useEffect(() => {
-    console.info("populate indiv atts")
+    //console.info("populate indiv atts")
     if (orgDid) {
-      console.info("got did")
+      //console.info("got did")
       AttestationService.getIndivsNotApprovedAttestations(orgDid).then((atts) => {
         if (atts) {
           setAttestations(atts)
