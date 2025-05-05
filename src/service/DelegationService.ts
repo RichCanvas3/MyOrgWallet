@@ -49,11 +49,11 @@ class DelegationService {
         let del : DelegationStruct | undefined
 
         const id = owner + "-" + delegator + "-" + delegate
-        console.info("get del: ", id)
+        //console.info("get del: ", id)
 
         const store = localStorage.getItem(id)
         if (store) {
-            console.info("got delegation from store")
+            //console.info("got delegation from store")
             del = JSON.parse(store)
         }
 

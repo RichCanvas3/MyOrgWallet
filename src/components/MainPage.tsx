@@ -194,8 +194,11 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   useEffect(() => {
     if (orgAccountClient && orgDid && indivDid) {
       AttestationService.setEntityAttestations(orgDid, indivDid).then((ents) => {
+
+        console.info("setentities")
         if (ents != undefined) {
 
+          console.info("ents: ", ents)
           setEntities(ents)
 
           for (const entity of ents) {
@@ -229,7 +232,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   }, [orgAccountClient, orgDid, indivDid]);
 
   useEffect(() => {
-    console.info("........ is connected: ", isConnected)
+    //console.info("........ is connected: ", isConnected)
     if (isConnected == false) {
       navigate('/')
     }
@@ -466,6 +469,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     //message = message + ", Please respond with a JSON object. Include keys like 'company_name', 'state_name', 'email' if they exist."
 
+    console.info("user message entered: ", message)
     addMessage(Role.User, MessageType.Normal, message, args, fileDataRef, sendMessage);
   };
 
@@ -488,7 +492,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         content: content,
         fileDataRef: fileDataRef,
       };
-      console.info("setMessages 3")
+      //console.info("setMessages 3")
       return [...prevMessages, newMsg];
     });
 
@@ -546,7 +550,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
 
 
-      console.info(">>>>>>>> handleStreamedResponse ")
+      //console.info(">>>>>>>> handleStreamedResponse ")
       handleStreamedResponse("", args, [], true)
       return
     }
@@ -556,11 +560,12 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     let defaultInstruction
     let defaultTools
     
+    //console.info("set ai stuff")
     if (entities != undefined) {
       for (const entity of entities) {
         //console.info("entity: ", entity, entity.attestation)
-        if (entity.attestation == undefined && entity.introduction != "") {
-          console.info(">>>>>> add tools for : ", entity.name)
+        if (entity.attestation == undefined && entity.introduction) {
+          //console.info(">>>>>> add tools for : ", entity.name)
           if (entity.introduction != undefined) {
             defaultIntroduction = entity.introduction.replace("[org]", orgName?orgName:"")
           }
@@ -578,6 +583,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     //console.info("tell AI what we need to do")
     //console.info("default introduction: ", defaultIntroduction)
     //console.info("default instruction: ", defaultInstruction)
+    //console.info("default tools: ", defaultTools)
 
 
     setLoading(true);
@@ -615,7 +621,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     let effectiveSettings = getEffectiveChatSettings();
 
 
-
+    console.info("....... defaultTools: ", defaultTools)
     ChatService.sendMessageStreamed(effectiveSettings, messages, defaultTools, handleStreamedResponse)
       .then((response: ChatCompletion) => {
         //console.info(">>>>> sendMessageStreamed response: ", response)
@@ -1054,13 +1060,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     }
 
     //console.info(" >>>>>>>>>>>  introduction: ", introduction)
-
+    // check if the user put in direct action like "delete all"
     checkAllDirectActions(introduction, lastUserResponse).then((data) => {
       
     })
  
     
-
+    // let inject args if the user said "yes" to actions
     args = checkLinkedinAttestation(introduction, lastUserResponse);
     if (args != "") {
       return args
@@ -1257,7 +1263,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
         }
 
-        
+        console.info("............. command: ", command)
         if ("orgName" in command) {
           let newOrgName = command["orgName"]
           if (newOrgName) {
@@ -1489,6 +1495,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         if (done == true) {
           // received message from AI Assitant => updatedMessage
           // go do what the AI assistant message told us to do  =>  appCommand
+          console.info("proccess Assistant Message: ", updatedMessage.content)
+          console.info("proccess Assistant Message args: ", updatedMessage.args)
           const response = processAssistantMessage(isFirstCall == 1, updatedMessage.content, updatedMessage.args, prevMessages, updatedMessage, fileDataRef);
           if (response.isToolFunction && response.messages) {
             return response.messages
