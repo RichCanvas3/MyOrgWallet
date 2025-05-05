@@ -269,6 +269,9 @@ export const useWalletConnect = () => {
             if (indivAttestation) {
               setIndivName((indivAttestation as IndivAttestation).name)
             }
+            else {
+              console.info("*********** indiv-org is not defined")
+            }
               
 
 
@@ -300,7 +303,7 @@ export const useWalletConnect = () => {
               });
             }
             else {
-              console.info("========== no valid delegation in attestation so see if we have valid indiv attestation that points to existing org account client ")
+              console.info("========== no valid delegation in indiv org attestation so see if we have valid indiv attestation that points to existing org account client ")
               if (indivAttestation) {
 
                 console.info("=============> yes we have an individual attestation that points to org account")
@@ -606,74 +609,6 @@ export const useWalletConnect = () => {
     }, [signatory, owner]);
 
 
-    /*
-    useEffect(() => {
-  
-      console.info("===========> check to see if we need to add individual attestation")
-      if (signatory && orgDid && indivDid && issuerDid && orgAccountClient && orgIndivDelegation && orgIssuerDelegation) {
-        const addIndivOrgAttestation = async () => {
-
-          console.info("*********** ADD INDIV ATTESTATION ****************")
-
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          await window.ethereum.request({ method: "eth_requestAccounts" });
-          const walletSigner = await provider.getSigner()
-
-      
-          const walletClient = signatory.walletClient
-          const entityId = "indiv-org"
-      
-          if (walletSigner && walletClient) {
-      
-            const indivName = ""
-      
-            const vc = await VerifiableCredentialsService.createIndivOrgVC(entityId, orgDid, issuerDid, indivDid, indivName);
-            const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
-            const fullVc = result.vc
-            const proofUrl = result.proofUrl
-
-            if (fullVc) {
-
-              const indivName = "indiv name"
-            
-              // now create attestation
-              const hash = keccak256(toUtf8Bytes("hash value"));
-              const attestation: IndivOrgAttestation = {
-                indivDid: indivDid,
-                name: indivName,
-                rolecid: JSON.stringify(orgIndivDelegation),
-                attester: orgDid,
-                class: "organization",
-                category: "leaders",
-                entityId: entityId,
-                hash: hash,
-                vccomm: (fullVc.credentialSubject as any).commitment.toString(),
-                vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-                vciss: issuerDid,
-                proof: proofUrl
-              };
-      
-              console.info("AttestationService add indiv attestation")
-              const uid = await AttestationService.addIndivOrgAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
-            }
-          }
-        }
-
-        AttestationService.getIndivOrgAttestation(indivDid, AttestationService.IndivOrgSchemaUID, "indiv-org").then((indivOrgAttestation) => {
-          if (!indivOrgAttestation) {
-            console.info("=============> no indiv org attestation so add one")
-            addIndivOrgAttestation()
-          }
-        })
-        
-      }
-      else {
-        console.info(".... fields not setup")
-      }
-      
-      
-    }, [signatory, orgDid, indivDid, issuerDid, orgAccountClient, orgIndivDelegation, orgIssuerDelegation]);
-    */
 
     const pimlicoClient = createPimlicoClient({
       transport: http(BUNDLER_URL),

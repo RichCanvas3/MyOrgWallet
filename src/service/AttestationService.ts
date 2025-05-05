@@ -2275,7 +2275,7 @@ static async getIndivsNotApprovedAttestations(orgDid: string): Promise<IndivAtte
 
   static async getIndivOrgAttestation(indivDid: string, schemaId: string, entityId: string): Promise<Attestation | undefined> {
 
-    console.info("get indiv attestation by address and schemaId and entityId: ", indivDid, schemaId, entityId)
+    console.info("get indiv org attestation by address and schemaId and entityId: ", indivDid, schemaId, entityId)
     let rtnAttestation : Attestation | undefined
 
     let exists = false
