@@ -12,6 +12,8 @@ import { keccak256, toUtf8Bytes } from 'ethers';
 import { createHash, publicDecrypt } from 'crypto';
 import * as base64 from '@ethersproject/base64';
 import { publicKeyToAddress } from 'viem/accounts';
+import bodyParser from 'body-parser';
+import { Storage } from '@google-cloud/storage';
 
 const app = express();
 
@@ -43,8 +45,11 @@ app.use(cors({
 
 app.use(helmet()); // Add security headers
 app.use(express.json());
+app.use(bodyParser.json());
 
 const verificationCodes = new Map();
+
+
 
 const generateCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -83,6 +88,46 @@ export const objToSortedArray = (obj) => {
     return out;
   }, []);
 };
+
+const storage = new Storage();     // uses GOOGLE_APPLICATION_CREDENTIALS
+const bucket = storage.bucket(process.env.GCLOUD_BUCKET_NAME);
+
+
+// Save JSON: POST /json?filename=whatever.json
+app.post('/json', async (req, res) => {
+  const filename = String(req.query.filename || 'data.json');
+  const data = req.body;            // assume valid JSON object
+  const file = bucket.file(filename);
+
+  try {
+    // Write JSON string directly
+    await file.save(JSON.stringify(data), {
+      contentType: 'application/json',
+      resumable: false,
+    });
+    res.json({ success: true, filename });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Retrieve JSON: GET /json?filename=whatever.json
+app.get('/json', async (req, res) => {
+  const filename = String(req.query.filename || 'data.json');
+  const file = bucket.file(filename);
+
+  try {
+    // Download as Buffer, then parse
+    const [contents] = await file.download();
+    const json = JSON.parse(contents.toString('utf8'));
+    res.json({ success: true, data: json });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // LinkedIn OAuth callback
 app.get('/linkedin-callback', async (req, res) => {

@@ -16,6 +16,7 @@ import ExploreCustomChats from "./components/ExploreCustomChats";
 import CustomChatEditor from './components/CustomChatEditor';
 
 import { WalletConnectContextProvider } from "./context/walletConnectContext"
+import AttestationService from "./service/AttestationService"
 
 
 
@@ -129,8 +130,14 @@ const App = () => {
   const [isXModalVisible, setXModalVisible] = useState(false);
   const [isAttestationViewModalVisible, setAttestationViewModalVisible] = useState(false);
   
+  const blacklisted = [{'did':'did:pkh:eip155:10:0x478df0535850b01cBE24AA2DAd295B2968d24B67'}]
+  AttestationService.saveBlacklist(blacklisted).then(() => {
+    console.info("blacklist saved")
+  })
 
-
+  AttestationService.loadBlacklist().then(() => {
+    console.info("blacklist loaded")
+  })
 
   const appCommand = (cmd: Command) => {
 

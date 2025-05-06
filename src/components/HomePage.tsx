@@ -142,10 +142,10 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
           }}
         >
           <Typography variant="h6" color="text.primary">
-            Organizations
+            Organizations & Leaders
           </Typography>
           <Button variant="outlined" size="medium" onClick={handleOrg}>
-            Explore Organizations
+             Explorer
           </Button>
         </Box>
 

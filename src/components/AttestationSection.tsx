@@ -125,20 +125,19 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
 
 
 
-    // Filter and group
-    const filtered = attestations.filter(a =>
-        a.entityId?.toLowerCase().includes(searchTerm.toLowerCase()),
-    );
-    //console.info("filtered: ", filtered, attestations)
-    const grouped = currentCategories.reduce((acc, cat) => {
-        acc[cat.name] = filtered.filter(a => a.category === cat.name && a.class === cat.class);
-        //console.info("return acc: ", acc)
-        return acc;
-    }, {} as Record<string, Attestation[]>);
+  // Filter and group
+  const filtered = attestations.filter(a =>
+      a.entityId?.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+  //console.info("filtered: ", filtered, attestations)
+  const grouped = currentCategories.reduce((acc, cat) => {
+      acc[cat.name] = filtered.filter(a => a.category === cat.name && a.class === cat.class);
+      //console.info("return acc: ", acc)
+      return acc;
+  }, {} as Record<string, Attestation[]>);
 
-    //console.info("groupd: ", grouped)
 
-  return (
+return (
 <Box
   display="flex"
   flexDirection="column"
