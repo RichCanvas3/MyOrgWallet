@@ -199,4 +199,148 @@ try {
 
       console.log('Fetching X user info...');
       const response2 = await axios.get(
-        'https://api.x.com/2/users/me?user.fields=id,name,username,created_at,description,
+        'https://api.x.com/2/users/me?user.fields=id,name,username,created_at,description,entities,location,pinned_tweet_id,profile_image_url,protected,public_metrics,url,verified,verified_type,withheld',
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      console.log('X user info:', response2.data);
+
+      console.log('Sending X user info response...');
+      res.send(JSON.stringify(response2.data));
+    } catch (error) {
+      console.error('Error in X callback:', error.message, error.stack);
+      res.status(500).send('Failed to get access token.');
+    }
+  });
+
+  app.get('/shopify-callback', async (req, res) => {
+    console.info('Shopify callback route called');
+    const { code } = req.query;
+
+    if (!code) {
+      console.warn('No authorization code received in Shopify callback');
+      return res.status(400).send('No authorization code received.');
+    }
+
+    console.info('Processing Shopify callback with code:', code);
+    try {
+      console.log('Requesting Shopify access token...');
+      const tokenUrl = `https://${process.env.SHOPIFY_SHOP_NAME}.myshopify.com/admin/oauth/access_token`;
+      const response = await axios.post(
+        tokenUrl,
+        {
+          client_id: process.env.SHOPIFY_CLIENT_ID,
+          client_secret: process.env.SHOPIFY_CLIENT_SECRET,
+          code,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      console.log('Received Shopify access token');
+      const accessToken = response.data.access_token;
+      console.info('Shopify access token:', accessToken);
+
+      console.log('Fetching Shopify shop info...');
+      const requestUrl = `https://${process.env.SHOPIFY_SHOP_NAME}.myshopify.com/admin/api/2025-01/shop.json`;
+      const response2 = await axios.get(requestUrl, {
+        headers: {
+          'X-Shopify-Access-Token': `${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log('Shopify shop info:', response2.data);
+
+      console.log('Sending Shopify shop info response...');
+      res.send(JSON.stringify(response2.data));
+    } catch (error) {
+      console.error('Error in Shopify callback:', error.message, error.stack);
+      res.status(500).send('Failed to get access token.');
+    }
+  });
+
+  app.post('/send-verification-email', async (req, res) => {
+    console.info('Send verification email route called');
+    const { email } = req.body;
+    if (!email) {
+      console.warn('Email is required for verification email');
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    console.log('Generating verification code for:', email);
+    const code = generateCode();
+    verificationCodes.set(email, code);
+
+    console.info('Generated code for', email, ':', code);
+
+    const msg = {
+      to: email,
+      from: 'r.pedersen@richcanvas.io',
+      subject: 'Your Verification Code',
+      text: `Your verification code is: ${code}`,
+      html: `<p>Your verification code is: <strong>${code}</strong></p>`,
+    };
+
+    try {
+      console.info('Sending verification email to:', email);
+      await sgMail.send(msg);
+      console.log('Verification email sent successfully');
+      res.json({ message: 'Verification email sent' });
+    } catch (error) {
+      console.error('Error sending verification email:', error.message, error.stack);
+      res.status(500).json({ error: 'Failed to send email' });
+    }
+  });
+
+  app.post('/verify-code', (req, res) => {
+    console.info('Verify code route called');
+    const { email, code } = req.body;
+    const storedCode = verificationCodes.get(email);
+
+    console.log('Verifying code for', email, ':', code, 'against stored:', storedCode);
+    if (code === storedCode) {
+      console.log('Code verified successfully for', email);
+      // verificationCodes.delete(email); // Uncomment to delete after verification
+      res.json({ message: 'Code verified' });
+    } else {
+      console.warn('Invalid verification code for', email);
+      res.status(400).json({ error: 'Invalid verification code' });
+    }
+  });
+
+  app.get('/', (req, res) => {
+    console.log('Health check route called');
+    res.status(200).send('🚀 Server is up and running');
+  });
+
+  app.get('/api/ping', (req, res) => {
+    console.log('Ping route called');
+    res.json({ message: 'pong' });
+  });
+
+  console.log('Setting up error handling middleware...');
+  app.use((err, req, res, next) => {
+    console.error('Unhandled error in request', req.method, req.url, ':', err.message, err.stack);
+    res.status(500).json({ error: 'Internal Server Error' });
+  });
+
+  const port = process.env.PORT || 8080;
+  console.log('Starting server on port', port, '...');
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  }).on('error', (error) => {
+    console.error('Server failed to start:', error.message, error.stack);
+    process.exit(1);
+  });
+
+} catch (error) {
+  console.error('Failed to initialize server:', error.message, error.stack);
+  process.exit(1);
+}
