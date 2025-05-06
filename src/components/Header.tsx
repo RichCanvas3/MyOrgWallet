@@ -8,7 +8,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import { useAccount, useWalletClient } from 'wagmi';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import { Link } from 'react-router-dom';
-
+import { useNavigate } from 'react-router-dom';
 import ProfileService, {
   Profile,
   ProfileChangeEvent,
@@ -39,6 +39,8 @@ const Header: React.FC<HeaderProps> = ({className}) => {
   const [anchorEl, setAnchorEl] = React.useState(null);
 
   const { orgName, indivName } = useWallectConnectContext();
+
+    const navigate = useNavigate();
   
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -46,6 +48,14 @@ const Header: React.FC<HeaderProps> = ({className}) => {
 
   const handleMenuClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleWallet = () => {
+    navigate('/chat/')
+  };
+
+  const handleOrganizations = () => {
+    navigate('/organizations/')
   };
 
   const [isSettingsModalVisible, setSettingsModalVisible] = useState(false);
@@ -117,10 +127,10 @@ const Header: React.FC<HeaderProps> = ({className}) => {
         onClose={handleMenuClose}
         classes={{ paper: 'menu' }}
       >
-        <MenuItem onClick={handleConnect} className="menu-item">
+        <MenuItem onClick={handleWallet} className="menu-item">
           Wallet
         </MenuItem>
-        <MenuItem onClick={handleMenuClose} className="menu-item">
+        <MenuItem onClick={handleOrganizations} className="menu-item">
           Organizations
         </MenuItem>
       </Menu>
