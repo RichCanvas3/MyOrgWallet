@@ -12,74 +12,63 @@ import { keccak256, toUtf8Bytes } from 'ethers';
 import { createHash, publicDecrypt } from 'crypto';
 import * as base64 from '@ethersproject/base64';
 import { publicKeyToAddress } from 'viem/accounts';
-import bodyParser from 'body-parser';
-import { Storage } from '@google-cloud/storage';
 
-const app = express();
+  console.log('Configuring environment variables...');
+  dotenv.config();
 
-// Load environment variables
-dotenv.config();
+  console.log('Validating environment variables...');
+  const requiredEnvVars = [
+    'SENDGRID_API_KEY',
+    'LINKEDIN_CLIENT_ID',
+    'LINKEDIN_CLIENT_SECRET',
+    'LINKEDIN_REDIRECT_URI',
+    'X_CLIENT_ID',
+    'X_CLIENT_SECRET',
+    'X_REDIRECT_URI',
+    'SHOPIFY_CLIENT_ID',
+    'SHOPIFY_CLIENT_SECRET',
+    'SHOPIFY_SHOP_NAME'
+  ];
 
-// Set SendGrid API key
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-// Middleware
-// Configure CORS to allow requests from the production client
-const allowedOrigins = [
-  'http://localhost:5173', // For local development
-  'https://wallet.myorgwallet.io', // Production client
-];
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+  for (const envVar of requiredEnvVars) {
+    if (!process.env[envVar]) {
+      throw new Error(`Missing environment variable: ${envVar}`);
     }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true, // only if you need to send cookies/auth headers
-}));
+  }
+
+  console.log('Setting SendGrid API key...');
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+  console.log('Initializing Express app...');
+  const app = express();
+
+  console.log('Configuring CORS middleware...');
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'https://wallet.myorgwallet.io'
+  ];
+  app.use(cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+  }));
 
 
 app.use(helmet()); // Add security headers
 app.use(express.json());
-app.use(bodyParser.json());
 
 const verificationCodes = new Map();
 
-
-
-const generateCode = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-};
-
-/* Use when you need to create encryption keys
-// Generate RSA key pair
-const { publicKey, privateKey } = generateKeyPairSync('rsa', {
-  modulusLength: 2048,
-  publicKeyEncoding: {
-    type: 'spki',
-    format: 'pem'
-  },
-  privateKeyEncoding: {
-    type: 'pkcs8',
-    format: 'pem'
-  }
-});
-
-const pubKey = createPublicKey(publicKey);
-const privKey = createPrivateKey(privateKey);
-
-let publicJWK = await jose.exportJWK(pubKey);
-let privateJWK = await jose.exportJWK(privKey);
-
-console.log("public: ", publicKey);
-console.log("private: ", privateKey);
-console.log("public jwk: ", publicJWK);
-console.log("private jwk: ", privateJWK);
-*/
+  const generateCode = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
 
 export const objToSortedArray = (obj) => {
   const keys = Object.keys(obj).sort();
@@ -89,275 +78,262 @@ export const objToSortedArray = (obj) => {
   }, []);
 };
 
-const storage = new Storage();     // uses GOOGLE_APPLICATION_CREDENTIALS
-const bucket = storage.bucket(process.env.GCLOUD_BUCKET_NAME);
+  console.log('Setting up routes...');
 
+  app.get('/linkedin-callback', async (req, res) => {
+    console.info('LinkedIn callback route called');
+    const { code } = req.query;
 
-// Save JSON: POST /json?filename=whatever.json
-app.post('/json', async (req, res) => {
-  const filename = String(req.query.filename || 'data.json');
-  const data = req.body;            // assume valid JSON object
-  const file = bucket.file(filename);
+    if (!code) {
+      console.warn('No authorization code received in LinkedIn callback');
+      return res.status(400).send('No authorization code received.');
+    }
 
-  try {
-    // Write JSON string directly
-    await file.save(JSON.stringify(data), {
-      contentType: 'application/json',
-      resumable: false,
-    });
-    res.json({ success: true, filename });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-});
+    try {
+      console.info('LinkedIn environment variables:', {
+        LINKEDIN_REDIRECT_URI: process.env.LINKEDIN_REDIRECT_URI,
+        LINKEDIN_CLIENT_ID: process.env.LINKEDIN_CLIENT_ID,
+        LINKEDIN_CLIENT_SECRET: '***'
+      });
 
-// Retrieve JSON: GET /json?filename=whatever.json
-app.get('/json', async (req, res) => {
-  const filename = String(req.query.filename || 'data.json');
-  const file = bucket.file(filename);
+      console.log('Requesting LinkedIn access token...');
+      const response = await axios.post(
+        'https://www.linkedin.com/oauth/v2/accessToken',
+        querystring.stringify({
+          grant_type: 'authorization_code',
+          code: code,
+          redirect_uri: process.env.LINKEDIN_REDIRECT_URI,
+          client_id: process.env.LINKEDIN_CLIENT_ID,
+          client_secret: process.env.LINKEDIN_CLIENT_SECRET,
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      );
 
-  try {
-    // Download as Buffer, then parse
-    const [contents] = await file.download();
-    const json = JSON.parse(contents.toString('utf8'));
-    res.json({ success: true, data: json });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-});
+      console.log('Received LinkedIn access token');
+      const accessToken = response.data.access_token;
 
-
-// LinkedIn OAuth callback
-app.get('/linkedin-callback', async (req, res) => {
-  console.info(".......... linkedin-callback is called ...........");
-  const { code } = req.query;
-
-  if (!code) {
-    return res.status(400).send('No authorization code received.');
-  }
-
-  try {
-    console.info("process.env.LINKEDIN_REDIRECT_URI: ", process.env.LINKEDIN_REDIRECT_URI);
-    console.info("process.env.LINKEDIN_CLIENT_ID: ", process.env.LINKEDIN_CLIENT_ID);
-    console.info("process.env.LINKEDIN_CLIENT_SECRET: ", process.env.LINKEDIN_CLIENT_SECRET);
-
-    const response = await axios.post(
-      'https://www.linkedin.com/oauth/v2/accessToken',
-      querystring.stringify({
-        grant_type: 'authorization_code',
-        code: code,
-        redirect_uri: process.env.LINKEDIN_REDIRECT_URI,
-        client_id: process.env.LINKEDIN_CLIENT_ID,
-        client_secret: process.env.LINKEDIN_CLIENT_SECRET,
-      }),
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      }
-    );
-
-    const accessToken = response.data.access_token;
-
-    const response2 = await axios.get('https://api.linkedin.com/v2/userinfo', {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const key = `{
-      kty: 'RSA',
-      n: 'xNmk3vLuyFV_xnlPUpG9hKEFhCFAl56_-trCl-KTE6MSafUwbefDg6NL0xZ62mQV5-lsG_RLdL9aa4uj8I8ifZzZBSiHE1BpcRM6P35-i0LVoJpHzi0a0MihUbKPqcHobVHwA4BIpiB-4A8NIHUspC0HcIhV4JWpCBXiDAy4uAV9MNqa-RL_Z_Jc0Rrme1q78w5mFtD6ToycgLW5k_87tZzCoLpNQ1NeiHPgZG4ERAMgHFPes1uTD15oiKsvC2hSoBFlyKWSLpHJS5WpKtxQFxdCoIODdDsTy9xCVIjRhbDRtx44428hJUEuPE97nDM69uk82J_syd1Hc5IdGg-iCQ',
-      e: 'AQAB',
-      d: 'BghniZ-nWsNoCZShLjYiOUTYDu8X9C2c05rNuOrsN_9Y6p9ljxC5yLiB8-Ot-zBzDWr1cbvgbiEJK9-ZNB-m3nOmoQZXcWuW96yvrc96IFl5g5UG21Y9iqWDcCYJShoTvfnzYaAWWeUIDmTXsaV1q0hoAHZlL19W0VUeWuEu7hDLOMPpIrpCHmh_jcFeWuEwN6Q_AvFFz56HFsTQfWsWfbHlf6XnSk8zVJXCuqatXWIKJT8yLAA38LX5unzfrxl23BgX4uDA5PNowCzUMYqr2Ylaup3B0xM1eCFi22lkLwFx2ts0FJs01capUJmKp2Z2kzimyqDtjALxpdxAYPEZQQ',
-      p: '7FWtZKGE1cp-Xjia-gnomUsCEn3TYzB8TRj5hFcFtzaJ6MlDQCluPrCViMWWsBzK9me8dbzfWTOKy0HBH3mzFfel62Kkb1Ylu-03fWTrKBpFIGYSgIFkODdNzaJ8KZfQ9mQq0QVKnSLMnlRRlX93pz-FSyb9hD6wkK44layXfHE',
-      q: '1Trhg8Fb9qybELnnV4pLcH3M5YNp9hZv0Eqfj4NCDYqvyop-Igp5Rt9w0MflB0nF1EWYcKYjA0B3Nv8UGaRMR71D56JGP165dRvjYbReuG9hPEwYoHHY5DRHt9P8Q_OHrGGJj0bQJU9wymBUqmfKbdZ2GvRlA8urc28jEuf1qxk',
-      dp: 'JOBRh-wz_-_yu9z1QaKeKp0rm5sKiuWb36PP-zhg6e-WoT4WQkK0sw92pbq_Aofbm4sgOvbXmuGR_Jkr-y9QJFNaDlp78ettQ9-F0wkWMFG5C48hv-9wpdzrRPTfjtXjgy6qB6ddtxsg9muNt1gGYZBlyg4xbJsjjc_BgIlHseE',
-      dq: 'CO8wp86gRdOxo5_Ge7qFsq7yuOMqu27xPG8EBIVhbSPUfc4TvuVlc3zFQ1o81HNY4K4R1xZ-_RHkbN9_PhvOPmtFvxzjiKA1cRy8CEoAdgXksxwVJBPhHJ68Ko2tUkOP-b8UfnZfHlEXzsL-iS1UJAoKZNK8sM4F3w5XD-G8P3E',
-      qi: 'Vql1nGgMjgiwj9Vo5nZUdAX4fzs4DHiIOjO0jwDdkFGVQuRiusU4t1uIxH-nAU9yevlEdC7x_OP3B1sQJ5RpS7NOv3o-oUA7Rc8FZe_Z-nyqo40sZe749vwSva3qA4vrnisG0RG1x6qj57ibDiLCqYhj9A3f1Y7fZ51SnnnJfIs'
-    }`;
-    let j = "hello world";
-    const hash = base64.encode(
-      createHash("sha256")
-        .update(key, "utf-8")
-        .update(j)
-        .digest()
-    );
-
-    console.info("........ hash: ", hash);
-
-    res.send(JSON.stringify(response2.data));
-  } catch (error) {
-    console.error('Error exchanging authorization code for access token:', error);
-    res.status(500).send('Failed to get access token.');
-  }
-});
-
-// X OAuth callback
-app.get('/x-callback', async (req, res) => {
-  console.info(".......... x-callback is called ...........");
-  const { code, verifier } = req.query;
-
-  if (!code) {
-    return res.status(400).send('No authorization code received.');
-  }
-
-  console.info("............... give it a go with code: " + code + ", verifier: " + verifier);
-  try {
-    const credentials = `${process.env.X_CLIENT_ID}:${process.env.X_CLIENT_SECRET}`;
-    const encodedCredentials = btoa(credentials);
-
-    const authorizationHeader = `Basic ${encodedCredentials}`;
-
-    const response = await axios.post(
-      'https://api.x.com/2/oauth2/token',
-      querystring.stringify({
-        grant_type: 'authorization_code',
-        code: code,
-        redirect_uri: process.env.X_REDIRECT_URI,
-        client_id: process.env.X_CLIENT_ID,
-        code_verifier: verifier,
-      }),
-      {
-        headers: {
-          'Authorization': authorizationHeader,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      }
-    );
-
-    const accessToken = response.data.access_token;
-    console.info("......... accessToken ........: ", accessToken);
-
-    const response2 = await axios.get(
-      'https://api.x.com/2/users/me?user.fields=id,name,username,created_at,description,entities,location,pinned_tweet_id,profile_image_url,protected,public_metrics,url,verified,verified_type,withheld',
-      {
+      console.log('Fetching LinkedIn user info...');
+      const response2 = await axios.get('https://api.linkedin.com/v2/userinfo', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
-      }
-    );
-    console.log("........... me positions");
-    console.log(response2.data);
+      });
 
-    res.send(JSON.stringify(response2.data));
-  } catch (error) {
-    console.error('Error exchanging authorization code for access token:', error);
-    res.status(500).send('Failed to get access token.');
-  }
-});
+      console.log('Computing hash for LinkedIn response...');
+      const key = `{
+        kty: 'RSA',
+        n: 'xNmk3vLuyFV_xnlPUpG9hKEFhCFAl56_-trCl-KTE6MSafUwbefDg6NL0xZ62mQV5-lsG_RLdL9aa4uj8I8ifZzZBSiHE1BpcRM6P35-i0LVoJpHzi0a0MihUbKPqcHobVHwA4BIpiB-4A8NIHUspC0HcIhV4JWpCBXiDAy4uAV9MNqa-RL_Z_Jc0Rrme1q78w5mFtD6ToycgLW5k_87tZzCoLpNQ1NeiHPgZG4ERAMgHFPes1uTD15oiKsvC2hSoBFlyKWSLpHJS5WpKtxQFxdCoIODdDsTy9xCVIjRhbDRtx44428hJUEuPE97nDM69uk82J_syd1Hc5IdGg-iCQ',
+        e: 'AQAB',
+        d: 'BghniZ-nWsNoCZShLjYiOUTYDu8X9C2c05rNuOrsN_9Y6p9ljxC5yLiB8-Ot-zBzDWr1cbvgbiEJK9-ZNB-m3nOmoQZXcWuW96yvrc96IFl5g5UG21Y9iqWDcCYJShoTvfnzYaAWWeUIDmTXsaV1q0hoAHZlL19W0VUeWuEu7hDLOMPpIrpCHmh_jcFeWuEwN6Q_AvFFz56HFsTQfWsWfbHlf6XnSk8zVJXCuqatXWIKJT8yLAA38LX5unzfrxl23BgX4uDA5PNowCzUMYqr2Ylaup3B0xM1eCFi22lkLwFx2ts0FJs01capUJmKp2Z2kzimyqDtjALxpdxAYPEZQQ',
+        p: '7FWtZKGE1cp-Xjia-gnomUsCEn3TYzB8TRj5hFcFtzaJ6MlDQCluPrCViMWWsBzK9me8dbzfWTOKy0HBH3mzFfel62Kkb1Ylu-03fWTrKBpFIGYSgIFkODdNzaJ8KZfQ9mQq0QVKnSLMnlRRlX93pz-FSyb9hD6wkK44layXfHE',
+        q: '1Trhg8Fb9qybELnnV4pLcH3M5YNp9hZv0Eqfj4NCDYqvyop-Igp5Rt9w0MflB0nF1EWYcKYjA0B3Nv8UGaRMR71D56JGP165dRvjYbReuG9hPEwYoHHY5DRHt9P8Q_OHrGGJj0bQJU9wymBUqmfKbdZ2GvRlA8urc28jEuf1qxk',
+        dp: 'JOBRh-wz_-_yu9z1QaKeKp0rm5sKiuWb36PP-zhg6e-WoT4WQkK0sw92pbq_Aofbm4sgOvbXmuGR_Jkr-y9QJFNaDlp78ettQ9-F0wkWMFG5C48hv-9wpdzrRPTfjtXjgy6qB6ddtxsg9muNt1gGYZBlyg4xbJsjjc_BgIlHseE',
+        dq: 'CO8wp86gRdOxo5_Ge7qFsq7yuOMqu27xPG8EBIVhbSPUfc4TvuVlc3zFQ1o81HNY4K4R1xZ-_RHkbN9_PhvOPmtFvxzjiKA1cRy8CEoAdgXksxwVJBPhHJ68Ko2tUkCRL
+      }`;
+      let j = "hello world";
+      const hash = base64.encode(
+        createHash("sha256")
+          .update(key, "utf-8")
+          .update(j)
+          .digest()
+      );
 
-// Shopify OAuth callback
-app.get('/shopify-callback', async (req, res) => {
-  console.info(".......... shopify-callback is called ...........");
-  const { code } = req.query;
+      console.info('Computed hash:', hash);
 
-  if (!code) {
-    return res.status(400).send('No authorization code received.');
-  }
+      console.log('Sending LinkedIn user info response...');
+      res.send(JSON.stringify(response2.data));
+    } catch (error) {
+      console.error('Error in LinkedIn callback:', error.message, error.stack);
+      res.status(500).send('Failed to get access token.');
+    }
+  });
 
-  console.info("............... give it a go with code: " + code);
-  try {
-    const tokenUrl = `https://${process.env.SHOPIFY_SHOP_NAME}.myshopify.com/admin/oauth/access_token`;
+  app.get('/x-callback', async (req, res) => {
+    console.info('X callback route called');
+    const { code, verifier } = req.query;
 
-    const response = await axios.post(
-      tokenUrl,
-      {
-        client_id: process.env.SHOPIFY_CLIENT_ID,
-        client_secret: process.env.SHOPIFY_CLIENT_SECRET,
-        code,
-      },
-      {
+    if (!code) {
+      console.warn('No authorization code received in X callback');
+      return res.status(400).send('No authorization code received.');
+    }
+
+    console.info('Processing X callback with code:', code, 'verifier:', verifier);
+    try {
+      console.log('Encoding X credentials...');
+      const credentials = `${process.env.X_CLIENT_ID}:${process.env.X_CLIENT_SECRET}`;
+      const encodedCredentials = Buffer.from(credentials).toString('base64');
+
+      console.log('Requesting X access token...');
+      const response = await axios.post(
+        'https://api.x.com/2/oauth2/token',
+        querystring.stringify({
+          grant_type: 'authorization_code',
+          code: code,
+          redirect_uri: process.env.X_REDIRECT_URI,
+          client_id: process.env.X_CLIENT_ID,
+          code_verifier: verifier,
+        }),
+        {
+          headers: {
+            'Authorization': `Basic ${encodedCredentials}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      );
+
+      console.log('Received X access token');
+      const accessToken = response.data.access_token;
+      console.info('X access token:', accessToken);
+
+      console.log('Fetching X user info...');
+      const response2 = await axios.get(
+        'https://api.x.com/2/users/me?user.fields=id,name,username,created_at,description,entities,location,pinned_tweet_id,profile_image_url,protected,public_metrics,url,verified,verified_type,withheld',
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      console.log('X user info:', response2.data);
+
+      console.log('Sending X user info response...');
+      res.send(JSON.stringify(response2.data));
+    } catch (error) {
+      console.error('Error in X callback:', error.message, error.stack);
+      res.status(500).send('Failed to get access token.');
+    }
+  });
+
+  app.get('/shopify-callback', async (req, res) => {
+    console.info('Shopify callback route called');
+    const { code } = req.query;
+
+    if (!code) {
+      console.warn('No authorization code received in Shopify callback');
+      return res.status(400).send('No authorization code received.');
+    }
+
+    console.info('Processing Shopify callback with code:', code);
+    try {
+      console.log('Requesting Shopify access token...');
+      const tokenUrl = `https://${process.env.SHOPIFY_SHOP_NAME}.myshopify.com/admin/oauth/access_token`;
+      const response = await axios.post(
+        tokenUrl,
+        {
+          client_id: process.env.SHOPIFY_CLIENT_ID,
+          client_secret: process.env.SHOPIFY_CLIENT_SECRET,
+          code,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      console.log('Received Shopify access token');
+      const accessToken = response.data.access_token;
+      console.info('Shopify access token:', accessToken);
+
+      console.log('Fetching Shopify shop info...');
+      const requestUrl = `https://${process.env.SHOPIFY_SHOP_NAME}.myshopify.com/admin/api/2025-01/shop.json`;
+      const response2 = await axios.get(requestUrl, {
         headers: {
+          'X-Shopify-Access-Token': `${accessToken}`,
           'Content-Type': 'application/json',
         },
-      }
-    );
+      });
+      console.log('Shopify shop info:', response2.data);
 
-    const accessToken = response.data.access_token;
-    console.info("......... accessToken ........: ", accessToken);
+      console.log('Sending Shopify shop info response...');
+      res.send(JSON.stringify(response2.data));
+    } catch (error) {
+      console.error('Error in Shopify callback:', error.message, error.stack);
+      res.status(500).send('Failed to get access token.');
+    }
+  });
 
-    const requestUrl = `https://${process.env.SHOPIFY_SHOP_NAME}.myshopify.com/admin/api/2025-01/shop.json`;
-    const response2 = await axios.get(requestUrl, {
-      headers: {
-        'X-Shopify-Access-Token': `${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    console.log(response2.data);
+  app.post('/send-verification-email', async (req, res) => {
+    console.info('Send verification email route called');
+    const { email } = req.body;
+    if (!email) {
+      console.warn('Email is required for verification email');
+      return res.status(400).json({ error: 'Email is required' });
+    }
 
-    res.send(JSON.stringify(response2.data));
-  } catch (error) {
-    console.error('Error exchanging authorization code for access token:', error);
-    res.status(500).send('Failed to get access token.');
-  }
-});
+    console.log('Generating verification code for:', email);
+    const code = generateCode();
+    verificationCodes.set(email, code);
 
-// Send verification email
-app.post('/send-verification-email', async (req, res) => {
-  const { email } = req.body;
-  if (!email) {
-    return res.status(400).json({ error: 'Email is required' });
-  }
+    console.info('Generated code for', email, ':', code);
 
-  const code = generateCode();
-  verificationCodes.set(email, code);
+    const msg = {
+      to: email,
+      from: 'r.pedersen@richcanvas.io',
+      subject: 'Your Verification Code',
+      text: `Your verification code is: ${code}`,
+      html: `<p>Your verification code is: <strong>${code}</strong></p>`,
+    };
 
-  console.info("code: ", email, code);
+    try {
+      console.info('Sending verification email to:', email);
+      await sgMail.send(msg);
+      console.log('Verification email sent successfully');
+      res.json({ message: 'Verification email sent' });
+    } catch (error) {
+      console.error('Error sending verification email:', error.message, error.stack);
+      res.status(500).json({ error: 'Failed to send email' });
+    }
+  });
 
-  const msg = {
-    to: email,
-    from: 'r.pedersen@richcanvas.io',
-    subject: 'Your Verification Code',
-    text: `Your verification code is: ${code}`,
-    html: `<p>Your verification code is: <strong>${code}</strong></p>`,
-  };
+  app.post('/verify-code', (req, res) => {
+    console.info('Verify code route called');
+    const { email, code } = req.body;
+    const storedCode = verificationCodes.get(email);
 
-  try {
-    console.info("****************************8 sending it:");
-    await sgMail.send(msg);
-    res.json({ message: 'Verification email sent' });
-  } catch (error) {
-    console.error('Error sending email:', error);
-    res.status(500).json({ error: 'Failed to send email' });
-  }
-});
+    console.log('Verifying code for', email, ':', code, 'against stored:', storedCode);
+    if (code === storedCode) {
+      console.log('Code verified successfully for', email);
+      // verificationCodes.delete(email); // Uncomment to delete after verification
+      res.json({ message: 'Code verified' });
+    } else {
+      console.warn('Invalid verification code for', email);
+      res.status(400).json({ error: 'Invalid verification code' });
+    }
+  });
 
-// Verify code
-app.post('/verify-code', (req, res) => {
-  const { email, code } = req.body;
-  const storedCode = verificationCodes.get(email);
+  app.get('/', (req, res) => {
+    console.log('Health check route called');
+    res.status(200).send('🚀 Server is up and running');
+  });
 
-  if (code === storedCode) {
-    // verificationCodes.delete(email); // Uncomment to delete after verification
-    res.json({ message: 'Code verified' });
-  } else {
-    res.status(400).json({ error: 'Invalid verification code' });
-  }
-});
+  app.get('/api/ping', (req, res) => {
+    console.log('Ping route called');
+    res.json({ message: 'pong' });
+  });
 
-// Start the server
-const port = process.env.PORT || 4000;
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+  console.log('Setting up error handling middleware...');
+  app.use((err, req, res, next) => {
+    console.error('Unhandled error in request', req.method, req.url, ':', err.message, err.stack);
+    res.status(500).json({ error: 'Internal Server Error' });
+  });
 
-// Health check
-app.get('/', (req, res) => {
-  res.status(200).send('🚀 Server is up and running');
-});
+  const port = process.env.PORT || 8080;
+  console.log('Starting server on port', port, '...');
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  }).on('error', (error) => {
+    console.error('Server failed to start:', error.message, error.stack);
+    process.exit(1);
+  });
 
-// Example API route
-app.get('/api/ping', (req, res) => {
-  res.json({ message: 'pong' });
-});
-
-// Error handler
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal Server Error' });
-});
+} catch (error) {
+  console.error('Failed to initialize server:', error.message, error.stack);
+  process.exit(1);
+}
