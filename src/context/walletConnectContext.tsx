@@ -49,10 +49,9 @@ import { optimism } from "viem/chains";
 
 import DelegationService from "../service/DelegationService"
 
-import { EAS, SchemaEncoder, SchemaDecodedItem, SchemaItem, DelegatedProxyAttestationVersion } from '@ethereum-attestation-service/eas-sdk';
-import { DeveloperBoard } from "@mui/icons-material";
+import { OrgService } from "../service/OrgService"
 
-import { IndivOrgAttestation, IndivEmailAttestation, IndivAttestation, OrgAttestation } from "../models/Attestation";
+import { IndivOrgAttestation, IndivEmailAttestation, IndivAttestation, OrgAttestation, RegisteredDomainAttestation } from "../models/Attestation";
 import AttestationService from "../service/AttestationService";
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService";
 import { Navigate } from "react-router-dom";
@@ -429,7 +428,6 @@ export const useWalletConnect = () => {
             if (orgIssuerDel == null && orgIndivDel && indivDid) {
 
               const parentDelegationHash = getDelegationHashOffchain(orgIndivDel);
-              console.info("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX5")
               orgIssuerDel = createDelegation({
                 to: issuerAccountClient.address,
                 from: indivAccountClient.address,
@@ -466,9 +464,6 @@ export const useWalletConnect = () => {
             }
 
             if (indivIssuerDel == null && indivDid) {
-              console.info("************ CREATE INDIV ISSUER DELEGATE ********")
-              console.info("delegate: ", issuerAccountClient.address)
-              console.info("delegator: ", indivAccountClient.address)
               indivIssuerDel = createDelegation({
                 from: indivAccountClient.address,
                 to: issuerAccountClient.address,
@@ -490,115 +485,6 @@ export const useWalletConnect = () => {
 
             setIndivIssuerDelegation(indivIssuerDel)
             setIsIndividualConnected(true)
-
-
- 
-            /*
-            console.info("*********** ADD INDIV ATTESTATION 6666 ****************")
-            const provider = new ethers.BrowserProvider(window.ethereum);
-            await window.ethereum.request({ method: "eth_requestAccounts" });
-            const walletSigner = await provider.getSigner()
-        
-            const walletClient = signatory.walletClient
-            const entityId = "indiv"
-        
-            if (walletSigner && walletClient && indivDid && orgDid) {
-
-              let indName = "name";
-              if (indivName) {
-                indName = indivName
-              }
-        
-              const vc = await VerifiableCredentialsService.createIndivVC(entityId, indivDid, issuerDid, orgDid, indName);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, issuerAccountClient)
-              const fullVc = result.vc
-              const proofUrl = result.proofUrl
-
-              if (fullVc) {
-              
-                // now create attestation
-                const hash = keccak256(toUtf8Bytes("hash value"));
-                const attestation: IndivAttestation = {
-                  orgDid: orgDid,
-                  name: indName,
-                  attester: indivDid,
-                  class: "individual",
-                  category: "wallet",
-                  entityId: entityId,
-                  hash: hash,
-                  vccomm: (fullVc.credentialSubject as any).commitment.toString(),
-                  vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-                  vciss: issuerDid,
-                  proof: proofUrl
-                };
-
-                const isDeployed1 = await indivAccountClient.isDeployed()
-                console.info(" is indiv AA address: ", indivAccountClient.address)
-                console.info(" is indiv AA deployed: ", isDeployed1)
-            
-                const isDeployed2 = await issuerAccountClient.isDeployed()
-                console.info(" is issuer AA address: ", issuerAccountClient.address)
-                console.info(" is issuer AA deployed: ", isDeployed2)
-
-                if (isDeployed1 == false) {
-
-                  console.info("send user operation")
-
-                  const pimlicoClient = createPimlicoClient({
-                    transport: http(BUNDLER_URL),
-                    //entryPoint: { address: ENTRY_POINT_ADDRESS, version: '0.7' },
-                  });
-                    const paymasterClient = createPaymasterClient({
-                      transport: http(PAYMASTER_URL),
-                    });
-                  const bundlerClient = createBundlerClient({
-                                  transport: http(BUNDLER_URL),
-                                  paymaster: paymasterClient,
-                                  chain: optimism,
-                                  paymasterContext: {
-                                    // at minimum this must be an object; for Biconomy you can use:
-                                    mode:             'SPONSORED',
-                                    //calculateGasLimits: true,
-                                    //expiryDuration:  300,
-                                  },
-                                });
-  
-  
-                  const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
-                  const userOperationHash = await bundlerClient!.sendUserOperation({
-                    account: indivAccountClient,
-                    calls: [
-                      {
-                        to: zeroAddress,
-                      },
-                    ],
-                    paymaster: paymasterClient,
-                    ...fee,
-                  });
-  
-                  console.info("send user operation - done")
-                  const { receipt } = await bundlerClient!.waitForUserOperationReceipt({
-                    hash: userOperationHash,
-                  });
-
-                }
-
-                
-            
-
-
-
-
-
-
-
-                const uid = await AttestationService.addIndivAttestation(attestation, walletSigner, [indivIssuerDel], indivAccountClient, issuerAccountClient)
-              }
-            }
-
-            */
-
-
 
           }
         }
@@ -954,7 +840,6 @@ export const useWalletConnect = () => {
           // add new org attestation
           const addOrgAttestation = async () => {
 
-            console.info("*********** ADD ORG ATTESTATION ****************")
             const provider = new ethers.BrowserProvider(window.ethereum);
             await window.ethereum.request({ method: "eth_requestAccounts" });
             const walletSigner = await provider.getSigner()
@@ -962,14 +847,12 @@ export const useWalletConnect = () => {
             const walletClient = signatory.walletClient
             const entityId = "org"
         
-            console.info(".........1 ", walletSigner, walletClient, orgName, orgDid, orgIssuerDel)
             if (walletSigner && walletClient && orgName && orgDid && orgIssuerDel) {
         
               const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, issuerDid, orgName);
               const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
               const fullVc = result.vc
               const proofUrl = result.proofUrl
-              console.info(".........2 ")
               if (fullVc) {
               
                 // now create attestation
@@ -987,8 +870,70 @@ export const useWalletConnect = () => {
                   proof: proofUrl
                 };
         
-                console.info("AttestationService add indiv attestation")
                 const uid = await AttestationService.addOrgAttestation(attestation, walletSigner, [orgIssuerDel, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+              }
+            }
+          }
+
+          const addDomainAttestation = async () => {
+
+            function getDomainFromEmail(email: string): string | null {
+              const atIndex = email.lastIndexOf('@');
+              if (atIndex <= 0 || atIndex === email.length - 1) {
+                // no '@', '@' at start, or '@' at end → invalid
+                return null;
+              }
+              return email.slice(atIndex + 1);
+            }
+
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            await window.ethereum.request({ method: "eth_requestAccounts" });
+            const walletSigner = await provider.getSigner()
+        
+            const walletClient = signatory.walletClient
+            const entityId = "domain"
+        
+            if (walletSigner && walletClient && orgName && orgDid && orgIssuerDel && indivEmail) {
+
+              const entityId = "domain"
+              const domainName = getDomainFromEmail(indivEmail)
+
+              if (domainName) {
+
+                const rslt = await OrgService.checkDomain(domainName);
+                
+                let rsltJson = JSON.parse(rslt)
+                console.info("domain check: ", rsltJson)
+            
+                const domaincreationdate = new Date("2023-03-10")
+                const domaincreationdateSeconds = Math.floor(domaincreationdate.getTime() / 1000); // Convert to seconds
+
+          
+                const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, issuerDid, domainName, "");
+                const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
+                const fullVc = result.vc
+                const proofUrl = result.proofUrl
+                if (fullVc) {
+                
+                  // now create attestation
+                  const hash = keccak256(toUtf8Bytes("hash value"));
+                  const attestation: RegisteredDomainAttestation = {
+                    domain: domainName,
+                    domaincreationdate: domaincreationdateSeconds,
+                    attester: orgDid,
+                    class: "organization",
+                    category: "wallet",
+                    entityId: entityId,
+                    hash: hash,
+                    vccomm: (fullVc.credentialSubject as any).commitment.toString(),
+                    vcsig: (fullVc.credentialSubject as any).commitmentSignature,
+                    vciss: issuerDid,
+                    proof: proofUrl
+                  };
+          
+                  const uid = await AttestationService.addRegisteredDomainAttestation(attestation, walletSigner, [orgIssuerDel, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+                }
+
               }
             }
           }
@@ -1002,8 +947,6 @@ export const useWalletConnect = () => {
               addOrgAttestation()
             }
           }
-
-
 
 
           // add new org indiv attestation
@@ -1061,6 +1004,7 @@ export const useWalletConnect = () => {
             const indivOrgAttestation = await AttestationService.getIndivOrgAttestation(indivDid, AttestationService.IndivOrgSchemaUID, "indiv-org")
             if (!indivOrgAttestation) {
               console.info("=============> no indiv attestation so add one")
+              addDomainAttestation()
               addIndivOrgAttestation()
             }
           }
