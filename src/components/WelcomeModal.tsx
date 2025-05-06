@@ -139,17 +139,23 @@ const WelcomeModal: React.FC = () => {
 
     // Step 3: organization name & final submit
     if (currentStep === 3) {
+
       if (!organizationName.trim()) {
         handleToast('Please enter your organization name.', 'error');
         return;
       }
       setIsSubmitting(true);
+
+      setIndivAndOrgInfo(fullName, organizationName, email).then(() => {
+        console.info("updated individual info")
+      })
+
       setTimeout(() => {
+        
         setIsSubmitting(false);
         handleToast('Setup complete! Redirecting...', 'success');
 
-        setIndivAndOrgInfo(fullName, organizationName, email)
-          .then(() => navigate('/setup'));
+        navigate('/setup');
 
       }, 1000);
     }
@@ -206,7 +212,7 @@ const WelcomeModal: React.FC = () => {
             {currentStep === 1 && (
               <Fade in>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Typography>Your Full Name</Typography>
+                  <Typography>Your full name</Typography>
                   <TextField fullWidth placeholder="Jane Doe" value={fullName} onChange={e => setFullName(e.target.value)} />
                 </Box>
               </Fade>
@@ -215,7 +221,7 @@ const WelcomeModal: React.FC = () => {
             {currentStep === 2 && (
               <Fade in>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Typography>Your Email at Organization</Typography>
+                  <Typography>Your email at organization</Typography>
                   <TextField
                     fullWidth
                     type="email"
