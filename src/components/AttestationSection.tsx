@@ -209,7 +209,7 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
       >
         {currentCategories.map(cat => (
           <Accordion
-            key={cat.name}
+            key={cat.id}
             expanded={!!expandedCategories[cat.name]}
             onChange={() =>
               setExpandedCategories(prev => ({
