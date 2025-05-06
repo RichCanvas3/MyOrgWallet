@@ -1085,6 +1085,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     args = checkInsuranceAttestation(introduction, lastUserResponse)
     if (args != "") {
+      console.info("############## return insurance args")
       return args
     }
 
@@ -1239,7 +1240,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
           if (socialCommand.toLowerCase() == "insurance") {
 
+            console.info("isFirstCall: ", isFirstCall)
             if (isFirstCall) {
+              console.info("open insurance popup: ", insuranceAuthRef.current)
               insuranceAuthRef.current?.openInsurancePopup()
             }
 

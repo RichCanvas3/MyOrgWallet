@@ -1,7 +1,7 @@
 import { useImperativeHandle, forwardRef, useEffect  } from 'react';
 
 import { keccak256, toUtf8Bytes } from 'ethers';
-
+import { ethers } from 'ethers';
 
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import AttestationService from '../service/AttestationService';
@@ -23,15 +23,17 @@ const entityId = "insurance"
 const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, ref) => {
 
   const { } = props;
-  const { issuerAccountClient, signer, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, issuerDid } = useWallectConnectContext();
+  const { issuerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, issuerDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   
 
   const openInsurancePopup = async () => {
 
+    console.info("############## inside open insurance popup")
+
       var insuranceNumber = "10"
-      if (orgDid && insuranceNumber && walletClient && orgAccountClient && issuerAccountClient && issuerDid  && signer) {
+      if (orgDid && insuranceNumber && walletClient && orgAccountClient && issuerAccountClient && issuerDid) {
 
         const vc = await VerifiableCredentialsService.createInsuranceVC(orgDid, issuerDid, insuranceNumber);
 
@@ -39,8 +41,12 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
         const fullVc = result.vc
         const proofUrl = result.proofUrl
-        if (fullVc && signer && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+        if (fullVc && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
         
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          await window.ethereum.request({ method: "eth_requestAccounts" });
+          const walletSigner = await provider.getSigner()
+
           // now create attestation
           console.info("create attestation")
           const hash = keccak256(toUtf8Bytes("hash value"));
@@ -59,7 +65,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
             proof: proofUrl
           };
 
-          const uid = await AttestationService.addInsuranceAttestation(attestation, signer, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+          const uid = await AttestationService.addInsuranceAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
           console.info("add insurance attestation complete")
 
 

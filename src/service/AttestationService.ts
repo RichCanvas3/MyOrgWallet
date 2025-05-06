@@ -16,7 +16,7 @@ import { error } from "console";
 
 import {ISSUER_PRIVATE_KEY, WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, BUNDLER_URL, PAYMASTER_URL} from "../config";
 
-const STORE_URL = `${import.meta.env.VITE_API_URL}/json` || 'http://localhost:4000/json';
+const STORE_URL = `${import.meta.env.VITE_API_URL}/json`;
 
 
 import { optimism } from "viem/chains";
