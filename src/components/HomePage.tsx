@@ -149,23 +149,6 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
           </Button>
         </Box>
 
-        {/* Leadership Card */}
-        <Box
-          sx={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 2,
-          }}
-        >
-          <Typography variant="h6" color="text.primary">
-            Leaders
-          </Typography>
-          <Button variant="outlined" size="medium" onClick={handleOrg}>
-            Explore Leaders
-          </Button>
-        </Box>
       </Card>
     </Box>
 
