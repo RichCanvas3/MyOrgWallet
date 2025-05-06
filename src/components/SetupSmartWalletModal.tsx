@@ -36,7 +36,7 @@ const SetupSmartWalletModal: React.FC = () => {
 
 
   const [steps, setSteps] = useState<Step[]>([
-    { id: 1, title: 'Connect Wallet', description: '', isActive: true, isCompleted: false },
+    { id: 1, title: 'Connect EOA Wallet', description: '', isActive: true, isCompleted: false },
     { id: 2, title: 'Build Smart Wallet', description: '',isActive: false, isCompleted: false },
     { id: 3, title: 'Setup Wallet Permissions', description: '',isActive: false, isCompleted: false },
   ]);
@@ -121,8 +121,8 @@ const SetupSmartWalletModal: React.FC = () => {
 
   // Decide current action
   const stepAction = [
-    { label: 'Connect Wallet', description: `
-      Connet to your local Externally Owned Account, ie. MetaMask.  <br/><br/>
+    { label: 'Connect EOA Wallet', description: `
+      Connet to your local Externally Owned Account - EOA (ie. MetaMask).  <br/><br/>
       This local wallet account will be the owner or your newly created Personal Smart Wallet and Organization Smart Wallet`
       , onClick: handleWalletConnect },
     { label: 'Build Smart Wallet', description: `
@@ -144,7 +144,7 @@ const SetupSmartWalletModal: React.FC = () => {
         <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {/* Header */}
           <Box textAlign="center">
-            <Typography variant="h4">Setup Your New Smart Wallet</Typography>
+            <Typography variant="h4">Build Your Smart Wallet</Typography>
             <Typography variant="body2" sx={{ mt: 1 }}>Please complete the steps below</Typography>
           </Box>
 

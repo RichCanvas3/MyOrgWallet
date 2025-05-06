@@ -2,8 +2,6 @@ import * as React from 'react';
 import {useContext, useEffect, useRef, useState} from 'react';
 
 import {useNavigate} from 'react-router-dom';
-import OrganizationListItem from './OrganizationListItem';
-import AttestationList from "./AttestationList";
 
 //import { WalletAuthRef } from "./WalletAuth"
 import { Organization } from "../models/Organization"
@@ -82,7 +80,6 @@ const SetupSmartWalletPage: React.FC<SetupSmartWalletPageProps> = ({className, a
       console.info("hello world")
     }
   
-    const OrganizationListItemMemo = React.memo(OrganizationListItem);
   
     return (
       <div className="onboarding-page flex h-screen">

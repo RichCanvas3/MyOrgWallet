@@ -16,6 +16,8 @@ import { error } from "console";
 
 import {ISSUER_PRIVATE_KEY, WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, BUNDLER_URL, PAYMASTER_URL} from "../config";
 
+const STORE_URL = `${import.meta.env.VITE_API_URL}/json` || 'http://localhost:4000/json';
+
 
 import { optimism } from "viem/chains";
 
@@ -1939,6 +1941,42 @@ class AttestationService {
     }
   }
 
+  static async saveBlacklist(payload: any)  {
+    const filename = "blacklist"
+
+    const res = await fetch(`${STORE_URL}?filename=${filename}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+
+  };
+
+  static async loadBlacklist() {
+
+    const filename = "blacklist"
+
+    const res = await fetch(`${STORE_URL}?filename=${filename}`);
+    const json = await res.json();
+    if (json.success) {
+      console.info("blacklist data: ", json.data)
+      this.Blacklisted = json.data
+    } 
+
+  };
+
+  static isBlacklisted(did: string) : boolean {
+
+    for (const item of this.Blacklisted) {
+      if (item.did == did) {
+        return true
+      }
+    }
+
+    return false
+  }
+  
   
   static async loadOrganizations(): Promise<Organization[]> {
     try {
@@ -1986,51 +2024,52 @@ class AttestationService {
 
           orgDid = "did:pkh:eip155:10:" + item.attester
 
-          
+          if (this.isBlacklisted(orgDid) == false) {
 
-          for (const field of decodedData) {
+            for (const field of decodedData) {
 
-            //console.info("name: ", field["name"])
-            //console.info("type of value: ", typeof field["value"].value)
-            //console.info("value: ", field["value"].value)
-            if (field["name"] == "name") {
-              if (typeof field["value"].value === "string") {
-                name = field["value"].value
+              //console.info("name: ", field["name"])
+              //console.info("type of value: ", typeof field["value"].value)
+              //console.info("value: ", field["value"].value)
+              if (field["name"] == "name") {
+                if (typeof field["value"].value === "string") {
+                  name = field["value"].value
+                }
+              }
+
+              if (field["name"] == "attester") {
+                if (typeof field["value"].value === "string") {
+                  orgDid = field["value"].value
+                }
+              }
+
+              if (field["name"] == "issuedate") {
+                if (typeof field["value"].value === "bigint") {
+                  const issuedateVal = field["value"].value as bigint
+                  issuedate = new Date(Number(issuedateVal) * 1000).toISOString().split('T')[0];
+                }
               }
             }
 
-            if (field["name"] == "attester") {
-              if (typeof field["value"].value === "string") {
-                orgDid = field["value"].value
+            //console.info("name: ", name)
+            //console.info("orgDid: ", orgDid)
+            //console.info("issuedate: ", issuedate)
+
+            if (item.schemaId == this.OrgSchemaUID) {
+
+            }
+
+            if (name && name != "") {
+              let org : Organization = {
+                id: id,
+                name: name,
+                hash: hash,
+                orgDid: orgDid,
+                issuedate: issuedate
               }
+              id = id + 1
+              organizations.push(org)
             }
-
-            if (field["name"] == "issuedate") {
-              if (typeof field["value"].value === "bigint") {
-                const issuedateVal = field["value"].value as bigint
-                issuedate = new Date(Number(issuedateVal) * 1000).toISOString().split('T')[0];
-              }
-            }
-          }
-
-          //console.info("name: ", name)
-          //console.info("orgDid: ", orgDid)
-          //console.info("issuedate: ", issuedate)
-
-          if (item.schemaId == this.OrgSchemaUID) {
-
-          }
-
-          if (name && name != "") {
-            let org : Organization = {
-              id: id,
-              name: name,
-              hash: hash,
-              orgDid: orgDid,
-              issuedate: issuedate
-            }
-            id = id + 1
-            organizations.push(org)
           }
           
         }
@@ -2322,6 +2361,7 @@ static async getIndivsNotApprovedAttestations(orgDid: string): Promise<IndivAtte
 
 
 
+  static Blacklisted : any[] = []
 
 
   static DefaultEntities : Entity[] = [

@@ -40,7 +40,6 @@ const OrganizationListItem: React.FC<OrganizationListItemProps> = ({
             <ChatBubbleLeftIcon className="organization-icon" />
             <span className="organization-name">{organization.name}</span>
           </div>
-          <div className="organization-did">{organization.orgDid}</div>
           <div className="organization-date">{organization.issuedate}</div>
         </div>
       </button>
