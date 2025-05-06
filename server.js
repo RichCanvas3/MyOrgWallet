@@ -13,6 +13,11 @@ import { createHash, publicDecrypt } from 'crypto';
 import * as base64 from '@ethersproject/base64';
 import { publicKeyToAddress } from 'viem/accounts';
 
+import bodyParser from 'body-parser';
+import { Storage } from '@google-cloud/storage';
+
+try {
+
   console.log('Configuring environment variables...');
   dotenv.config();
 
@@ -27,7 +32,9 @@ import { publicKeyToAddress } from 'viem/accounts';
     'X_REDIRECT_URI',
     'SHOPIFY_CLIENT_ID',
     'SHOPIFY_CLIENT_SECRET',
-    'SHOPIFY_SHOP_NAME'
+    'SHOPIFY_SHOP_NAME',
+    'GCLOUD_BUCKET_NAME',
+    'GOOGLE_APPLICATION_CREDENTIALS'
   ];
 
   for (const envVar of requiredEnvVars) {
@@ -63,6 +70,10 @@ import { publicKeyToAddress } from 'viem/accounts';
 
 app.use(helmet()); // Add security headers
 app.use(express.json());
+app.use(bodyParser.json());   
+
+const storage = new Storage();     // uses GOOGLE_APPLICATION_CREDENTIALS
+const bucket = storage.bucket(process.env.GCLOUD_BUCKET_NAME);
 
 const verificationCodes = new Map();
 
@@ -70,13 +81,38 @@ const verificationCodes = new Map();
     return Math.floor(100000 + Math.random() * 900000).toString();
   };
 
-export const objToSortedArray = (obj) => {
-  const keys = Object.keys(obj).sort();
-  return keys.reduce((out, key) => {
-    out.push([key, obj[key]]);
-    return out;
-  }, []);
-};
+  app.post('/json', async (req, res) => {
+    const filename = String(req.query.filename || 'data.json');
+    const data = req.body;            // assume valid JSON object
+    const file = bucket.file(filename);
+  
+    try {
+      // Write JSON string directly
+      await file.save(JSON.stringify(data), {
+        contentType: 'application/json',
+        resumable: false,
+      });
+      res.json({ success: true, filename });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get('/json', async (req, res) => {
+    const filename = String(req.query.filename || 'data.json');
+    const file = bucket.file(filename);
+  
+    try {
+      // Download as Buffer, then parse
+      const [contents] = await file.download();
+      const json = JSON.parse(contents.toString('utf8'));
+      res.json({ success: true, data: json });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: err.message });
+    }
+  });
 
   console.log('Setting up routes...');
 
