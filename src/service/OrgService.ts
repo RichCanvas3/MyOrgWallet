@@ -2,7 +2,7 @@
 import {OPENAI_API_KEY} from "../config";
 import {CustomError} from "./CustomError";
 
-
+const BASE_URL = 'myorgwallet-service-f3ffgehta2ecbsea.westus2-01.azurewebsites.net'; 
 
 export class OrgService {
 
@@ -11,7 +11,7 @@ export class OrgService {
 
 
   static async getOrgWithCompanyName(name: string, state: string): Promise<any> {
-    let endpoint = "http://127.0.0.1:8501/creds/good-standing/company?company=" + name + "&state=" + state;
+    let endpoint = `${BASE_URL}/creds/good-standing/company?company=${encodeURIComponent(name)}&state=${encodeURIComponent(state)}`;
     let headers = {
       "Content-Type": "application/json"
     };
@@ -34,7 +34,7 @@ export class OrgService {
 
 
   static async getOrgWithEmail(email: string): Promise<any> {
-    let endpoint = "http://127.0.0.1:8501/creds/good-standing/email?email=" + email;
+    let endpoint = `${BASE_URL}/creds/good-standing/email?email=${encodeURIComponent(email)}`;
     let headers = {
       "Content-Type": "application/json"
     };
@@ -57,7 +57,7 @@ export class OrgService {
 
 
   static async checkDomain(domain: string): Promise<any> {
-    let endpoint = "http://127.0.0.1:8501/creds/good-standing/domain?domain=" + domain;
+    let endpoint = `${BASE_URL}/creds/good-standing/domain?domain=${encodeURIComponent(domain)}`;
     let headers = {
       "Content-Type": "application/json"
     };
@@ -79,7 +79,7 @@ export class OrgService {
   }
 
   static async checkWebsite(website: string): Promise<any> {
-    let endpoint = "http://127.0.0.1:8501/creds/good-standing/website?website=" + website;
+    let endpoint = `${BASE_URL}/creds/good-standing/website?website=${encodeURIComponent(website)}`;
     let headers = {
       "Content-Type": "application/json"
     };
