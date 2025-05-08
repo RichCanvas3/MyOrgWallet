@@ -2,7 +2,8 @@
 import {OPENAI_API_KEY} from "../config";
 import {CustomError} from "./CustomError";
 
-const BASE_URL = 'myorgwallet-service-f3ffgehta2ecbsea.westus2-01.azurewebsites.net'; 
+const BASE_URL = 'https://myorgwallet-service-f3ffgehta2ecbsea.westus2-01.azurewebsites.net/'; 
+
 
 export class OrgService {
 
