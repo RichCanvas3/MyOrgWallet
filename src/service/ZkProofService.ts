@@ -6,7 +6,7 @@ const encoder = new TextEncoder();
 const SNARK_FIELD = BigInt('21888242871839275222246405745257275088548364400416034343698204186575808495617');
 
 
-const BASE_URL_PROVER = process.env.PROVER_API_URL || 'http://localhost:3051';
+const BASE_URL_PROVER = process.env.VITE_PROVER_API_URL || 'http://localhost:3051';
 
 class ZkProofService {
 
