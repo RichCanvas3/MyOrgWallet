@@ -6,6 +6,7 @@ const encoder = new TextEncoder();
 const SNARK_FIELD = BigInt('21888242871839275222246405745257275088548364400416034343698204186575808495617');
 
 
+const BASE_URL_PROVER = process.env.PROVER_API_URL || 'http://localhost:3051';
 
 class ZkProofService {
 
@@ -32,6 +33,7 @@ class ZkProofService {
 
       const validateWith = [modOrgDidHash.toString(), modIssuerDidHash.toString(), vccomm]
 
+
       if (zkProof.proof) {
         const zkProofJson = JSON.parse(zkProof.proof)
         
@@ -47,7 +49,7 @@ class ZkProofService {
 
           //console.info("run proof: ", modOrgDidHash.toString(), modIssuerDidHash.toString(), vccomm)
 
-          const res = await fetch('http://localhost:3051/api/proof/checkproof', {
+          const res = await fetch(`${BASE_URL_PROVER}/api/proof/checkproof`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -89,7 +91,8 @@ class ZkProofService {
         }
         else {
           //console.info("run proof: ")
-          const res = await fetch('http://localhost:3051/api/proof/checkproof', {
+          
+          const res = await fetch(`${BASE_URL_PROVER}/api/proof/checkproof`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
