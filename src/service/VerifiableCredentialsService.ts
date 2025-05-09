@@ -382,7 +382,6 @@ class VerifiableCredentialsService {
       //   - commitment
       //   - verifier DID (richcanvas)
 
-
       const issuerDid = vc.issuer
       const credentialJSON = JSON.stringify(vc);
 
@@ -411,13 +410,16 @@ class VerifiableCredentialsService {
         }
 
 
+        const BASE_URL_PROVER = process.env.PROVER_API_URL || 'http://localhost:3051';
+        
         if (issuerDid && did) {
 
           console.info(">>>>>>>>>>>>> did: ", did)
           const issuerDidHash = hashDID(issuerDid)
           const didHash = hashDID(did)
 
-          const res = await fetch('http://localhost:3051/api/proof/commitment', {
+
+          const res = await fetch(`${BASE_URL_PROVER}/api/proof/commitment`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -473,7 +475,7 @@ class VerifiableCredentialsService {
             }
 
             console.info("-----------> create proof")
-            const proofResp = await fetch('http://localhost:3051/api/proof/create', {
+            const proofResp = await fetch(`${BASE_URL_PROVER}/api/proof/create`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
