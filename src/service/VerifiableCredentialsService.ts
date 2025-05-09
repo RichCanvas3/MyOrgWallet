@@ -410,8 +410,8 @@ class VerifiableCredentialsService {
         }
 
 
-        const BASE_URL_PROVER = process.env.PROVER_API_URL || 'http://localhost:3051';
-        
+        const BASE_URL_PROVER = process.env.VITE_PROVER_API_URL  || 'http://localhost:3051';
+
         if (issuerDid && did) {
 
           console.info(">>>>>>>>>>>>> did: ", did)
