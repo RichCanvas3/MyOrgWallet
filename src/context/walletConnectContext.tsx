@@ -73,7 +73,7 @@ export type WalletConnectContextState = {
 
     orgDid?: string;
     indivDid?: string;
-    issuerDid?: string;
+    
 
     orgName?: string;
     indivName?: string;
@@ -89,6 +89,7 @@ export type WalletConnectContextState = {
     selectedSignatory?: SignatoryFactory,
     signatory?: any,
 
+    privateIssuerDid?: string;
     privateIssuerAccount?: PrivateKeyAccount,
     
     setOrgNameValue: (orgNameValue: string) => Promise<void>,
@@ -101,7 +102,7 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
   
   orgDid: undefined,
   indivDid: undefined,
-  issuerDid: undefined,
+  
 
   orgName: undefined,
   indivName: undefined,
@@ -116,6 +117,8 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
   indivIssuerDelegation: undefined,
 
   signatory: undefined,
+
+  privateIssuerDid: undefined,
   privateIssuerAccount: undefined,
 
   isIndividualConnected: false,
@@ -144,7 +147,7 @@ export const useWalletConnect = () => {
 
     const [orgDid, setOrgDid] = useState<string>();
     const [indivDid, setIndivDid] = useState<string>();
-    const [issuerDid, setIssuerDid] = useState<string>();
+    const [privateIssuerDid, setPrivateIssuerDid] = useState<string>();
 
     const [orgName, setOrgName] = useState<string>();
     const [indivName, setIndivName] = useState<string>();
@@ -244,9 +247,7 @@ export const useWalletConnect = () => {
               deploySalt: toHex(10),
             })
 
-            setPrivateIssuerAccount(issuerOwner)
-            let issuerDid = 'did:ethr:0xa:' + issuerOwner.address
-            setIssuerDid(issuerDid)
+            
 
 
             setIssuerAccountClient(issuerAccountClient)
@@ -512,7 +513,13 @@ export const useWalletConnect = () => {
 
     }, [signatory, owner]);
 
+    useEffect(() => {
+      const issAccount = privateKeyToAccount(ISSUER_PRIVATE_KEY);
+      setPrivateIssuerAccount(issAccount)
 
+      const issDid = 'did:ethr:0xa:' + issAccount.address
+      setPrivateIssuerDid(issDid)
+    }, []);
 
     const pimlicoClient = createPimlicoClient({
       transport: http(BUNDLER_URL),
@@ -794,8 +801,8 @@ export const useWalletConnect = () => {
         let isDeployed = await issuerAccountClient.isDeployed()
         console.info("is issuerAccount deployed: ", isDeployed)
 
-        let issuerDid = 'did:ethr:0xa:' + issuerAccountClient.address
-        setIssuerDid(issuerDid)
+        let privateIssuerDid = 'did:ethr:0xa:' + issuerAccountClient.address
+        setPrivateIssuerDid(privateIssuerDid)
         setIssuerAccountClient(issuerAccountClient)
 
         if (orgIndivDelegation && orgAccountClient) {
@@ -845,7 +852,7 @@ export const useWalletConnect = () => {
         
             if (walletSigner && walletClient && privateIssuerAccount && orgName && orgDid && orgIssuerDel) {
         
-              const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, issuerDid, orgName);
+              const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, privateIssuerDid, orgName);
               const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
               const fullVc = result.vc
               const proofUrl = result.proofUrl
@@ -862,7 +869,7 @@ export const useWalletConnect = () => {
                   hash: hash,
                   vccomm: (fullVc.credentialSubject as any).commitment.toString(),
                   vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-                  vciss: issuerDid,
+                  vciss: privateIssuerDid,
                   proof: proofUrl
                 };
         
@@ -905,7 +912,7 @@ export const useWalletConnect = () => {
                 const domaincreationdateSeconds = Math.floor(domaincreationdate.getTime() / 1000); // Convert to seconds
 
           
-                const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, issuerDid, domainName, "");
+                const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, privateIssuerDid, domainName, "");
                 const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
                 const fullVc = result.vc
                 const proofUrl = result.proofUrl
@@ -923,7 +930,7 @@ export const useWalletConnect = () => {
                     hash: hash,
                     vccomm: (fullVc.credentialSubject as any).commitment.toString(),
                     vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-                    vciss: issuerDid,
+                    vciss: privateIssuerDid,
                     proof: proofUrl
                   };
           
@@ -965,7 +972,7 @@ export const useWalletConnect = () => {
               }
               
         
-              const vc = await VerifiableCredentialsService.createIndivOrgVC(entityId, orgDid, issuerDid, indivDid, indName);
+              const vc = await VerifiableCredentialsService.createIndivOrgVC(entityId, orgDid, privateIssuerDid, indivDid, indName);
               const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
               const fullVc = result.vc
               const proofUrl = result.proofUrl
@@ -986,13 +993,22 @@ export const useWalletConnect = () => {
                   hash: hash,
                   vccomm: (fullVc.credentialSubject as any).commitment.toString(),
                   vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-                  vciss: issuerDid,
+                  vciss: privateIssuerDid,
                   proof: proofUrl
                 };
         
                 console.info("AttestationService add indiv org attestation")
                 const uid = await AttestationService.addIndivOrgAttestation(attestation, walletSigner, [orgIssuerDel, orgIndivDelegation], orgAccountClient, issuerAccountClient)
               }
+            }
+            else {
+              console.info("*********** no wallet signer or client or indivDid or orgDid or orgIssuerDel")  
+              console.info("walletSigner: ", walletSigner)
+              console.info("walletClient: ", walletClient)
+              console.info("privateIssuerAccount: ", privateIssuerAccount)
+              console.info("indivDid: ", indivDid)
+              console.info("orgDid: ", orgDid)
+              console.info("orgIssuerDel: ", orgIssuerDel)
             }
           }
 
@@ -1058,7 +1074,7 @@ export const useWalletConnect = () => {
                 indName = indivName
               }
         
-              const vc = await VerifiableCredentialsService.createIndivVC(entityId, indivDid, issuerDid, orgDid, indName);
+              const vc = await VerifiableCredentialsService.createIndivVC(entityId, indivDid, privateIssuerDid, orgDid, indName);
               const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, privateIssuerAccount, issuerAccountClient)
               const fullVc = result.vc
               const proofUrl = result.proofUrl
@@ -1077,7 +1093,7 @@ export const useWalletConnect = () => {
                   hash: hash,
                   vccomm: (fullVc.credentialSubject as any).commitment.toString(),
                   vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-                  vciss: issuerDid,
+                  vciss: privateIssuerDid,
                   proof: proofUrl
                 };
 
@@ -1104,7 +1120,7 @@ export const useWalletConnect = () => {
                 indEmail = indivEmail
               }
         
-              const vc = await VerifiableCredentialsService.createIndivEmailVC(entityId, indivDid, issuerDid, "business", indEmail);
+              const vc = await VerifiableCredentialsService.createIndivEmailVC(entityId, indivDid, privateIssuerDid, "business", indEmail);
               const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, privateIssuerAccount, issuerAccountClient)
               const fullVc = result.vc
               const proofUrl = result.proofUrl
@@ -1123,7 +1139,7 @@ export const useWalletConnect = () => {
                   hash: hash,
                   vccomm: (fullVc.credentialSubject as any).commitment.toString(),
                   vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-                  vciss: issuerDid,
+                  vciss: privateIssuerDid,
                   proof: proofUrl
                 };
         
@@ -1166,7 +1182,7 @@ export const useWalletConnect = () => {
             
             orgDid,
             indivDid,
-            issuerDid,
+            
 
             indivName,
             orgName,
@@ -1179,6 +1195,8 @@ export const useWalletConnect = () => {
             indivAccountClient,
 
             signatory,
+
+            privateIssuerDid,
             privateIssuerAccount,
             
             orgIndivDelegation,
@@ -1203,7 +1221,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
       orgDid, 
       indivDid,
-      issuerDid,
+      
 
       indivName,
       orgName,
@@ -1226,6 +1244,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
       selectedSignatory,
       signatory,
 
+      privateIssuerDid,
       privateIssuerAccount,
       
       setOrgNameValue,
@@ -1238,7 +1257,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
         orgDid,
         indivDid,
-        issuerDid,
+        
 
         indivName,
         orgName,
@@ -1255,7 +1274,10 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
         selectedSignatory,
         signatory,
+
         privateIssuerAccount,
+        privateIssuerDid,
+
         connect,
         setIndivAndOrgInfo,
         buildSmartWallet,
@@ -1270,7 +1292,6 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
         orgDid,
         indivDid, 
-        issuerDid,
 
         isIndividualConnected,
 
@@ -1284,7 +1305,10 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
         selectedSignatory,
         signatory,
+
+        privateIssuerDid,
         privateIssuerAccount,
+
         connect,
         setIndivAndOrgInfo,
         buildSmartWallet,

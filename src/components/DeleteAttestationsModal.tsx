@@ -53,7 +53,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { signatory, privateIssuerAccount, orgDid, indivDid, issuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, issuerAccountClient } = useWallectConnectContext();
+  const { signatory, privateIssuerAccount, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, issuerAccountClient } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
 
@@ -104,7 +104,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
 
   const handleAddSamCFO = async (event: React.MouseEvent<HTMLButtonElement>) => {
 
-    if (signatory && orgDid && issuerDid && indivIssuerDelegation) {
+    if (signatory && orgDid && privateIssuerDid && indivIssuerDelegation) {
 
       const walletClient = signatory.walletClient
 
@@ -181,7 +181,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
 
         const samIndivName = ""
 
-        const vc = await VerifiableCredentialsService.createIndivOrgVC("indiv-org", orgDid, issuerDid, samIndivDid, samIndivName);
+        const vc = await VerifiableCredentialsService.createIndivOrgVC("indiv-org", orgDid, privateIssuerDid, samIndivDid, samIndivName);
         const result = await VerifiableCredentialsService.createCredential(vc, "indiv-org", orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
 
         console.info("result of create credential: ", result)
@@ -207,7 +207,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-            vciss: issuerDid,
+            vciss: privateIssuerDid,
             proof: proofUrl
           };
 

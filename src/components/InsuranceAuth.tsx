@@ -23,7 +23,7 @@ const entityId = "insurance"
 const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, ref) => {
 
   const { } = props;
-  const { privateIssuerAccount, issuerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, issuerDid } = useWallectConnectContext();
+  const { privateIssuerAccount, issuerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   
@@ -33,9 +33,9 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
     console.info("############## inside open insurance popup")
 
       var insuranceNumber = "10"
-      if (orgDid && insuranceNumber && walletClient && orgAccountClient && issuerAccountClient && issuerDid) {
+      if (privateIssuerAccount && orgDid && insuranceNumber && walletClient && orgAccountClient && issuerAccountClient && privateIssuerDid) {
 
-        const vc = await VerifiableCredentialsService.createInsuranceVC(orgDid, issuerDid, insuranceNumber);
+        const vc = await VerifiableCredentialsService.createInsuranceVC(orgDid, privateIssuerDid, insuranceNumber);
 
         console.info("vc: ", JSON.stringify(vc))
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
@@ -61,7 +61,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-            vciss: issuerDid,
+            vciss: privateIssuerDid,
             proof: proofUrl
           };
 
