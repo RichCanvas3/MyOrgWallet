@@ -33,7 +33,7 @@ const entityId = "shopify"
 const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) => {
 
   const { } = props;
-  const { issuerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, issuerDid } = useWallectConnectContext();
+  const { privateIssuerAccount, issuerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, issuerDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   const openShopifyPopup = () => {
@@ -69,14 +69,14 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
       var shopifyUrl = res.data.shop.domain
       var websiteType = "commerce"
 
-      if (orgDid && shopifyUrl && walletClient && orgAccountClient && issuerAccountClient && orgIssuerDelegation && orgIndivDelegation && issuerDid) {
+      if (orgDid && shopifyUrl && walletClient && privateIssuerAccount && orgAccountClient && issuerAccountClient && orgIssuerDelegation && orgIndivDelegation && issuerDid) {
 
         const provider = new ethers.BrowserProvider(window.ethereum);
         await window.ethereum.request({ method: "eth_requestAccounts" });
         const walletSigner = await provider.getSigner()
 
         const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC(entityId, orgDid, issuerDid, websiteType, shopifyUrl);
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
+        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
         const fullVc = result.vc
         const proofUrl = result.proofUrl
         if (fullVc && walletSigner && orgAccountClient && walletClient) {

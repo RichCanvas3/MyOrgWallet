@@ -129,7 +129,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const { data: walletClient } = useWalletClient();
 
-  const { issuerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, issuerDid, orgName, setOrgNameValue } = useWallectConnectContext();
+  const { privateIssuerAccount, issuerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, issuerDid, orgName, setOrgNameValue } = useWallectConnectContext();
 
   const [isDeleteAttestationsModalVisible, setDeleteAttestationsModalVisible] = useState(false);
   const [isApproveLeaderModalVisible, setApproveLeaderModalVisible] = useState(false);
@@ -691,10 +691,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         const state = orgJson["state"]
         const formationDate = "1/2/2020"
 
-        if (orgDid && issuerDid && walletClient && orgAccountClient && issuerAccountClient) {
+        if (orgDid && issuerDid && walletClient && privateIssuerAccount && orgAccountClient && issuerAccountClient) {
 
           const vc = await VerifiableCredentialsService.createStateRegistrationVC(entityId, orgDid, issuerDid, idNumber, orgName, status, formationDate, state, locationAddress);
-          const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
+          const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
           const fullVc = result.vc
           const proofUrl = result.proofUrl
 
@@ -758,10 +758,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     const domaincreationdate = new Date("2023-03-10")
     const domaincreationdateSeconds = Math.floor(domaincreationdate.getTime() / 1000); // Convert to seconds
 
-    if (orgDid && issuerDid && walletClient && orgAccountClient && issuerAccountClient) {
+    if (orgDid && issuerDid && walletClient && privateIssuerAccount && orgAccountClient && issuerAccountClient) {
 
       const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, issuerDid, domain, domaincreationdate.toDateString());
-      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
       const fullVc = result.vc
       const proofUrl = result.proofUrl
       if (fullVc && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
@@ -807,10 +807,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     const websiteType = "public"
 
     const entityId = "website"
-    if (orgDid && walletClient && orgAccountClient && issuerAccountClient && issuerDid) {
+    if (orgDid && walletClient && privateIssuerAccount && orgAccountClient && issuerAccountClient && issuerDid) {
 
       const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC(entityId, orgDid, issuerDid, websiteType, website);
-      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
       const fullVc = result.vc
       const proofUrl = result.proofUrl
       if (fullVc && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
@@ -858,10 +858,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     const emailType = "info"
     
     const entityId = "email"
-    if (orgDid && issuerDid && walletClient && orgAccountClient && issuerAccountClient) {
+    if (orgDid && issuerDid && walletClient && privateIssuerAccount && orgAccountClient && issuerAccountClient) {
 
       const vc = await VerifiableCredentialsService.createEmailVC(entityId, orgDid, issuerDid, emailType, email);
-      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, issuerAccountClient)
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
       const fullVc = result.vc
       const proofUrl = result.proofUrl
       if (fullVc && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {

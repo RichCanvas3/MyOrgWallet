@@ -26,6 +26,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
   const { isConnected } = useAccount();
 
   useEffect(() => {
+    console.info("check if going to chat: ", isConnected, isIndividualConnected)
     // if wallet is defined and we have not defined smart wallet
     if (isConnected && isIndividualConnected) {
       console.info(".......... navigate to chat")

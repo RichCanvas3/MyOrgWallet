@@ -47,7 +47,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
   const [ orgEthName, setOrgEthName] = useState<string>("");
   const [ orgEthAvatar, setOrgEthAvatar] = useState<string>("");
 
-  const [activeTab, setActiveTab] = useState<'info' | 'vc' | 'zk' | 'rzk' | 'at'>('vc');
+  const [activeTab, setActiveTab] = useState<'info' | 'vc' | 'vc-raw' | 'zk' | 'rzk' | 'at'>('vc');
 
 
   const handleClose = () => {
@@ -428,6 +428,12 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
               Verifiable Credential
             </button>
             <button
+              className={`tab-button ${activeTab === 'vc-raw' ? 'active' : ''}`}
+              onClick={() => setActiveTab('vc-raw')}
+            >
+              VC Raw
+            </button>
+            <button
               className={`tab-button  ${activeTab === 'at' ? 'active' : ''}`}
               onClick={() => setActiveTab('at')}
             >
@@ -484,6 +490,13 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                     )}
                   </div>
                 )}
+              </div>
+            )}
+            {activeTab === 'vc-raw' && (
+              <div className="tab-panel">
+                <div style={{ whiteSpace: 'pre-wrap' }}>
+                  {JSON.stringify(credential, null, 2)}
+                </div>
               </div>
             )}
             {activeTab === 'vc' && (
