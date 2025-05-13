@@ -10,7 +10,7 @@ const BASE_URL_PROVER = import.meta.env.VITE_PROVER_API_URL || 'http://localhost
 
 class ZkProofService {
 
-    static async getVcZkProof(proofUrl: string, vccomm: string, issuerDid: string, orgDid: string): Promise<VcZkProof> {
+    static async getVcZkProof(proof: string, vccomm: string, issuerDid: string, orgDid: string): Promise<VcZkProof> {
 
       const resp1 = await fetch('/verification_key.json')
       const verificationKey = await resp1.json()
@@ -21,9 +21,7 @@ class ZkProofService {
         return didBigInt
       }
 
-      const res = await fetch(proofUrl)
-      let zkProof : VcZkProof =  await res.json()
-
+      let zkProof : VcZkProof =  JSON.parse(proof)
 
       const issuerDidHash = hashText(issuerDid)
       const modIssuerDidHash = issuerDidHash % SNARK_FIELD
@@ -70,13 +68,13 @@ class ZkProofService {
     }
 
 
-    static async getVcRevokeZkProof(proofUrl: string, vccomm: string): Promise<VcRevokeZkProof> {
+    static async getVcRevokeZkProof(proof: string, vccomm: string): Promise<VcRevokeZkProof> {
 
       const resp = await fetch('/revoke_verification_key.json')
       const revokeVerificationKey = await resp.json()
 
-      const res = await fetch(proofUrl)
-      let zkProof : VcRevokeZkProof =  await res.json()
+
+      let zkProof : VcRevokeZkProof =  JSON.parse(proof)
       
 
       if (zkProof.proof && zkProof.publicSignals) {

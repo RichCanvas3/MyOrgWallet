@@ -118,9 +118,9 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
 
       console.info("result of create credential: ", result)
       const fullVc = result.vc
-      const proofUrl = result.proofUrl
+      const proof = result.proof
 
-      if (fullVc && orgIssuerDelegation && orgIndivDelegation && issuerAccountClient) {
+      if (proof && fullVc && orgIssuerDelegation && orgIndivDelegation && issuerAccountClient) {
 
         console.info("&&&&&&&&&&&&&&&&&&&&&&& AttestationService add indiv attestation")
 
@@ -138,7 +138,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
           vccomm: (fullVc.credentialSubject as any).commitment.toString(),
           vcsig: (fullVc.credentialSubject as any).commitmentSignature,
           vciss: privateIssuerDid,
-          proof: proofUrl
+          proof: proof
         };
 
         const provider = new ethers.BrowserProvider(window.ethereum);

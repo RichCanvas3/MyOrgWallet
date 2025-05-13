@@ -696,11 +696,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           const vc = await VerifiableCredentialsService.createStateRegistrationVC(entityId, orgDid, privateIssuerDid, idNumber, orgName, status, formationDate, state, locationAddress);
           const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
           const fullVc = result.vc
-          const proofUrl = result.proofUrl
+          const proof = result.proof
 
-          console.info("************** creating att: ", proofUrl)
-
-          if (fullVc && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+          if (proof && fullVc && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
           
             // now create attestation
             const hash = keccak256(toUtf8Bytes("hash value"));
@@ -719,7 +717,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
               vccomm: (fullVc.credentialSubject as any).commitment.toString(),
               vcsig: (fullVc.credentialSubject as any).commitmentSignature,
               vciss: privateIssuerDid,
-              proof: proofUrl
+              proof: proof
             };
 
             const provider = new ethers.BrowserProvider(window.ethereum);
@@ -763,8 +761,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, isprivateIssuerDidsuerDid, domain, domaincreationdate.toDateString());
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
       const fullVc = result.vc
-      const proofUrl = result.proofUrl
-      if (fullVc && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+      const proof = result.proof
+      if (proof && fullVc && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
       
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -779,7 +777,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           vccomm: (fullVc.credentialSubject as any).commitment.toString(),
           vcsig: (fullVc.credentialSubject as any).commitmentSignature,
           vciss: privateIssuerDid,
-          proof: proofUrl
+          proof: proof
         };
 
         const provider = new ethers.BrowserProvider(window.ethereum);
@@ -812,8 +810,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC(entityId, orgDid, privateIssuerDid, websiteType, website);
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
       const fullVc = result.vc
-      const proofUrl = result.proofUrl
-      if (fullVc && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+      const proof = result.proof
+      if (proof && fullVc && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
       
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -828,7 +826,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           vccomm: (fullVc.credentialSubject as any).commitment.toString(),
           vcsig: (fullVc.credentialSubject as any).commitmentSignature,
           vciss: privateIssuerDid,
-          proof: proofUrl
+          proof: proof
         };
 
         const provider = new ethers.BrowserProvider(window.ethereum);
@@ -863,8 +861,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       const vc = await VerifiableCredentialsService.createEmailVC(entityId, orgDid, privateIssuerDid, emailType, email);
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
       const fullVc = result.vc
-      const proofUrl = result.proofUrl
-      if (fullVc && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+      const proof = result.proof
+      if (proof && fullVc && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
       
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -879,7 +877,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           vccomm: (fullVc.credentialSubject as any).commitment.toString(),
           vcsig: (fullVc.credentialSubject as any).commitmentSignature,
           vciss: privateIssuerDid,
-          proof: proofUrl
+          proof: proof
         };
 
         const provider = new ethers.BrowserProvider(window.ethereum);

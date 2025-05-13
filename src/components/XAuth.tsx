@@ -108,8 +108,8 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
         const vc = await VerifiableCredentialsService.createSocialVC(entityId, orgDid, privateIssuerDid, name, url);
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
         const fullVc = result.vc
-        const proofUrl = result.proofUrl
-        if (fullVc && orgAccountClient && indivIssuerDelegation && walletClient) {
+        const proof = result.proof
+        if (proof && fullVc && orgAccountClient && indivIssuerDelegation && walletClient) {
         
           // add attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
@@ -122,7 +122,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,
             vciss: privateIssuerDid,
-            proof: proofUrl,
+            proof: proof,
             name: name,
             url: url
           };

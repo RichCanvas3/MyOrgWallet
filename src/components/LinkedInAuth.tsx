@@ -97,9 +97,9 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
           const vc = await VerifiableCredentialsService.createSocialVC(entityId, indivDid, privateIssuerDid, res.data.sub, "");
           const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, privateIssuerAccount, issuerAccountClient)
           const fullVc = result.vc
-          const proofUrl = result.proofUrl
+          const proof = result.proof
 
-          if (fullVc && indivAccountClient && indivIssuerDelegation) {
+          if (proof && fullVc && indivAccountClient && indivIssuerDelegation) {
           
             // add attestation
             const hash = keccak256(toUtf8Bytes("hash value"));
@@ -112,7 +112,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
               vccomm: (fullVc.credentialSubject as any).commitment.toString(),
               vcsig: (fullVc.credentialSubject as any).commitmentSignature,
               vciss: privateIssuerDid,
-              proof: proofUrl,
+              proof: proof,
               name: "",
               url: ""
             };
@@ -121,7 +121,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
             await window.ethereum.request({ method: "eth_requestAccounts" });
             const walletSigner = await provider.getSigner()
   
-            console.info("proof url: ", proofUrl)
+            console.info("proof: ", proof)
             const uid = await AttestationService.addSocialAttestation(attestation, walletSigner, [indivIssuerDelegation], indivAccountClient, issuerAccountClient)
           
             console.info(">>>>>>>>>>>>>>>>>  added attestation complete: ", uid)
