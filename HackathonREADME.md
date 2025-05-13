@@ -13,8 +13,9 @@
 ### Issue Verifiable Credentials (VC) associated with Individuals (AA) and Organization (AA), DID references
 - Create a set of Verifiable Credentials for the Individual Smart Wallet (AA).  Similar to Humanity Protocol use-case
 - Create a set of Verifiable Credentials for the Organization Smart Wallet (AA).  Unique to Org Wallet Company Goals
-- Credential sets created with the use of an Agentic AI model (OpenAI) which accessed and obtained publically available company information through the web.
-- Company information includes name, id number, form, status, formation date, state, and address. 
+- Credential sets created with the use of an Agentic AI model (OpenAI) which scraped publically available company information through the web.
+- Company information includes name, id number, form, status, formation date, state, and address.
+- Agentic AI model is given direction through the use of an app-inbedded chatbot
 ### Publish VC related Attestations (on-chain Organization and Individual) and associated Zero Knowledge Proofs
 - Generate a Zero Knowledge Proof for each Verifiable Credential (associated with Smart Wallets) and attach to attestation.
 - Create Attestations using entry point user op to EAS Contract.  Using Paymaster, Bundler and delegationChain RedeemDelegation.
