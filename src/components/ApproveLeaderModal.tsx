@@ -69,7 +69,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { signatory, orgDid, indivDid, issuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, issuerAccountClient } = useWallectConnectContext();
+  const { signatory, orgDid, indivDid, issuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, issuerAccountClient } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   const [attestations, setAttestations] = useState<IndivAttestation[]>([]);
@@ -84,7 +84,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
 
     // if this user has been granted permissions through orgIndivDelegation
     console.info("need these values: ", orgIndivDelegation, orgDid, issuerDid, walletClient)
-    if (orgIndivDelegation && orgDid && issuerDid && walletClient) {
+    if (orgIndivDelegation && orgDid && issuerDid && walletClient && orgAccountClient && privateIssuerAccount) {
 
       console.info("approve it: ", att)
 
@@ -114,13 +114,13 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
 
 
       const vc = await VerifiableCredentialsService.createIndivOrgVC("indiv-org", orgDid, issuerDid, leaderIndivDid, att.name);
-      const result = await VerifiableCredentialsService.createCredential(vc, "indiv-org", orgDid, walletClient, issuerAccountClient)
+      const result = await VerifiableCredentialsService.createCredential(vc, "indiv-org", orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
 
       console.info("result of create credential: ", result)
       const fullVc = result.vc
       const proofUrl = result.proofUrl
 
-      if (fullVc && orgIssuerDelegation && orgIndivDelegation) {
+      if (fullVc && orgIssuerDelegation && orgIndivDelegation && issuerAccountClient) {
 
         console.info("&&&&&&&&&&&&&&&&&&&&&&& AttestationService add indiv attestation")
 

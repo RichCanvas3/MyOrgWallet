@@ -2,7 +2,7 @@ import { VerifiableCredential } from "../models/VerifiableCredential"
 import { WalletClient, verifyMessage, hexToBytes, bytesToHex } from "viem";
 import { ethers, hashMessage } from 'ethers'
 import { recoverPublicKey } from "@ethersproject/signing-key";
-
+import { privateKeyToAccount, PrivateKeyAccount, generatePrivateKey } from "viem/accounts";
 
 import { vs } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { Buffer } from 'buffer';
@@ -344,7 +344,8 @@ class VerifiableCredentialsService {
       vc: VerifiableCredential,
       entityId: string,
       did: string, 
-      walletClient: WalletClient, 
+      walletClient: WalletClient,
+      privateIssuerAccount: PrivateKeyAccount, 
       issuerAccountClient: any): Promise<any | undefined> {
 
 
@@ -389,9 +390,12 @@ class VerifiableCredentialsService {
       const credentialHash = hashMessage(credentialJSON)
 
       console.info("issuerAccountClient: ", issuerAccountClient)
-      const signature = await issuerAccountClient?.signMessage({message: credentialHash})
+      const signature = await privateIssuerAccount.signMessage({message: credentialHash})
+      //const signature = await issuerAccountClient?.signMessage({message: credentialHash})
 
-      const addr = await issuerAccountClient?.getAddress()
+      const addr = privateIssuerAccount.address
+      //const addr = await issuerAccountClient?.getAddress()
+      
       if (addr && signature) {
 
         //const validSignature = await verifyMessageDirect(addr, credentialHash, signature)
@@ -433,8 +437,8 @@ class VerifiableCredentialsService {
           // construct zkProof associated with verifiable credential
           const commitmenthHex = '0x' + BigInt(commitment as any).toString(16)
           const commitmenthHexHash = hashMessage(commitmenthHex)
-
-          const commitmentSignature = await issuerAccountClient?.signMessage({message: commitment.toString()})
+          const commitmentSignature = await privateIssuerAccount.signMessage({message: commitment.toString()})
+          //const commitmentSignature = await issuerAccountClient?.signMessage({message: commitment.toString()})
           if (commitmentSignature && vc.credentialSubject) {
 
             console.info("^^^^^^^^^^^^^^^^^^ signature: ", commitmentSignature)

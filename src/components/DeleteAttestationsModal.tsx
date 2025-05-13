@@ -53,7 +53,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { signatory, orgDid, indivDid, issuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, issuerAccountClient } = useWallectConnectContext();
+  const { signatory, privateIssuerAccount, orgDid, indivDid, issuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, issuerAccountClient } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
 
@@ -65,7 +65,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
 
   const handleDeleteOrgAttestations = async () => {
     console.info("delete attestations")
-    if (orgDid && orgIndivDelegation && orgIssuerDelegation && indivIssuerDelegation) {
+    if (orgDid && orgIndivDelegation && orgIssuerDelegation && indivIssuerDelegation && issuerAccountClient) {
       console.info("delete org attestations")
       const attestations = await AttestationService.loadRecentAttestationsTitleOnly(orgDid, "")
       if (attestations && attestations.length > 0) {
@@ -83,7 +83,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
   }
 
   const handleDeleteIndivAttestations = async () => {
-    if (indivDid && indivIssuerDelegation) {
+    if (indivDid && indivIssuerDelegation && issuerAccountClient) {
       console.info("delete indiv attestations")
       const attestations = await AttestationService.loadRecentAttestationsTitleOnly("", indivDid)
       if (attestations && attestations.length > 0) {
@@ -152,7 +152,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
         }
       }
 
-      if (!samOrgIndivDel) {
+      if (!samOrgIndivDel && orgAccountClient && privateIssuerAccount) {
 
         console.info("************************   CREATE DELEGATION FOR SAM ************")
         console.info("samCFOEOA: ", samCFOEOA)
@@ -182,7 +182,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
         const samIndivName = ""
 
         const vc = await VerifiableCredentialsService.createIndivOrgVC("indiv-org", orgDid, issuerDid, samIndivDid, samIndivName);
-        const result = await VerifiableCredentialsService.createCredential(vc, "indiv-org", orgDid, walletClient, issuerAccountClient)
+        const result = await VerifiableCredentialsService.createCredential(vc, "indiv-org", orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
 
         console.info("result of create credential: ", result)
         const fullVc = result.vc
