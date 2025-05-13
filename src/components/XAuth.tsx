@@ -47,7 +47,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
   const { data: walletClient } = useWalletClient();
 
   const { } = props;
-  const { privateIssuerAccount, issuerAccountClient, indivIssuerDelegation, orgAccountClient, orgDid, issuerDid } = useWallectConnectContext();
+  const { privateIssuerAccount, issuerAccountClient, indivIssuerDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
 
   
 
@@ -103,9 +103,9 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
       let url = "https://x.com/" + res["data"]["data"]["username"]
 
 
-      if (orgDid && issuerDid && walletClient && privateIssuerAccount && orgAccountClient && issuerAccountClient) {
+      if (orgDid && privateIssuerDid && walletClient && privateIssuerAccount && orgAccountClient && issuerAccountClient) {
   
-        const vc = await VerifiableCredentialsService.createSocialVC(entityId, orgDid, issuerDid, name, url);
+        const vc = await VerifiableCredentialsService.createSocialVC(entityId, orgDid, privateIssuerDid, name, url);
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
         const fullVc = result.vc
         const proofUrl = result.proofUrl
@@ -121,7 +121,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-            vciss: issuerDid,
+            vciss: privateIssuerDid,
             proof: proofUrl,
             name: name,
             url: url

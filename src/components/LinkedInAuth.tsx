@@ -50,7 +50,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
 
   
   const { } = props;
-  const { privateIssuerAccount, issuerAccountClient, indivIssuerDelegation, indivAccountClient, indivDid, issuerDid } = useWallectConnectContext();
+  const { privateIssuerAccount, issuerAccountClient, indivIssuerDelegation, indivAccountClient, indivDid, privateIssuerDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
 
@@ -91,10 +91,10 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
         console.info(res.data.picture)
 
         console.info("indivIssuerDelegation: ", indivIssuerDelegation)
-        console.info("add social: ", indivDid,issuerDid,walletClient,indivAccountClient,issuerAccountClient,indivIssuerDelegation)
-        if (indivDid && issuerDid && walletClient && privateIssuerAccount && indivAccountClient && issuerAccountClient && indivIssuerDelegation) {
+        console.info("add social: ", indivDid,privateIssuerDid,walletClient,indivAccountClient,issuerAccountClient,indivIssuerDelegation)
+        if (indivDid && privateIssuerDid && walletClient && privateIssuerAccount && indivAccountClient && issuerAccountClient && indivIssuerDelegation) {
   
-          const vc = await VerifiableCredentialsService.createSocialVC(entityId, indivDid, issuerDid, res.data.sub, "");
+          const vc = await VerifiableCredentialsService.createSocialVC(entityId, indivDid, privateIssuerDid, res.data.sub, "");
           const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, privateIssuerAccount, issuerAccountClient)
           const fullVc = result.vc
           const proofUrl = result.proofUrl
@@ -111,7 +111,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
               hash: hash,
               vccomm: (fullVc.credentialSubject as any).commitment.toString(),
               vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-              vciss: issuerDid,
+              vciss: privateIssuerDid,
               proof: proofUrl,
               name: "",
               url: ""

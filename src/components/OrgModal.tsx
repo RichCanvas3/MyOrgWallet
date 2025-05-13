@@ -32,7 +32,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { privateIssuerAccount, issuerAccountClient, signatory, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, issuerDid, setOrgNameValue } = useWallectConnectContext();
+  const { privateIssuerAccount, issuerAccountClient, signatory, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, setOrgNameValue } = useWallectConnectContext();
   const { data: walletClient }= useWalletClient()
 
   const [name, setName] = useState("");
@@ -49,15 +49,15 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
 
     const entityId = "org"
 
-    //console.info("fields: ", orgDid, issuerDid, walletClient, signatory, orgAccountClient, issuerAccountClient, orgIssuerDelegation, orgIndivDelegation, walletClient)
+    //console.info("fields: ", orgDid, privateIssuerDid, walletClient, signatory, orgAccountClient, issuerAccountClient, orgIssuerDelegation, orgIndivDelegation, walletClient)
     console.info("fields: ", orgIssuerDelegation, orgIndivDelegation)
-    if (orgDid && issuerDid && walletClient && privateIssuerAccount && signatory && orgAccountClient && issuerAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+    if (orgDid && privateIssuerDid && walletClient && privateIssuerAccount && signatory && orgAccountClient && issuerAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
 
       // set the org name locally and in profile
       //console.info("set org name: ", orgName)
       //setOrgName(orgName)
 
-      const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, issuerDid, orgName);
+      const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, privateIssuerDid, orgName);
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
       const fullVc = result.vc
       const proofUrl = result.proofUrl
@@ -74,7 +74,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
           hash: hash,
           vccomm: (fullVc.credentialSubject as any).commitment.toString(),
           vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-          vciss: issuerDid,
+          vciss: privateIssuerDid,
           proof: proofUrl
         };
 

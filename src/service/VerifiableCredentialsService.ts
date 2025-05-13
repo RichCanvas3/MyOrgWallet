@@ -349,7 +349,7 @@ class VerifiableCredentialsService {
       issuerAccountClient: any): Promise<any | undefined> {
 
 
-      let proofUrl = ""
+      let proof = ""
 
       
       const encoder = new TextEncoder();
@@ -492,9 +492,9 @@ class VerifiableCredentialsService {
             console.info("get json ", proofResp)
             const proofResults = await proofResp.json()
             console.info(" get proof url: ", proofResults)
-            proofUrl = proofResults.proofUrl
+            proof = proofResults.proofJson
 
-            console.info("proof done: ", proofUrl)
+            console.info("proof done: ", proof)
 
             // verify if we have access to accountclient
             //const validSigData = await issuerAccountClient?.getIsValidSignatureData(commitmenthHexHash as `0x${string}`, commitmentSignature)
@@ -510,7 +510,7 @@ class VerifiableCredentialsService {
       }
 
       console.info("done creating vc and return")
-      return { vc: vc, proofUrl: proofUrl }
+      return { vc: vc, proofUrl: proof }
     }
         
     static async verifyIssuerCredentialHashSignature(smartAccountAddress: string, messageHash: string, signature: string) {

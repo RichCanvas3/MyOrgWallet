@@ -69,7 +69,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { signatory, orgDid, indivDid, issuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, issuerAccountClient } = useWallectConnectContext();
+  const { signatory, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, issuerAccountClient } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   const [attestations, setAttestations] = useState<IndivAttestation[]>([]);
@@ -83,8 +83,8 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
   const handleSelectedAttestation = async (att: IndivAttestation) => {
 
     // if this user has been granted permissions through orgIndivDelegation
-    console.info("need these values: ", orgIndivDelegation, orgDid, issuerDid, walletClient)
-    if (orgIndivDelegation && orgDid && issuerDid && walletClient && orgAccountClient && privateIssuerAccount) {
+    console.info("need these values: ", orgIndivDelegation, orgDid, privateIssuerDid, walletClient)
+    if (orgIndivDelegation && orgDid && privateIssuerDid && walletClient && orgAccountClient && privateIssuerAccount) {
 
       console.info("approve it: ", att)
 
@@ -113,7 +113,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
       }
 
 
-      const vc = await VerifiableCredentialsService.createIndivOrgVC("indiv-org", orgDid, issuerDid, leaderIndivDid, att.name);
+      const vc = await VerifiableCredentialsService.createIndivOrgVC("indiv-org", orgDid, privateIssuerDid, leaderIndivDid, att.name);
       const result = await VerifiableCredentialsService.createCredential(vc, "indiv-org", orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
 
       console.info("result of create credential: ", result)
@@ -137,7 +137,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
           hash: hash,
           vccomm: (fullVc.credentialSubject as any).commitment.toString(),
           vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-          vciss: issuerDid,
+          vciss: privateIssuerDid,
           proof: proofUrl
         };
 
