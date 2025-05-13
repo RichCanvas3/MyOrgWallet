@@ -17,6 +17,7 @@ import CustomChatEditor from './components/CustomChatEditor';
 
 import { WalletConnectContextProvider } from "./context/walletConnectContext"
 import AttestationService from "./service/AttestationService"
+import ReadmeViewer from './components/ReadmeViewer';
 
 
 
@@ -415,6 +416,7 @@ const App = () => {
                     path="/organizations"
                     element={<OrganizationsPageWithProps />}
                   />
+                  <Route path="/readme" element={<ReadmeViewer />} /> {/* 👈 This line adds the README route */}
 
                   <Route path="linkedincallback" element={<LinkedinCallback />} />
                   <Route path="xcallback" element={<XCallback />} />

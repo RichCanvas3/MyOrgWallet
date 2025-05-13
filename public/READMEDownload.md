@@ -72,9 +72,7 @@ Design a solution showcasing these features, such as a decentralized eCommerce p
 - Bundle/batch multiple EAS Contract Users Operations in single Bundled request
 ### Individuals fully control their account and attestations.  Individuals jointly manage Organizations Attestations
 
-Try me!
-
-<img src="https://github.com/user-attachments/assets/08458342-7421-44c5-b05e-4dfe609af36b" width="600px">
+<img src="delegation.jpeg" width="600px">
 
 ## Goals
 
@@ -87,7 +85,7 @@ Try me!
 
 ## Architecture
 
-<img src="https://github.com/user-attachments/assets/b99bf77e-2d96-47a4-a8c7-1bc24e6a6ed1" width='750px'>
+<img src="architecture.jpeg" width='750px'>
 
 ## Technology
 
