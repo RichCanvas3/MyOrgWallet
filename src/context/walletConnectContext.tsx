@@ -253,7 +253,7 @@ export const useWalletConnect = () => {
 
 
             // connect to individual account abstraction
-            const indivAccountClient = await toMetaMaskSmartAccount({
+            let indivAccountClient : any | undefined = await toMetaMaskSmartAccount({
               client: publicClient,
               implementation: Implementation.Hybrid,
               deployParams: [owner, [], [], []],
@@ -261,14 +261,11 @@ export const useWalletConnect = () => {
               deploySalt: toHex(11),
             });
 
-            const indivAddress = await indivAccountClient.getAddress()
+            let indivAddress = await indivAccountClient.getAddress()
+            let indivDid : string | undefined = 'did:pkh:eip155:10:' + indivAccountClient.address
+            
 
 
-            // connect to org account abstraction
-            // can have three states coming into this section
-            let indivDid = 'did:pkh:eip155:10:' + indivAccountClient.address
-            setIndivDid(indivDid)
-            setIndivAccountClient(indivAccountClient)
 
             const indivOrgAttestation = await AttestationService.getIndivOrgAttestation(indivDid, AttestationService.IndivOrgSchemaUID, "indiv-org");
             const indivAttestation = await AttestationService.getAttestationByAddressAndSchemaId(indivDid, AttestationService.IndivSchemaUID, "indiv")
@@ -276,9 +273,16 @@ export const useWalletConnect = () => {
               setIndivName((indivAttestation as IndivAttestation).name)
             }
             else {
+              indivAddress = undefined
+              indivDid = undefined
+              indivAccountClient = undefined
               console.info("*********** indiv-org is not defined")
             }
               
+            // connect to org account abstraction
+            // can have three states coming into this section
+            setIndivDid(indivDid)
+            setIndivAccountClient(indivAccountClient)
 
 
             let orgIndivDel : any | undefined
@@ -313,6 +317,7 @@ export const useWalletConnect = () => {
               if (indivAttestation) {
 
                 console.info("=============> yes we have an individual attestation that points to org account")
+                console.info("indiv attestation => org did: ", (indivAttestation as IndivAttestation).orgDid)
                 const orgDidValue = (indivAttestation as IndivAttestation).orgDid
                 const orgAddressValue = orgDidValue.replace('did:pkh:eip155:10:', '') as `0x${string}`
 
@@ -328,6 +333,7 @@ export const useWalletConnect = () => {
 
               }
               else {
+                /*
                 console.info("=================> no individual attestation")
                 console.info("let's go ahead and create org account client")
 
@@ -360,21 +366,14 @@ export const useWalletConnect = () => {
                 }
       
                 setOrgIndivDelegation(orgIndivDel)
+                */
 
               }
 
             }
 
+
             
-            let orgDid = 'did:pkh:eip155:10:' + orgAccountClient.address
-            console.info(".......... org did: ", orgDid)
-
-            setOrgDid(orgDid)
-            setOrgAccountClient(orgAccountClient)
-
-
-
-
             /*
             const message = 'Hello, MetaMask Delegator!';
             const signature = await orgAccountClient.signMessage({ message });
@@ -416,20 +415,25 @@ export const useWalletConnect = () => {
             console.log("isValidSignatureCall:", isValidSignature); // should be EIP1271_MAGIC_VALUE(0x1626ba7e)
             */
 
-
-
-
             if (orgIndivDel) {
               setOrgIndivDelegation(orgIndivDel)
             }
             
-            
-            // setup delegation for org to issuer -> redelegation of orgIndivDel
             let orgIssuerDel  = null
-            try {
-              orgIssuerDel = await DelegationService.getDelegationFromStorage(walletClient, ownerEOAAddress, orgAccountClient.address, issuerAccountClient.address)
-            }
-            catch (error) {
+            if (orgAccountClient) {
+              let orgDid = 'did:pkh:eip155:10:' + orgAccountClient.address
+              console.info(".......... org did: ", orgDid)
+
+              setOrgDid(orgDid)
+              setOrgAccountClient(orgAccountClient)
+
+
+              // setup delegation for org to issuer -> redelegation of orgIndivDel
+              try {
+                orgIssuerDel = await DelegationService.getDelegationFromStorage(walletClient, ownerEOAAddress, orgAccountClient.address, issuerAccountClient.address)
+              }
+              catch (error) {
+              }
             }
 
             if (orgIssuerDel == null && orgIndivDel && indivDid) {
@@ -464,34 +468,39 @@ export const useWalletConnect = () => {
             // setup delegation for individual to issuer delegation
             let indivIssuerDel = null
 
-            try {
-              indivIssuerDel = await DelegationService.getDelegationFromStorage(walletClient, ownerEOAAddress, indivAccountClient.address, issuerAccountClient.address)
-            }
-            catch (error) {
-            }
-
-            if (indivIssuerDel == null && indivDid) {
-              indivIssuerDel = createDelegation({
-                from: indivAccountClient.address,
-                to: issuerAccountClient.address,
-                caveats: [] }
-              );
-
-              const signature = await indivAccountClient.signDelegation({
-                delegation: indivIssuerDel,
-              });
-  
-  
-              indivIssuerDel = {
-                ...indivIssuerDel,
-                signature,
+            if (indivAccountClient) {
+              console.info(".......... indiv account client: ", indivAccountClient.address, issuerAccountClient.address)
+              try {
+                indivIssuerDel = await DelegationService.getDelegationFromStorage(walletClient, ownerEOAAddress, indivAccountClient.address, issuerAccountClient.address)
+              }
+              catch (error) {
               }
 
-              await DelegationService.saveDelegationToStorage(walletClient, ownerEOAAddress, indivAccountClient.address, issuerAccountClient.address, indivIssuerDel)
+              if (indivIssuerDel == null && indivDid) {
+                indivIssuerDel = createDelegation({
+                  from: indivAccountClient.address,
+                  to: issuerAccountClient.address,
+                  caveats: [] }
+                );
+
+                const signature = await indivAccountClient.signDelegation({
+                  delegation: indivIssuerDel,
+                });
+    
+    
+                indivIssuerDel = {
+                  ...indivIssuerDel,
+                  signature,
+                }
+
+                await DelegationService.saveDelegationToStorage(walletClient, ownerEOAAddress, indivAccountClient.address, issuerAccountClient.address, indivIssuerDel)
+              }
+
+              setIndivIssuerDelegation(indivIssuerDel)
+              setIsIndividualConnected(true)
             }
 
-            setIndivIssuerDelegation(indivIssuerDel)
-            setIsIndividualConnected(true)
+
 
             console.info("setIsIndividualConnected done")
 
