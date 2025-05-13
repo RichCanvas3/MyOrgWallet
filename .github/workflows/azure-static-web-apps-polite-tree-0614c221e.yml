@@ -44,6 +44,13 @@ jobs:
           api_location: "" # Api source code path - optional
           output_location: "dist" # Built app content directory - optional
           github_id_token: ${{ steps.idtoken.outputs.result }}
+        env:
+          VITE_API_URL: https://myorgwallet-wallet-node-server-f6eed6cpd0c4dzey.westus2-01.azurewebsites.net
+          VITE_BASE_PATH: https://wallet.myorgwallet.io
+          VITE_LINKEDIN_REDIRECT_URI: https://wallet.myorgwallet.io/linkedincallback
+          VITE_X_REDIRECT_URI: https://wallet.myorgwallet.io/xcallback
+          VITE_SHOPIFY_REDIRECT_URI: https://wallet.myorgwallet.io/shopifycallback
+          VITE_PROVER_API_URL: https://myorgwallet-prover-ghh3dbghcjddbkds.westus2-01.azurewebsites.net
           ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:
