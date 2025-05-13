@@ -1,3 +1,5 @@
+<img src="https://github.com/user-attachments/assets/08458342-7421-44c5-b05e-4dfe609af36b" width="800px">
+
 ### Organization Smart Wallet (AA) and Individuals Smart Wallet (AA) linked to EOA account (no funds required)
 - Connect to Individuals EOA that has no funds (newly create metamask account within metmask wallet)
 - Generate and Deploy Individual Smart Wallet (AA) that is driven from (owned by) an individuals EOA
