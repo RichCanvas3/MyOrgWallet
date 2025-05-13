@@ -60,7 +60,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
       const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, privateIssuerDid, orgName);
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
       const fullVc = result.vc
-      const proofUrl = result.proofUrl
+      const proof = result.proof
       if (fullVc && signatory && orgAccountClient && walletClient) {
       
         // now create attestation
@@ -75,7 +75,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
           vccomm: (fullVc.credentialSubject as any).commitment.toString(),
           vcsig: (fullVc.credentialSubject as any).commitmentSignature,
           vciss: privateIssuerDid,
-          proof: proofUrl
+          proof: proof
         };
 
         const provider = new ethers.BrowserProvider(window.ethereum);

@@ -40,8 +40,8 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
         console.info("vc: ", JSON.stringify(vc))
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
         const fullVc = result.vc
-        const proofUrl = result.proofUrl
-        if (fullVc && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+        const proof = result.proof
+        if (proof && fullVc && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
         
           const provider = new ethers.BrowserProvider(window.ethereum);
           await window.ethereum.request({ method: "eth_requestAccounts" });
@@ -62,7 +62,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,
             vciss: privateIssuerDid,
-            proof: proofUrl
+            proof: proof
           };
 
           const uid = await AttestationService.addInsuranceAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)

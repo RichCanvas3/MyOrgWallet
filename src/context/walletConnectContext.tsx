@@ -855,7 +855,7 @@ export const useWalletConnect = () => {
               const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, privateIssuerDid, orgName);
               const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
               const fullVc = result.vc
-              const proofUrl = result.proofUrl
+              const proof = result.proof
               if (fullVc) {
               
                 // now create attestation
@@ -870,7 +870,7 @@ export const useWalletConnect = () => {
                   vccomm: (fullVc.credentialSubject as any).commitment.toString(),
                   vcsig: (fullVc.credentialSubject as any).commitmentSignature,
                   vciss: privateIssuerDid,
-                  proof: proofUrl
+                  proof: proof
                 };
         
                 const uid = await AttestationService.addOrgAttestation(attestation, walletSigner, [orgIssuerDel, orgIndivDelegation], orgAccountClient, issuerAccountClient)
@@ -915,7 +915,7 @@ export const useWalletConnect = () => {
                 const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, privateIssuerDid, domainName, "");
                 const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
                 const fullVc = result.vc
-                const proofUrl = result.proofUrl
+                const proof = result.proof
                 if (fullVc) {
                 
                   // now create attestation
@@ -931,7 +931,7 @@ export const useWalletConnect = () => {
                     vccomm: (fullVc.credentialSubject as any).commitment.toString(),
                     vcsig: (fullVc.credentialSubject as any).commitmentSignature,
                     vciss: privateIssuerDid,
-                    proof: proofUrl
+                    proof: proof
                   };
           
                   const uid = await AttestationService.addRegisteredDomainAttestation(attestation, walletSigner, [orgIssuerDel, orgIndivDelegation], orgAccountClient, issuerAccountClient)
@@ -975,7 +975,7 @@ export const useWalletConnect = () => {
               const vc = await VerifiableCredentialsService.createIndivOrgVC(entityId, orgDid, privateIssuerDid, indivDid, indName);
               const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
               const fullVc = result.vc
-              const proofUrl = result.proofUrl
+              const proof = result.proof
 
               if (fullVc) {
 
@@ -994,7 +994,7 @@ export const useWalletConnect = () => {
                   vccomm: (fullVc.credentialSubject as any).commitment.toString(),
                   vcsig: (fullVc.credentialSubject as any).commitmentSignature,
                   vciss: privateIssuerDid,
-                  proof: proofUrl
+                  proof: proof
                 };
         
                 console.info("AttestationService add indiv org attestation")
@@ -1077,7 +1077,7 @@ export const useWalletConnect = () => {
               const vc = await VerifiableCredentialsService.createIndivVC(entityId, indivDid, privateIssuerDid, orgDid, indName);
               const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, privateIssuerAccount, issuerAccountClient)
               const fullVc = result.vc
-              const proofUrl = result.proofUrl
+              const proof = result.proof
 
               if (fullVc) {
               
@@ -1094,7 +1094,7 @@ export const useWalletConnect = () => {
                   vccomm: (fullVc.credentialSubject as any).commitment.toString(),
                   vcsig: (fullVc.credentialSubject as any).commitmentSignature,
                   vciss: privateIssuerDid,
-                  proof: proofUrl
+                  proof: proof
                 };
 
                 const uid = await AttestationService.addIndivAttestation(attestation, walletSigner, [indivIssuerDel], indivAccountClient, issuerAccountClient)
@@ -1123,7 +1123,7 @@ export const useWalletConnect = () => {
               const vc = await VerifiableCredentialsService.createIndivEmailVC(entityId, indivDid, privateIssuerDid, "business", indEmail);
               const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, privateIssuerAccount, issuerAccountClient)
               const fullVc = result.vc
-              const proofUrl = result.proofUrl
+              const proof = result.proof
 
               if (fullVc) {
               
@@ -1140,7 +1140,7 @@ export const useWalletConnect = () => {
                   vccomm: (fullVc.credentialSubject as any).commitment.toString(),
                   vcsig: (fullVc.credentialSubject as any).commitmentSignature,
                   vciss: privateIssuerDid,
-                  proof: proofUrl
+                  proof: proof
                 };
         
                 console.info("+++++++++++++ AttestationService add indiv attestation")

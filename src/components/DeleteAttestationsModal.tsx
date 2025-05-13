@@ -186,9 +186,9 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
 
         console.info("result of create credential: ", result)
         const fullVc = result.vc
-        const proofUrl = result.proofUrl
+        const proof = result.proof
 
-        if (fullVc && orgIssuerDelegation && orgIndivDelegation) {
+        if (fullVc && proof && orgIssuerDelegation && orgIndivDelegation) {
 
           console.info("&&&&&&&&&&&&&&&&&&&&&&& AttestationService add indiv attestation")
 
@@ -208,7 +208,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,
             vciss: privateIssuerDid,
-            proof: proofUrl
+            proof: proof
           };
 
           const provider = new ethers.BrowserProvider(window.ethereum);

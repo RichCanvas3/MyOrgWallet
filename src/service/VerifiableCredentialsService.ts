@@ -510,7 +510,7 @@ class VerifiableCredentialsService {
       }
 
       console.info("done creating vc and return")
-      return { vc: vc, proofUrl: proof }
+      return { vc: vc, proof: proof }
     }
         
     static async verifyIssuerCredentialHashSignature(smartAccountAddress: string, messageHash: string, signature: string) {
