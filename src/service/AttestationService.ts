@@ -816,7 +816,7 @@ class AttestationService {
       console.info("parms: ", attestation.vccomm, attestation.vcsig, attestation.vciss, attestation.name, attestation.url, attestation.proof)
 
 
-      throw error("linkedin attestation info not complete")
+      throw error("social attestation info not complete")
     }
 
     return attestation.entityId
