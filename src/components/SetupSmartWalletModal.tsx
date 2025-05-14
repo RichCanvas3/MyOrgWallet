@@ -121,8 +121,8 @@ const SetupSmartWalletModal: React.FC = () => {
 
   // Decide current action
   const stepAction = [
-    { label: 'Connect EOA Wallet', description: `
-      Connet to your local Externally Owned Account - EOA (ie. MetaMask).  <br/><br/>
+    { label: 'Connect EOA Wallet - USE OP Mainnet', description: `
+      No wallet funds required to get started <br/><br/>Connet to your local Externally Owned Account - EOA (ie. MetaMask).  <br/><br/>
       This local wallet account will be the owner or your newly created Personal Smart Wallet and Organization Smart Wallet`
       , onClick: handleWalletConnect },
     { label: 'Build Smart Wallet', description: `
