@@ -13,4 +13,6 @@ export const PAYMASTER_URL = (env as any).paymaster_url;
 export const X_CLIENT_ID = (env as any).x_client_id;
 export const LINKEDIN_CLIENT_ID = (env as any).linkedin_client_id;
 export const SHOPIFY_CLIENT_ID = (env as any).shopify_client_id;
+export const ALCHEMY_RPC_URL = (env as any).alchemyRpcUrl;
+export const ETHERSCAN_API_KEY = (env as any).etherscanApiKey;
 
