@@ -12,7 +12,7 @@ import { VerifiableCredential } from '../models/VerifiableCredential'
 import { VcZkProof, VcRevokeZkProof } from '../models/ZkProof'
 import {Attestation, WebsiteAttestation} from '../models/Attestation';
 import AttestationService from '../service/AttestationService';
-
+import { ALCHEMY_RPC_URL, ETHERSCAN_API_KEY } from "../config";
 
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService"
 import ZkProofService from "../service/ZkProofService"
@@ -68,8 +68,8 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
       if (!cached && address) {
 
         //   PRIVATE DATA
-        const alchemyRpcUrl = "https://eth-mainnet.g.alchemy.com/v2/UXKG7nGL5a0mdDhvP-2ScOaLiRIM0rsW"
-        const ETHERSCAN_API_KEY = "BD2GFK7A98WY88KXBDXXAPYVW8FDVAEMHV"
+        const alchemyRpcUrl = ALCHEMY_RPC_URL
+
     
         //  get org account information
         const ACCOUNT_INFO_SMART_CONTRACT = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"

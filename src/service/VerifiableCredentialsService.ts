@@ -362,18 +362,7 @@ class VerifiableCredentialsService {
       }
 
 
-      async function verifyMessageDirect(smartAccountAddress: string, messageHash: string, signature: string) {
 
-        const rpcUrl = "https://opt-mainnet.g.alchemy.com/v2/UXKG7nGL5a0mdDhvP-2ScOaLiRIM0rsW"
-        const provider = new ethers.JsonRpcProvider(rpcUrl);
-      
-        const abi = ["function isValidSignature(bytes32 _hash, bytes _signature) external view returns (bytes4)"];
-        const contract = new ethers.Contract(smartAccountAddress, abi, provider);
-
-        console.info("******* contract *****: ", contract)
-        const result = await contract.isValidSignature(messageHash, signature);
-        return result.startsWith("0x1626ba7e");
-      }
 
 
 
@@ -511,18 +500,6 @@ class VerifiableCredentialsService {
 
       console.info("done creating vc and return")
       return { vc: vc, proof: proof }
-    }
-        
-    static async verifyIssuerCredentialHashSignature(smartAccountAddress: string, messageHash: string, signature: string) {
-
-      //   PRIVATE DATA
-      const rpcUrl = "https://opt-mainnet.g.alchemy.com/v2/UXKG7nGL5a0mdDhvP-2ScOaLiRIM0rsW"
-      const provider = new ethers.JsonRpcProvider(rpcUrl);
-    
-      const abi = ["function isValidSignature(bytes32 _hash, bytes _signature) external view returns (bytes4)"];
-      const contract = new ethers.Contract(smartAccountAddress, abi, provider);
-      const result = await contract.isValidSignature(messageHash, signature);
-      return result.startsWith("0x1626ba7e");
     }
 
 }
