@@ -22,7 +22,7 @@ const Sidebar: React.FC<SidebarProps> = ({className, isSidebarCollapsed, toggleS
   const { isConnected, address: web3ModalAddress, chain } = useAccount();
 
   const handleNewChat = () => {
-    if (isConnected) {
+    if (isConnected && !location.pathname.startsWith('/readme')) {
       navigate('/chat/', {state: {reset: Date.now()}});
     }
     
