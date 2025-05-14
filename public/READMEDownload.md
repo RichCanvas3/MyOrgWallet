@@ -47,7 +47,7 @@ Design a solution showcasing these features, such as a decentralized eCommerce p
 ### Organization (AA) to Individual (AA) Delegation -  give Individuals (AA) rights to create attestations for Organization
 - Create a Delegation "from" the Oranization Smart Wallet (AA) "to" the Individuals Smart Wallet (AA)
 - Save that this Indiv-to-Org Delegation for future use.  Stored in Indiv-to-Org on-chain attestation
-- Create chained Delegation from Indiv-to-Org Delegation to Burner Account and store it in browser for subsequent smart wallet Org user
+- Create chained Delegation from Indiv-to-Org Delegation to Burner Account. Store delegation in browser local storage for subsequent onchain smart wallet user operations
 ### Org-to-Indiv Delegation chained to Burner Delegation - support multiple user-operations to creating Organization and Individual Attestations
 - Create a burner Account
 - Create a stored Chained Delegation from Ind-Org Delegation to Burner Account in support of Organization level smart wallet user operations
@@ -76,12 +76,10 @@ Design a solution showcasing these features, such as a decentralized eCommerce p
 
 ## Goals
 
-* Provide an organization a digital wallet (Account Abstraction) to manage their organizational attestations.
-* Use a modern web stack of ReactJS, Tailwind CSS, and Typescript.
-* Vite client and server.
-* Intuitive AI chat driven UI.
-* No metamask permission popups within main application (one time permission popups during initial onboarding)
-* Role based (via delegation) security.  On-chain based on domain and leveraged by all dApps
+* Provide an organization a digital wallet (Account Abstraction) to manage their organizational and individual attestations.
+* Use a modern web3 stack and leverage latest metamask capabilities
+* Intuitive AI chat driven UI.  No metamask permission popups within main application (one time permission popups during initial onboarding)
+* Role based (via delegation) security.  On-chain based on domain and leveraged by all dApps.  
 
 ## Architecture
 
@@ -103,81 +101,8 @@ Design a solution showcasing these features, such as a decentralized eCommerce p
 * Django
 * Selenium
 * Lavague
-* Veramo
-* Masca Snap
+* Veramo (future)
+* Masca Snap (future)
 
-## Requirements
 
-* [NodeJS](https://nodejs.dev/en/)
-* [npm](https://www.npmjs.com/)
-* [OpenAI API Account](https://openai.com/blog/openai-api)
-* LinkedIn
-
-## Setup
-
-### 1. Create Environment Variable File (If Absent)
-
-```sh
-cd MyOrgWallet
-
-touch .env
-```
-
-### 2. Install Dependencies
-
-When installing dependencies, make sure the node version is up-to-date. Check the current node version with `node -v`. Update note with `nvm install node`.
-
-```sh
-npm install
-```
-
-### 3. Run Client
-
-```sh
-open http://localhost:5173
-
-npm run dev
-```
-
-### 4. Run Server
-
-```sh
-open http://localhost:8080
-
-npm run start
-```
-
-## DID's used by application
-
-```
-RichCanvas Organization
-RichCanvas EAO Owner DID:
-    did:pkh:eip155:10:0x9cfc7e44757529769a28747f86425c682fe64653
-RichCanvas Org (Abstract Account, Smart Wallet) DID:
-    did:pkh:eip155:10:...
-```
-
-## Contributions
-
-This project is based on elebitzero, openai-react-chat, licensed under the MIT License. Substantial changes have been made. See elebitzero openai-react-chat MIT License.txt for the original license.
-
-```
-query GetAllZkProofs {
-  zkProofIndex(first: 100) {
-    edges {
-      node {
-        issuer {
-          id
-        }
-        id
-        proof
-        publicSignals
-        createdAt
-        orgDid
-        hash
-      }
-    }
-  }
-}
-```
 
