@@ -106,7 +106,9 @@ const SetupSmartWalletModal: React.FC = () => {
     setIsSubmitting(true);
     try {
       await setupSmartWallet(owner, signatory);
-      await sleep(2000);
+      console.info("start sleep")
+      await sleep(13000);
+      console.info("end sleep")
       handleToast('Permissions granted', 'success');
       
       navigate('/chat/')
