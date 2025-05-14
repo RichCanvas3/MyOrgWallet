@@ -28,7 +28,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
   useEffect(() => {
     console.info("check if going to chat: ", isConnected, isIndividualConnected)
     // if wallet is defined and we have not defined smart wallet
-    if (isConnected && isIndividualConnected) {
+    if (isConnected && isIndividualConnected && !location.pathname.startsWith('/readme')) {
       console.info(".......... navigate to chat")
       navigate('/chat/')
     } else  {
