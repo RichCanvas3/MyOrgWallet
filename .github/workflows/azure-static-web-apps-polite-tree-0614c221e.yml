@@ -36,20 +36,23 @@ jobs:
           VITE_SHOPIFY_REDIRECT_URI: ${{ secrets.VITE_SHOPIFY_REDIRECT_URI }}  # Use GitHub secret
           VITE_PROVER_API_URL: ${{ secrets.VITE_PROVER_API_URL }}            # Use GitHub secret
 
-          ISSUER_EOA_PRIVATE_KEY: ${{ secrets.ISSUER_EOA_PRIVATE_KEY }}
-          OPENAPI_KEY: ${{ secrets.OPENAPI_KEY }}
-          DEFAULT_MODEL: ${{ secrets.DEFAULT_MODEL }}
-          DEFAULT_SYSTEM_PROMPT: ${{ secrets.DEFAULT_SYSTEM_PROMPT }}
-          DEFAULT_ASSISTANT_PROMPT: ${{ secrets.DEFAULT_ASSISTANT_PROMPT }}
-          WEB3_AUTH_NETWORK: ${{ secrets.WEB3_AUTH_NETWORK }}
-          WEB3_AUTH_CLIENT_ID: ${{ secrets.WEB3_AUTH_CLIENT_ID }}
-          RPC_URL: ${{ secrets.RPC_URL }}
-          BUNDLER_URL: ${{ secrets.BUNDLER_URL }}
-          PAYMASTER_URL: ${{ secrets.PAYMASTER_URL }}
-          METAMASK_STORAGE_ID: ${{ secrets.METAMASK_STORAGE_ID }}
-          METAMASK_STORAGE_KEY: ${{ secrets.METAMASK_STORAGE_KEY }}
-          ALCHEMY_RPC_URL: ${{ secrets.ALCHEMY_RPC_URL }}
-          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+          VITE_ISSUER_EOA_PRIVATE_KEY: ${{ secrets.VITE_ISSUER_EOA_PRIVATE_KEY }}
+          VITE_OPENAPI_KEY: ${{ secrets.VITE_OPENAPI_KEY }}
+          VITE_DEFAULT_MODEL: ${{ secrets.VITE_DEFAULT_MODEL }}
+          VITE_DEFAULT_SYSTEM_PROMPT: ${{ secrets.VITE_DEFAULT_SYSTEM_PROMPT }}
+          VITE_DEFAULT_ASSISTANT_PROMPT: ${{ secrets.VITE_DEFAULT_ASSISTANT_PROMPT }}
+          VITE_WEB3_AUTH_NETWORK: ${{ secrets.VITE_WEB3_AUTH_NETWORK }}
+          VITE_WEB3_AUTH_CLIENT_ID: ${{ secrets.VITE_WEB3_AUTH_CLIENT_ID }}
+          VITE_RPC_URL: ${{ secrets.VITE_RPC_URL }}
+          VITE_BUNDLER_URL: ${{ secrets.VITE_BUNDLER_URL }}
+          VITE_PAYMASTER_URL: ${{ secrets.VITE_PAYMASTER_URL }}
+          VITE_METAMASK_STORAGE_ID: ${{ secrets.VITE_METAMASK_STORAGE_ID }}
+          VITE_METAMASK_STORAGE_KEY: ${{ secrets.VITE_METAMASK_STORAGE_KEY }}
+          VITE_ALCHEMY_RPC_URL: ${{ secrets.VITE_ALCHEMY_RPC_URL }}
+          VITE_ETHERSCAN_API_KEY: ${{ secrets.VITE_ETHERSCAN_API_KEY }}
+          VITE_X_CLIENT_ID: ${{ secrets.VITE_X_CLIENT_ID }}              # Added
+          VITE_LINKEDIN_CLIENT_ID: ${{ secrets.VITE_LINKEDIN_CLIENT_ID }}  # Added
+          VITE_SHOPIFY_CLIENT_ID: ${{ secrets.VITE_SHOPIFY_CLIENT_ID }}
           
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
@@ -67,13 +70,13 @@ jobs:
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ AZURE_STATIC_WEB_APPS_API_TOKEN_POLITE_TREE_0614C221E }}  # Use GitHub secret
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_POLITE_TREE_0614C221E }}
           action: "upload"
           app_location: "/"                  # App source code path
           api_location: ""                   # No API code in this repo
           output_location: "dist"            # Built app content directory
           github_id_token: ${{ steps.idtoken.outputs.result }}
-
+          
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
