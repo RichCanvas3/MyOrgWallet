@@ -32,9 +32,7 @@ try {
     'X_REDIRECT_URI',
     'SHOPIFY_CLIENT_ID',
     'SHOPIFY_CLIENT_SECRET',
-    'SHOPIFY_SHOP_NAME',
-    'GCLOUD_BUCKET_NAME',
-    'GOOGLE_APPLICATION_CREDENTIALS'
+    'SHOPIFY_SHOP_NAME'
   ];
 
   for (const envVar of requiredEnvVars) {
@@ -72,8 +70,6 @@ app.use(helmet()); // Add security headers
 app.use(express.json());
 app.use(bodyParser.json());   
 
-const storage = new Storage();     // uses GOOGLE_APPLICATION_CREDENTIALS
-const bucket = storage.bucket(process.env.GCLOUD_BUCKET_NAME);
 
 const verificationCodes = new Map();
 

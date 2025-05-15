@@ -1942,6 +1942,7 @@ class AttestationService {
   }
 
   static async saveBlacklist(payload: any)  {
+    /*
     const filename = "blacklist"
 
     const res = await fetch(`${STORE_URL}?filename=${filename}`, {
@@ -1950,11 +1951,14 @@ class AttestationService {
       body: JSON.stringify(payload),
     });
     const json = await res.json();
+    */
 
   };
 
+
   static async loadBlacklist() {
 
+    /*
     const filename = "blacklist"
 
     const res = await fetch(`${STORE_URL}?filename=${filename}`);
@@ -1963,6 +1967,9 @@ class AttestationService {
       console.info("blacklist data: ", json.data)
       this.Blacklisted = json.data
     } 
+    */
+
+    this.Blacklisted = [{'did':'did:pkh:eip155:10:0x478df0535850b01cBE24AA2DAd295B2968d24B67'}]
 
   };
 

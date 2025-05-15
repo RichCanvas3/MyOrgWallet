@@ -513,7 +513,7 @@ export const useWalletConnect = () => {
 
     }, [signatory, owner]);
 
-    useEffect(() => {
+    useEffect(() => { 
       const issAccount = privateKeyToAccount(ISSUER_PRIVATE_KEY);
       setPrivateIssuerAccount(issAccount)
 
