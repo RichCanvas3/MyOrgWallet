@@ -29,12 +29,12 @@ jobs:
       - name: Build the app
         run: npm run build
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}                      # Use GitHub secret
-          VITE_BASE_PATH: ${{ secrets.VITE_BASE_PATH }}                  # Use GitHub secret
-          VITE_LINKEDIN_REDIRECT_URI: ${{ secrets.VITE_LINKEDIN_REDIRECT_URI }}  # Use GitHub secret
-          VITE_X_REDIRECT_URI: ${{ secrets.VITE_X_REDIRECT_URI }}            # Use GitHub secret
-          VITE_SHOPIFY_REDIRECT_URI: ${{ secrets.VITE_SHOPIFY_REDIRECT_URI }}  # Use GitHub secret
-          VITE_PROVER_API_URL: ${{ secrets.VITE_PROVER_API_URL }}            # Use GitHub secret
+          VITE_API_URL: https://myorgwallet-wallet-node-server-f6eed6cpd0c4dzey.westus2-01.azurewebsites.net
+          VITE_BASE_PATH: https://wallet.myorgwallet.io
+          VITE_LINKEDIN_REDIRECT_URI: https://wallet.myorgwallet.io/linkedincallback
+          VITE_X_REDIRECT_URI: https://wallet.myorgwallet.io/xcallback
+          VITE_SHOPIFY_REDIRECT_URI: https://wallet.myorgwallet.io/shopifycallback
+          VITE_PROVER_API_URL: https://myorgwallet-prover-ghh3dbghcjddbkds.westus2-01.azurewebsites.net
 
           VITE_ISSUER_EOA_PRIVATE_KEY: ${{ secrets.ISSUER_EOA_PRIVATE_KEY }}
           VITE_OPENAPI_KEY: ${{ secrets.OPENAPI_KEY }}
