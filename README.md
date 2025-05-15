@@ -165,22 +165,3 @@ RichCanvas Org (Abstract Account, Smart Wallet) DID:
 
 This project is based on elebitzero, openai-react-chat, licensed under the MIT License. Substantial changes have been made. See elebitzero openai-react-chat MIT License.txt for the original license.
 
-```
-query GetAllZkProofs {
-  zkProofIndex(first: 100) {
-    edges {
-      node {
-        issuer {
-          id
-        }
-        id
-        proof
-        publicSignals
-        createdAt
-        orgDid
-        hash
-      }
-    }
-  }
-}
-```
