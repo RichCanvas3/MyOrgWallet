@@ -77,6 +77,12 @@ jobs:
           output_location: "dist"            # Built app content directory
           github_id_token: ${{ steps.idtoken.outputs.result }}
 
+      - name: Debug Environment Variables
+        run: |
+          echo "VITE_BUNDLER_URL=$VITE_BUNDLER_URL"
+          echo "VITE_RPC_URL=$VITE_RPC_URL"
+          echo "VITE_PAYMASTER_URL=$VITE_PAYMASTER_URL"
+          
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
