@@ -69,7 +69,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { signatory, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, issuerAccountClient } = useWallectConnectContext();
+  const { veramoAgent, signatory, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, issuerAccountClient } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   const [attestations, setAttestations] = useState<IndivAttestation[]>([]);
@@ -114,7 +114,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
 
 
       const vc = await VerifiableCredentialsService.createIndivOrgVC("indiv-org", orgDid, privateIssuerDid, leaderIndivDid, att.name);
-      const result = await VerifiableCredentialsService.createCredential(vc, "indiv-org", orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
+      const result = await VerifiableCredentialsService.createCredential(vc, "indiv-org", orgDid, walletClient, privateIssuerAccount, issuerAccountClient, veramoAgent)
 
       console.info("result of create credential: ", result)
       const fullVc = result.vc

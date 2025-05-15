@@ -33,7 +33,7 @@ const entityId = "shopify"
 const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) => {
 
   const { } = props;
-  const { privateIssuerAccount, issuerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
+  const { veramoAgent, privateIssuerAccount, issuerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   const openShopifyPopup = () => {
@@ -76,7 +76,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
         const walletSigner = await provider.getSigner()
 
         const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC(entityId, orgDid, privateIssuerDid, websiteType, shopifyUrl);
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
+        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
         if (fullVc && walletSigner && orgAccountClient && walletClient) {

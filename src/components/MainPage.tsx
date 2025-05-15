@@ -129,7 +129,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const { data: walletClient } = useWalletClient();
 
-  const { privateIssuerAccount, issuerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, setOrgNameValue } = useWallectConnectContext();
+  const { veramoAgent, privateIssuerAccount, issuerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, setOrgNameValue } = useWallectConnectContext();
 
   const [isDeleteAttestationsModalVisible, setDeleteAttestationsModalVisible] = useState(false);
   const [isApproveLeaderModalVisible, setApproveLeaderModalVisible] = useState(false);
@@ -694,10 +694,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         if (orgDid && privateIssuerDid && walletClient && privateIssuerAccount && orgAccountClient && issuerAccountClient) {
 
           const vc = await VerifiableCredentialsService.createStateRegistrationVC(entityId, orgDid, privateIssuerDid, idNumber, orgName, status, formationDate, state, locationAddress);
-          const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
+          const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient, veramoAgent)
+          console.info("state reg createCredential result: ", result)
           const fullVc = result.vc
           const proof = result.proof
 
+          console.info("fields: ", proof, fullVc, issuerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, walletClient)
+          console.info("orgIndivDelegation: ", orgIndivDelegation)
           if (proof && fullVc && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
           
             // now create attestation
@@ -724,6 +727,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             await window.ethereum.request({ method: "eth_requestAccounts" });
             const walletSigner = await provider.getSigner()
 
+            console.info("add state registration attestation")
             const uid = await AttestationService.addStateRegistrationAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
             console.info("add registration attestation complete")
     
@@ -759,7 +763,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     if (orgDid && privateIssuerDid && walletClient && privateIssuerAccount && orgAccountClient && issuerAccountClient) {
 
       const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, isprivateIssuerDidsuerDid, domain, domaincreationdate.toDateString());
-      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
       if (proof && fullVc && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
@@ -808,7 +812,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     if (orgDid && walletClient && privateIssuerAccount && orgAccountClient && issuerAccountClient && privateIssuerDid) {
 
       const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC(entityId, orgDid, privateIssuerDid, websiteType, website);
-      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
       if (proof && fullVc && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
@@ -859,7 +863,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     if (orgDid && privateIssuerDid && walletClient && privateIssuerAccount && orgAccountClient && issuerAccountClient) {
 
       const vc = await VerifiableCredentialsService.createEmailVC(entityId, orgDid, privateIssuerDid, emailType, email);
-      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
       if (proof && fullVc && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {

@@ -1038,6 +1038,8 @@ class AttestationService {
       
       
         const encodedData = schemaEncoder.encodeData(schemaItems);
+
+        console.info("store state registration ... attestation")
         await AttestationService.storeAttestation(this.StateRegistrationSchemaUID, encodedData, orgAccountClient, orgDelegateClient, delegationChain)
   
         let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
