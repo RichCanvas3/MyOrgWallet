@@ -40,7 +40,7 @@ jobs:
           VITE_OPENAPI_KEY: ${{ secrets.VITE_OPENAPI_KEY }}
           VITE_DEFAULT_MODEL: ${{ secrets.VITE_DEFAULT_MODEL }}
           VITE_DEFAULT_SYSTEM_PROMPT: ${{ secrets.VITE_DEFAULT_SYSTEM_PROMPT }}
-          VITE_: ${{ secrets.VITE_DEFAULT_ASSISTANT_PROMPT }}
+          VITE_DEFAULT_ASSISTANT_PROMPT: ${{ secrets.VITE_DEFAULT_ASSISTANT_PROMPT }}
           VITE_WEB3_AUTH_NETWORK: ${{ secrets.VITE_WEB3_AUTH_NETWORK }}
           VITE_WEB3_AUTH_CLIENT_ID: ${{ secrets.VITE_WEB3_AUTH_CLIENT_ID }}
           VITE_RPC_URL: ${{ secrets.VITE_RPC_URL }}
@@ -50,6 +50,9 @@ jobs:
           VITE_METAMASK_STORAGE_KEY: ${{ secrets.VITE_METAMASK_STORAGE_KEY }}
           VITE_ALCHEMY_RPC_URL: ${{ secrets.VITE_ALCHEMY_RPC_URL }}
           VITE_ETHERSCAN_API_KEY: ${{ secrets.VITE_ETHERSCAN_API_KEY }}
+          VITE_X_CLIENT_ID: ${{ secrets.VITE_X_CLIENT_ID }}              # Added
+          VITE_LINKEDIN_CLIENT_ID: ${{ secrets.VITE_LINKEDIN_CLIENT_ID }}  # Added
+          VITE_SHOPIFY_CLIENT_ID: ${{ secrets.VITE_SHOPIFY_CLIENT_ID }}
           
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
