@@ -36,20 +36,20 @@ jobs:
           VITE_SHOPIFY_REDIRECT_URI: ${{ secrets.VITE_SHOPIFY_REDIRECT_URI }}  # Use GitHub secret
           VITE_PROVER_API_URL: ${{ secrets.VITE_PROVER_API_URL }}            # Use GitHub secret
 
-          ISSUER_EOA_PRIVATE_KEY: ${{ secrets.ISSUER_EOA_PRIVATE_KEY }}
-          OPENAPI_KEY: ${{ secrets.OPENAPI_KEY }}
-          DEFAULT_MODEL: ${{ secrets.DEFAULT_MODEL }}
-          DEFAULT_SYSTEM_PROMPT: ${{ secrets.DEFAULT_SYSTEM_PROMPT }}
-          DEFAULT_ASSISTANT_PROMPT: ${{ secrets.DEFAULT_ASSISTANT_PROMPT }}
-          WEB3_AUTH_NETWORK: ${{ secrets.WEB3_AUTH_NETWORK }}
-          WEB3_AUTH_CLIENT_ID: ${{ secrets.WEB3_AUTH_CLIENT_ID }}
-          RPC_URL: ${{ secrets.RPC_URL }}
-          BUNDLER_URL: ${{ secrets.BUNDLER_URL }}
-          PAYMASTER_URL: ${{ secrets.PAYMASTER_URL }}
-          METAMASK_STORAGE_ID: ${{ secrets.METAMASK_STORAGE_ID }}
-          METAMASK_STORAGE_KEY: ${{ secrets.METAMASK_STORAGE_KEY }}
-          ALCHEMY_RPC_URL: ${{ secrets.ALCHEMY_RPC_URL }}
-          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+          VITE_ISSUER_EOA_PRIVATE_KEY: ${{ secrets.ISSUER_EOA_PRIVATE_KEY }}
+          VITE_OPENAPI_KEY: ${{ secrets.OPENAPI_KEY }}
+          VITE_DEFAULT_MODEL: ${{ secrets.DEFAULT_MODEL }}
+          VITE_DEFAULT_SYSTEM_PROMPT: ${{ secrets.DEFAULT_SYSTEM_PROMPT }}
+          VITE_: ${{ secrets.DEFAULT_ASSISTANT_PROMPT }}
+          VITE_WEB3_AUTH_NETWORK: ${{ secrets.WEB3_AUTH_NETWORK }}
+          VITE_WEB3_AUTH_CLIENT_ID: ${{ secrets.WEB3_AUTH_CLIENT_ID }}
+          VITE_RPC_URL: ${{ secrets.RPC_URL }}
+          VITE_BUNDLER_URL: ${{ secrets.BUNDLER_URL }}
+          VITE_PAYMASTER_URL: ${{ secrets.PAYMASTER_URL }}
+          VITE_METAMASK_STORAGE_ID: ${{ secrets.METAMASK_STORAGE_ID }}
+          VITE_METAMASK_STORAGE_KEY: ${{ secrets.METAMASK_STORAGE_KEY }}
+          VITE_ALCHEMY_RPC_URL: ${{ secrets.ALCHEMY_RPC_URL }}
+          VITE_ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
           
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
