@@ -23,7 +23,7 @@ const entityId = "insurance"
 const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, ref) => {
 
   const { } = props;
-  const { privateIssuerAccount, issuerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
+  const { veramoAgent, privateIssuerAccount, issuerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   
@@ -38,7 +38,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
         const vc = await VerifiableCredentialsService.createInsuranceVC(orgDid, privateIssuerDid, insuranceNumber);
 
         console.info("vc: ", JSON.stringify(vc))
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
+        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
         if (proof && fullVc && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {

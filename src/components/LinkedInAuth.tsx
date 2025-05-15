@@ -50,7 +50,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
 
   
   const { } = props;
-  const { privateIssuerAccount, issuerAccountClient, indivIssuerDelegation, indivAccountClient, indivDid, privateIssuerDid } = useWallectConnectContext();
+  const { veramoAgent, privateIssuerAccount, issuerAccountClient, indivIssuerDelegation, indivAccountClient, indivDid, privateIssuerDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
 
@@ -95,7 +95,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
         if (indivDid && privateIssuerDid && walletClient && privateIssuerAccount && indivAccountClient && issuerAccountClient && indivIssuerDelegation) {
   
           const vc = await VerifiableCredentialsService.createSocialVC(entityId, indivDid, privateIssuerDid, res.data.sub, "");
-          const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, privateIssuerAccount, issuerAccountClient)
+          const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, privateIssuerAccount, issuerAccountClient, veramoAgent)
           const fullVc = result.vc
           const proof = result.proof
 

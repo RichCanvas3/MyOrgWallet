@@ -53,7 +53,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { signatory, privateIssuerAccount, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, issuerAccountClient } = useWallectConnectContext();
+  const { veramoAgent, signatory, privateIssuerAccount, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, issuerAccountClient } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
 
@@ -182,7 +182,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
         const samIndivName = ""
 
         const vc = await VerifiableCredentialsService.createIndivOrgVC("indiv-org", orgDid, privateIssuerDid, samIndivDid, samIndivName);
-        const result = await VerifiableCredentialsService.createCredential(vc, "indiv-org", orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
+        const result = await VerifiableCredentialsService.createCredential(vc, "indiv-org", orgDid, walletClient, privateIssuerAccount, issuerAccountClient, veramoAgent)
 
         console.info("result of create credential: ", result)
         const fullVc = result.vc

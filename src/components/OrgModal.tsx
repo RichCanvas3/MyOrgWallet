@@ -32,7 +32,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { privateIssuerAccount, issuerAccountClient, signatory, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, setOrgNameValue } = useWallectConnectContext();
+  const { veramoAgent, privateIssuerAccount, issuerAccountClient, signatory, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, setOrgNameValue } = useWallectConnectContext();
   const { data: walletClient }= useWalletClient()
 
   const [name, setName] = useState("");
@@ -58,7 +58,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
       //setOrgName(orgName)
 
       const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, privateIssuerDid, orgName);
-      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
       if (fullVc && signatory && orgAccountClient && walletClient) {

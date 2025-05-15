@@ -7,9 +7,20 @@ import { privateKeyToAccount, PrivateKeyAccount, generatePrivateKey } from "viem
 import { vs } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { Buffer } from 'buffer';
 
+import { Resolver } from 'did-resolver';
+import { createAgent,  } from '@veramo/core';
+import type {
+  W3CVerifiableCredential,
+} from '@veramo/core';
 
-import { createPimlicoClient } from "permissionless/clients/pimlico";
-import { MessageHashUtils } from "@metamask/delegation-toolkit";
+import { CredentialPlugin } from '@veramo/credential-w3c';
+
+import { KeyManagementSystem } from '@veramo/kms-local';
+import { getResolver as ethrDidResolver } from 'ethr-did-resolver';
+
+import { CredentialStatusPlugin } from '@veramo/credential-status';
+import { DIDResolverPlugin } from '@veramo/did-resolver';
+
 
 // @ts-ignore
 window.Buffer = Buffer;
@@ -346,13 +357,16 @@ class VerifiableCredentialsService {
       did: string, 
       walletClient: WalletClient,
       privateIssuerAccount: PrivateKeyAccount, 
-      issuerAccountClient: any): Promise<any | undefined> {
+      issuerAccountClient: any,
+      veramoAgent: any): Promise<any | undefined> {
 
+      let veramoVC : any | undefined
+
+      const BASE_URL_PROVER = import.meta.env.VITE_PROVER_API_URL  || 'http://localhost:3051';
+      const encoder = new TextEncoder();
 
       let proof = ""
 
-      
-      const encoder = new TextEncoder();
 
       // Hash the subject DID
       function hashDID(did: string) {
@@ -362,144 +376,108 @@ class VerifiableCredentialsService {
       }
 
 
-
-
-
-
-      // create verifiable credential to represent
-      //   - organization DID
-      //   - organization domain
-      //   - commitment
-      //   - verifier DID (richcanvas)
+      
 
       const issuerDid = vc.issuer
-      const credentialJSON = JSON.stringify(vc);
 
-      // Hash data according to EIP-712
-      const credentialHash = hashMessage(credentialJSON)
-
-      console.info("issuerAccountClient: ", issuerAccountClient)
-      const signature = await privateIssuerAccount.signMessage({message: credentialHash})
-      //const signature = await issuerAccountClient?.signMessage({message: credentialHash})
 
       const addr = privateIssuerAccount.address
       //const addr = await issuerAccountClient?.getAddress()
       
-      if (addr && signature) {
+      if (addr && issuerDid && did && vc.credentialSubject) {
 
-        //const validSignature = await verifyMessageDirect(addr, credentialHash, signature)
-        //console.info("is valid issuer signature: ", validSignature)
+        // this section is going to be replaced with veramo create verifiable credential and then stored in masca metamask snap
+        // the code is working in proof of concept
 
-        var sig = "'" + signature + "'"
+        const credentialSubjectJSON = JSON.stringify(vc.credentialSubject);
+        const credentialSubjectHash = hashMessage(credentialSubjectJSON)
 
-        // complete vc proof that holds commitmentHash hex in subject
-        vc.proof = {
-          type: 'EthereumEip712Signature2021',
-          created: vs.issuanceDate,
-          proofPurpose: 'assertionMethod',
-          verificationMethod: issuerDid,
-          // issuer signed a string of the vc without proof section
-          signature: sig
-        }
+        console.info(">>>>>>>>>>>>> did: ", did)
+        const issuerDidHash = hashDID(issuerDid)
+        const didHash = hashDID(did)
 
+        const commitmentResponse = await fetch(`${BASE_URL_PROVER}/api/proof/commitment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            issuerDidHash: issuerDidHash.toString(),
+            didHash: didHash.toString(), 
+            vcHash: credentialSubjectHash.toString()
+          }),
+        })
+        const commitment = await commitmentResponse.json()
 
-        const BASE_URL_PROVER = import.meta.env.VITE_PROVER_API_URL  || 'http://localhost:3051';
-
-        if (issuerDid && did) {
-
-          console.info(">>>>>>>>>>>>> did: ", did)
-          const issuerDidHash = hashDID(issuerDid)
-          const didHash = hashDID(did)
-
-
-          const res = await fetch(`${BASE_URL_PROVER}/api/proof/commitment`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              issuerDidHash: issuerDidHash.toString(),
+        // construct zkProof associated with credential subject, issuerDid and subjectDid
+        console.info("-----------> create zk proof")
+        const proofResp = await fetch(`${BASE_URL_PROVER}/api/proof/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            inputs: { 
               didHash: didHash.toString(), 
-              vcHash: credentialHash.toString()
-            }),
-          })
-          const commitment = await res.json()
+              issuerDidHash: issuerDidHash.toString(), 
+              vcHash: credentialSubjectHash.toString(), 
+              commitment: commitment.toString()
+            }, // Example inputs
+            did: did,
+            commitment: commitment.toString()
+          }),
+        })
 
-          // construct zkProof associated with verifiable credential
-          const commitmenthHex = '0x' + BigInt(commitment as any).toString(16)
-          const commitmenthHexHash = hashMessage(commitmenthHex)
-          const commitmentSignature = await privateIssuerAccount.signMessage({message: commitment.toString()})
-          //const commitmentSignature = await issuerAccountClient?.signMessage({message: commitment.toString()})
-          if (commitmentSignature && vc.credentialSubject) {
+          console.info("get json ", proofResp)
+          const proofResults = await proofResp.json()
+          console.info(" get proof url: ", proofResults)
+          proof = proofResults.proofJson
 
-            console.info("^^^^^^^^^^^^^^^^^^ signature: ", commitmentSignature)
-            //const abc = normalizeSignature(commitmentSignature)
-            //const isValid = await verifyMessage({ address: issuerAccountClient.address, message: commitment.toString(), signature: abc })
-            //console.info("^^^^^^^^^^^^^^^^^^^ isValid: ", isValid)
+          console.info("proof done: ", proof)
 
 
-            vc.credentialSubject.commitment = commitment.toString()
-            vc.credentialSubject.commitmentSignature = commitmentSignature
+        // lets add the commitment and commitment signature to credential and then sign it
+        const commitmenthHex = '0x' + BigInt(commitment as any).toString(16)
+        const commitmenthHexHash = hashMessage(commitmenthHex)
+        const commitmentSignature = await privateIssuerAccount.signMessage({message: commitment.toString()})
+        //const commitmentSignature = await issuerAccountClient?.signMessage({message: commitment.toString()})
 
-            console.info("addr: ", addr)
-            console.info("hash: ", commitmenthHexHash)
-            console.info("signature: ", commitmentSignature)
-            //const validCommitment = await verifyMessageDirect(addr, commitmenthHexHash, commitmentSignature)
+        if (commitmentSignature) {
 
-            // console.info("is valid signature for commitment: ", valid)
-            // generate Proof
-  
+          console.info("^^^^^^^^^^^^^^^^^^ signature: ", commitmentSignature)
+          vc.credentialSubject.commitment = commitment.toString()
+          vc.credentialSubject.commitmentSignature = commitmentSignature
 
-            //console.info("issuerDid: ", issuerDid)
-            //console.info("issuerDidHash: ", issuerDidHash) 
+          console.info("create veramoAgent: ", veramoAgent);
+          veramoVC = await veramoAgent.createVerifiableCredential({
+              //proofFormat: 'jwt',
+              proofFormat: 'EthereumEip712Signature2021',
+              credential: {
+                issuer: issuerDid,
+                credentialSubject: vc.credentialSubject,
+              },
+            });
 
-            //console.info("orgDid: ", orgDid)
-            //console.info("orgDidHash: ", orgDidHash) 
 
-            //console.info("credentialHash: ", credentialHash)
-
-            //console.info("commitment: ", commitment)
-            //console.info("commitmenthHex (can get back to commitment): ", commitmenthHex)
-            //console.info("commitmenthHexHash: ", commitmenthHexHash)
-
-            //console.info("commitmentSignature: ", commitmentSignature)
-
-            // save vc to metamask snap storage
-            if (walletClient) {
-              await VerifiableCredentialsService.saveCredential(walletClient, vc, entityId)
-            }
-
-            console.info("-----------> create proof")
-            const proofResp = await fetch(`${BASE_URL_PROVER}/api/proof/create`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                inputs: { issuerDidHash: issuerDidHash.toString(), didHash: didHash.toString(), vcHash: credentialHash.toString(), commitment: commitment.toString(), commitmentSignature: commitmentSignature.toString() }, // Example inputs
-                commitment: commitment.toString(),
-                did: did
-              }),
-            })
-
-            console.info("get json ", proofResp)
-            const proofResults = await proofResp.json()
-            console.info(" get proof url: ", proofResults)
-            proof = proofResults.proofJson
-
-            console.info("proof done: ", proof)
-
-            // verify if we have access to accountclient
-            //const validSigData = await issuerAccountClient?.getIsValidSignatureData(commitmenthHexHash as `0x${string}`, commitmentSignature)
-            //if (validSigData) {
-            //  const valid = validSigData.startsWith("0x1626ba7e"); // ERC-1271 magic value
-            //}
-
-            
+          // save vc to metamask snap storage
+          if (walletClient) {
+            console.info("save credential: ", veramoVC)
+            await VerifiableCredentialsService.saveCredential(walletClient, veramoVC, entityId)
           }
+
+          
+
+          // verify if we have access to accountclient
+          //const validSigData = await issuerAccountClient?.getIsValidSignatureData(commitmenthHexHash as `0x${string}`, commitmentSignature)
+          //if (validSigData) {
+          //  const valid = validSigData.startsWith("0x1626ba7e"); // ERC-1271 magic value
+          //}
+
           
         }
+        
+
 
       }
 
       console.info("done creating vc and return")
-      return { vc: vc, proof: proof }
+      return { vc: veramoVC, proof: proof }
     }
 
 }

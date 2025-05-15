@@ -8,6 +8,60 @@ import { keccak256, toUtf8Bytes } from 'ethers';
 import { ethers, AbiCoder } from 'ethers';
 
 
+import { Resolver } from 'did-resolver';
+import { createAgent,  } from '@veramo/core';
+import type {
+  W3CVerifiableCredential,
+} from '@veramo/core';
+
+import { CredentialPlugin } from '@veramo/credential-w3c';
+
+import { KeyManagementSystem } from '@veramo/kms-local';
+import { getResolver as ethrDidResolver } from 'ethr-did-resolver';
+
+import { CredentialStatusPlugin } from '@veramo/credential-status';
+import { DIDResolverPlugin } from '@veramo/did-resolver';
+
+
+import {
+  KeyDIDProvider,
+  getDidKeyResolver as keyDidResolver,
+} from '@blockchain-lab-um/did-provider-key';
+
+import {
+  KeyManager,
+  MemoryKeyStore,
+  MemoryPrivateKeyStore,
+} from '@veramo/key-manager';
+
+import {
+  type AbstractIdentifierProvider,
+  DIDManager,
+  MemoryDIDStore,
+} from '@veramo/did-manager';
+
+import {
+  PkhDIDProvider,
+  getDidPkhResolver as pkhDidResolver,
+} from '@veramo/did-provider-pkh';
+
+import { 
+  EthrDIDProvider 
+} 
+from '@veramo/did-provider-ethr';
+
+import {
+  CredentialIssuerEIP712,
+} from '@veramo/credential-eip712';
+
+import {
+  type AbstractDataStore,
+  DataManager,
+  type IDataManager,
+} from '@blockchain-lab-um/veramo-datamanager';
+
+import type { IKey, TKeyType, IDIDManager, ICredentialIssuer, ICredentialVerifier, IResolver, IDataStore, IKeyManager, VerifiableCredential, IVerifyResult } from '@veramo/core';
+
 import { privateKeyToAccount, PrivateKeyAccount, generatePrivateKey } from "viem/accounts";
 import {ISSUER_PRIVATE_KEY, WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, BUNDLER_URL, PAYMASTER_URL} from "../config";
 
@@ -56,6 +110,11 @@ import AttestationService from "../service/AttestationService";
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService";
 import { Navigate } from "react-router-dom";
 
+// Define missing types
+export type CredentialJwtOrJSON = { proof: { jwt: string } } | Record<string, unknown>;
+export type CredentialStatus = { revoked: boolean };
+
+
 
 export type GetSnapsResponse = Record<string, Snap>;
 export type Snap = {
@@ -96,6 +155,8 @@ export type WalletConnectContextState = {
     setOrgDidValue: (orgDidValue: string) => Promise<void>,
     
     isIndividualConnected: boolean
+
+    veramoAgent?: any
 }
 
 export const WalletConnectContext = createContext<WalletConnectContextState>({
@@ -123,6 +184,8 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
 
   isIndividualConnected: false,
 
+  veramoAgent: undefined,
+
 
 
   connect: () => {
@@ -148,6 +211,7 @@ export const useWalletConnect = () => {
     const [orgDid, setOrgDid] = useState<string>();
     const [indivDid, setIndivDid] = useState<string>();
     const [privateIssuerDid, setPrivateIssuerDid] = useState<string>();
+    const [veramoAgent, setVeramoAgent] = useState<any>();
 
     const [orgName, setOrgName] = useState<string>();
     const [indivName, setIndivName] = useState<string>();
@@ -198,6 +262,109 @@ export const useWalletConnect = () => {
     const [connectedAddress, setConnectedAddress] = useState<string | undefined>();
 
 
+    const setupVeramoAgent = async () : Promise<any>  => {
+
+      const privateKey = ISSUER_PRIVATE_KEY;
+            if (!privateKey) {
+              throw new Error('Private key not found in environment variables');
+            }
+      const networks: Array<{ name: string; chainId: string; rpcUrl: string; registry: string }> = [
+          {
+            name: 'optimism',
+            chainId: '10',
+            rpcUrl: `${import.meta.env.OPTIMISM_RPC_URL}`,
+            registry: '0x1234567890abcdef1234567890abcdef12345678',
+          },
+          {
+            name: 'mainnet',
+            chainId: '0x1',
+            rpcUrl: `${import.meta.env.MAINNET_RPC_URL}`,
+            registry: '0xdCa7EF03e98e0DC2B855bE647C39ABe984fcF21B',
+          },
+        ];
+      
+      const didProviders: Record<string, AbstractIdentifierProvider> = {
+        'did:pkh': new PkhDIDProvider({
+          defaultKms: 'local',
+          chainId: '10'
+        }),
+        'did:ethr': new EthrDIDProvider({
+          defaultKms: 'local',
+          networks,
+        }),
+        'did:key': new KeyDIDProvider({ defaultKms: 'local' }),
+      };
+
+      console.info(".............. create veramo agent")
+      const veramoAgent = createAgent<
+        IDIDManager &
+        IKeyManager &
+        IDataStore &
+        IResolver &
+        IDataManager &
+        ICredentialIssuer &
+        ICredentialVerifier
+      >({
+        plugins: [
+          new CredentialPlugin(),
+          new CredentialIssuerEIP712(),
+          new CredentialStatusPlugin({
+            StatusList2021Entry: async (): Promise<CredentialStatus> => {
+              return { revoked: false };
+            },
+          }),
+          new KeyManager({
+            store: new MemoryKeyStore(),
+            kms: {
+              local: new KeyManagementSystem(new MemoryPrivateKeyStore()),
+            },
+          }),
+          //new DataManager({ store: vcStorePlugins }),
+          new DIDResolverPlugin({
+            resolver: new Resolver({
+              ...ethrDidResolver({ networks }),
+              ...keyDidResolver(),
+              ...pkhDidResolver(),
+            }),
+          }),
+          new DIDManager({
+            store: new MemoryDIDStore(),
+            defaultProvider: 'did:pkh',
+            providers: didProviders,
+          })
+
+        ],
+      })
+
+
+      const key: IKey = await veramoAgent.keyManagerImport({
+        privateKeyHex: privateKey.slice(2),
+        type: 'Secp256k1' as TKeyType, // For Ethereum-based DIDs
+        kms: 'local', // Matches your KeyManagementSystem
+        meta: { alias: 'my-eth-key' },
+      });
+
+      await veramoAgent.didManagerImport({
+        did: privateIssuerDid,
+        alias: 'my-issuer',
+        provider: 'did:pkh',
+        controllerKeyId: key.kid,
+        keys: [
+          {
+            kid: key.kid,
+            kms: 'local',
+            type: 'Secp256k1',
+            publicKeyHex: key.publicKeyHex,
+            privateKeyHex: privateKey.slice(2),
+          },
+        ],
+      });
+
+
+      setVeramoAgent(veramoAgent)
+
+      return veramoAgent
+    }
 
 
     useEffect(() => {
@@ -235,10 +402,18 @@ export const useWalletConnect = () => {
           // Initialize metamask wallet and give access to ceramic datastore
           let ownerEOAAddress = owner
 
-          if (publicClient && selectedSignatory) {
+          if (publicClient && selectedSignatory && privateIssuerDid) {
+
+            const privateKey = ISSUER_PRIVATE_KEY;
+            if (!privateKey) {
+              throw new Error('Private key not found in environment variables');
+            }
+
+            const veramoAgent = await setupVeramoAgent()
+            setVeramoAgent(veramoAgent)
 
             // connect to issuer account abstraction
-            const issuerOwner = privateKeyToAccount(ISSUER_PRIVATE_KEY);
+            const issuerOwner = privateKeyToAccount(privateKey);
             const issuerAccountClient = await toMetaMaskSmartAccount({
               client: publicClient,
               implementation: Implementation.Hybrid,
@@ -246,7 +421,6 @@ export const useWalletConnect = () => {
               signatory: { account: issuerOwner },
               deploySalt: toHex(10),
             })
-
             
 
 
@@ -267,7 +441,7 @@ export const useWalletConnect = () => {
             
 
 
-
+            console.info("get indiv org att and indiv attestation")
             const indivOrgAttestation = await AttestationService.getIndivOrgAttestation(indivDid, AttestationService.IndivOrgSchemaUID, "indiv-org");
             const indivAttestation = await AttestationService.getAttestationByAddressAndSchemaId(indivDid, AttestationService.IndivSchemaUID, "indiv")
             if (indivAttestation) {
@@ -517,7 +691,8 @@ export const useWalletConnect = () => {
       const issAccount = privateKeyToAccount(ISSUER_PRIVATE_KEY);
       setPrivateIssuerAccount(issAccount)
 
-      const issDid = 'did:ethr:0xa:' + issAccount.address
+      const issDid = `did:pkh:eip155:10:${issAccount.address}`
+      
       setPrivateIssuerDid(issDid)
     }, []);
 
@@ -535,6 +710,8 @@ export const useWalletConnect = () => {
 
       if (signatory && owner) {
 
+        const veramoAgent = await setupVeramoAgent()
+        setVeramoAgent(veramoAgent)
 
         const publicClient = createPublicClient({
           chain: optimism,
@@ -801,7 +978,7 @@ export const useWalletConnect = () => {
         let isDeployed = await issuerAccountClient.isDeployed()
         console.info("is issuerAccount deployed: ", isDeployed)
 
-        let privateIssuerDid = 'did:ethr:0xa:' + issuerAccountClient.address
+        let privateIssuerDid = 'did:pkh:eip155:10:' + issuerOwner.address
         setPrivateIssuerDid(privateIssuerDid)
         setIssuerAccountClient(issuerAccountClient)
 
@@ -853,7 +1030,7 @@ export const useWalletConnect = () => {
             if (walletSigner && walletClient && privateIssuerAccount && orgName && orgDid && orgIssuerDel) {
         
               const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, privateIssuerDid, orgName);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
               if (fullVc) {
@@ -913,7 +1090,7 @@ export const useWalletConnect = () => {
 
           
                 const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, privateIssuerDid, domainName, "");
-                const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
+                const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient, veramoAgent)
                 const fullVc = result.vc
                 const proof = result.proof
                 if (fullVc) {
@@ -973,7 +1150,7 @@ export const useWalletConnect = () => {
               
         
               const vc = await VerifiableCredentialsService.createIndivOrgVC(entityId, orgDid, privateIssuerDid, indivDid, indName);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
 
@@ -1075,7 +1252,7 @@ export const useWalletConnect = () => {
               }
         
               const vc = await VerifiableCredentialsService.createIndivVC(entityId, indivDid, privateIssuerDid, orgDid, indName);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, privateIssuerAccount, issuerAccountClient)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, privateIssuerAccount, issuerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
 
@@ -1121,7 +1298,7 @@ export const useWalletConnect = () => {
               }
         
               const vc = await VerifiableCredentialsService.createIndivEmailVC(entityId, indivDid, privateIssuerDid, "business", indEmail);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, privateIssuerAccount, issuerAccountClient)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, privateIssuerAccount, issuerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
 
@@ -1198,6 +1375,8 @@ export const useWalletConnect = () => {
 
             privateIssuerDid,
             privateIssuerAccount,
+
+            veramoAgent,
             
             orgIndivDelegation,
             orgIssuerDelegation,
@@ -1211,6 +1390,8 @@ export const useWalletConnect = () => {
             setupSmartWallet,
             setOrgNameValue,
             setOrgDidValue,
+
+            
 
     }
         
@@ -1246,6 +1427,8 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
       privateIssuerDid,
       privateIssuerAccount,
+
+      veramoAgent,
       
       setOrgNameValue,
       setOrgDidValue
@@ -1278,6 +1461,8 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         privateIssuerAccount,
         privateIssuerDid,
 
+        veramoAgent,
+
         connect,
         setIndivAndOrgInfo,
         buildSmartWallet,
@@ -1308,6 +1493,8 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
         privateIssuerDid,
         privateIssuerAccount,
+
+        veramoAgent,
 
         connect,
         setIndivAndOrgInfo,

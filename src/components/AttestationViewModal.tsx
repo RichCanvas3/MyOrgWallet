@@ -279,6 +279,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                   VerifiableCredentialsService.getCredential(walletClient, att.entityId).then((cred) => {
                     if (cred) {
                       setHasCredential(true)
+                      console.info(",,,,,,,,,, credential: ", cred)
                       setCredential(cred)
                     }
                     else {
@@ -493,7 +494,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
               </div>
             )}
             {activeTab === 'vc-raw' && (
-              <div className="tab-panel">
+              <div className="tab-panel" style={{ maxHeight: '600px', overflowY: 'auto' }}>
                 <div style={{ whiteSpace: 'pre-wrap' }}>
                   {JSON.stringify(credential, null, 2)}
                 </div>
@@ -532,30 +533,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                         </p>
                       )}
                     </div>
-                    {credential?.credentialSubject && (
-                      <div className="panel-section">
-                        <h3 className="section-title">Subject:</h3>
-                        <ul className="section-list">
-                          {Object.entries(credential.credentialSubject).map(([key, value]) => (
-                            <li key={key}>
-                              <strong>{key}:</strong> {JSON.stringify(cleanLine(value))}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {credential?.proof && (
-                      <div className="panel-section">
-                        <h3 className="section-title">Proof:</h3>
-                        <ul className="section-list">
-                          {Object.entries(credential.proof).map(([key, value]) => (
-                            <li key={key}>
-                              <strong>{key}:</strong> {JSON.stringify(cleanLine(value))}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                    
                   </div>
                 )}
               </div>
