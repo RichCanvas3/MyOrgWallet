@@ -26,33 +26,34 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Write .env file
+        run: |
+          echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
+          echo "VITE_BASE_PATH=${{ secrets.VITE_BASE_PATH }}" >> .env
+          echo "VITE_LINKEDIN_REDIRECT_URI=${{ secrets.VITE_LINKEDIN_REDIRECT_URI }}" >> .env
+          echo "VITE_X_REDIRECT_URI=${{ secrets.VITE_X_REDIRECT_URI }}" >> .env
+          echo "VITE_SHOPIFY_REDIRECT_URI=${{ secrets.VITE_SHOPIFY_REDIRECT_URI }}" >> .env
+          echo "VITE_PROVER_API_URL=${{ secrets.VITE_PROVER_API_URL }}" >> .env
+          echo "VITE_ISSUER_EOA_PRIVATE_KEY=${{ secrets.VITE_ISSUER_EOA_PRIVATE_KEY }}" >> .env
+          echo "VITE_OPENAPI_KEY=${{ secrets.VITE_OPENAPI_KEY }}" >> .env
+          echo "VITE_DEFAULT_MODEL=${{ secrets.VITE_DEFAULT_MODEL }}" >> .env
+          echo "VITE_DEFAULT_SYSTEM_PROMPT=${{ secrets.VITE_DEFAULT_SYSTEM_PROMPT }}" >> .env
+          echo "VITE_DEFAULT_ASSISTANT_PROMPT=${{ secrets.VITE_DEFAULT_ASSISTANT_PROMPT }}" >> .env
+          echo "VITE_WEB3_AUTH_NETWORK=${{ secrets.VITE_WEB3_AUTH_NETWORK }}" >> .env
+          echo "VITE_WEB3_AUTH_CLIENT_ID=${{ secrets.VITE_WEB3_AUTH_CLIENT_ID }}" >> .env
+          echo "VITE_RPC_URL=${{ secrets.VITE_RPC_URL }}" >> .env
+          echo "VITE_BUNDLER_URL=${{ secrets.VITE_BUNDLER_URL }}" >> .env
+          echo "VITE_PAYMASTER_URL=${{ secrets.VITE_PAYMASTER_URL }}" >> .env
+          echo "VITE_METAMASK_STORAGE_ID=${{ secrets.VITE_METAMASK_STORAGE_ID }}" >> .env
+          echo "VITE_METAMASK_STORAGE_KEY=${{ secrets.VITE_METAMASK_STORAGE_KEY }}" >> .env
+          echo "VITE_ALCHEMY_RPC_URL=${{ secrets.VITE_ALCHEMY_RPC_URL }}" >> .env
+          echo "VITE_ETHERSCAN_API_KEY=${{ secrets.VITE_ETHERSCAN_API_KEY }}" >> .env
+          echo "VITE_X_CLIENT_ID=${{ secrets.VITE_X_CLIENT_ID }}" >> .env
+          echo "VITE_LINKEDIN_CLIENT_ID=${{ secrets.VITE_LINKEDIN_CLIENT_ID }}" >> .env
+          echo "VITE_SHOPIFY_CLIENT_ID=${{ secrets.VITE_SHOPIFY_CLIENT_ID }}" >> .env
+
       - name: Build the app
         run: npm run build
-        env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}                      # Use GitHub secret
-          VITE_BASE_PATH: ${{ secrets.VITE_BASE_PATH }}                  # Use GitHub secret
-          VITE_LINKEDIN_REDIRECT_URI: ${{ secrets.VITE_LINKEDIN_REDIRECT_URI }}  # Use GitHub secret
-          VITE_X_REDIRECT_URI: ${{ secrets.VITE_X_REDIRECT_URI }}            # Use GitHub secret
-          VITE_SHOPIFY_REDIRECT_URI: ${{ secrets.VITE_SHOPIFY_REDIRECT_URI }}  # Use GitHub secret
-          VITE_PROVER_API_URL: ${{ secrets.VITE_PROVER_API_URL }}            # Use GitHub secret
-
-          VITE_ISSUER_EOA_PRIVATE_KEY: ${{ secrets.VITE_ISSUER_EOA_PRIVATE_KEY }}
-          VITE_OPENAPI_KEY: ${{ secrets.VITE_OPENAPI_KEY }}
-          VITE_DEFAULT_MODEL: ${{ secrets.VITE_DEFAULT_MODEL }}
-          VITE_DEFAULT_SYSTEM_PROMPT: ${{ secrets.VITE_DEFAULT_SYSTEM_PROMPT }}
-          VITE_DEFAULT_ASSISTANT_PROMPT: ${{ secrets.VITE_DEFAULT_ASSISTANT_PROMPT }}
-          VITE_WEB3_AUTH_NETWORK: ${{ secrets.VITE_WEB3_AUTH_NETWORK }}
-          VITE_WEB3_AUTH_CLIENT_ID: ${{ secrets.VITE_WEB3_AUTH_CLIENT_ID }}
-          VITE_RPC_URL: ${{ secrets.VITE_RPC_URL }}
-          VITE_BUNDLER_URL: ${{ secrets.VITE_BUNDLER_URL }}
-          VITE_PAYMASTER_URL: ${{ secrets.VITE_PAYMASTER_URL }}
-          VITE_METAMASK_STORAGE_ID: ${{ secrets.VITE_METAMASK_STORAGE_ID }}
-          VITE_METAMASK_STORAGE_KEY: ${{ secrets.VITE_METAMASK_STORAGE_KEY }}
-          VITE_ALCHEMY_RPC_URL: ${{ secrets.VITE_ALCHEMY_RPC_URL }}
-          VITE_ETHERSCAN_API_KEY: ${{ secrets.VITE_ETHERSCAN_API_KEY }}
-          VITE_X_CLIENT_ID: ${{ secrets.VITE_X_CLIENT_ID }}              # Added
-          VITE_LINKEDIN_CLIENT_ID: ${{ secrets.VITE_LINKEDIN_CLIENT_ID }}  # Added
-          VITE_SHOPIFY_CLIENT_ID: ${{ secrets.VITE_SHOPIFY_CLIENT_ID }}
           
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
@@ -76,12 +77,6 @@ jobs:
           api_location: ""                   # No API code in this repo
           output_location: "dist"            # Built app content directory
           github_id_token: ${{ steps.idtoken.outputs.result }}
-
-      - name: Debug Environment Variables
-        run: |
-          echo "VITE_BUNDLER_URL=$VITE_BUNDLER_URL"
-          echo "VITE_RPC_URL=$VITE_RPC_URL"
-          echo "VITE_PAYMASTER_URL=$VITE_PAYMASTER_URL"
           
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
