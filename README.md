@@ -5,7 +5,7 @@
 
 MyOrgWallet is a cutting-edge Web3 digital wallet designed for organizations, empowering seamless and secure interactions in decentralized ecosystems. For this hackathon, build innovative applications leveraging MyOrgWallet’s advanced features:
 
-[Watch the myOrgWallet video](./MyOrgWalletVideo.mp4)
+[Watch the myOrgWallet video](./public/MyOrgWalletDemo.mp4)
 
 ### Account Abstraction (AA): 
 
@@ -75,7 +75,7 @@ Design a solution showcasing these features, such as a decentralized eCommerce p
 - Bundle/batch multiple EAS Contract Users Operations in single Bundled request
 ### Individuals fully control their account and attestations.  Individuals jointly manage Organizations Attestations
 
-<img src="delegation.jpeg" width="600px">
+<img src="./public/delegation.jpeg" width="600px">
 
 ## Goals
 
@@ -86,7 +86,7 @@ Design a solution showcasing these features, such as a decentralized eCommerce p
 
 ## Architecture
 
-<img src="architecture.jpeg" width='750px'>
+<img src="./public/architecture.jpeg" width='750px'>
 
 ## Technology
 
