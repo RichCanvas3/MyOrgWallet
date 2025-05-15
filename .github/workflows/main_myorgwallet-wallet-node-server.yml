@@ -1,10 +1,10 @@
 name: Build and deploy Node.js app to Azure Web App - MyOrgWallet-Wallet-Node-Server
 
-# on:
-#   push:
-#     branches:
-#       - main
-   workflow_dispatch:
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   build:
@@ -75,3 +75,23 @@ jobs:
           app-name: 'MyOrgWallet-Wallet-Node-Server'
           slot-name: 'Production'
           package: ./deploy
+      
+      # Set environment variables for deployment, including sensitive ones
+      - name: Set environment variables for deployment
+        run: |
+          echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> $GITHUB_ENV
+          echo "VITE_BASE_PATH=${{ secrets.VITE_BASE_PATH }}" >> $GITHUB_ENV
+          echo "VITE_LINKEDIN_REDIRECT_URI=${{ secrets.VITE_LINKEDIN_REDIRECT_URI }}" >> $GITHUB_ENV
+          echo "VITE_X_REDIRECT_URI=${{ secrets.VITE_X_REDIRECT_URI }}" >> $GITHUB_ENV
+          echo "VITE_SHOPIFY_REDIRECT_URI=${{ secrets.VITE_SHOPIFY_REDIRECT_URI }}" >> $GITHUB_ENV
+          echo "VITE_PROVER_API_URL=${{ secrets.VITE_PROVER_API_URL }}" >> $GITHUB_ENV
+          echo "GCLOUD_BUCKET_NAME=${{ secrets.GCLOUD_BUCKET_NAME }}" >> $GITHUB_ENV
+          echo "GOOGLE_APPLICATION_CREDENTIALS=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" >> $GITHUB_ENV
+          echo "LINKEDIN_CLIENT_ID=${{ secrets.LINKEDIN_CLIENT_ID }}" >> $GITHUB_ENV  # LinkedIn Client ID
+          echo "LINKEDIN_CLIENT_SECRET=${{ secrets.LINKEDIN_CLIENT_SECRET }}" >> $GITHUB_ENV  # LinkedIn Client Secret
+          echo "X_CLIENT_ID=${{ secrets.X_CLIENT_ID }}" >> $GITHUB_ENV  # X Client ID
+          echo "X_CLIENT_SECRET=${{ secrets.X_CLIENT_SECRET }}" >> $GITHUB_ENV  # X Client Secret
+          echo "SHOPIFY_SHOP_NAME=${{ secrets.SHOPIFY_SHOP_NAME }}" >> $GITHUB_ENV  # Shopify Shop Name
+          echo "SHOPIFY_CLIENT_ID=${{ secrets.SHOPIFY_CLIENT_ID }}" >> $GITHUB_ENV  # Shopify Client ID
+          echo "SHOPIFY_CLIENT_SECRET=${{ secrets.SHOPIFY_CLIENT_SECRET }}" >> $GITHUB_ENV  # Shopify Client Secret
+          echo "SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}" >> $GITHUB_ENV  # SendGrid API Key

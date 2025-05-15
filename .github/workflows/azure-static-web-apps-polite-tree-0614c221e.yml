@@ -15,28 +15,45 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     permissions:
-       id-token: write
-       contents: read
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: true
           lfs: false
+
       - name: Install dependencies
         run: npm install
 
       - name: Build the app
         run: npm run build
         env:
-          VITE_API_URL: https://myorgwallet-wallet-node-server-f6eed6cpd0c4dzey.westus2-01.azurewebsites.net
-          VITE_BASE_PATH: https://wallet.myorgwallet.io
-          VITE_LINKEDIN_REDIRECT_URI: https://wallet.myorgwallet.io/linkedincallback
-          VITE_X_REDIRECT_URI: https://wallet.myorgwallet.io/xcallback
-          VITE_SHOPIFY_REDIRECT_URI: https://wallet.myorgwallet.io/shopifycallback
-          VITE_PROVER_API_URL: https://myorgwallet-prover-ghh3dbghcjddbkds.westus2-01.azurewebsites.net
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}                      # Use GitHub secret
+          VITE_BASE_PATH: ${{ secrets.VITE_BASE_PATH }}                  # Use GitHub secret
+          VITE_LINKEDIN_REDIRECT_URI: ${{ secrets.VITE_LINKEDIN_REDIRECT_URI }}  # Use GitHub secret
+          VITE_X_REDIRECT_URI: ${{ secrets.VITE_X_REDIRECT_URI }}            # Use GitHub secret
+          VITE_SHOPIFY_REDIRECT_URI: ${{ secrets.VITE_SHOPIFY_REDIRECT_URI }}  # Use GitHub secret
+          VITE_PROVER_API_URL: ${{ secrets.VITE_PROVER_API_URL }}            # Use GitHub secret
 
+          ISSUER_EOA_PRIVATE_KEY: ${{ secrets.ISSUER_EOA_PRIVATE_KEY }}
+          OPENAPI_KEY: ${{ secrets.OPENAPI_KEY }}
+          DEFAULT_MODEL: ${{ secrets.DEFAULT_MODEL }}
+          DEFAULT_SYSTEM_PROMPT: ${{ secrets.DEFAULT_SYSTEM_PROMPT }}
+          DEFAULT_ASSISTANT_PROMPT: ${{ secrets.DEFAULT_ASSISTANT_PROMPT }}
+          WEB3_AUTH_NETWORK: ${{ secrets.WEB3_AUTH_NETWORK }}
+          WEB3_AUTH_CLIENT_ID: ${{ secrets.WEB3_AUTH_CLIENT_ID }}
+          RPC_URL: ${{ secrets.RPC_URL }}
+          BUNDLER_URL: ${{ secrets.BUNDLER_URL }}
+          PAYMASTER_URL: ${{ secrets.PAYMASTER_URL }}
+          METAMASK_STORAGE_ID: ${{ secrets.METAMASK_STORAGE_ID }}
+          METAMASK_STORAGE_KEY: ${{ secrets.METAMASK_STORAGE_KEY }}
+          ALCHEMY_RPC_URL: ${{ secrets.ALCHEMY_RPC_URL }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+          
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
+
       - name: Get Id Token
         uses: actions/github-script@v6
         id: idtoken
@@ -45,19 +62,17 @@ jobs:
                const coredemo = require('@actions/core')
                return await coredemo.getIDToken()
            result-encoding: string
-      - name: Build And Deploy
+
+      - name: Build and Deploy to Azure Static Web Apps
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_POLITE_TREE_0614C221E }}
+          azure_static_web_apps_api_token: ${{ AZURE_STATIC_WEB_APPS_API_TOKEN_POLITE_TREE_0614C221E }}  # Use GitHub secret
           action: "upload"
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "/" # App source code path
-          api_location: "" # Api source code path - optional
-          output_location: "dist" # Built app content directory - optional
+          app_location: "/"                  # App source code path
+          api_location: ""                   # No API code in this repo
+          output_location: "dist"            # Built app content directory
           github_id_token: ${{ steps.idtoken.outputs.result }}
-          ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
