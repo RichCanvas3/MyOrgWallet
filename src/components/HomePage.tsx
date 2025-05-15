@@ -43,7 +43,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
         if (loginResp) {
           await connect(loginResp.owner, loginResp.signatory, "", "", "")
         }
-        
+
       }
 
       //if (walletAuthRef.current) {
@@ -58,7 +58,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
     try {
       navigate("/welcome")
     } catch (error) {
-      
+
     }
   };
   const handleOrg = async () => {
@@ -86,15 +86,19 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
       {/* Top Right Sign In */}
       <Box
         sx={{
-          top: '96px',      // increased spacing (~1 inch)
-          right: '96px',    // increased spacing (~1 inch)
+          backgroundColor: '#ffffff',
+          padding: '20px',
+          boxShadow: 3,
+          borderRadius: 2,
+          top: '50px',      // increased spacing (~1 inch)
+          right: '50px',    // increased spacing (~1 inch)
           position: 'absolute',
           display: 'flex',
           flexDirection: 'column',
           gap: 1,
         }}
       >
-        <Typography variant="subtitle1" color="text.secondary">
+        <Typography variant="h6" color="text.primary">
           Sign in:
         </Typography>
         <Button variant="contained" size="small" onClick={handleConnect}>
@@ -128,7 +132,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
             Wallet
           </Typography>
           <Button variant="contained" size="medium" onClick={handleWelcome}>
-            Let's Get Started
+            Get Started
           </Button>
         </Box>
 
@@ -146,14 +150,14 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
             Organizations & Leaders
           </Typography>
           <Button variant="outlined" size="medium" onClick={handleOrg}>
-             Explorer
+             Explore
           </Button>
         </Box>
 
       </Card>
     </Box>
 
-    
+
   );
 };
 

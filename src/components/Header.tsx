@@ -1,7 +1,7 @@
 import React, {useContext, useEffect, useRef, useState} from 'react';
 import { AppBar, Toolbar, IconButton, Menu, MenuItem, Typography, Box, Button } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-import myOrgWalletLogo from "/icon.png"; 
+import myOrgWalletLogo from "/icon.png";
 import { useDisconnect } from 'wagmi';
 import UserSettingsModal from './UserSettingsModal';
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -41,7 +41,7 @@ const Header: React.FC<HeaderProps> = ({className}) => {
   const { orgName, indivName } = useWallectConnectContext();
 
     const navigate = useNavigate();
-  
+
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -63,11 +63,11 @@ const Header: React.FC<HeaderProps> = ({className}) => {
   const openSettingsDialog = () => {
     setSettingsModalVisible(true);
   }
-  
+
   const handleOnSettingsModalClose = () => {
     setSettingsModalVisible(false);
   }
-  
+
 
   return (
     <AppBar position="static" className={`app-bar ${className}`}>
@@ -75,12 +75,16 @@ const Header: React.FC<HeaderProps> = ({className}) => {
     isVisible={isSettingsModalVisible}
     onClose={handleOnSettingsModalClose}
   />
-  <Toolbar className="toolbar">
+  <Toolbar className="toolbar" sx={{
+    backgroundColor: '#2563EB'
+  }}>
     <div className="logo-container">
       <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-        <img src={myOrgWalletLogo} alt="myOrgWallet Logo" className="logo" />
-        <Typography variant="h6" className="title">
-          myOrgWallet
+        {/*<img src={myOrgWalletLogo} alt="myOrgWallet Logo" className="logo" />*/}
+        <Typography variant="h6" className="title" sx={{
+          fontWeight: 'bold'
+        }}>
+          MyOrgWallet
         </Typography>
       </Link>
     </div>
