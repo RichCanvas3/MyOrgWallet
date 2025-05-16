@@ -155,3 +155,9 @@ A cicuit, like the one above, is a specialized piece of code that outputs *somet
 It looks a lot like how the hashed seed code might have looked in the python program! However, it is actually a set of mathematical objects. It's also quite small for something of it's cryptographical strength. This proof will be used along with the verification key mentioned earlier to verify whatever original statement was inputted into the circuit to get the proof. 
 
 When the proof is verified, if everything is intact and the statment is correct (it must be correct for the program to have got this far, since it would have been stopped at the generation step), then the verifier will be convinced of whatever the prover is proving as it will come back as True. 
+
+Here's a good diagram from https://zkintro.com/articles/programming-zkps-from-zero-to-hero#third-iteration, an amazing introduction to ZPK's which we reccomend if you are interested in a much more thorough explanation on the topic!
+
+![02_example1_verify_proof](https://github.com/user-attachments/assets/a4337880-0929-4060-90a1-8cd1c23e6b38)
+
+
