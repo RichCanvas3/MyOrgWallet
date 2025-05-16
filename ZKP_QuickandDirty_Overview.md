@@ -19,7 +19,7 @@ A ZKP must statify three core properties:
 ### Lets look at some brief code!
 So the big question on your mind now is probably: How? Well, it requires an insane amount of calculation to classically preform a zero knowledge proof, but code wise it can be fairly easy to understand with simplified python examples of course. 
 
-In any case, here's a simple python script which simulats an entire ZK age-verifcation transactio using a hash-chain method: 
+In any case, here's a simple python script which simulats an entire ZK age-verifcation transaction using a hash-chain method: 
 ```sh
 import hashlib;
 import sys;
