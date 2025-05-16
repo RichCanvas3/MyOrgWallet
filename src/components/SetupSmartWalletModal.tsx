@@ -110,7 +110,7 @@ const SetupSmartWalletModal: React.FC = () => {
       await sleep(13000);
       console.info("end sleep")
       handleToast('Permissions granted', 'success');
-      
+
       navigate('/chat/')
     } catch (err: any) {
       handleToast(err.message || 'Permission denied', 'error');
@@ -124,20 +124,21 @@ const SetupSmartWalletModal: React.FC = () => {
   // Decide current action
   const stepAction = [
     { label: 'Connect EOA Wallet - USE OP Mainnet', description: `
-      No wallet funds required to get started <br/><br/>Connet to your local Externally Owned Account - EOA (ie. MetaMask).  <br/><br/>
-      This local wallet account will be the owner or your newly created Personal Smart Wallet and Organization Smart Wallet`
+      No wallet funds are required to get started. <br/><br/>
+      Connect to your local Externally Owned Account (EOA) (ie. MetaMask). <br/><br/>
+      This local wallet account will be the owner of your newly created Personal Smart Wallet and Organization Smart Wallet.`
       , onClick: handleWalletConnect },
     { label: 'Build Smart Wallet', description: `
         <ul style="list-style-type: disc; margin-left: 1.5em; padding-left: 0;">
-          <li>Build your Personal Smart Wallet, deploy it to the blockchain</li>
-          <li>Build your Organizations Smart Wallet, deploy it to the blockchain</li>
-          <li>Setup permissions between Personal Smart Wallet and Organizations Smart Wallet</li>
+          <li>Build your Personal Smart Wallet and deploy it to the blockchain.</li>
+          <li>Build your Organizations Smart Wallet and deploy it to the blockchain.</li>
+          <li>Setup permissions between Personal your Smart Wallet and Organizations Smart Wallet.</li>
         </ul>`
       , onClick: handleBuildWallet },
     { label: 'Grant Attestation Permissions', description: `
         <ul style="list-style-type: disc; margin-left: 1.5em; padding-left: 0;">
-          <li>Grant Personal Smart Wallet permission to manage Personal Attestations</li>
-          <li>Grant Organization Smart Wallet permission to manage Organization Attestations</li>
+          <li>Grant Personal Smart Wallet permission to manage Personal Attestations.</li>
+          <li>Grant Organization Smart Wallet permission to manage Organization Attestations.</li>
         </ul>`, onClick: handlePermissions },
   ][currentStep - 1];
   return (
@@ -190,7 +191,7 @@ const SetupSmartWalletModal: React.FC = () => {
                     >
                       {step.title}
                     </Typography>
-                    
+
                   </Box>
                   {/* connector */}
                   {idx < steps.length - 1 && (

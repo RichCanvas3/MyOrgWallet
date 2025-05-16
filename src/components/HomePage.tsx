@@ -147,7 +147,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
             Connect to your externally owned account (EOA).
           </Typography>
 
-          <Button variant="contained" size="large" onClick={handleConnect}>
+          <Button variant="contained" size="large" onClick={handleConnect} sx={{backgroundColor: '#48ba2f'}}>
             Connect Wallet
           </Button>
         </Box>

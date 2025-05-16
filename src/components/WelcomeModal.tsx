@@ -73,7 +73,7 @@ const WelcomeModal: React.FC = () => {
       return false;
     }
   };
-  
+
   const handleNextStep = async () => {
 
     function getDomainFromEmail(email: string): string | null {
@@ -124,7 +124,7 @@ const WelcomeModal: React.FC = () => {
             setOrganizationName((orgAttestation as OrgAttestation).name)
             setOrgNameValue((orgAttestation as OrgAttestation).name)
 
-            
+
             const orgDidValue = (orgAttestation as OrgAttestation).attester
 
             console.info("set org did value: ", orgDidValue)
@@ -132,7 +132,7 @@ const WelcomeModal: React.FC = () => {
           }
         }
       }
-      
+
       setCurrentStep(3);
       return;
     }
@@ -151,7 +151,7 @@ const WelcomeModal: React.FC = () => {
       })
 
       setTimeout(() => {
-        
+
         setIsSubmitting(false);
         handleToast('Setup complete! Redirecting...', 'success');
 
@@ -173,11 +173,12 @@ const WelcomeModal: React.FC = () => {
 
   return (
     <Box sx={{ minHeight: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2, bgcolor: 'background.default' }}>
-      <Card sx={{ maxWidth: 600, width: '100%', p: 3, boxShadow: 3, borderRadius: 2 }}>
+      <Card sx={{ position: 'absolute', top: '150px', maxWidth: 600, width: '100%', p: 3, boxShadow: 3, borderRadius: 2 }}>
         <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <Box sx={{ textAlign: 'center' }}>
-            <Typography variant="h3">Welcome</Typography>
-            <Typography variant="body2" sx={{ mt: 1 }}>Complete these steps to verify org</Typography>
+            <Typography variant="h3" sx={{marginBottom: '30px'}}>Welcome</Typography>
+            <Typography variant="body2" sx={{ mt: 1 }}>Complete these steps to verify your organization and create your smart wallets.</Typography>
+            <Typography variant="body2" sx={{ mt: 1 }}>Before beginning, make sure you have an externally owned account (EOA) wallet.</Typography>
           </Box>
 
           {/* Stepper */}
