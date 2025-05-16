@@ -61,7 +61,7 @@ else:
 ```
 Lets go through this step by step!
 
-1. An actual age is known by the prover and a required age is given to the prover in these lines (note: neither know the seed value):
+1. An actual age is known by the prover and a required age is given to the prover in these lines (note: neither the prover nor the verifier know the seed value):
 ```sh
 age_actual=25
 age_to_prove=18
