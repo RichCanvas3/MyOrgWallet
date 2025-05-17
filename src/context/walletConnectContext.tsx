@@ -988,6 +988,14 @@ export const useWalletConnect = () => {
 
       if (owner && signatory) {
 
+          // setup veramo agent and masca api
+          const veramoAgent = await setupVeramoAgent()
+          setVeramoAgent(veramoAgent)
+
+          console.info("setup snap")
+          const mascaApi = await setupSnap(owner)
+
+
         console.info("owner and signatory are defined")
 
         const publicClient = createPublicClient({
@@ -1054,7 +1062,9 @@ export const useWalletConnect = () => {
           }
 
           // add new org attestation
-          const addOrgAttestation = async () => {
+          const addOrgAttestation = async (mascaApi: any) => {
+
+            console.info("*********** ADD ORG ATTESTATION ****************")
 
             const provider = new ethers.BrowserProvider(window.ethereum);
             await window.ethereum.request({ method: "eth_requestAccounts" });
@@ -1064,8 +1074,10 @@ export const useWalletConnect = () => {
             const entityId = "org"
         
 
-            if (walletSigner && walletClient && mascaApi && privateIssuerAccount && orgName && orgDid && orgIssuerDel) {
+            console.info("fields: ", orgName, orgDid, privateIssuerDid, orgIssuerDel, indivDid, mascaApi, walletSigner, walletClient)
+            if (walletSigner && walletClient && mascaApi && privateIssuerAccount && orgName && orgDid && orgIssuerDel && mascaApi) {
         
+              console.info("create credential for org attestation")
               const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, privateIssuerDid, orgName);
               const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, issuerAccountClient, veramoAgent)
               const fullVc = result.vc
@@ -1110,7 +1122,9 @@ export const useWalletConnect = () => {
             const walletClient = signatory.walletClient
             const entityId = "domain"
         
-            if (walletSigner && walletClient && orgName && orgDid && orgIssuerDel && indivEmail) {
+            if (walletSigner && walletClient && orgName && orgDid && orgIssuerDel && indivEmail && mascaApi) {
+
+              console.info("*********** ADD DOMAIN ATTESTATION ****************")
 
               const entityId = "domain"
               const domainName = getDomainFromEmail(indivEmail)
@@ -1161,15 +1175,15 @@ export const useWalletConnect = () => {
             const orgAttestation = await AttestationService.getAttestationByAddressAndSchemaId(orgDid, AttestationService.OrgSchemaUID, "org")
             if (!orgAttestation) {
               console.info("=============> no org attestation so add one")
-              addOrgAttestation()
+              await addOrgAttestation(mascaApi)
             }
           }
 
 
           // add new org indiv attestation
-          const addIndivOrgAttestation = async () => {
+          const addIndivOrgAttestation = async (mascaApi: any) => {
 
-            console.info("*********** ADD INDIV ATTESTATION ****************")
+            
 
             const provider = new ethers.BrowserProvider(window.ethereum);
             await window.ethereum.request({ method: "eth_requestAccounts" });
@@ -1178,7 +1192,9 @@ export const useWalletConnect = () => {
             const walletClient = signatory.walletClient
             const entityId = "indiv-org"
         
-            if (walletSigner && walletClient && privateIssuerAccount && indivDid && orgDid && orgIssuerDel) {
+            if (mascaApi && walletSigner && walletClient && privateIssuerAccount && indivDid && orgDid && orgIssuerDel) {
+
+              console.info("*********** ADD INDIV ATTESTATION ****************")
 
               let indName = "indiv name"
               if (indivName) {
@@ -1231,7 +1247,7 @@ export const useWalletConnect = () => {
             if (!indivOrgAttestation) {
               console.info("=============> no indiv attestation so add one")
               addDomainAttestation()
-              addIndivOrgAttestation()
+              await addIndivOrgAttestation(mascaApi)
             }
           }
           
@@ -1271,15 +1287,10 @@ export const useWalletConnect = () => {
           setIndivIssuerDelegation(indivIssuerDel)
 
 
-          // setup veramo agent and masca api
-          const veramoAgent = await setupVeramoAgent()
-          setVeramoAgent(veramoAgent)
 
-          console.info("setup snap")
-          const mascaApi = await setupSnap(owner)
 
           // add indiv  attestation
-          const addIndivAttestation = async () => {
+          const addIndivAttestation = async (mascaApi: any) => {
 
             console.info("*********** ADD INDIV ATTESTATION ****************")
             const provider = new ethers.BrowserProvider(window.ethereum);
@@ -1289,7 +1300,7 @@ export const useWalletConnect = () => {
             const walletClient = signatory.walletClient
             const entityId = "indiv"
         
-            if (walletSigner && walletClient && privateIssuerAccount && indivDid && orgDid) {
+            if (walletSigner && walletClient && privateIssuerAccount && indivDid && orgDid && mascaApi) {
 
               let indName = "name";
               if (indivName) {
@@ -1325,7 +1336,7 @@ export const useWalletConnect = () => {
           }
           
           // add indiv email attestation
-          const addIndivEmailAttestation = async () => {
+          const addIndivEmailAttestation = async (mascaApi: any) => {
 
             console.info("*********** ADD INDIV EMAIL ATTESTATION ****************")
             const provider = new ethers.BrowserProvider(window.ethereum);
@@ -1335,7 +1346,7 @@ export const useWalletConnect = () => {
             const walletClient = signatory.walletClient
             const entityId = "indiv-email"
         
-            if (walletSigner && walletClient && privateIssuerAccount && indivDid) {
+            if (walletSigner && walletClient && privateIssuerAccount && indivDid && mascaApi) {
 
               let indEmail = "email";
               if (indivEmail) {
@@ -1380,12 +1391,12 @@ export const useWalletConnect = () => {
           if (indivDid && orgDid && indivIssuerDel) {
             const indivAttestation = await AttestationService.getAttestationByAddressAndSchemaId(indivDid, AttestationService.IndivSchemaUID, "indiv")
             if (!indivAttestation) {
-              addIndivAttestation()
+              addIndivAttestation(mascaApi)
             }
 
             const indivEmailAttestation = await AttestationService.getAttestationByAddressAndSchemaId(indivDid, AttestationService.IndivEmailSchemaUID, "indiv-email")
             if (!indivEmailAttestation) {
-              addIndivEmailAttestation()
+              addIndivEmailAttestation(mascaApi)
             }
           }
         }
