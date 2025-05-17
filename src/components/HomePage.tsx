@@ -43,7 +43,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
         if (loginResp) {
           await connect(loginResp.owner, loginResp.signatory, "", "", "")
         }
-        
+
       }
 
       //if (walletAuthRef.current) {
@@ -58,7 +58,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
     try {
       navigate("/welcome")
     } catch (error) {
-      
+
     }
   };
   const handleOrg = async () => {
@@ -83,37 +83,51 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
         p: 2,
       }}
     >
+
       {/* Top Right Sign In */}
       <Box
         sx={{
-          top: '96px',      // increased spacing (~1 inch)
-          right: '96px',    // increased spacing (~1 inch)
+          bgcolor: 'background.default',
+          padding: '20px',
+          boxShadow: 3,
+          borderRadius: 2,
+          top: '130px',      // increased spacing (~1 inch)
+          right: 'center',    // increased spacing (~1 inch)
           position: 'absolute',
           display: 'flex',
           flexDirection: 'column',
-          gap: 1,
+          gap: 3,
+          justifyContent: 'center',
+          alignItems: 'center',
         }}
       >
-        <Typography variant="subtitle1" color="text.secondary">
-          Sign in:
+
+        <Typography variant="h6" color="text.primary" sx={{ fontWeight: 'bold' }}>
+          Wallet
         </Typography>
-        <Button variant="contained" size="small" onClick={handleConnect}>
-          Connect Wallet
+
+        <Typography variant="subtitle2" color="var(--dark-gray-7)">
+          Create your individual and organizational smart wallets.
+        </Typography>
+
+        <Button variant="contained" size="large" onClick={handleWelcome}>
+          Get Started
         </Button>
       </Box>
 
       <Card
         sx={{
-          maxWidth: 800,
+          maxWidth: 700,
           width: '100%',
           p: 3,
           boxShadow: 3,
           borderRadius: 2,
           display: 'flex',
-          gap: 4,
+          gap: 3,
           justifyContent: 'center',
         }}
       >
+
         {/* Wallet Card */}
         <Box
           sx={{
@@ -124,11 +138,17 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
             gap: 2,
           }}
         >
-          <Typography variant="h6" color="text.primary">
-            Wallet
+
+          <Typography variant="h6" color="text.primary" sx={{ fontWeight: 'bold' }}>
+            Log In
           </Typography>
-          <Button variant="contained" size="medium" onClick={handleWelcome}>
-            Let's Get Started
+
+          <Typography variant="subtitle2" color="var(--dark-gray-7)">
+            Connect to your externally owned account (EOA).
+          </Typography>
+
+          <Button variant="contained" size="large" onClick={handleConnect} sx={{backgroundColor: '#48ba2f'}}>
+            Connect Wallet
           </Button>
         </Box>
 
@@ -142,18 +162,23 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
             gap: 2,
           }}
         >
-          <Typography variant="h6" color="text.primary">
+          <Typography variant="h6" color="text.primary" sx={{ fontWeight: 'bold' }}>
             Organizations & Leaders
           </Typography>
-          <Button variant="outlined" size="medium" onClick={handleOrg}>
-             Explorer
+
+         <Typography variant="subtitle2" color="var(--dark-gray-7)">
+            View smart wallets on the chain.
+          </Typography>
+
+          <Button variant="outlined" size="large" onClick={handleOrg}>
+             View All
           </Button>
         </Box>
 
       </Card>
     </Box>
 
-    
+
   );
 };
 
