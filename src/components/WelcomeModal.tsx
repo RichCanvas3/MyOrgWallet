@@ -115,6 +115,8 @@ const WelcomeModal: React.FC = () => {
       const domain = getDomainFromEmail(email)
       if (domain) {
         console.info("domain: ", domain)
+        setOrgNameValue("")
+        setOrgDidValue("")
         const registeredDomainAttestation = await AttestationService.getRegisteredDomainAttestation(domain, AttestationService.RegisteredDomainSchemaUID, "domain")
         if (registeredDomainAttestation) {
           console.info("registered domain: ", registeredDomainAttestation)

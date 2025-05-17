@@ -70,40 +70,6 @@ export class ChatService {
   }
 
 
-  /*
-  static async sendMessage(messages: ChatMessage[], modelId: string): Promise<ChatCompletion> {
-    let endpoint = CHAT_COMPLETIONS_ENDPOINT;
-    let headers = {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${OPENAI_API_KEY}`
-    };
-
-    const mappedMessages = await ChatService.mapChatMessagesToCompletionMessages(modelId,messages);
-
-    console.info(" >>>>>>>>>>>>  send message: ", mappedMessages)
-    const requestBody: ChatCompletionRequest = {
-      model: modelId,
-      messages: mappedMessages,
-      //max_tokens: 400,
-      //temperature: 0.7
-    };
-
-    console.info("send openai message")
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: headers,
-      body: JSON.stringify(requestBody),
-    });
-    console.info("done sending openai message")
-
-    if (!response.ok) {
-      const err = await response.json();
-      throw new CustomError(err.error.message, err);
-    }
-
-    return await response.json();
-  }
-  */
 
   private static lastCallbackTime: number = 0;
   private static callDeferred: number | null = null;
@@ -182,7 +148,7 @@ export class ChatService {
     const mappedMessages = await ChatService.mapChatMessagesToCompletionMessages(requestBody.model,messages);
     requestBody.messages = mappedMessages;
 
-    //console.info(">>>>>>> calling openai with messages: ", mappedMessages)
+    console.info(">>>>>>> calling openai with messages: ", mappedMessages)
 
     let response: Response;
     try {
@@ -192,6 +158,7 @@ export class ChatService {
         body: JSON.stringify(requestBody),
         signal: this.abortController.signal
       });
+      console.info("open ai response: ", response)
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         NotificationService.handleUnexpectedError(error, 'Stream reading was aborted.');

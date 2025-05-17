@@ -47,7 +47,8 @@ class VerifiableCredentialsService {
           type: websiteType,
           url: websiteUrl,
           verifiedMethod: "OAuth",
-          platform: "richcanvas-" + entityId
+          platform: "richcanvas",
+          provider: entityId
         }
       }
     
@@ -68,7 +69,8 @@ class VerifiableCredentialsService {
           id: orgDid,
           insuranceId: insuranceId,
           verifiedMethod: "OAuth",
-          platform: "richcanvas-insurance"
+          platform: "richcanvas",
+          provider: "insurance"
         }
       }
     
@@ -92,7 +94,8 @@ class VerifiableCredentialsService {
           socialId: socialId,
           socialUrl: socialUrl,
           verifiedMethod: "OAuth",
-          platform: "richcanvas-" + entityId
+          platform: "richcanvas",
+          provider: entityId
         }
       }
     
@@ -116,7 +119,8 @@ class VerifiableCredentialsService {
           domainName: domainname,
           createdOn: domaincreationdate,
           verifiedMethod: "OAuth",
-          platform: "richcanvas-" + entityId
+          platform: "richcanvas",
+          provider: entityId
         }
       }
     
@@ -140,7 +144,8 @@ class VerifiableCredentialsService {
           org: orgDid,
           name: indivName,
           verifiedMethod: "OAuth",
-          platform: "richcanvas-" + entityId
+          platform: "richcanvas",
+          provider: entityId
         }
       }
     
@@ -162,7 +167,8 @@ class VerifiableCredentialsService {
           id: orgDid,
           name: orgName,
           verifiedMethod: "OAuth",
-          platform: "richcanvas-" + entityId
+          platform: "richcanvas",
+          provider: entityId
         }
       }
     
@@ -193,7 +199,8 @@ class VerifiableCredentialsService {
           state: state,
           locationAddress: locationAddress,
           verifiedMethod: "State",
-          platform: "richcanvas-" + entityId
+          platform: "richcanvas",
+          provider: entityId
         }
       }
     
@@ -217,7 +224,8 @@ class VerifiableCredentialsService {
           type: emailType,
           email: email,
           verifiedMethod: "oAuth",
-          platform: "richcanvas-" + entityId
+          platform: "richcanvas",
+          provider: entityId
         }
       }
     
@@ -242,7 +250,8 @@ class VerifiableCredentialsService {
           type: emailType,
           email: email,
           verifiedMethod: "oAuth",
-          platform: "richcanvas-" + entityId
+          platform: "richcanvas",
+          provider: entityId
         }
       }
     
@@ -268,86 +277,73 @@ class VerifiableCredentialsService {
           type: emailType,
           email: email,
           verifiedMethod: "oAuth",
-          platform: "richcanvas-" + entityId
+          platform: "richcanvas",
+          provider: entityId
         }
       }
     
       return vc;
     }
 
-    static async saveCredential(walletClient: WalletClient, credential: VerifiableCredential, entityId: string) {
+    static async saveCredential(mascaApi: any, credential: VerifiableCredential, entityId: string) {
         
-        const credentialJSON = JSON.stringify(credential);
-
-        localStorage.setItem(entityId, credentialJSON)
-
-        /*
-        const snapVC = { id: entityId, credential: credentialJSON}
-
-        walletClient.request({
-          method: 'wallet_invokeSnap',
-          params: {
-            snapId: VerifiableCredentialsService.snapId,
-            request: { method: "storeVC", params: { snapVC } }
+         const cred : W3CVerifiableCredential = {
+          ...credential,
+          proof: {
+            ...credential.proof,
+            //jwt: credential.proof.jwt,
           },
-        }).then((resp) => {
-          //console.info("save call successful, ", resp)
-        })
-          */
+        };
+        
+
+        // using masca snap storage
+        const result = await mascaApi?.saveCredential(cred)
+
+        const did = await mascaApi.getDID() 
+        const key = entityId + "-" + did.data
+
+        const credentialJSON = JSON.stringify(cred);
+        localStorage.setItem(key, credentialJSON)
+
 
     }
 
-    static async getCredential(walletClient: WalletClient, entityId: string): Promise<VerifiableCredential | undefined> {
+    static async getCredential(mascaApi: any, entityId: string): Promise<VerifiableCredential | undefined> {
 
-        let credential : VerifiableCredential | undefined
+      console.info(">>>>>>>>> get credential: ", entityId)
+      console.info(">>>>>>>>> mascaApi: ", mascaApi)
 
-        const credStr = localStorage.getItem(entityId)
+      const did = await mascaApi.getDID() 
+      const key = entityId + "-" + did.data
 
-        if (credStr) {
-          const credJson = JSON.parse(credStr)
-          credential = {
-              '@context': credJson['@context'],
-              id: credJson['id'],
-              type: credJson['type'],
-              issuer: credJson['issuer'],
-              issuanceDate: credJson['issuanceDate'],
-              expirationDate: credJson['expirationDate'],
-              credentialSubject: credJson['credentialSubject'],
-              proof: credJson['proof']
-          }
-        }
+      console.info("************** key 1: ", key)
+      const existingCredentialJSON = localStorage.getItem(key)
+      if (existingCredentialJSON) {
+        const existingCredential = JSON.parse(existingCredentialJSON)
+        console.info("found existing credential: ", existingCredential)
+        return existingCredential
+      }
 
-        /*
-        const response : any = await walletClient.request({
-            method: 'wallet_invokeSnap',
-            params: {
-                snapId: VerifiableCredentialsService.snapId,
-                request: { method: "getVC", params: {id: entityId}},
-            },
-        })
 
-        if (response?.id && response?.id == entityId) {
-            if (response?.credential) {
+      const vcs = await mascaApi.queryCredentials();
+      console.info("got vcs: ", vcs)
+      for (const vc of vcs.data) {
+        console.info("****************** vc: ", vc)
+        if (vc.data.credentialSubject?.provider?.toLowerCase() == entityId.toLowerCase()) {
 
-                const credStr = response?.credential
-                const credJson = JSON.parse(credStr)
+          const credentialJSON = JSON.stringify(vc.data);
+          localStorage.setItem(key, credentialJSON)
 
-                credential = {
-                    '@context': credJson['@context'],
-                    id: credJson['id'],
-                    type: credJson['type'],
-                    issuer: credJson['issuer'],
-                    issuanceDate: credJson['issuanceDate'],
-                    expirationDate: credJson['expirationDate'],
-                    credentialSubject: credJson['credentialSubject'],
-                    proof: credJson['proof']
-                }
 
-            }
-        }
-        */
+          console.info("************** key 2: ", key)
+          console.info("************** found credential: ", vc)
 
-        return credential
+          return vc.data
+        } 
+      }
+
+      console.info("************** no credential found")
+      return undefined
 
     }
 
@@ -355,7 +351,7 @@ class VerifiableCredentialsService {
       vc: VerifiableCredential,
       entityId: string,
       did: string, 
-      walletClient: WalletClient,
+      mascaApi: any,
       privateIssuerAccount: PrivateKeyAccount, 
       issuerAccountClient: any,
       veramoAgent: any): Promise<any | undefined> {
@@ -424,12 +420,9 @@ class VerifiableCredentialsService {
           }),
         })
 
-          console.info("get json ", proofResp)
-          const proofResults = await proofResp.json()
-          console.info(" get proof url: ", proofResults)
-          proof = proofResults.proofJson
 
-          console.info("proof done: ", proof)
+        const proofResults = await proofResp.json()
+        proof = proofResults.proofJson
 
 
         // lets add the commitment and commitment signature to credential and then sign it
@@ -456,9 +449,9 @@ class VerifiableCredentialsService {
 
 
           // save vc to metamask snap storage
-          if (walletClient) {
+          if (mascaApi) {
             console.info("save credential: ", veramoVC)
-            await VerifiableCredentialsService.saveCredential(walletClient, veramoVC, entityId)
+            await VerifiableCredentialsService.saveCredential(mascaApi, veramoVC, entityId)
           }
 
           

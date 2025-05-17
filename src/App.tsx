@@ -131,7 +131,18 @@ const App = () => {
   const [isXModalVisible, setXModalVisible] = useState(false);
   const [isAttestationViewModalVisible, setAttestationViewModalVisible] = useState(false);
   
-  const blacklisted = [{'did':'did:pkh:eip155:10:0x478df0535850b01cBE24AA2DAd295B2968d24B67'}]
+  const blacklisted = [
+    {'did': 'did:pkh:eip155:10:0x478df0535850b01cBE24AA2DAd295B2968d24B67'},
+    {'did': 'did:pkh:eip155:10:0x89AA108af44d340Be28034965c760Dd1Bb289189'},
+    {'did': 'did:pkh:eip155:10:0x64b10fC4001023f2Be205eD83b7bf05f1bC2716C'},
+    {'did': 'did:pkh:eip155:10:0xccEF79B6B5d5db30DaB7fd8759B4953c1923da12'},
+    {'did': 'did:pkh:eip155:10:0x89AA108af44d340Be28034965c760Dd1Bb289189'},
+    {'did': 'did:pkh:eip155:10:0x89AA108af44d340Be28034965c760Dd1Bb289189'},
+    {'did': 'did:pkh:eip155:10:0x89AA108af44d340Be28034965c760Dd1Bb289189'},
+    {'did': 'did:pkh:eip155:10:0x89AA108af44d340Be28034965c760Dd1Bb289189'},
+    {'did': 'did:pkh:eip155:10:0x89AA108af44d340Be28034965c760Dd1Bb289189'},
+    {'did': 'did:pkh:eip155:10:0x89AA108af44d340Be28034965c760Dd1Bb289189'}
+  ]
   AttestationService.saveBlacklist(blacklisted).then(() => {
     console.info("blacklist saved")
   })

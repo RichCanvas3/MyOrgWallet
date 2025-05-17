@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState, useRef, useMemo, useCal
 import { useAccount, useWalletClient } from "wagmi";
 import { useNavigate } from 'react-router-dom';
 
-import { encodeFunctionData, hashMessage, createPublicClient, createWalletClient, WalletClient, toHex, http, zeroAddress, publicActions, custom, verifyMessage  } from "viem";
+import { encodeFunctionData, hashMessage, createPublicClient, createWalletClient, WalletClient, toHex, http, zeroAddress, publicActions, custom, verifyMessage, signatureToCompactSignature  } from "viem";
 import { keccak256, toUtf8Bytes } from 'ethers';
 import { ethers, AbiCoder } from 'ethers';
 
@@ -21,7 +21,7 @@ import { getResolver as ethrDidResolver } from 'ethr-did-resolver';
 
 import { CredentialStatusPlugin } from '@veramo/credential-status';
 import { DIDResolverPlugin } from '@veramo/did-resolver';
-
+import { enableMasca} from '@blockchain-lab-um/masca-connector';
 
 import {
   KeyDIDProvider,
@@ -157,6 +157,8 @@ export type WalletConnectContextState = {
     isIndividualConnected: boolean
 
     veramoAgent?: any
+    mascaApi?: any
+
 }
 
 export const WalletConnectContext = createContext<WalletConnectContextState>({
@@ -185,6 +187,7 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
   isIndividualConnected: false,
 
   veramoAgent: undefined,
+  mascaApi: undefined,
 
 
 
@@ -211,7 +214,9 @@ export const useWalletConnect = () => {
     const [orgDid, setOrgDid] = useState<string>();
     const [indivDid, setIndivDid] = useState<string>();
     const [privateIssuerDid, setPrivateIssuerDid] = useState<string>();
+
     const [veramoAgent, setVeramoAgent] = useState<any>();
+    const [mascaApi, setMascaApi] = useState<any>();
 
     const [orgName, setOrgName] = useState<string>();
     const [indivName, setIndivName] = useState<string>();
@@ -367,6 +372,11 @@ export const useWalletConnect = () => {
     }
 
 
+    const snapId = process.env.USE_LOCAL === 'true'
+        ? 'local:http://localhost:8081'
+        : 'npm:@blockchain-lab-um/masca';
+    const snapVersion = '1.3.0'
+
     useEffect(() => {
 
         //console.info("........ if connection to wallet has changed then update info .........")
@@ -380,7 +390,30 @@ export const useWalletConnect = () => {
 
     }, [chain, isConnected, web3ModalAddress, connectedAddress]);
 
-    
+    const setupSnap = async (ownerAddress: string) : Promise<any|undefined> => {   
+
+      const provider = window.ethereum;
+      if (provider) {
+          await provider.request({
+            method: 'wallet_requestSnaps',
+            params: {
+              [snapId]: { version: snapVersion },
+            },
+        });
+      }
+
+      console.info("owner.address: ", ownerAddress)
+      const mascaRslt = await enableMasca(ownerAddress, {
+        snapId: snapId,
+        supportedMethods: ['did:ethr', 'did:key', 'did:pkh'], // Specify supported DID methods
+      });
+      console.info("mascaRslt: ", mascaRslt)
+      const api = await mascaRslt.data.getMascaApi();
+      setMascaApi(api)
+      
+      return api
+
+    }
 
 
     useEffect(() => {
@@ -411,6 +444,9 @@ export const useWalletConnect = () => {
 
             const veramoAgent = await setupVeramoAgent()
             setVeramoAgent(veramoAgent)
+
+            console.info("setup snap")
+            const mascaApi = await setupSnap(ownerEOAAddress)
 
             // connect to issuer account abstraction
             const issuerOwner = privateKeyToAccount(privateKey);
@@ -1027,10 +1063,11 @@ export const useWalletConnect = () => {
             const walletClient = signatory.walletClient
             const entityId = "org"
         
-            if (walletSigner && walletClient && privateIssuerAccount && orgName && orgDid && orgIssuerDel) {
+
+            if (walletSigner && walletClient && mascaApi && privateIssuerAccount && orgName && orgDid && orgIssuerDel) {
         
               const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, privateIssuerDid, orgName);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, issuerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
               if (fullVc) {
@@ -1090,7 +1127,7 @@ export const useWalletConnect = () => {
 
           
                 const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, privateIssuerDid, domainName, "");
-                const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient, veramoAgent)
+                const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, issuerAccountClient, veramoAgent)
                 const fullVc = result.vc
                 const proof = result.proof
                 if (fullVc) {
@@ -1150,7 +1187,7 @@ export const useWalletConnect = () => {
               
         
               const vc = await VerifiableCredentialsService.createIndivOrgVC(entityId, orgDid, privateIssuerDid, indivDid, indName);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, walletClient, privateIssuerAccount, issuerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, issuerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
 
@@ -1233,6 +1270,14 @@ export const useWalletConnect = () => {
 
           setIndivIssuerDelegation(indivIssuerDel)
 
+
+          // setup veramo agent and masca api
+          const veramoAgent = await setupVeramoAgent()
+          setVeramoAgent(veramoAgent)
+
+          console.info("setup snap")
+          const mascaApi = await setupSnap(owner)
+
           // add indiv  attestation
           const addIndivAttestation = async () => {
 
@@ -1252,7 +1297,7 @@ export const useWalletConnect = () => {
               }
         
               const vc = await VerifiableCredentialsService.createIndivVC(entityId, indivDid, privateIssuerDid, orgDid, indName);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, privateIssuerAccount, issuerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, mascaApi, privateIssuerAccount, issuerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
 
@@ -1298,7 +1343,7 @@ export const useWalletConnect = () => {
               }
         
               const vc = await VerifiableCredentialsService.createIndivEmailVC(entityId, indivDid, privateIssuerDid, "business", indEmail);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, walletClient, privateIssuerAccount, issuerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, mascaApi, privateIssuerAccount, issuerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
 
@@ -1377,6 +1422,7 @@ export const useWalletConnect = () => {
             privateIssuerAccount,
 
             veramoAgent,
+            mascaApi,
             
             orgIndivDelegation,
             orgIssuerDelegation,
@@ -1429,6 +1475,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
       privateIssuerAccount,
 
       veramoAgent,
+      mascaApi,
       
       setOrgNameValue,
       setOrgDidValue
@@ -1462,6 +1509,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         privateIssuerDid,
 
         veramoAgent,
+        mascaApi,
 
         connect,
         setIndivAndOrgInfo,
@@ -1495,6 +1543,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         privateIssuerAccount,
 
         veramoAgent,
+        mascaApi,
 
         connect,
         setIndivAndOrgInfo,

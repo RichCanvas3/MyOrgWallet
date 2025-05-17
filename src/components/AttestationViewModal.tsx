@@ -19,6 +19,8 @@ import ZkProofService from "../service/ZkProofService"
 import { useWalletClient, useAccount, useConnect, useEnsName, useEnsAvatar, useDisconnect } from 'wagmi';
 import { getCachedResponse, putCachedResponse, putCachedValue } from "../service/CachedService"
 
+import { useWallectConnectContext } from "../context/walletConnectContext";
+
 interface AttestationViewModalProps {
   did: string;
   entityId: string;
@@ -48,9 +50,12 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
   const [ orgEthAvatar, setOrgEthAvatar] = useState<string>("");
 
   const [activeTab, setActiveTab] = useState<'info' | 'vc' | 'vc-raw' | 'zk' | 'rzk' | 'at'>('vc');
-
+  const { veramoAgent, mascaApi } = useWallectConnectContext();
+  
 
   const handleClose = () => {
+    console.info("close attestation modal")
+
     onClose();
   };
   
@@ -194,6 +199,12 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
 
   useEffect(() => {
 
+    console.info(" >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  is visible       ")
+    setAttestation(undefined);
+    setCredential(undefined); 
+    setVcZkProof(undefined);
+    setVcRevokeZkProof(undefined);
+
     if (isVisible) {
       if (did) {
 
@@ -272,11 +283,12 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                 }
                 */
 
-                if (walletClient) {
+                if (mascaApi) {
                   setHasInfo(true)
 
                   setHasCredential(false)
-                  VerifiableCredentialsService.getCredential(walletClient, att.entityId).then((cred) => {
+                  setCredential(undefined)
+                  VerifiableCredentialsService.getCredential(mascaApi, att.entityId).then((cred) => {
                     if (cred) {
                       setHasCredential(true)
                       console.info(",,,,,,,,,, credential: ", cred)
@@ -510,12 +522,9 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                 )}
                 {hasCredential === true && (
                   <div>
-                    {credential?.id && (
-                      <p className="panel-text">ID: {credential.id}</p>
-                    )}
                     <div className="panel-details">
                       <p>
-                        <strong>Type:</strong> {credential?.type.join(', ')}
+                        <strong>Type:</strong> {credential?.type?.join(', ')}
                       </p>
                       <p>
                         <strong>Issuer:</strong>{' '}

@@ -10,6 +10,7 @@
     "@apollo/client": "^3.13.5",
     "@biconomy/account": "^4.5.7",
     "@blockchain-lab-um/did-provider-key": "^1.1.0",
+    "@blockchain-lab-um/masca-connector": "^1.4.0",
     "@blockchain-lab-um/veramo-datamanager": "^1.1.0",
     "@ceramicnetwork/http-client": "^6.4.0",
     "@composedb/client": "^0.7.1",
