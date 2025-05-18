@@ -2239,7 +2239,7 @@ class AttestationService {
     return rtnAttestation;
   }
 
-  static async getRegisteredDomainAttestation(domain: string, schemaId: string, entityId: string): Promise<Attestation | undefined> {
+  static async getRegisteredDomainAttestations(domain: string, schemaId: string, entityId: string): Promise<Attestation[] | undefined> {
 
     //console.info("get attestation by address and schemaId and entityId: ", address, schemaId, entityId)
     let rtnAttestation : Attestation | undefined
@@ -2264,6 +2264,7 @@ class AttestationService {
     //console.info(">>>>>>>>>>>>>>>>>>> data: ", data)
 
     // cycle through aes attestations and update entity with attestation info
+    let rtnAttestations : Attestation[] = []
     for (const item of data.attestations) {
       if (schemaId == this.RegisteredDomainSchemaUID) {
         const schemaEncoder = new SchemaEncoder(this.RegisteredDomainSchema);
@@ -2272,15 +2273,14 @@ class AttestationService {
           const orgAddress = item.attester
           const att = this.constructRegisteredDomainAttestation(item.id, item.schemaId, entityId, orgAddress, "", decodedData)
           if ((att as RegisteredDomainAttestation).domain.toLowerCase() == domain.toLowerCase()) {
-            rtnAttestation = att
-            break
+            rtnAttestations.push(att as RegisteredDomainAttestation)
           }
         }
       }
       
     }
 
-    return rtnAttestation;
+    return rtnAttestations;
 }
   
 static async getIndivsNotApprovedAttestations(orgDid: string): Promise<IndivAttestation[] | undefined> {

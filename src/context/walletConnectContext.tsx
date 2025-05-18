@@ -78,6 +78,7 @@ import {
   toMetaMaskSmartAccount,
   type MetaMaskSmartAccount,
   type DelegationStruct,
+  type ToMetaMaskSmartAccountReturnType,
   createDelegation,
   DelegationFramework,
   SINGLE_DEFAULT_MODE,
@@ -153,8 +154,12 @@ export type WalletConnectContextState = {
     
     setOrgNameValue: (orgNameValue: string) => Promise<void>,
     setOrgDidValue: (orgDidValue: string) => Promise<void>,
-    
+
+    checkIfDIDBlacklisted: (did: string) => Promise<boolean>, 
+
     isIndividualConnected: boolean
+
+    
 
     veramoAgent?: any
     mascaApi?: any
@@ -205,6 +210,7 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
   },
   setOrgNameValue: async (orgNameValue: string) => {},
   setOrgDidValue: async (orgDidValue: string) => {},
+  checkIfDIDBlacklisted: async (did: string) : Promise<boolean> => { return false},
 })
 
 
@@ -236,7 +242,31 @@ export const useWalletConnect = () => {
     const [orgIssuerDelegation, setOrgIssuerDelegation] = useState<Delegation | undefined>();
     const [indivIssuerDelegation, setIndivIssuerDelegation] = useState<Delegation | undefined>();
 
+    const blacklisted =  [
+      {'did': 'did:pkh:eip155:10:0x478df0535850b01cBE24AA2DAd295B2968d24B67'},
+      {'did': 'did:pkh:eip155:10:0x89AA108af44d340Be28034965c760Dd1Bb289189'},
+      {'did': 'did:pkh:eip155:10:0x64b10fC4001023f2Be205eD83b7bf05f1bC2716C'},
+      {'did': 'did:pkh:eip155:10:0xccEF79B6B5d5db30DaB7fd8759B4953c1923da12'},
+      {'did': 'did:pkh:eip155:10:0x97D9d517A2948ae4eF9076b01492c7981e787B81'},
+      {'did': 'did:pkh:eip155:10:0xb201929847147A25B5701F6f2c4058f3d3836c57'},
+      {'did': 'did:pkh:eip155:10:0xd07ad34308111AC10EC883326A7DB9e77b4Da5A9'},
+      {'did': 'did:pkh:eip155:10:0x547329A545144379D1DA8aB6D61003b63AB2dcb2'}
+    ]
 
+    function isBlacklisted(did: string) : boolean {
+
+      for (const item of blacklisted) {
+        if (item.did == did) {
+          return true
+        }
+      }
+
+      return false
+    }
+
+    const checkIfDIDBlacklisted = async (did: string) : Promise<boolean> => {
+      return isBlacklisted(did)
+    }
 
     const {selectedSignatory, setSelectedSignatoryName, selectedSignatoryName } =
       useSelectedSignatory({
@@ -464,6 +494,13 @@ export const useWalletConnect = () => {
 
 
             // connect to individual account abstraction
+            let indivAccountClient = await findValidIndivAccount(owner, signatory, publicClient)
+            if (indivAccountClient == undefined) {
+              console.info("*********** indivAccountClient is not valid")
+              return
+            }
+
+            /*
             let indivAccountClient : any | undefined = await toMetaMaskSmartAccount({
               client: publicClient,
               implementation: Implementation.Hybrid,
@@ -471,6 +508,7 @@ export const useWalletConnect = () => {
               signatory: signatory,
               deploySalt: toHex(11),
             });
+            */
 
             let indivAddress = await indivAccountClient.getAddress()
             let indivDid : string | undefined = 'did:pkh:eip155:10:' + indivAccountClient.address
@@ -742,6 +780,84 @@ export const useWalletConnect = () => {
       setIndivName(indivName)
       setIndivEmail(indivEmail)
     }
+
+    const findValidIndivAccount = async(owner: any, signatory: any, publicClient: any) : Promise<ToMetaMaskSmartAccountReturnType<Implementation.Hybrid> | undefined> => {
+      const startSeed = 100
+      const tryCount = 30
+
+      if (owner == undefined) {
+        console.info("*********** owner is not defined")  
+        return undefined
+      }
+
+            if (signatory == undefined) {
+        console.info("*********** signatory is not defined")  
+        return undefined
+      }
+
+      for (let i = 0; i < tryCount; i++) {
+
+        // build individuals AA for EOA Connected Wallet
+        const indivAccountClient = await toMetaMaskSmartAccount({
+          client: publicClient,
+          implementation: Implementation.Hybrid,
+          deployParams: [owner, [], [], []],
+          signatory: signatory,
+          deploySalt: toHex(startSeed),
+        });
+
+        const indivAddress = await indivAccountClient.getAddress()
+
+        if (isBlacklisted(indivAddress) == false) {
+          console.info("valid indivAccountClient at address: ", indivAddress)
+          return indivAccountClient
+        } 
+      }
+      return undefined
+    }
+
+
+    const findValidOrgAccount = async(owner: any, signatory: any, publicClient: any) : Promise<ToMetaMaskSmartAccountReturnType<Implementation.Hybrid> | undefined> => {
+      const startSeed = 10000
+      const tryCount = 30
+
+      for (let i = 0; i < tryCount; i++) {
+
+        // build individuals AA for EOA Connected Wallet
+        const indivAccountClient = await toMetaMaskSmartAccount({
+          client: publicClient,
+          implementation: Implementation.Hybrid,
+          deployParams: [owner, [], [], []],
+          signatory: signatory,
+          deploySalt: toHex(startSeed),
+        });
+
+        const indivAddress = await indivAccountClient.getAddress()
+
+        if (isBlacklisted(indivAddress) == false) {
+          return indivAccountClient
+        } 
+      }
+      return undefined
+    }
+
+    const findValidExistingOrgAccount = async(orgAddressValue: `0x${string}`, owner: any, publicClient: any) : Promise<ToMetaMaskSmartAccountReturnType<Implementation.Hybrid> | undefined> => {
+
+      const orgAccountClient = await toMetaMaskSmartAccount({
+        address: orgAddressValue,
+        client: publicClient,
+        implementation: Implementation.Hybrid,
+        deployParams: [owner, [], [], []],
+        signatory: signatory,
+
+      });
+
+      if (isBlacklisted(indivAddress) == false) {
+        return orgAccountClient
+      }
+      return undefined
+    }
+
     const buildSmartWallet = async (owner: any, signatory: any, ) => {
 
       if (signatory && owner) {
@@ -759,6 +875,8 @@ export const useWalletConnect = () => {
         if (publicClient) {
 
           // build individuals AA for EOA Connected Wallet
+          
+          /*
           const indivAccountClient = await toMetaMaskSmartAccount({
             client: publicClient,
             implementation: Implementation.Hybrid,
@@ -766,6 +884,17 @@ export const useWalletConnect = () => {
             signatory: signatory,
             deploySalt: toHex(11),
           });
+          */
+          
+
+          const indivAccountClient = await findValidIndivAccount(owner, signatory, publicClient)
+          if (!indivAccountClient) {
+            console.info("*********** indivAccountClient is not valid")
+            return
+          } 
+    
+
+          console.info(">>>>>>>>>> indivAccountClient: ", indivAccountClient.address)
 
           const indivAddress = await indivAccountClient.getAddress()
           let indivDid = 'did:pkh:eip155:10:' + indivAccountClient.address
@@ -777,12 +906,16 @@ export const useWalletConnect = () => {
           console.info("is indivAccountClient deployed: ", isDeployed)
           if (isDeployed == false) {
 
+            console.info("create pimlico client   ")
             const pimlicoClient = createPimlicoClient({
               transport: http(BUNDLER_URL),
             });
-              const paymasterClient = createPaymasterClient({
-                transport: http(PAYMASTER_URL),
-              });
+
+            const paymasterClient = createPaymasterClient({
+              transport: http(PAYMASTER_URL),
+            });
+
+            console.info("create bundler client ", BUNDLER_URL, PAYMASTER_URL)
             const bundlerClient = createBundlerClient({
                             transport: http(BUNDLER_URL),
                             paymaster: paymasterClient,
@@ -795,27 +928,36 @@ export const useWalletConnect = () => {
                             },
                           });
 
-
+            console.info("get gas price") 
             const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
-            const userOperationHash = await bundlerClient!.sendUserOperation({
-              account: indivAccountClient,
-              calls: [
-                {
-                  to: zeroAddress,
-                },
-              ],
-              paymaster: paymasterClient,
-              ...fee,
-            });
 
-            console.info("send user operation - done")
-            const { receipt } = await bundlerClient!.waitForUserOperationReceipt({
-              hash: userOperationHash,
-            });
+            console.info("deploy indivAccountClient", indivAccountClient)
+            try {
+              console.info("bundlerClient: ", bundlerClient)
+              const userOperationHash = await bundlerClient!.sendUserOperation({
+                account: indivAccountClient,
+                calls: [
+                  {
+                    to: zeroAddress,
+                  },
+                ],
+                paymaster: paymasterClient,
+                ...fee,
+              });
+
+              console.info("send user operation - done")
+              const { receipt } = await bundlerClient!.waitForUserOperationReceipt({
+                hash: userOperationHash,
+              });
+            }
+            catch (error) { 
+              console.info("error deploying indivAccountClient: ", error)
+            }
           }
   
 
           // get attestation for individual account abstraction address
+          console.info("get indiv org attestation for indiv did: ", indivDid)
           const indivOrgAttestation = await AttestationService.getIndivOrgAttestation(indivDid, AttestationService.IndivOrgSchemaUID, "indiv-org");
 
 
@@ -832,8 +974,8 @@ export const useWalletConnect = () => {
 
           // user can enter this part in four states
           //  1) new to site with new individual and new organization
-          //  2) new to site with new individual and existing organization found my email match
-          //  3) new to site with new individual (indiv-org attestation was added with delegation) and existing organization found by email match
+          //  2) new to site with new individual and existing organization found my email domain match
+          //  3) new to site with new individual (indiv-org attestation was added with delegation) and existing organization found by email domain match
           //  4) return to site with existing individual and existing owned organization with delegation
 
           // case 3 with delegation existing that points to existing organization
@@ -856,7 +998,7 @@ export const useWalletConnect = () => {
           let orgAccountClient : MetaMaskSmartAccount | undefined
           if (orgAddressValue) {
 
-            console.info("&&&&&&&&&& check owner info ")
+            console.info(" org address value is defined so lets try and connect: ", orgAddressValue)
 
             let isOwner = false
             const code = await publicClient.getCode({ address: orgAddressValue });
@@ -869,6 +1011,12 @@ export const useWalletConnect = () => {
               const [onChainOwner] = coder.decode(['address'], returnData);
               isOwner = onChainOwner.toLowerCase() == owner.toLowerCase()
 
+              // make sure this org is not blacklisted
+              const ownerOrgAccount = await findValidExistingOrgAccount(orgAddressValue, owner, publicClient)
+              if (!ownerOrgAccount) {
+                isOwner = false
+              }
+
               console.info("owner: ", onChainOwner)
             }
 
@@ -878,7 +1026,9 @@ export const useWalletConnect = () => {
             if (isOwner || orgIndivDel) {
 
               console.info("==========>  the user is owner of org or has been given delegatee access to it ")
+              
 
+              /*
               orgAccountClient = await toMetaMaskSmartAccount({
                 address: orgAddressValue,
                 client: publicClient,
@@ -887,6 +1037,13 @@ export const useWalletConnect = () => {
                 signatory: signatory,
                 deploySalt: toHex(10),
               });
+              */
+
+              if (!orgAccountClient) {
+                console.info("*********** orgAccountClient is not valid")
+                return
+              }
+              
 
               orgDidValue = 'did:pkh:eip155:10:' + orgAddressValue
               setOrgDid(orgDidValue)
@@ -900,6 +1057,15 @@ export const useWalletConnect = () => {
           else {
             // this is first time through so create new org AA and deploy it
             console.info("==========>  this is first time through so create new org AA and deploy it 2 ")
+
+            orgAccountClient = await findValidOrgAccount(owner, signatory, publicClient)
+            if (!orgAccountClient) {
+              console.info("*********** orgAccountClient is not valid")
+              return
+            }
+            console.info("orgAccountClient address ..... : ", orgAccountClient.address)
+
+            /*
             orgAccountClient = await toMetaMaskSmartAccount({
               client: publicClient,
               implementation: Implementation.Hybrid,
@@ -907,6 +1073,8 @@ export const useWalletConnect = () => {
               signatory: signatory,
               deploySalt: toHex(10),
             });
+            */
+
             orgAddressValue = orgAccountClient.address
             orgDidValue = 'did:pkh:eip155:10:' + orgAddressValue
 
@@ -1104,7 +1272,7 @@ export const useWalletConnect = () => {
             }
           }
 
-          const addDomainAttestation = async () => {
+          const addDomainAttestation = async (mascaApi: any) => {
 
             function getDomainFromEmail(email: string): string | null {
               const atIndex = email.lastIndexOf('@');
@@ -1246,7 +1414,7 @@ export const useWalletConnect = () => {
             const indivOrgAttestation = await AttestationService.getIndivOrgAttestation(indivDid, AttestationService.IndivOrgSchemaUID, "indiv-org")
             if (!indivOrgAttestation) {
               console.info("=============> no indiv attestation so add one")
-              addDomainAttestation()
+              await addDomainAttestation(mascaApi)
               await addIndivOrgAttestation(mascaApi)
             }
           }
@@ -1447,6 +1615,7 @@ export const useWalletConnect = () => {
             setupSmartWallet,
             setOrgNameValue,
             setOrgDidValue,
+            checkIfDIDBlacklisted
 
             
 
@@ -1489,7 +1658,8 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
       mascaApi,
       
       setOrgNameValue,
-      setOrgDidValue
+      setOrgDidValue,
+      checkIfDIDBlacklisted
     } =
       useWalletConnect();
   
@@ -1527,7 +1697,8 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         buildSmartWallet,
         setupSmartWallet,
         setOrgNameValue,
-        setOrgDidValue
+        setOrgDidValue,
+        checkIfDIDBlacklisted
       }),
       [
         
@@ -1561,7 +1732,8 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         buildSmartWallet,
         setupSmartWallet,
         setOrgNameValue,
-        setOrgDidValue]
+        setOrgDidValue,
+        checkIfDIDBlacklisted]
     );
   
     return <WalletConnectContext.Provider value={providerProps}>{children}</WalletConnectContext.Provider>;

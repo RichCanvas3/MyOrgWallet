@@ -39,7 +39,7 @@ const WelcomeModal: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'info' as 'info' | 'success' | 'error' });
 
-  const { setIndivAndOrgInfo, setOrgNameValue, setOrgDidValue } = useWallectConnectContext();
+  const { setIndivAndOrgInfo, setOrgNameValue, setOrgDidValue, checkIfDIDBlacklisted } = useWallectConnectContext();
 
   const steps: Step[] = [
     { id: 1, title: 'Your Name',      isActive: currentStep === 1, isCompleted: currentStep > 1 },
@@ -117,20 +117,38 @@ const WelcomeModal: React.FC = () => {
         console.info("domain: ", domain)
         setOrgNameValue("")
         setOrgDidValue("")
-        const registeredDomainAttestation = await AttestationService.getRegisteredDomainAttestation(domain, AttestationService.RegisteredDomainSchemaUID, "domain")
-        if (registeredDomainAttestation) {
-          console.info("registered domain: ", registeredDomainAttestation)
-          const orgAddress = registeredDomainAttestation.attester
-          const orgAttestation = await AttestationService.getAttestationByAddressAndSchemaId(orgAddress, AttestationService.OrgSchemaUID, "org")
-          if (orgAttestation) {
-            setOrganizationName((orgAttestation as OrgAttestation).name)
-            setOrgNameValue((orgAttestation as OrgAttestation).name)
+        const registeredDomainAttestations = await AttestationService.getRegisteredDomainAttestations(domain, AttestationService.RegisteredDomainSchemaUID, "domain")
+        if (registeredDomainAttestations) {
+          for (const registeredDomainAttestation of registeredDomainAttestations) {
+            
+            console.info("registered domain: ", registeredDomainAttestation)
+            const orgAddress = registeredDomainAttestation.attester
+            const orgAttestation = await AttestationService.getAttestationByAddressAndSchemaId(orgAddress, AttestationService.OrgSchemaUID, "org")
+            if (orgAttestation) {
 
+              const orgDidValue = (orgAttestation as OrgAttestation).attester
 
-            const orgDidValue = (orgAttestation as OrgAttestation).attester
+              console.info("check if blacklisted: ", orgDidValue)
+              const isBlacklisted = await checkIfDIDBlacklisted(orgDidValue)
+              if (!isBlacklisted) {
 
-            console.info("set org did value: ", orgDidValue)
-            setOrgDidValue(orgDidValue)
+                console.info("not blacklisted so continue: ", orgDidValue)
+
+                console.info("set org did value: ", orgDidValue)
+                setOrgDidValue(orgDidValue)
+
+                setOrganizationName((orgAttestation as OrgAttestation).name)
+                setOrgNameValue((orgAttestation as OrgAttestation).name)
+
+                break
+
+              }
+              else {
+                console.info("blacklisted so do not continue: ", orgDidValue)
+              }
+            }
+
+            
           }
         }
       }
