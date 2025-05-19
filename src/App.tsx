@@ -17,8 +17,9 @@ import CustomChatEditor from './components/CustomChatEditor';
 
 import { WalletConnectContextProvider } from "./context/walletConnectContext"
 import AttestationService from "./service/AttestationService"
-import ReadmeViewer from './components/ReadmeViewer';
 
+import ReadmeViewer from './components/ReadmeViewer';
+import AboutUs from './components/AboutUs';
 
 
 
@@ -130,7 +131,7 @@ const App = () => {
   const [isLinkedinModalVisible, setLinkedinModalVisible] = useState(false);
   const [isXModalVisible, setXModalVisible] = useState(false);
   const [isAttestationViewModalVisible, setAttestationViewModalVisible] = useState(false);
-  
+
   const blacklisted = [
     {'did': 'did:pkh:eip155:10:0x478df0535850b01cBE24AA2DAd295B2968d24B67'},
     {'did': 'did:pkh:eip155:10:0x89AA108af44d340Be28034965c760Dd1Bb289189'},
@@ -203,7 +204,7 @@ const App = () => {
       setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
-    
+
     if (cmd.action == "edit" && cmd.entityId == "linkedin" && cmd.did) {
       setSelectedEntityId("linkedin")
       setSelectedDid(cmd.did)
@@ -276,12 +277,12 @@ const App = () => {
       setAttestationViewModalVisible(true)
     }
 
-    
+
     //console.info("app command: ", cmd)
   };
 
 
-  
+
   const handleOnLinkedinModalClose = () => {
     setLinkedinModalVisible(false);
   }
@@ -302,7 +303,7 @@ const App = () => {
 
 
   useEffect(() => {
-  
+
       return () => {
       };
     }, []);
@@ -347,7 +348,7 @@ const App = () => {
     />
   );
 
-  
+
   const WelcomePageWithProps: React.FC<Partial<WelcomePageProps>> = (props) => (
     <WelcomePage
         className={'main-content'}
@@ -398,7 +399,7 @@ const App = () => {
             <HeaderWithProps />
             <ToastContainer />
             <div className="flex overflow-hidden w-full h-full relative z-0">
-            
+
               <LinkedinModal
                 isVisible={isLinkedinModalVisible}
                 onClose={handleOnLinkedinModalClose}
@@ -427,7 +428,9 @@ const App = () => {
                     path="/organizations"
                     element={<OrganizationsPageWithProps />}
                   />
+
                   <Route path="/readme" element={<ReadmeViewer />} /> {/* 👈 This line adds the README route */}
+                  <Route path="/aboutus" element={<AboutUs />} />
 
                   <Route path="linkedincallback" element={<LinkedinCallback />} />
                   <Route path="xcallback" element={<XCallback />} />
