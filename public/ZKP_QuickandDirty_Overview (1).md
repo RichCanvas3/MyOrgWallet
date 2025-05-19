@@ -169,6 +169,12 @@ What else could we do? We could try to change the proof itself, if we're really 
 
 The overall takeaway here is that we can't effectively cheat the system through anything less thna random chance and practically impossible guesses, showing the soundness of a ZKP.
 
+## Major Tech Used
+* Just
+* Circom
+* Rust
+* SnarkJS
+
 
 
 
