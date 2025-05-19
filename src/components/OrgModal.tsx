@@ -32,7 +32,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { veramoAgent, mascaApi, privateIssuerAccount, issuerAccountClient, signatory, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, setOrgNameValue } = useWallectConnectContext();
+  const { veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, signatory, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, setOrgNameValue } = useWallectConnectContext();
   const { data: walletClient }= useWalletClient()
 
   const [name, setName] = useState("");
@@ -49,16 +49,16 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
 
     const entityId = "org"
 
-    //console.info("fields: ", orgDid, privateIssuerDid, walletClient, signatory, orgAccountClient, issuerAccountClient, orgIssuerDelegation, orgIndivDelegation, walletClient)
+    //console.info("fields: ", orgDid, privateIssuerDid, walletClient, signatory, orgAccountClient, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, walletClient)
     console.info("fields: ", orgIssuerDelegation, orgIndivDelegation)
-    if (orgDid && privateIssuerDid && mascaApi && walletClient && privateIssuerAccount && signatory && orgAccountClient && issuerAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+    if (orgDid && privateIssuerDid && mascaApi && walletClient && privateIssuerAccount && signatory && orgAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
 
       // set the org name locally and in profile
       //console.info("set org name: ", orgName)
       //setOrgName(orgName)
 
       const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, privateIssuerDid, orgName);
-      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, issuerAccountClient, veramoAgent)
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
       if (fullVc && signatory && orgAccountClient && walletClient) {
@@ -83,7 +83,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
         const walletSigner = await provider.getSigner()
 
         console.info("AttestationService add org attestation")
-        const uid = await AttestationService.addOrgAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+        const uid = await AttestationService.addOrgAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         setOrgNameValue(orgName)
 
         if (location.pathname.startsWith("/chat/c/")) {

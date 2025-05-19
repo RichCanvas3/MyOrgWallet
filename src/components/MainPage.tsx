@@ -129,7 +129,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const { data: walletClient } = useWalletClient();
 
-  const { veramoAgent, mascaApi, privateIssuerAccount, issuerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, setOrgNameValue } = useWallectConnectContext();
+  const { veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, setOrgNameValue } = useWallectConnectContext();
 
   const [isDeleteAttestationsModalVisible, setDeleteAttestationsModalVisible] = useState(false);
   const [isApproveLeaderModalVisible, setApproveLeaderModalVisible] = useState(false);
@@ -691,17 +691,17 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         const state = orgJson["state"]
         const formationDate = "1/2/2020"
 
-        if (orgDid && privateIssuerDid && walletClient && mascaApi && privateIssuerAccount && orgAccountClient && issuerAccountClient) {
+        if (orgDid && privateIssuerDid && walletClient && mascaApi && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
 
           const vc = await VerifiableCredentialsService.createStateRegistrationVC(entityId, orgDid, privateIssuerDid, idNumber, orgName, status, formationDate, state, locationAddress);
-          const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, issuerAccountClient, veramoAgent)
+          const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
           console.info("state reg createCredential result: ", result)
           const fullVc = result.vc
           const proof = result.proof
 
-          console.info("fields: ", proof, fullVc, issuerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, walletClient)
+          console.info("fields: ", proof, fullVc, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, walletClient)
           console.info("orgIndivDelegation: ", orgIndivDelegation)
-          if (proof && fullVc && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+          if (proof && fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
           
             // now create attestation
             const hash = keccak256(toUtf8Bytes("hash value"));
@@ -728,7 +728,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             const walletSigner = await provider.getSigner()
 
             console.info("add state registration attestation")
-            const uid = await AttestationService.addStateRegistrationAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+            const uid = await AttestationService.addStateRegistrationAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
             console.info("add registration attestation complete")
     
             entities?.forEach((ent) => {
@@ -760,13 +760,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     const domaincreationdate = new Date("2023-03-10")
     const domaincreationdateSeconds = Math.floor(domaincreationdate.getTime() / 1000); // Convert to seconds
 
-    if (orgDid && privateIssuerDid && mascaApi && walletClient && privateIssuerAccount && orgAccountClient && issuerAccountClient) {
+    if (orgDid && privateIssuerDid && mascaApi && walletClient && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
 
       const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, privateIssuerDid, domain, domaincreationdate.toDateString());
-      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, issuerAccountClient, veramoAgent)
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
-      if (proof && fullVc && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+      if (proof && fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
       
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -788,7 +788,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         await window.ethereum.request({ method: "eth_requestAccounts" });
         const walletSigner = await provider.getSigner()
 
-        const uid = await AttestationService.addRegisteredDomainAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+        const uid = await AttestationService.addRegisteredDomainAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         console.info("add org domain attestation complete")
 
         entities?.forEach((ent) => {
@@ -809,13 +809,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     const websiteType = "public"
 
     const entityId = "website"
-    if (orgDid && mascaApi && walletClient && privateIssuerAccount && orgAccountClient && issuerAccountClient && privateIssuerDid) {
+    if (orgDid && mascaApi && walletClient && privateIssuerAccount && orgAccountClient && burnerAccountClient && privateIssuerDid) {
 
       const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC(entityId, orgDid, privateIssuerDid, websiteType, website);
-      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, issuerAccountClient, veramoAgent)
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
-      if (proof && fullVc && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+      if (proof && fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
       
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -837,7 +837,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         await window.ethereum.request({ method: "eth_requestAccounts" });
         const walletSigner = await provider.getSigner()
 
-        const uid = await AttestationService.addWebsiteAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+        const uid = await AttestationService.addWebsiteAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         console.info("add website attestation complete")
 
         entities?.forEach((ent) => {
@@ -860,13 +860,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     const emailType = "info"
     
     const entityId = "email"
-    if (orgDid && privateIssuerDid && mascaApi && walletClient && privateIssuerAccount && orgAccountClient && issuerAccountClient) {
+    if (orgDid && privateIssuerDid && mascaApi && walletClient && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
 
       const vc = await VerifiableCredentialsService.createEmailVC(entityId, orgDid, privateIssuerDid, emailType, email);
-      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, issuerAccountClient, veramoAgent)
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
-      if (proof && fullVc && issuerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+      if (proof && fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
       
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -888,7 +888,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         await window.ethereum.request({ method: "eth_requestAccounts" });
         const walletSigner = await provider.getSigner()
 
-        const uid = await AttestationService.addEmailAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+        const uid = await AttestationService.addEmailAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         console.info("add email attestation complete")
 
         entities?.forEach((ent) => {

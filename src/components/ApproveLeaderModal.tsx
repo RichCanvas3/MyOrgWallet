@@ -69,7 +69,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { veramoAgent, mascaApi, signatory, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, issuerAccountClient } = useWallectConnectContext();
+  const { veramoAgent, mascaApi, signatory, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, burnerAccountClient } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   const [attestations, setAttestations] = useState<IndivAttestation[]>([]);
@@ -114,13 +114,13 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
 
 
       const vc = await VerifiableCredentialsService.createIndivOrgVC("indiv-org", orgDid, privateIssuerDid, leaderIndivDid, att.name);
-      const result = await VerifiableCredentialsService.createCredential(vc, "indiv-org", orgDid, mascaApi, privateIssuerAccount, issuerAccountClient, veramoAgent)
+      const result = await VerifiableCredentialsService.createCredential(vc, "indiv-org", orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
 
       console.info("result of create credential: ", result)
       const fullVc = result.vc
       const proof = result.proof
 
-      if (proof && fullVc && orgIssuerDelegation && orgIndivDelegation && issuerAccountClient) {
+      if (proof && fullVc && orgIssuerDelegation && orgIndivDelegation && burnerAccountClient) {
 
         console.info("&&&&&&&&&&&&&&&&&&&&&&& AttestationService add indiv attestation")
 
@@ -145,7 +145,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
         await window.ethereum.request({ method: "eth_requestAccounts" });
         const walletSigner = await provider.getSigner()
         
-        const uid = await AttestationService.addIndivOrgAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+        const uid = await AttestationService.addIndivOrgAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
       }
     }
     else {

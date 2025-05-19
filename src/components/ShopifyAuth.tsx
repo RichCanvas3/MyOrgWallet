@@ -33,7 +33,7 @@ const entityId = "shopify"
 const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) => {
 
   const { } = props;
-  const { veramoAgent, mascaApi, privateIssuerAccount, issuerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
+  const { veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   const openShopifyPopup = () => {
@@ -69,14 +69,14 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
       var shopifyUrl = res.data.shop.domain
       var websiteType = "commerce"
 
-      if (orgDid && shopifyUrl && walletClient && mascaApi && privateIssuerAccount && orgAccountClient && issuerAccountClient && orgIssuerDelegation && orgIndivDelegation && privateIssuerDid) {
+      if (orgDid && shopifyUrl && walletClient && mascaApi && privateIssuerAccount && orgAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && privateIssuerDid) {
 
         const provider = new ethers.BrowserProvider(window.ethereum);
         await window.ethereum.request({ method: "eth_requestAccounts" });
         const walletSigner = await provider.getSigner()
 
         const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC(entityId, orgDid, privateIssuerDid, websiteType, shopifyUrl);
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, issuerAccountClient, veramoAgent)
+        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
         if (fullVc && walletSigner && orgAccountClient && walletClient) {
@@ -97,7 +97,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
             proof: proof
           };
 
-          const uid = await AttestationService.addWebsiteAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+          const uid = await AttestationService.addWebsiteAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
           console.info("add shopify attestation complete")
 
         }

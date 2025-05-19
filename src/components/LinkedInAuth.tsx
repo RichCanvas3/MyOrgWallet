@@ -50,7 +50,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
 
   
   const { } = props;
-  const { veramoAgent, mascaApi, privateIssuerAccount, issuerAccountClient, indivIssuerDelegation, indivAccountClient, indivDid, privateIssuerDid } = useWallectConnectContext();
+  const { veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, indivAccountClient, indivDid, privateIssuerDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
 
@@ -91,11 +91,11 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
         console.info(res.data.picture)
 
         console.info("indivIssuerDelegation: ", indivIssuerDelegation)
-        console.info("add social: ", indivDid,privateIssuerDid,mascaApi,indivAccountClient,issuerAccountClient,indivIssuerDelegation)
-        if (indivDid && privateIssuerDid && mascaApi && privateIssuerAccount && indivAccountClient && issuerAccountClient && indivIssuerDelegation) {
+        console.info("add social: ", indivDid,privateIssuerDid,mascaApi,indivAccountClient,burnerAccountClient,indivIssuerDelegation)
+        if (indivDid && privateIssuerDid && mascaApi && privateIssuerAccount && indivAccountClient && burnerAccountClient && indivIssuerDelegation) {
   
           const vc = await VerifiableCredentialsService.createSocialVC(entityId, indivDid, privateIssuerDid, res.data.sub, "");
-          const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, mascaApi, privateIssuerAccount, issuerAccountClient, veramoAgent)
+          const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
           const fullVc = result.vc
           const proof = result.proof
 
@@ -122,7 +122,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
             const walletSigner = await provider.getSigner()
   
             console.info("proof: ", proof)
-            const uid = await AttestationService.addSocialAttestation(attestation, walletSigner, [indivIssuerDelegation], indivAccountClient, issuerAccountClient)
+            const uid = await AttestationService.addSocialAttestation(attestation, walletSigner, [indivIssuerDelegation], indivAccountClient, burnerAccountClient)
           
             console.info(">>>>>>>>>>>>>>>>>  added attestation complete: ", uid)
 

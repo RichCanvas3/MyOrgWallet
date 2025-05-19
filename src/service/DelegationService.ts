@@ -21,7 +21,34 @@ class DelegationService {
     //static snapId : string = "local:http://localhost:8080"
 
 
-    static async saveDelegationToStorage(walletClient: WalletClient, owner: string, delegator: string, delegate: string, delegation: DelegationStruct) {
+
+    static async saveBurnerKeyToStorage(owner: string, privatekey: string) {
+        
+        const id = owner
+        localStorage.setItem(id, privatekey)
+
+    }
+
+
+    static async getBurnerKeyFromStorage(owner: string): Promise<string | undefined> {
+    
+        let privateKey : string | undefined
+
+        const id = owner
+
+        const store = localStorage.getItem(id)
+        if (store) {
+            //console.info("got delegation from store")
+            privateKey = store
+        }
+
+
+        return privateKey
+
+    }
+
+
+    static async saveDelegationToStorage(owner: string, delegator: string, delegate: string, delegation: DelegationStruct) {
         
         const id = owner + "-" + delegator + "-" + delegate
         const delegationJSON = JSON.stringify(delegation);
@@ -44,7 +71,7 @@ class DelegationService {
     }
 
 
-    static async getDelegationFromStorage(walletClient: WalletClient, owner: string, delegator: string, delegate: string): Promise<DelegationStruct | undefined> {
+    static async getDelegationFromStorage(owner: string, delegator: string, delegate: string): Promise<DelegationStruct | undefined> {
     
         let del : DelegationStruct | undefined
 

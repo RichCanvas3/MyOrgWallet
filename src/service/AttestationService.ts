@@ -225,7 +225,7 @@ class AttestationService {
 
   static RevokeSchemaUID = "0x8ced29acd56451bf43c457bd0cc1c13aa213fcdcdbd872ab87674d3fbf9fc218"
   static RevokeSchema = "string vccomm, string proof, uint64 issuedate"
-  static async addRevokeAttestation(vccomm: string, proof: string, signer: ethers.JsonRpcSigner, issuerAccountClient: MetaMaskSmartAccount): Promise<string> {
+  static async addRevokeAttestation(vccomm: string, proof: string, signer: ethers.JsonRpcSigner, burnerAccountClient: MetaMaskSmartAccount): Promise<string> {
 
     eas.connect(signer)
 
@@ -241,7 +241,7 @@ class AttestationService {
       ];
 
     const encodedData = schemaEncoder.encodeData(schemaItems);
-    let swa = await issuerAccountClient.getAddress()
+    let swa = await burnerAccountClient.getAddress()
 
     let tx = await eas.attest({
       schema: AttestationService.RevokeSchemaUID,
@@ -253,7 +253,7 @@ class AttestationService {
       }
     })
 
-    let swTx = await issuerAccountClient.sendTransaction(tx.data, {
+    let swTx = await burnerAccountClient.sendTransaction(tx.data, {
             paymasterServiceData: {
               mode: 'SPONSORED',
             },
@@ -775,7 +775,7 @@ class AttestationService {
 
   static SocialSchemaUID = "0xb05a2a08fd5afb49a338b27bb2e6cf1d8bd37992b23ad38a95f807d19c40782e"
   static SocialSchema = this.BaseSchema + "string name, string url"
-  static async addSocialAttestation(attestation: SocialAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], indivAccountClient: MetaMaskSmartAccount, issuerAccountClient: MetaMaskSmartAccount): Promise<string> {
+  static async addSocialAttestation(attestation: SocialAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], indivAccountClient: MetaMaskSmartAccount, burnerAccountClient: MetaMaskSmartAccount): Promise<string> {
 
     eas.connect(signer)
 
@@ -805,7 +805,7 @@ class AttestationService {
       const encodedData = schemaEncoder.encodeData(schemaItems);
 
       console.info("store attestation")
-      await AttestationService.storeAttestation(this.SocialSchemaUID, encodedData, indivAccountClient, issuerAccountClient, delegationChain )
+      await AttestationService.storeAttestation(this.SocialSchemaUID, encodedData, indivAccountClient, burnerAccountClient, delegationChain )
 
       console.info("done")
       let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
@@ -1490,7 +1490,7 @@ class AttestationService {
 
   static IndivEmailSchemaUID = "0x0679112c62bedf14255c9b20b07486233f25e98505e1a8adb270e20c17893baf"
   static IndivEmailSchema = this.BaseSchema + "string class, string email" 
-  static async addIndivEmailAttestation(attestation: IndivEmailAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], indivAccountClient: MetaMaskSmartAccount, issuerAccountClient: MetaMaskSmartAccount): Promise<string> {
+  static async addIndivEmailAttestation(attestation: IndivEmailAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], indivAccountClient: MetaMaskSmartAccount, burnerAccountClient: MetaMaskSmartAccount): Promise<string> {
 
     eas.connect(signer)
 
@@ -1522,7 +1522,7 @@ class AttestationService {
 
       
       const encodedData = schemaEncoder.encodeData(schemaItems);
-      await AttestationService.storeAttestation(this.IndivEmailSchemaUID, encodedData, indivAccountClient, issuerAccountClient, delegationChain)
+      await AttestationService.storeAttestation(this.IndivEmailSchemaUID, encodedData, indivAccountClient, burnerAccountClient, delegationChain)
 
       let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
       attestationsEmitter.emit('attestationChangeEvent', event);
@@ -1635,11 +1635,11 @@ class AttestationService {
     }));
   }
 
-  static async deleteIssuerAttestation(uid: string, schemaId: string, signer: ethers.JsonRpcSigner, issuerAccountClient: MetaMaskSmartAccount): Promise<void> {
+  static async deleteIssuerAttestation(uid: string, schemaId: string, signer: ethers.JsonRpcSigner, burnerAccountClient: MetaMaskSmartAccount): Promise<void> {
 
     eas.connect(signer)
 
-    if (issuerAccountClient) {
+    if (burnerAccountClient) {
 
       //let att = atts[0]
       let txs : Transaction[] = []
@@ -1648,7 +1648,7 @@ class AttestationService {
       txs.push(tx.data)
 
       console.info("send transactions: ", schemaId, uid)
-      const delTx = await issuerAccountClient.sendTransaction(txs, {
+      const delTx = await burnerAccountClient.sendTransaction(txs, {
         paymasterServiceData: {
           mode: 'SPONSORED',
         }, 

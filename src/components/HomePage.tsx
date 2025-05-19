@@ -39,7 +39,9 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
   const handleConnect = async () => {
     try {
       if (selectedSignatory) {
+        console.info("........ selected signatory login ....... ")
         const loginResp = await selectedSignatory.login()
+        console.info("........ response from login: ", loginResp)
         if (loginResp) {
           await connect(loginResp.owner, loginResp.signatory, "", "", "")
         }
@@ -50,7 +52,15 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
       //  walletAuthRef.current.openWalletPopup()
       //}
     } catch (error) {
-      console.error("Wallet connection failed:", error);
+
+      if (error.message === "Signatory not configured") {
+        // Handle this specific error with a user-friendly message
+        alert("Please configure your wallet signatory before connecting.");
+      } else {
+        // Generic error fallback
+        alert("An error occurred while connecting your wallet.");
+      }
+
     }
   };
 

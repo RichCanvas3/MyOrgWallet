@@ -353,7 +353,7 @@ class VerifiableCredentialsService {
       did: string, 
       mascaApi: any,
       privateIssuerAccount: PrivateKeyAccount, 
-      issuerAccountClient: any,
+      burnerAccountClient: any,
       veramoAgent: any): Promise<any | undefined> {
 
       let veramoVC : any | undefined
@@ -378,8 +378,6 @@ class VerifiableCredentialsService {
 
 
       const addr = privateIssuerAccount.address
-      //const addr = await issuerAccountClient?.getAddress()
-      
       if (addr && issuerDid && did && vc.credentialSubject) {
 
         // this section is going to be replaced with veramo create verifiable credential and then stored in masca metamask snap
@@ -429,7 +427,6 @@ class VerifiableCredentialsService {
         const commitmenthHex = '0x' + BigInt(commitment as any).toString(16)
         const commitmenthHexHash = hashMessage(commitmenthHex)
         const commitmentSignature = await privateIssuerAccount.signMessage({message: commitment.toString()})
-        //const commitmentSignature = await issuerAccountClient?.signMessage({message: commitment.toString()})
 
         if (commitmentSignature) {
 
@@ -453,15 +450,6 @@ class VerifiableCredentialsService {
             console.info("save credential: ", veramoVC)
             await VerifiableCredentialsService.saveCredential(mascaApi, veramoVC, entityId)
           }
-
-          
-
-          // verify if we have access to accountclient
-          //const validSigData = await issuerAccountClient?.getIsValidSignatureData(commitmenthHexHash as `0x${string}`, commitmentSignature)
-          //if (validSigData) {
-          //  const valid = validSigData.startsWith("0x1626ba7e"); // ERC-1271 magic value
-          //}
-
           
         }
         

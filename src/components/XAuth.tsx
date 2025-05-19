@@ -47,7 +47,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
   const { data: walletClient } = useWalletClient();
 
   const { } = props;
-  const { veramoAgent, mascaApi, privateIssuerAccount, issuerAccountClient, indivIssuerDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
+  const { veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
 
   
 
@@ -103,10 +103,10 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
       let url = "https://x.com/" + res["data"]["data"]["username"]
 
 
-      if (orgDid && privateIssuerDid && walletClient && mascaApi && privateIssuerAccount && orgAccountClient && issuerAccountClient) {
+      if (orgDid && privateIssuerDid && walletClient && mascaApi && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
   
         const vc = await VerifiableCredentialsService.createSocialVC(entityId, orgDid, privateIssuerDid, name, url);
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, issuerAccountClient, veramoAgent)
+        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
         if (proof && fullVc && orgAccountClient && indivIssuerDelegation && walletClient) {
@@ -131,7 +131,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
           await window.ethereum.request({ method: "eth_requestAccounts" });
           const walletSigner = await provider.getSigner()
 
-          const uid = AttestationService.addSocialAttestation(attestation, walletSigner, [indivIssuerDelegation], orgAccountClient, issuerAccountClient)
+          const uid = AttestationService.addSocialAttestation(attestation, walletSigner, [indivIssuerDelegation], orgAccountClient, burnerAccountClient)
           console.info("add social attestation complete")
 
           if (location.pathname.startsWith("/chat/c/")) {

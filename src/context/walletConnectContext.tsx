@@ -128,8 +128,8 @@ export type Snap = {
 export type WalletConnectContextState = {
     connect: (orgAddress: string, walletClient: WalletClient, organizationName: string, fullName: string, email: string) => Promise<void>;
     setIndivAndOrgInfo: (indivName: string, orgName: string, indivEmail: string) => Promise<void>;
-    buildSmartWallet: (owner: any, signatory: any, ) => Promise<void>;
-    setupSmartWallet: (owner: any, signatory: any, ) => Promise<void>;
+    buildSmartWallet: (owner: string, signatory: any, ) => Promise<void>;
+    setupSmartWallet: (owner: string, signatory: any, ) => Promise<void>;
 
     orgDid?: string;
     indivDid?: string;
@@ -138,7 +138,7 @@ export type WalletConnectContextState = {
     orgName?: string;
     indivName?: string;
 
-    issuerAccountClient?: MetaMaskSmartAccount;
+    burnerAccountClient?: MetaMaskSmartAccount;
     orgAccountClient?: MetaMaskSmartAccount;
     indivAccountClient?: MetaMaskSmartAccount;
 
@@ -176,7 +176,7 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
   indivName: undefined,
 
 
-  issuerAccountClient: undefined,
+  burnerAccountClient: undefined,
   orgAccountClient: undefined,
   indivAccountClient: undefined,
 
@@ -234,7 +234,7 @@ export const useWalletConnect = () => {
     const [privateIssuerAccount, setPrivateIssuerAccount] = useState<PrivateKeyAccount | undefined>();
     const [owner, setOwner] = useState<any | undefined>();
 
-    const [issuerAccountClient, setIssuerAccountClient] = useState<MetaMaskSmartAccount>();
+    const [burnerAccountClient, setBurnerAccountClient] = useState<MetaMaskSmartAccount>();
     const [orgAccountClient, setOrgAccountClient] = useState<MetaMaskSmartAccount>();
     const [indivAccountClient, setIndivAccountClient] = useState<MetaMaskSmartAccount>();
 
@@ -412,7 +412,13 @@ export const useWalletConnect = () => {
         //console.info("........ if connection to wallet has changed then update info .........")
         if (!chain || !isConnected || (connectedAddress && web3ModalAddress !== connectedAddress)) {
           console.info("****************** is disconnected")
-          setConnectedAddress(undefined);
+          try {
+            setConnectedAddress(undefined);
+          }
+          catch (error) { 
+            console.error("......... Error setting connected address:", error);  
+          }
+          
         }
 
         //console.info(".......... setSelectedSignatoryName .............")
@@ -424,15 +430,17 @@ export const useWalletConnect = () => {
 
       const provider = window.ethereum;
       if (provider) {
-          await provider.request({
-            method: 'wallet_requestSnaps',
-            params: {
-              [snapId]: { version: snapVersion },
-            },
+        await provider.request({
+          method: 'wallet_requestSnaps',
+          params: {
+            [snapId]: { version: snapVersion },
+          },
         });
       }
 
-      console.info("owner.address: ", ownerAddress)
+
+
+      console.info("owner address: ", ownerAddress)
       const mascaRslt = await enableMasca(ownerAddress, {
         snapId: snapId,
         supportedMethods: ['did:ethr', 'did:key', 'did:pkh'], // Specify supported DID methods
@@ -440,7 +448,24 @@ export const useWalletConnect = () => {
       console.info("mascaRslt: ", mascaRslt)
       const api = await mascaRslt.data.getMascaApi();
       setMascaApi(api)
-      
+
+      if (provider) {
+
+        const res = await api.getSnapSettings();
+        const disablePopups = res.data?.dApp?.disablePopups
+        if (!disablePopups || disablePopups == false) {
+          await provider.request({
+            method: 'wallet_invokeSnap',
+            params: {
+              snapId: snapId,
+              request: {
+                method: 'togglePopups',
+              },
+            },
+          });
+        }
+      }
+
       return api
 
     }
@@ -478,19 +503,26 @@ export const useWalletConnect = () => {
             console.info("setup snap")
             const mascaApi = await setupSnap(ownerEOAAddress)
 
+
             // connect to issuer account abstraction
-            const issuerOwner = privateKeyToAccount(privateKey);
-            const issuerAccountClient = await toMetaMaskSmartAccount({
+            let burnerPrivateKey = await DelegationService.getBurnerKeyFromStorage(owner)
+            if (!burnerPrivateKey) {
+              console.info("create new burner key")
+              burnerPrivateKey = generatePrivateKey() as `0x${string}`;
+              await DelegationService.saveBurnerKeyToStorage(owner, burnerPrivateKey)
+            }
+            console.info("burner private key: ", burnerPrivateKey)
+            const burnerAccount = privateKeyToAccount(burnerPrivateKey as `0x${string}`);
+
+            const burnerAccountClient = await toMetaMaskSmartAccount({
               client: publicClient,
               implementation: Implementation.Hybrid,
-              deployParams: [issuerOwner.address, [], [], []],
-              signatory: { account: issuerOwner },
+              deployParams: [burnerAccount.address, [], [], []],
+              signatory: { account: burnerAccount },
               deploySalt: toHex(10),
             })
-            
 
-
-            setIssuerAccountClient(issuerAccountClient)
+            setBurnerAccountClient(burnerAccountClient)
 
 
             // connect to individual account abstraction
@@ -679,17 +711,17 @@ export const useWalletConnect = () => {
 
               // setup delegation for org to issuer -> redelegation of orgIndivDel
               try {
-                orgIssuerDel = await DelegationService.getDelegationFromStorage(walletClient, ownerEOAAddress, orgAccountClient.address, issuerAccountClient.address)
+                orgIssuerDel = await DelegationService.getDelegationFromStorage(ownerEOAAddress, orgAccountClient.address, burnerAccountClient.address)
               }
               catch (error) {
               }
             }
 
-            if (orgIssuerDel == null && orgIndivDel && indivDid) {
+            if (orgIssuerDel == null && orgIndivDel && indivDid && indivAccountClient && orgAccountClient) {
 
               const parentDelegationHash = getDelegationHashOffchain(orgIndivDel);
               orgIssuerDel = createDelegation({
-                to: issuerAccountClient.address,
+                to: burnerAccountClient.address,
                 from: indivAccountClient.address,
                 parentDelegation: parentDelegationHash,
                 caveats: []
@@ -705,7 +737,7 @@ export const useWalletConnect = () => {
                 signature,
               }
 
-              await DelegationService.saveDelegationToStorage(walletClient, ownerEOAAddress, orgAccountClient.address, issuerAccountClient.address, orgIssuerDel)
+              await DelegationService.saveDelegationToStorage(ownerEOAAddress, orgAccountClient.address, burnerAccountClient.address, orgIssuerDel)
             }
 
             if (orgIssuerDel) {
@@ -718,9 +750,9 @@ export const useWalletConnect = () => {
             let indivIssuerDel = null
 
             if (indivAccountClient) {
-              console.info(".......... indiv account client: ", indivAccountClient.address, issuerAccountClient.address)
+              console.info(".......... indiv account client: ", indivAccountClient.address, burnerAccountClient.address)
               try {
-                indivIssuerDel = await DelegationService.getDelegationFromStorage(walletClient, ownerEOAAddress, indivAccountClient.address, issuerAccountClient.address)
+                indivIssuerDel = await DelegationService.getDelegationFromStorage(ownerEOAAddress, indivAccountClient.address, burnerAccountClient.address)
               }
               catch (error) {
               }
@@ -728,7 +760,7 @@ export const useWalletConnect = () => {
               if (indivIssuerDel == null && indivDid) {
                 indivIssuerDel = createDelegation({
                   from: indivAccountClient.address,
-                  to: issuerAccountClient.address,
+                  to: burnerAccountClient.address,
                   caveats: [] }
                 );
 
@@ -742,7 +774,7 @@ export const useWalletConnect = () => {
                   signature,
                 }
 
-                await DelegationService.saveDelegationToStorage(walletClient, ownerEOAAddress, indivAccountClient.address, issuerAccountClient.address, indivIssuerDel)
+                await DelegationService.saveDelegationToStorage(ownerEOAAddress, indivAccountClient.address, burnerAccountClient.address, indivIssuerDel)
               }
 
               setIndivIssuerDelegation(indivIssuerDel)
@@ -761,8 +793,9 @@ export const useWalletConnect = () => {
 
     }, [signatory, owner]);
 
+    const privateKey = ISSUER_PRIVATE_KEY as `0x${string}`;
     useEffect(() => { 
-      const issAccount = privateKeyToAccount(ISSUER_PRIVATE_KEY);
+      const issAccount = privateKeyToAccount(privateKey);
       setPrivateIssuerAccount(issAccount)
 
       const issDid = `did:pkh:eip155:10:${issAccount.address}`
@@ -841,18 +874,20 @@ export const useWalletConnect = () => {
       return undefined
     }
 
-    const findValidExistingOrgAccount = async(orgAddressValue: `0x${string}`, owner: any, publicClient: any) : Promise<ToMetaMaskSmartAccountReturnType<Implementation.Hybrid> | undefined> => {
+    const findValidExistingOrgAccount = async(orgAddressValue: `0x${string}`, owner: `0x${string}`, publicClient: any) : Promise<ToMetaMaskSmartAccountReturnType<Implementation.Hybrid> | undefined> => {
 
+      console.info("findValidExistingOrgAccount: ", orgAddressValue)
       const orgAccountClient = await toMetaMaskSmartAccount({
         address: orgAddressValue,
         client: publicClient,
         implementation: Implementation.Hybrid,
         deployParams: [owner, [], [], []],
         signatory: signatory,
-
       });
 
-      if (isBlacklisted(indivAddress) == false) {
+      const orgAddress = await orgAccountClient.getAddress()
+      console.info("is blacklisted")
+      if (isBlacklisted(orgAddress) == false) {
         return orgAccountClient
       }
       return undefined
@@ -1002,8 +1037,10 @@ export const useWalletConnect = () => {
 
             let isOwner = false
             const code = await publicClient.getCode({ address: orgAddressValue });
+            console.info("code: ", code)
             const isDeployed = code !== '0x';
             if (isDeployed) {
+              console.info("org account client is deployed: ", orgAddressValue)
               const data = '0x8da5cb5b';
               const provider = new ethers.BrowserProvider(window.ethereum);
               const returnData = await provider.call({ to: orgAddressValue, data });
@@ -1012,10 +1049,15 @@ export const useWalletConnect = () => {
               isOwner = onChainOwner.toLowerCase() == owner.toLowerCase()
 
               // make sure this org is not blacklisted
+              console.info("find valid existing org account for address: ", orgAddressValue)
+              console.info("find valid existing org account for owner: ", owner)
+              console.info("find valid existing org account for public client: ", publicClient)
+              /*
               const ownerOrgAccount = await findValidExistingOrgAccount(orgAddressValue, owner, publicClient)
               if (!ownerOrgAccount) {
                 isOwner = false
               }
+            
 
               console.info("owner: ", onChainOwner)
             }
@@ -1150,7 +1192,7 @@ export const useWalletConnect = () => {
       }
     }
 
-    const setupSmartWallet = async (owner: any, signatory: any, ) => {
+    const setupSmartWallet = async (owner: string, signatory: any, ) => {
 
       console.info("setup smart wallet")
 
@@ -1174,25 +1216,32 @@ export const useWalletConnect = () => {
 
 
         // connect to issuer account abstraction
-        const issuerOwner = privateKeyToAccount(ISSUER_PRIVATE_KEY);
-        const issuerAccountClient = await toMetaMaskSmartAccount({
+        let burnerPrivateKey = await DelegationService.getBurnerKeyFromStorage(owner)
+        if (!burnerPrivateKey) {
+          burnerPrivateKey = generatePrivateKey() as `0x${string}`;
+          await DelegationService.saveBurnerKeyToStorage(owner, burnerPrivateKey)
+        }
+        const burnerAccount = privateKeyToAccount(burnerPrivateKey as `0x${string}`);
+
+
+        const burnerAccountClient = await toMetaMaskSmartAccount({
           client: publicClient,
           implementation: Implementation.Hybrid,
-          deployParams: [issuerOwner.address, [], [], []],
-          signatory: { account: issuerOwner },
+          deployParams: [burnerAccount.address, [], [], []],
+          signatory: { account: burnerAccount },
           deploySalt: toHex(10),
         })
+        setBurnerAccountClient(burnerAccountClient)
 
-        setPrivateIssuerAccount(issuerOwner)
 
-        console.info("issuerAccountClient: ", issuerAccountClient)
-        
-        let isDeployed = await issuerAccountClient.isDeployed()
-        console.info("is issuerAccount deployed: ", isDeployed)
+        const privateIssuerOwner = privateKeyToAccount(ISSUER_PRIVATE_KEY as `0x${string}`);
+        setPrivateIssuerAccount(privateIssuerOwner)
 
-        let privateIssuerDid = 'did:pkh:eip155:10:' + issuerOwner.address
+        let privateIssuerDid = 'did:pkh:eip155:10:' + privateIssuerOwner.address
         setPrivateIssuerDid(privateIssuerDid)
-        setIssuerAccountClient(issuerAccountClient)
+        
+        
+        
 
         if (orgIndivDelegation && orgAccountClient) {
 
@@ -1200,12 +1249,12 @@ export const useWalletConnect = () => {
 
           // setup delegation for org to issuer -> redelegation of orgIndivDel
           let orgIssuerDel  = null
-          orgIssuerDel = await DelegationService.getDelegationFromStorage(walletClient, owner, orgAccountClient.address, issuerAccountClient.address)
+          orgIssuerDel = await DelegationService.getDelegationFromStorage(owner, orgAccountClient.address, burnerAccountClient.address)
           if (orgIssuerDel == null && indivDid && indivAccountClient) {
 
             const parentDelegationHash = getDelegationHashOffchain(orgIndivDelegation);
             orgIssuerDel = createDelegation({
-              to: issuerAccountClient.address,
+              to: burnerAccountClient.address,
               from: indivAccountClient.address,
               parentDelegation: parentDelegationHash,
               caveats: []
@@ -1222,7 +1271,7 @@ export const useWalletConnect = () => {
               signature,
             }
 
-            await DelegationService.saveDelegationToStorage(walletClient, owner, orgAccountClient.address, issuerAccountClient.address, orgIssuerDel)
+            await DelegationService.saveDelegationToStorage(owner, orgAccountClient.address, burnerAccountClient.address, orgIssuerDel)
           }
 
           if (orgIssuerDel) {
@@ -1247,7 +1296,7 @@ export const useWalletConnect = () => {
         
               console.info("create credential for org attestation")
               const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, privateIssuerDid, orgName);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, issuerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
               if (fullVc) {
@@ -1267,7 +1316,7 @@ export const useWalletConnect = () => {
                   proof: proof
                 };
         
-                const uid = await AttestationService.addOrgAttestation(attestation, walletSigner, [orgIssuerDel, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+                const uid = await AttestationService.addOrgAttestation(attestation, walletSigner, [orgIssuerDel, orgIndivDelegation], orgAccountClient, burnerAccountClient)
               }
             }
           }
@@ -1309,7 +1358,7 @@ export const useWalletConnect = () => {
 
           
                 const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, privateIssuerDid, domainName, "");
-                const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, issuerAccountClient, veramoAgent)
+                const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
                 const fullVc = result.vc
                 const proof = result.proof
                 if (fullVc) {
@@ -1330,7 +1379,7 @@ export const useWalletConnect = () => {
                     proof: proof
                   };
           
-                  const uid = await AttestationService.addRegisteredDomainAttestation(attestation, walletSigner, [orgIssuerDel, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+                  const uid = await AttestationService.addRegisteredDomainAttestation(attestation, walletSigner, [orgIssuerDel, orgIndivDelegation], orgAccountClient, burnerAccountClient)
                 }
 
               }
@@ -1371,7 +1420,7 @@ export const useWalletConnect = () => {
               
         
               const vc = await VerifiableCredentialsService.createIndivOrgVC(entityId, orgDid, privateIssuerDid, indivDid, indName);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, issuerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
 
@@ -1396,7 +1445,7 @@ export const useWalletConnect = () => {
                 };
         
                 console.info("AttestationService add indiv org attestation")
-                const uid = await AttestationService.addIndivOrgAttestation(attestation, walletSigner, [orgIssuerDel, orgIndivDelegation], orgAccountClient, issuerAccountClient)
+                const uid = await AttestationService.addIndivOrgAttestation(attestation, walletSigner, [orgIssuerDel, orgIndivDelegation], orgAccountClient, burnerAccountClient)
               }
             }
             else {
@@ -1422,18 +1471,18 @@ export const useWalletConnect = () => {
         }
       
 
-        if (indivAccountClient && issuerAccountClient) {
+        if (indivAccountClient && burnerAccountClient) {
 
           // setup delegation for individual to issuer delegation
           let indivIssuerDel = null
-          indivIssuerDel = await DelegationService.getDelegationFromStorage(walletClient, owner, indivAccountClient.address, issuerAccountClient.address)
+          indivIssuerDel = await DelegationService.getDelegationFromStorage(owner, indivAccountClient.address, burnerAccountClient.address)
           if (indivIssuerDel == null && indivDid) {
 
             console.info("delegation does not exist for indiv-issuer so create one")
             console.info("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX3")
             indivIssuerDel = createDelegation({
               from: indivAccountClient.address,
-              to: issuerAccountClient.address,
+              to: burnerAccountClient.address,
               caveats: [] }
             );
 
@@ -1449,7 +1498,7 @@ export const useWalletConnect = () => {
 
 
             console.info("&&&&&&&&&&&&&& Save indIssuerDelegation: ", indivIssuerDel)
-            await DelegationService.saveDelegationToStorage(walletClient, owner, indivAccountClient.address, issuerAccountClient.address, indivIssuerDel)
+            await DelegationService.saveDelegationToStorage(owner, indivAccountClient.address, burnerAccountClient.address, indivIssuerDel)
           }
 
           setIndivIssuerDelegation(indivIssuerDel)
@@ -1476,7 +1525,7 @@ export const useWalletConnect = () => {
               }
         
               const vc = await VerifiableCredentialsService.createIndivVC(entityId, indivDid, privateIssuerDid, orgDid, indName);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, mascaApi, privateIssuerAccount, issuerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
 
@@ -1498,7 +1547,7 @@ export const useWalletConnect = () => {
                   proof: proof
                 };
 
-                const uid = await AttestationService.addIndivAttestation(attestation, walletSigner, [indivIssuerDel], indivAccountClient, issuerAccountClient)
+                const uid = await AttestationService.addIndivAttestation(attestation, walletSigner, [indivIssuerDel], indivAccountClient, burnerAccountClient)
               }
             }
           }
@@ -1522,7 +1571,7 @@ export const useWalletConnect = () => {
               }
         
               const vc = await VerifiableCredentialsService.createIndivEmailVC(entityId, indivDid, privateIssuerDid, "business", indEmail);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, mascaApi, privateIssuerAccount, issuerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
 
@@ -1544,14 +1593,14 @@ export const useWalletConnect = () => {
                   proof: proof
                 };
         
-                console.info("+++++++++++++ AttestationService add indiv attestation")
-                console.info("+++++++++++++ att: ", attestation)
-                console.info("+++++++++++++ del: ", indivIssuerDel)
-                console.info("+++++++++++++ indivAccountClient: ", indivAccountClient)
-                console.info("+++++++++++++ issuerAccountClient: ", issuerAccountClient)
+                //console.info("+++++++++++++ AttestationService add indiv attestation")
+                //console.info("+++++++++++++ att: ", attestation)
+                //console.info("+++++++++++++ del: ", indivIssuerDel)
+                //console.info("+++++++++++++ indivAccountClient: ", indivAccountClient)
+                //console.info("+++++++++++++ burnerAccountClient: ", burnerAccountClient)
 
 
-                const uid = await AttestationService.addIndivEmailAttestation(attestation, walletSigner, [indivIssuerDel], indivAccountClient, issuerAccountClient)
+                const uid = await AttestationService.addIndivEmailAttestation(attestation, walletSigner, [indivIssuerDel], indivAccountClient, burnerAccountClient)
               }
             }
           }
@@ -1591,7 +1640,7 @@ export const useWalletConnect = () => {
             isIndividualConnected,
 
 
-            issuerAccountClient,
+            burnerAccountClient,
             orgAccountClient,
             indivAccountClient,
 
@@ -1635,7 +1684,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
       isIndividualConnected,
 
-      issuerAccountClient,
+      burnerAccountClient,
       orgAccountClient,
       indivAccountClient,
 
@@ -1675,7 +1724,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
         isIndividualConnected,
 
-        issuerAccountClient,
+        burnerAccountClient,
         orgAccountClient,
         indivAccountClient,
 
@@ -1710,7 +1759,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
         isIndividualConnected,
 
-        issuerAccountClient,
+        burnerAccountClient,
         orgAccountClient,
         indivAccountClient,
 
