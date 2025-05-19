@@ -67,12 +67,12 @@ age_actual=25
 age_to_prove=18
 seed=b"12345667"
 ```
-2. The prover hashes the seed value once, encrypting it and setting the encrypted values equal to both the 'proof' and the 'encrypted_age':
+2. The prover hashes the seed value once, encrypting it and sets the encrypted values equal to both the 'proof' and the 'encrypted_age':
 ```sh
 proof = hashlib.md5(seed)
 encrypted_age = hashlib.md5(seed)
 ```
-3. The prover hashes the proof value a subsequent 8 times (1+25-18=8), and hashes the encrypted_age value a subsequent 26 times (1+25=26):
+3. The prover hashes the proof value a subsequent 8 times (1+25-18=8), and hashes the encrypted_age value a subsequent 26 times (1+25=26). Note that the difference between the two hashing amounts is 18, or the required age:
 ```sh
 for i in range(1,1+age_actual-age_to_prove):
 	proof = hashlib.md5(proof.digest())
