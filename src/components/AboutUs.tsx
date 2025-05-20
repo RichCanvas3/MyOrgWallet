@@ -1,6 +1,6 @@
 function AboutUs() {
   return (
-    <div className="prose max-w-none bg-white p-6 rounded shadow max-h-[80vh] overflow-y-auto min-h-0">
+    <div className="prose max-w-none bg-white p-6 shadow max-h-screen overflow-y-auto min-h-0">
       <h1>MyWalletOrg.io</h1>
 
       <h2> Verify digital information on the web about <b>your</b> organization and store it securely on the Ethereum blockchain. </h2>

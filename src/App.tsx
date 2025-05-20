@@ -398,7 +398,7 @@ const App = () => {
           >
             <HeaderWithProps />
             <ToastContainer />
-            <div className="flex overflow-hidden w-full h-full relative z-0">
+            <div className="flex w-full h-full relative z-0">
 
               <LinkedinModal
                 isVisible={isLinkedinModalVisible}
@@ -412,24 +412,14 @@ const App = () => {
               />
               <XModal isVisible={isXModalVisible} onClose={handleOnXModalClose} />
 
-
-              <div className="grow overflow-hidden">
+              <div className="grow">
                 <Routes>
                   <Route path="/" element={<HomePageWithProps />} />
-                  <Route
-                    path="/welcome"
-                    element={<WelcomePageWithProps />}
-                  />
-                  <Route
-                    path="/setup"
-                    element={<SetupWalletPageWithProps />}
-                  />
-                  <Route
-                    path="/organizations"
-                    element={<OrganizationsPageWithProps />}
-                  />
+                  <Route path="/welcome" element={<WelcomePageWithProps />} />
+                  <Route path="/setup" element={<SetupWalletPageWithProps />} />
+                  <Route path="/organizations" element={<OrganizationsPageWithProps />} />
 
-                  <Route path="/readme" element={<ReadmeViewer />} /> {/* 👈 This line adds the README route */}
+                  <Route path="/readme" element={<ReadmeViewer />} />
                   <Route path="/aboutus" element={<AboutUs />} />
 
                   <Route path="linkedincallback" element={<LinkedinCallback />} />

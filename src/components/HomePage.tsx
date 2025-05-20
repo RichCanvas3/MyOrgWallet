@@ -60,7 +60,6 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
         // Generic error fallback
         alert("An error occurred while connecting your wallet.");
       }
-
     }
   };
 
@@ -68,9 +67,18 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
     try {
       navigate("/welcome")
     } catch (error) {
-
+      console.error("Welcome Page Connection Failed: ", error)
     }
   };
+
+  const handleLearnMore = async () => {
+    try {
+      navigate("/aboutus")
+    } catch (error) {
+      console.error("About Us Page Connection Failed: ", error)
+    }
+  };
+
   const handleOrg = async () => {
     try {
       navigate("/organizations")
@@ -90,20 +98,20 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
         alignItems: 'center',
         justifyContent: 'center',
         bgcolor: 'background.default',
+        flexDirection: 'column',
         p: 2,
+        gap: 4
       }}
     >
 
-      {/* Top Right Sign In */}
+      {/* Wallet */}
+
       <Box
         sx={{
           bgcolor: 'background.default',
           padding: '20px',
           boxShadow: 3,
           borderRadius: 2,
-          top: '130px',      // increased spacing (~1 inch)
-          right: 'center',    // increased spacing (~1 inch)
-          position: 'absolute',
           display: 'flex',
           flexDirection: 'column',
           gap: 3,
@@ -120,12 +128,26 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
           Create your individual and organizational smart wallets.
         </Typography>
 
-        <Button variant="contained" size="large" onClick={handleWelcome}>
-          Get Started
-        </Button>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            gap: 2,
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+          }}
+        >
+          <Button variant="contained" size="large" onClick={handleWelcome}>
+            Get Started
+          </Button>
+
+          <Button variant="outlined" size="large" onClick={handleLearnMore}>
+            Learn More
+          </Button>
+        </Box>
       </Box>
 
-      <Card
+      <Box
         sx={{
           maxWidth: 700,
           width: '100%',
@@ -138,7 +160,8 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
         }}
       >
 
-        {/* Wallet Card */}
+        {/* Log In */}
+
         <Box
           sx={{
             flex: 1,
@@ -162,7 +185,8 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
           </Button>
         </Box>
 
-        {/* Organization Card */}
+        {/* Organizations and Leaders */}
+
         <Box
           sx={{
             flex: 1,
@@ -176,7 +200,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
             Organizations & Leaders
           </Typography>
 
-         <Typography variant="subtitle2" color="var(--dark-gray-7)">
+          <Typography variant="subtitle2" color="var(--dark-gray-7)">
             View smart wallets on the chain.
           </Typography>
 
@@ -184,10 +208,9 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
              View All
           </Button>
         </Box>
+      </Box>
 
-      </Card>
     </Box>
-
 
   );
 };
