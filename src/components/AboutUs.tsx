@@ -1,34 +1,40 @@
 function AboutUs() {
   return (
     <div className="prose max-w-none bg-white p-6 rounded shadow max-h-[80vh] overflow-y-auto min-h-0">
-      <h1>About Us (In Progress)</h1>
+      <h1>MyWalletOrg.io</h1>
 
-      <p> MyOrgWallet is an application that lets organizations create smart wallets for their organization and leaders of the organization. </p>
-      <p> Within these wallets, users can create and publish business attestations, digital proof or evidence of things specifically related to the organization. These proofs are then signed by the app and stored on the Ethereum blockchain. </p>
+      <h2> Verify digital information on the web about <b>your</b> organization and store it securely on the Ethereum blockchain. </h2>
 
-      <h2> Definitions </h2>
+      <h2>How It Works</h2>
 
-      <p><b>Decentralized applications</b>, also known as (DApps) are applications that can operate autonomously and run most commonly on the blockchain, a distributed ledger with a continuously growing list of records (blocks). Each of these blocks are linked together by a cryptographic hash of the previous block in the chain, and contains a timestamp and data. DApps usually operate with minimal human intervention and are not owned by a single entity. </p>
-      <p> A <b>smart wallet</b> is a crypto wallet powered by a smart contract on the blockchain. </p>
+      <ol>
+        <li> Create a cryptocurrency wallet using <a href="https://metamask.io/" target="_blank">MetaMask</a>. </li>
+        <li> Visit <a href="https://myorgwallet.io/" target="_blank">MyOrgWallet.io</a> and create both organizational and individual smart wallets using your cryptocurrency wallet. </li>
+        <li> Create attestations, or verified proofs, about digital information for your organization, either manually or through our AI-powered chat bot. Some examples of attestations include:
+          <ul>
+            <li> Verified proofs for company social media accounts (LinkedIn, Facebook, YouTube). </li>
+            <li> Verified proofs for state business registration. </li>
+            <li> Verified proofs for regulation compliance. </li>
+          </ul>
+        </li>
+        <li> Invite other leaders from your organization and give them access to create attestations. </li>
+        <li> Explore other organizations and view their attestations. </li>
+      </ol>
+
+      <p><b>MyOrgWallet.io</b> - Verified, secure, and accurate digital information about your business, ready for Web 3.0. </p>
+
+      <h2> Some Definitions </h2>
+
+      <p><b>Decentralized applications</b>, also known as (DApps) are applications that can operate autonomously and run most commonly on a blockchain. DApps usually operate with minimal human intervention and are not owned by a single entity. </p>
       <p> A <b>cryptocurrency wallet</b>, or crypto wallet, stores public and/or private keys for cryptocurrency transactions. Crypto wallets keep cryptocurrency safe, and allow the owner of the wallet to spend, send, or save their cryptocurrency. </p>
-      <p> The <b>blockchain</b> is a distributed ledger with a continuously growing list of records (blocks). Each of these blocks are linked together with a cryptographic hash of the previous block in the chain, and contains a timestamp and data. </p>
+      <p> A <b>smart wallet</b> is a crypto wallet powered by a smart contract on the blockchain. </p>
+      <p> A <b>smart contract</b> is a digital contract, or software program, that is automatically executed when certain predetermined conditions are met. </p>
+      <p> A <b>blockchain</b> is a way of storing data in blocks that are linked together in a chain. It is, in essence, a database of transactions. This "block chain" acts like a distributed ledger as these records cannot be modified or deleted, thus proving a chronological and sequential order. </p>
+      <p> <b>Ethereum</b> is a decentralized blockchain with smart contract functionality. </p>
 
       <h2> Zero-Knowledge Proofs </h2>
 
-      <p> A zero-knowledge proof, or ZKP, is a cryptographic method used in to prove, or convince, that a statement is true without exposing the actual statement. </p>
-      <p> For example, let's use Dave's Auto Repair. Dave's Auto Repair is a repair shop owned by Dave that's registered in the state of California. This is factually true - Dave has physical business license to prove it. </p>
-      <p> How can Dave convince you with certainty that his repair shop does in fact have a California business license, but without actually showing you? </p>
-      <p> A ZKP is the answer. ZKPs only expose whether a statement is true or not - true or false. The "zero" in zero-knowledge proof comes from the fact that nothing extra is exposed about Dave's Auto Repair. A ZKP doesn't expose about Dave's personal information, or the number of employees he has, or what his yearly financials look like. It only proves whether a statement is true or not. You would be convinced that Dave's Repair Shop has a California business license if you received a piece of paper that said "Does Dave's Auto Repair have a California business license? Yes."  </p>
-
-      <p> There are three big players when it comes to ZKPs - the prover, the verifier, and the issuer. </p>
-
-      <ul>
-        <li> The Prover - In this example, Dave is the prover. </li>
-        <li> The Verifier - You are the verifier. Dave is trying to convince you. </li>
-        <li> The Issuer - The state of California. They have definitive proof whether Dave's Auto Repair is licensed in their state. </li>
-      </ul>
-
-      <p> In essence, a ZKP is a way to convince another party that a statement is true. </p>
+      <p> A <b>zero-knowledge proof</b>, or ZKP, is a cryptographic method used to prove, or convince, that a statement is true without exposing the actual statement. The "zero" in zero-knowledge proof comes from the fact that nothing extra is exposed related to the statement. </p>
     </div>
   )
 }
