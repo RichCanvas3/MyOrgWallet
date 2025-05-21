@@ -101,7 +101,7 @@ During this process, the verifier never saw the actual age of the prover, nor di
 
 Here's a diagram of the above program for further clarification:
 
-![Screenshot 2025-05-21 092921](https://github.com/user-attachments/assets/f2e65f19-4585-4615-83ae-3fc26df20d07)
+![image](https://github.com/user-attachments/assets/1cacfdc2-5eb7-45b1-8112-00bbbd192867)
 
 (credit to https://asecuritysite.com/encryption/age for this extremely simple to follow program)
 
