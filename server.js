@@ -5,6 +5,8 @@ import sgMail from '@sendgrid/mail';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 
+import { Ed25519VerificationKey2020 } from '@digitalbazaar/ed25519-verification-key-2020';
+
 import querystring from 'querystring'; // For query string parsing
 import { generateKeyPairSync, createPrivateKey, createPublicKey } from 'crypto';
 import * as jose from 'jose';
@@ -338,6 +340,14 @@ const verificationCodes = new Map();
       console.warn('Invalid verification code for', email);
       res.status(400).json({ error: 'Invalid verification code' });
     }
+  });
+
+  app.get('/apikey', async (req, res) => {  
+        Ed25519VerificationKey2020.generate().then((keyPair) => {
+                    const vals = keyPair.export({ publicKey: true, privateKey: true })
+                  console.info("Generated key pair:", JSON.stringify(vals, null, 2));
+
+                  })  
   });
 
   app.get('/', (req, res) => {

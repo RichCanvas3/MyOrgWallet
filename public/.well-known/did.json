@@ -1,0 +1,14 @@
+{
+  "@context": "https://www.w3.org/ns/did/v1",
+  "id": "did:web:wallet.myorgwallet.io",
+  "verificationMethod": [
+    {
+      "id": "did:web:wallet.myorgwallet.io#owner",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:web:wallet.myorgwallet.io",
+      "publicKeyMultibase": "z6MkuH1BakufZjwFXfcUEKCzPLDtK5L2SKX3Q3BTagZYSdQq"
+    }
+  ],
+  "authentication": ["did:web:wallet.myorgwallet.io#owner"]
+}
+

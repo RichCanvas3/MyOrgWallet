@@ -17,6 +17,7 @@
     "@didtools/cacao": "^3.0.1",
     "@didtools/key-did": "^1.0.0",
     "@didtools/pkh-ethereum": "^0.5.0",
+    "@digitalbazaar/ed25519-verification-key-2020": "^4.2.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@ethereum-attestation-service/eas-sdk": "^2.7.0",

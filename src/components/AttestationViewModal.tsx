@@ -21,6 +21,9 @@ import { getCachedResponse, putCachedResponse, putCachedValue } from "../service
 
 import { useWallectConnectContext } from "../context/walletConnectContext";
 
+
+
+
 interface AttestationViewModalProps {
   did: string;
   entityId: string;
@@ -36,6 +39,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
 
   const [attestation, setAttestation] = useState<Attestation | undefined>(undefined);
   const [credential, setCredential] = useState<VerifiableCredential | undefined>(undefined);
+  const [publicKey, setPublicKey] = useState<string | undefined>(undefined);
   const [vcZkProof, setVcZkProof] = useState<VcZkProof | undefined>(undefined);
   const [vcRevokeZkProof, setVcRevokeZkProof] = useState<VcRevokeZkProof | undefined>(undefined);
 
@@ -49,7 +53,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
   const [ orgEthName, setOrgEthName] = useState<string>("");
   const [ orgEthAvatar, setOrgEthAvatar] = useState<string>("");
 
-  const [activeTab, setActiveTab] = useState<'info' | 'vc' | 'vc-raw' | 'zk' | 'rzk' | 'at'>('vc');
+  const [activeTab, setActiveTab] = useState<'info' | 'vc' | 'vc-raw' | 'zk' | 'rzk' | 'at' >('vc');
   const { veramoAgent, mascaApi } = useWallectConnectContext();
   
 
@@ -202,6 +206,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
     console.info(" >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  is visible       ")
     setAttestation(undefined);
     setCredential(undefined); 
+    setPublicKey(undefined);
     setVcZkProof(undefined);
     setVcRevokeZkProof(undefined);
 
@@ -298,6 +303,9 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                       setHasCredential(false)
                     }
                   })
+
+
+                  
                 }
                   
 
@@ -464,6 +472,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
             >
               Revoked ZK Proof
             </button>
+
           </div>
 
           {/* Tab Content */}
@@ -512,6 +521,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                 </div>
               </div>
             )}
+
             {activeTab === 'vc' && (
               <div className="tab-panel">
                 <h2 className="panel-title">Verifiable Credential</h2>
