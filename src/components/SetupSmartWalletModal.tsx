@@ -37,7 +37,7 @@ const SetupSmartWalletModal: React.FC = () => {
 
   const [steps, setSteps] = useState<Step[]>([
     { id: 1, title: 'Connect EOA Wallet', description: '', isActive: true, isCompleted: false },
-    { id: 2, title: 'Build Smart Wallet', description: '',isActive: false, isCompleted: false },
+    { id: 2, title: 'Build Smart Wallets', description: '',isActive: false, isCompleted: false },
     { id: 3, title: 'Setup Wallet Permissions', description: '',isActive: false, isCompleted: false },
   ]);
   const [currentStep, setCurrentStep] = useState(1);
@@ -123,23 +123,35 @@ const SetupSmartWalletModal: React.FC = () => {
 
   // Decide current action
   const stepAction = [
-    { label: 'Connect EOA Wallet - USE OP Mainnet', description: `
-      No wallet funds are required to get started. <br/><br/>
-      Connect to your local Externally Owned Account (EOA) (ie. MetaMask). <br/><br/>
+    { label: 'Connect EOA Wallet - Use OP Mainnet', description: `
+      <b>No wallet funds are required to get started with MyOrgWallet</b> <br/><br/>
+      Make sure your browser is connected to your MetaMask account and that OP Mainnnet is configured properly - this is required. <br/><br/>
+      Watch <a href="https://youtu.be/nVbJUDLtYCM" target="_blank">How to Configure OP Mainnet</a> if you are stuck or are getting the error. <code>"Unrecognized chain ID '0xa. Try adding the chain using wallet_addEthereumChain first." </code><br><br>
       This local wallet account will be the owner of your newly created Personal Smart Wallet and Organization Smart Wallet.`
       , onClick: handleWalletConnect },
-    { label: 'Build Smart Wallet', description: `
-        <ul style="list-style-type: disc; margin-left: 1.5em; padding-left: 0;">
-          <li>Build your Personal Smart Wallet and deploy it to the blockchain.</li>
-          <li>Build your Organizations Smart Wallet and deploy it to the blockchain.</li>
-          <li>Setup permissions between Personal your Smart Wallet and Organizations Smart Wallet.</li>
-        </ul>`
+    { label: 'Build Smart Wallets', description: `
+
+      <ul style="list-style-type: disc; margin-left: 1.5em; padding-left: 0;">
+        <li>Build your personal smart wallet and deploy it to the blockchain.</li>
+        <li>Build your organization's smart wallet and deploy it to the blockchain.</li>
+        <li>Setup permissions between your personal smart wallet and your organization's smart wallet.</li>
+      </ul>
+
+      <br>
+
+      Watch <a href="https://youtu.be/B5mAdz4A5Y8" target="_blank">How to Create Smart Wallets on MyOrgWallet</a> to see these steps in action.`
       , onClick: handleBuildWallet },
     { label: 'Grant Attestation Permissions', description: `
-        <ul style="list-style-type: disc; margin-left: 1.5em; padding-left: 0;">
-          <li>Grant Personal Smart Wallet permission to manage Personal Attestations.</li>
-          <li>Grant Organization Smart Wallet permission to manage Organization Attestations.</li>
-        </ul>`, onClick: handlePermissions },
+
+      <ul style="list-style-type: disc; margin-left: 1.5em; padding-left: 0;">
+        <li>Grant personal smart wallet permission to manage personal attestations.</li>
+        <li>Grant organization smart wallet permission to manage organization attestations.</li>
+      </ul>
+
+      <br>
+
+      Watch <a href="https://youtu.be/B5mAdz4A5Y8" target="_blank">How to Create Smart Wallets on MyOrgWallet</a> to see these steps in action.
+        `, onClick: handlePermissions },
   ][currentStep - 1];
   return (
     <Box sx={{ minHeight: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2, bgcolor: 'background.default' }}>

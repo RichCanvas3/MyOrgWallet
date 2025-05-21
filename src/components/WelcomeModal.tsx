@@ -120,7 +120,7 @@ const WelcomeModal: React.FC = () => {
         const registeredDomainAttestations = await AttestationService.getRegisteredDomainAttestations(domain, AttestationService.RegisteredDomainSchemaUID, "domain")
         if (registeredDomainAttestations) {
           for (const registeredDomainAttestation of registeredDomainAttestations) {
-            
+
             console.info("registered domain: ", registeredDomainAttestation)
             const orgDid = registeredDomainAttestation.attester
             const orgAttestation = await AttestationService.getAttestationByDidAndSchemaId(orgDid, AttestationService.OrgSchemaUID, "org")
@@ -148,7 +148,7 @@ const WelcomeModal: React.FC = () => {
               }
             }
 
-            
+
           }
         }
       }
@@ -198,7 +198,8 @@ const WelcomeModal: React.FC = () => {
           <Box sx={{ textAlign: 'center' }}>
             <Typography variant="h3" sx={{marginBottom: '30px'}}>Welcome</Typography>
             <Typography variant="body2" sx={{ mt: 1 }}>Complete these steps to verify your organization and create your smart wallets.</Typography>
-            <Typography variant="body2" sx={{ mt: 1 }}>Before beginning, make sure you have an externally owned account (EOA) wallet.</Typography>
+            <Typography variant="body2" sx={{ mt: 1 }}>Before beginning, make sure you have a <a href="https://metamask.io/" target="_blank">MetaMask</a> account.</Typography>
+            <Typography variant="body2" sx={{ mt: 1 }}>Watch <a href="https://youtu.be/BI3S2YsL-po" target="_blank">How to Set Up MetaMask</a>.</Typography>
           </Box>
 
           {/* Stepper */}

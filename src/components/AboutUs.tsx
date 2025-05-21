@@ -8,9 +8,9 @@ function AboutUs() {
       <h2>How It Works</h2>
 
       <ol>
-        <li> Create a local wallet (EOA) using <a href="https://metamask.io/" target="_blank">MetaMask</a>. </li>
-        <li> Configure your MetaMask account within the browser and set up OP Mainnet. </li>
-        <li> Visit <a href="https://myorgwallet.io/" target="_blank">MyOrgWallet.io</a> and create your on-chain organizational and individual smart wallets using MetaMask. </li>
+        <li> Create a local wallet (EOA) using <a href="https://metamask.io/" target="_blank">MetaMask</a>. Watch <a href="https://youtu.be/BI3S2YsL-po" target="_blank">How to Set Up MetaMask</a>. </li>
+        <li> Configure your MetaMask account within the browser and set up OP Mainnet. Watch <a href="https://youtu.be/nVbJUDLtYCM" target="_blank">How to Configure OP Mainnet</a>. </li>
+        <li> Visit <a href="https://myorgwallet.io/" target="_blank">MyOrgWallet.io</a> and create your on-chain organizational and individual smart wallets using MetaMask. Watch <a href="https://youtu.be/B5mAdz4A5Y8" target="_blank">How to Create Smart Wallets on MyOrgWallet</a>. </li>
         <li> Create attestations, or verified proofs, about digital information for your organization, either manually or through our AI-powered chat bot. Some examples of attestations include:
           <ul>
             <li> Verified proofs for company social media accounts (LinkedIn, Facebook, YouTube). </li>
