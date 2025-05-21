@@ -90,6 +90,7 @@ const CreateWebDidModal: React.FC<CreateWebDidModalProps> = ({isVisible, onClose
 
     async function createWebDidJson() {
 
+      // test with https://resolver.identity.foundation/
       
       const attestation = await AttestationService.getAttestationByDidAndSchemaId(orgDid, AttestationService.RegisteredDomainSchemaUID, "domain")
       if (attestation) {
@@ -124,7 +125,7 @@ const CreateWebDidModal: React.FC<CreateWebDidModalProps> = ({isVisible, onClose
 
         const domain = domainAttestation.domain
         const webDidJson = {
-          "@context": "https://www.w3.org/ns/did/v1",
+          "@context": "https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1",
           "id": "did:web:" + domain,
           "verificationMethod": [{
             "id": "did:web:" + domain + "#owner",
