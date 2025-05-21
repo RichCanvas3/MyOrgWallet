@@ -54,6 +54,7 @@ import { useAccount, useWalletClient } from 'wagmi';
 
 import DeleteAttestationsModal from './DeleteAttestationsModal';
 import ApproveLeaderModal from './ApproveLeaderModal';
+import CreateWebDidModal from './CreateWebDidModal';
 import OrgModal from './OrgModal';  
 
 
@@ -133,6 +134,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const [isDeleteAttestationsModalVisible, setDeleteAttestationsModalVisible] = useState(false);
   const [isApproveLeaderModalVisible, setApproveLeaderModalVisible] = useState(false);
+  const [isCreateWebDidModalVisible, setCreateWebDidModalVisible] = useState(false);
+  
   const [isOrgModalVisible, setOrgModalVisible] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
 
@@ -144,6 +147,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   }
   const handleOnApproveLeaderModalClose = () => {
     setApproveLeaderModalVisible(false);
+  }
+    const handleOnCreateWebDidModalClose = () => {
+    setCreateWebDidModalVisible(false);
   }
 
   const handleOnOrgModalClose = () => {
@@ -658,6 +664,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       if (lastUserResponse.toLowerCase().includes("approve leader")) {
         console.info("approve leader ...")
         setApproveLeaderModalVisible(true)
+      }
+      if (lastUserResponse.toLowerCase().includes("create web did")) {
+        console.info("create web did ...")
+        setCreateWebDidModalVisible(true)
       }
     
     } catch (error)
@@ -1622,6 +1632,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         <ApproveLeaderModal
           isVisible={isApproveLeaderModalVisible}
           onClose={handleOnApproveLeaderModalClose}
+        />
+        <CreateWebDidModal
+          isVisible={isCreateWebDidModalVisible}
+          onClose={handleOnCreateWebDidModalClose}
         />
         <OrgModal
           orgName={newOrgName?newOrgName:""}

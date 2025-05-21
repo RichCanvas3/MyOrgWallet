@@ -549,7 +549,7 @@ export const useWalletConnect = () => {
 
             console.info("get indiv org att and indiv attestation")
             const indivOrgAttestation = await AttestationService.getIndivOrgAttestation(indivDid, AttestationService.IndivOrgSchemaUID, "indiv-org");
-            const indivAttestation = await AttestationService.getAttestationByAddressAndSchemaId(indivDid, AttestationService.IndivSchemaUID, "indiv")
+            const indivAttestation = await AttestationService.getAttestationByDidAndSchemaId(indivDid, AttestationService.IndivSchemaUID, "indiv")
             if (indivAttestation) {
               setIndivName((indivAttestation as IndivAttestation).name)
             }
@@ -1389,7 +1389,7 @@ export const useWalletConnect = () => {
           console.info("===========> : ", indivDid, orgDid)
           if (indivDid && orgDid) {
             console.info(" get att")
-            const orgAttestation = await AttestationService.getAttestationByAddressAndSchemaId(orgDid, AttestationService.OrgSchemaUID, "org")
+            const orgAttestation = await AttestationService.getAttestationByDidAndSchemaId(orgDid, AttestationService.OrgSchemaUID, "org")
             if (!orgAttestation) {
               console.info("=============> no org attestation so add one")
               await addOrgAttestation(mascaApi)
@@ -1606,12 +1606,12 @@ export const useWalletConnect = () => {
           }
 
           if (indivDid && orgDid && indivIssuerDel) {
-            const indivAttestation = await AttestationService.getAttestationByAddressAndSchemaId(indivDid, AttestationService.IndivSchemaUID, "indiv")
+            const indivAttestation = await AttestationService.getAttestationByDidAndSchemaId(indivDid, AttestationService.IndivSchemaUID, "indiv")
             if (!indivAttestation) {
               addIndivAttestation(mascaApi)
             }
 
-            const indivEmailAttestation = await AttestationService.getAttestationByAddressAndSchemaId(indivDid, AttestationService.IndivEmailSchemaUID, "indiv-email")
+            const indivEmailAttestation = await AttestationService.getAttestationByDidAndSchemaId(indivDid, AttestationService.IndivEmailSchemaUID, "indiv-email")
             if (!indivEmailAttestation) {
               addIndivEmailAttestation(mascaApi)
             }

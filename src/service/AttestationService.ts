@@ -2117,7 +2117,7 @@ class AttestationService {
     return false
   }
   
-  static async getAttestationByAddressAndSchemaId(did: string, schemaId: string, entityId: string): Promise<Attestation | undefined> {
+  static async getAttestationByDidAndSchemaId(did: string, schemaId: string, entityId: string): Promise<Attestation | undefined> {
 
     //console.info("get attestation by address and schemaId and entityId: ", address, schemaId, entityId)
     let rtnAttestation : Attestation | undefined

@@ -122,8 +122,8 @@ const WelcomeModal: React.FC = () => {
           for (const registeredDomainAttestation of registeredDomainAttestations) {
             
             console.info("registered domain: ", registeredDomainAttestation)
-            const orgAddress = registeredDomainAttestation.attester
-            const orgAttestation = await AttestationService.getAttestationByAddressAndSchemaId(orgAddress, AttestationService.OrgSchemaUID, "org")
+            const orgDid = registeredDomainAttestation.attester
+            const orgAttestation = await AttestationService.getAttestationByDidAndSchemaId(orgDid, AttestationService.OrgSchemaUID, "org")
             if (orgAttestation) {
 
               const orgDidValue = (orgAttestation as OrgAttestation).attester

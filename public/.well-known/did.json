@@ -4,11 +4,18 @@
   "verificationMethod": [
     {
       "id": "did:web:wallet.myorgwallet.io#owner",
-      "type": "Ed25519VerificationKey2020",
+      "type": "JsonWebKey2020",
       "controller": "did:web:wallet.myorgwallet.io",
-      "publicKeyMultibase": "z6MkuH1BakufZjwFXfcUEKCzPLDtK5L2SKX3Q3BTagZYSdQq"
+      "publicKeyJwk": {
+        "kty": "EC",
+        "crv": "secp256k1",
+        "x": "BPiT95B6JJqABg-dKUSfyZm2qJKYWX7qjyu2ZguD1gk",
+        "y": "CLINeoekaPqX-f_lqWlFZPQhSCBre3CPZlwxWYXqtMM5"
+      }
     }
   ],
-  "authentication": ["did:web:wallet.myorgwallet.io#owner"]
+  "authentication": [
+    "did:web:wallet.myorgwallet.io#owner"
+  ]
 }
 

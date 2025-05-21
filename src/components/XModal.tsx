@@ -62,7 +62,7 @@ const XModal: React.FC<XModalProps> = ({isVisible, onClose}) => {
       // get x attestation
       if (indivDid) {
 
-        AttestationService.getAttestationByAddressAndSchemaId(indivDid, AttestationService.SocialSchemaUID, "x").then((att) => {
+        AttestationService.getAttestationByDidAndSchemaId(indivDid, AttestationService.SocialSchemaUID, "x").then((att) => {
           if (att) {
             setAttestation(att)
           }
