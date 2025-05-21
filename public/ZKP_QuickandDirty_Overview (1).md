@@ -99,6 +99,10 @@ else:
 
 During this process, the verifier never saw the actual age of the prover, nor did either see the seed phrase. This means that the verifier cannot trace the data back to the seed phrase, and therefore cannot possibly know the age of the prover. The verfier gains no actual knowedge, the prover cannot cheat the system (as long as whatever was used to give the age value was inherently honest), and the prover will always be able to prove a true statement. Thus, we have an, albeit simple, ZKP!
 
+Here's a diagram of the above program for further clarification:
+
+![Screenshot 2025-05-21 092609](https://github.com/user-attachments/assets/385b1f33-27e4-4ee9-b745-4337eab27199)
+
 (credit to https://asecuritysite.com/encryption/age for this extremely simple to follow program)
 
 ## Digging a little deeper
@@ -167,7 +171,7 @@ That's all great, but what if we try to be a bit conniving? Let's say we sneakil
 
 What else could we do? We could try to change the proof itself, if we're really trying to cheat the system. Let's say we just change the mathematical objects to match those which would indicate truth. It's easier said than done, though, as each mathematcial object is created using a seed phrase which nobody knows at this point. So we can't reverse engineer an object lickety split to fool the verifier, and thus can't use this method of proof-editing to cheat. We could, of course, try to guess. It would, however, take a miracle to guess the value of the object due to the sheer amount and variance of digits and seperate integer objects involved. For just one of the integers shown in the above proof, there are 84590643846578180 (84 quadrillion) permutations. 
 
-The overall takeaway here is that we can't effectively cheat the system through anything less thna random chance and practically impossible guesses, showing the soundness of a ZKP.
+The overall takeaway here is that we can't effectively cheat the system through anything less than random chance and practically impossible guesses, showing the soundness of a ZKP.
 
 ## Major Tech Used
 * Just
