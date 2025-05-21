@@ -3,17 +3,18 @@ function AboutUs() {
     <div className="prose max-w-none bg-white p-6 shadow max-h-screen overflow-y-auto min-h-0">
       <h1>MyWalletOrg.io</h1>
 
-      <h2> Verify digital information on the web about <b>your</b> organization and store it securely on the Ethereum blockchain. </h2>
+      <h2> Verify digital information on the web about <b>your</b> organization, store it securely within your MetaMask wallet, and publish proof of ownership on the Ethereum blockchain. </h2>
 
       <h2>How It Works</h2>
 
       <ol>
-        <li> Create a cryptocurrency wallet using <a href="https://metamask.io/" target="_blank">MetaMask</a>. </li>
-        <li> Visit <a href="https://myorgwallet.io/" target="_blank">MyOrgWallet.io</a> and create both organizational and individual smart wallets using your cryptocurrency wallet. </li>
+        <li> Create a local wallet (EOA) using <a href="https://metamask.io/" target="_blank">MetaMask</a>. </li>
+        <li> Configure your MetaMask account within the browser and set up OP Mainnet. </li>
+        <li> Visit <a href="https://myorgwallet.io/" target="_blank">MyOrgWallet.io</a> and create your on-chain organizational and individual smart wallets using MetaMask. </li>
         <li> Create attestations, or verified proofs, about digital information for your organization, either manually or through our AI-powered chat bot. Some examples of attestations include:
           <ul>
             <li> Verified proofs for company social media accounts (LinkedIn, Facebook, YouTube). </li>
-            <li> Verified proofs for state business registration. </li>
+            <li> Verified proofs of state business registration web page. </li>
             <li> Verified proofs for regulation compliance. </li>
           </ul>
         </li>
@@ -26,11 +27,11 @@ function AboutUs() {
       <h2> Some Definitions </h2>
 
       <p><b>Decentralized applications</b>, also known as (DApps) are applications that can operate autonomously and run most commonly on a blockchain. DApps usually operate with minimal human intervention and are not owned by a single entity. </p>
-      <p> A <b>cryptocurrency wallet</b>, or crypto wallet, stores public and/or private keys for cryptocurrency transactions. Crypto wallets keep cryptocurrency safe, and allow the owner of the wallet to spend, send, or save their cryptocurrency. </p>
+      <p> A <b>crypto wallet</b> stores public and/or private keys for cryptographic transactions. </p>
       <p> A <b>smart wallet</b> is a crypto wallet powered by a smart contract on the blockchain. </p>
       <p> A <b>smart contract</b> is a digital contract, or software program, that is automatically executed when certain predetermined conditions are met. </p>
       <p> A <b>blockchain</b> is a way of storing data in blocks that are linked together in a chain. It is, in essence, a database of transactions. This "block chain" acts like a distributed ledger as these records cannot be modified or deleted, thus proving a chronological and sequential order. </p>
-      <p> <b>Ethereum</b> is a decentralized blockchain with smart contract functionality. </p>
+      <p> <b>Ethereum</b> is a public decentralized blockchain with smart contract functionality. </p>
 
       <h2> Zero-Knowledge Proofs </h2>
 
