@@ -1,6 +1,6 @@
 function AboutUs() {
   return (
-    <div className="prose max-w-none bg-white p-6 shadow max-h-screen overflow-y-auto min-h-0">
+    <div className="prose max-w-none bg-white p-6 shadow overflow-y-auto min-h-full">
       <h1>MyWalletOrg.io</h1>
 
       <h2> Manage <b>your</b> organization's digital identity, credentials, and profile; store them securely within your MetaMask wallet, and publish proof of ownership on the Ethereum blockchain. </h2>

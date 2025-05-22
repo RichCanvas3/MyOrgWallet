@@ -450,7 +450,7 @@
     height: 100%;
   }
   .h-screen {
-    height: 100vh;
+    height: 100vh; /* Changing this to min-height: 100vh; fixes the issue on the main page, which is also in App.tsx*/
   }
   .max-h-5 {
     max-height: calc(var(--spacing) * 5);
