@@ -3,7 +3,7 @@ function AboutUs() {
     <div className="prose max-w-none bg-white p-6 shadow max-h-screen overflow-y-auto min-h-0">
       <h1>MyWalletOrg.io</h1>
 
-      <h2> Verify digital information on the web about <b>your</b> organization, store it securely within your MetaMask wallet, and publish proof of ownership on the Ethereum blockchain. </h2>
+      <h2> Manage <b>your</b> organization's digital identity, credentials, and profile; store them securely within your MetaMask wallet, and publish proof of ownership on the Ethereum blockchain. </h2>
 
       <h2>How It Works</h2>
 
