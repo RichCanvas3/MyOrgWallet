@@ -4,6 +4,7 @@ import cors from 'cors';
 import sgMail from '@sendgrid/mail';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
+import { v4 as uuidv4 } from 'uuid';
 
 import { Ed25519VerificationKey2020 } from '@digitalbazaar/ed25519-verification-key-2020';
 
@@ -25,6 +26,7 @@ try {
 
   console.log('Validating environment variables...');
   const requiredEnvVars = [
+    'API_URL',
     'SENDGRID_API_KEY',
     'LINKEDIN_CLIENT_ID',
     'LINKEDIN_CLIENT_SECRET',
@@ -72,6 +74,8 @@ app.use(helmet()); // Add security headers
 app.use(express.json());
 app.use(bodyParser.json());   
 
+const driversLicenseStore = []
+driversLicenseStore.push("drivers license presentation")
 
 const verificationCodes = new Map();
 
@@ -341,6 +345,51 @@ const verificationCodes = new Map();
       res.status(400).json({ error: 'Invalid verification code' });
     }
   });
+
+
+  app.get('/driverslicenses', (req, res) => {
+    res.json(driversLicenseStore)
+  })
+
+  const sessions = {}
+  app.get('/startsession', (req, res) => {
+    const sessionId = uuidv4()
+    const url = process.env.API_URL + '/session/' + sessionId
+    //const url = 'https://wallet.myorgwallet.io/session/' + sessionId
+
+    // Expected data fields (simulate mDL data request)
+    const session = {
+      sessionId,
+      callbackUrl: `${url}`,
+      request: {
+        docType: 'mDL',
+        requestedItems: ['given_name', 'family_name', 'height', 'eye_colour'],
+        nonce: uuidv4()
+      }
+    }
+
+    sessions[sessionId] = { status: 'pending', session }
+    res.json(session)
+  })
+
+  app.post('/session/:sessionId', (req, res) => {
+    const sessionId = req.params.sessionId
+    const data = req.body
+
+    
+
+    if (!sessions[sessionId]) {
+      return res.status(404).json({ error: 'Invalid session' })
+    }
+
+    sessions[sessionId].status = 'received'
+    sessions[sessionId].data = data
+
+    driversLicenseStore.push(data)
+
+    console.log('✅ Received mDL data:', data)
+    res.json({ received: true })
+  })
 
   app.get('/apikey', async (req, res) => {  
         Ed25519VerificationKey2020.generate().then((keyPair) => {

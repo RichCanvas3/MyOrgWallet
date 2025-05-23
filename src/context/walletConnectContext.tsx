@@ -18,10 +18,12 @@ import { CredentialPlugin } from '@veramo/credential-w3c';
 
 import { KeyManagementSystem } from '@veramo/kms-local';
 import { getResolver as ethrDidResolver } from 'ethr-did-resolver';
+import { getResolver as webDidResolver } from 'web-did-resolver';
 
 import { CredentialStatusPlugin } from '@veramo/credential-status';
 import { DIDResolverPlugin } from '@veramo/did-resolver';
 import { enableMasca} from '@blockchain-lab-um/masca-connector';
+
 
 import {
   KeyDIDProvider,
@@ -45,10 +47,16 @@ import {
   getDidPkhResolver as pkhDidResolver,
 } from '@veramo/did-provider-pkh';
 
+import {
+  WebDIDProvider
+} from '@veramo/did-provider-web';
+
 import { 
   EthrDIDProvider 
 } 
 from '@veramo/did-provider-ethr';
+
+
 
 import {
   CredentialIssuerEIP712,
@@ -297,7 +305,7 @@ export const useWalletConnect = () => {
     const [connectedAddress, setConnectedAddress] = useState<string | undefined>();
 
 
-    const setupVeramoAgent = async () : Promise<any>  => {
+    const setupVeramoAgent = async (privateIssuerDid: string) : Promise<any>  => {
 
       const privateKey = ISSUER_PRIVATE_KEY;
             if (!privateKey) {
@@ -323,11 +331,20 @@ export const useWalletConnect = () => {
           defaultKms: 'local',
           chainId: '10'
         }),
+        'did:aa': new PkhDIDProvider({
+          defaultKms: 'local',
+          chainId: '10'
+        }),
         'did:ethr': new EthrDIDProvider({
           defaultKms: 'local',
           networks,
         }),
-        'did:key': new KeyDIDProvider({ defaultKms: 'local' }),
+        'did:web': new WebDIDProvider({
+          defaultKms: 'local'
+        }),
+        'did:key': new KeyDIDProvider({ 
+          defaultKms: 'local' 
+        }),
       };
 
       console.info(".............. create veramo agent")
@@ -360,6 +377,7 @@ export const useWalletConnect = () => {
               ...ethrDidResolver({ networks }),
               ...keyDidResolver(),
               ...pkhDidResolver(),
+              ...webDidResolver(),
             }),
           }),
           new DIDManager({
@@ -379,22 +397,25 @@ export const useWalletConnect = () => {
         meta: { alias: 'my-eth-key' },
       });
 
-      await veramoAgent.didManagerImport({
-        did: privateIssuerDid,
-        alias: 'my-issuer',
-        provider: 'did:pkh',
-        controllerKeyId: key.kid,
-        keys: [
-          {
-            kid: key.kid,
-            kms: 'local',
-            type: 'Secp256k1',
-            publicKeyHex: key.publicKeyHex,
-            privateKeyHex: privateKey.slice(2),
-          },
-        ],
-      });
-
+      console.info(".... privateIssuerDid: ", privateIssuerDid)
+      if (privateIssuerDid){
+        console.info("add my-issuer")
+        await veramoAgent.didManagerImport({
+                did: privateIssuerDid,
+                alias: 'my-issuer-did',
+                provider: 'did:pkh',
+                controllerKeyId: key.kid,
+                keys: [
+                  {
+                    kid: key.kid,
+                    kms: 'local',
+                    type: 'Secp256k1',
+                    publicKeyHex: key.publicKeyHex,
+                    privateKeyHex: privateKey.slice(2),
+                  },
+                ],
+              });
+      }
 
       setVeramoAgent(veramoAgent)
 
@@ -492,16 +513,22 @@ export const useWalletConnect = () => {
 
           if (publicClient && selectedSignatory && privateIssuerDid) {
 
+            
+
             const privateKey = ISSUER_PRIVATE_KEY;
             if (!privateKey) {
               throw new Error('Private key not found in environment variables');
             }
 
-            const veramoAgent = await setupVeramoAgent()
+            const veramoAgent = await setupVeramoAgent(privateIssuerDid)
             setVeramoAgent(veramoAgent)
 
             console.info("setup snap")
             const mascaApi = await setupSnap(ownerEOAAddress)
+
+            console.info("........ call check state registration ..........")
+
+
 
 
             // connect to issuer account abstraction
@@ -581,6 +608,8 @@ export const useWalletConnect = () => {
 
             
             // create orgAccountClient
+            let orgDid : string | undefined
+            let orgAddress : string | undefined
             let orgAccountClient : MetaMaskSmartAccount | undefined
             if (delegationOrgAddress) {
               console.info("==========>  valid delegation in attestation so use it and define orgAccountClient: ", delegationOrgAddress)
@@ -599,12 +628,12 @@ export const useWalletConnect = () => {
 
                 console.info("=============> yes we have an individual attestation that points to org account")
                 console.info("indiv attestation => org did: ", (indivAttestation as IndivAttestation).orgDid)
-                const orgDidValue = (indivAttestation as IndivAttestation).orgDid
-                const orgAddressValue = orgDidValue.replace('did:pkh:eip155:10:', '') as `0x${string}`
+                orgDid = (indivAttestation as IndivAttestation).orgDid
+                orgAddress = orgDid.replace('did:pkh:eip155:10:', '') as `0x${string}`
 
                 // set with org address
                 orgAccountClient = await toMetaMaskSmartAccount({
-                  address: orgAddressValue,
+                  address: orgAddress,
                   client: publicClient,
                   implementation: Implementation.Hybrid,
                   deployParams: [owner, [], [], []],
@@ -702,7 +731,7 @@ export const useWalletConnect = () => {
             
             let orgIssuerDel  = null
             if (orgAccountClient) {
-              let orgDid = 'did:pkh:eip155:10:' + orgAccountClient.address
+              orgDid = 'did:pkh:eip155:10:' + orgAccountClient.address
               console.info(".......... org did: ", orgDid)
 
               setOrgDid(orgDid)
@@ -782,6 +811,44 @@ export const useWalletConnect = () => {
             }
 
 
+
+            console.info(".... orgDid: ", orgDid)
+            if (orgDid) {
+              const attestation = await AttestationService.getAttestationByDidAndSchemaId(orgDid, AttestationService.RegisteredDomainSchemaUID, "domain")
+              console.info(".... domainAttestation: ", attestation)
+              if (attestation) {
+                console.info("add my-issuer")
+                const domainAttestation = attestation as RegisteredDomainAttestation
+                const domain = domainAttestation.domain
+
+                const key: IKey = await veramoAgent.keyManagerImport({
+                    privateKeyHex: privateKey.slice(2),
+                    type: 'Secp256k1' as TKeyType, // For Ethereum-based DIDs
+                    kms: 'local', // Matches your KeyManagementSystem
+                    meta: { alias: 'my-eth-key' },
+                  });
+
+                const webDid = "my-web-did:" + domain
+                await veramoAgent.didManagerImport({
+                  did: webDid,
+                  alias: 'my-web-did',
+                  provider: 'did:web',
+                  controllerKeyId: key.kid,
+                  keys: [
+                    {
+                      kid: key.kid,
+                      kms: 'local',
+                      type: 'Secp256k1',
+                      publicKeyHex: key.publicKeyHex,
+                      privateKeyHex: privateKey.slice(2),
+                    },
+                  ],
+                });
+              }
+            }
+            
+            
+            //OrgService.checkStateRegistrationLink(veramoAgent, mascaApi)
 
             console.info("setIsIndividualConnected done")
 
@@ -897,7 +964,7 @@ export const useWalletConnect = () => {
 
       if (signatory && owner) {
 
-        const veramoAgent = await setupVeramoAgent()
+        const veramoAgent = await setupVeramoAgent(privateIssuerDid)
         setVeramoAgent(veramoAgent)
 
         const publicClient = createPublicClient({
@@ -1199,7 +1266,7 @@ export const useWalletConnect = () => {
       if (owner && signatory) {
 
           // setup veramo agent and masca api
-          const veramoAgent = await setupVeramoAgent()
+          const veramoAgent = await setupVeramoAgent(privateIssuerDid)
           setVeramoAgent(veramoAgent)
 
           console.info("setup snap")

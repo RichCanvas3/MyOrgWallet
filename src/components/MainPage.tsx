@@ -55,6 +55,7 @@ import { useAccount, useWalletClient } from 'wagmi';
 import DeleteAttestationsModal from './DeleteAttestationsModal';
 import ApproveLeaderModal from './ApproveLeaderModal';
 import CreateWebDidModal from './CreateWebDidModal';
+import ImportDriversLicenseModal from './ImportDriversLicenseModal';
 import OrgModal from './OrgModal';  
 
 
@@ -135,7 +136,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const [isDeleteAttestationsModalVisible, setDeleteAttestationsModalVisible] = useState(false);
   const [isApproveLeaderModalVisible, setApproveLeaderModalVisible] = useState(false);
   const [isCreateWebDidModalVisible, setCreateWebDidModalVisible] = useState(false);
-  
+  const [isImportDriversLicenseModalVisible, setImportDriversLicenseModalVisible] = useState(false);
+    
   const [isOrgModalVisible, setOrgModalVisible] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
 
@@ -148,10 +150,12 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const handleOnApproveLeaderModalClose = () => {
     setApproveLeaderModalVisible(false);
   }
-    const handleOnCreateWebDidModalClose = () => {
+  const handleOnCreateWebDidModalClose = () => {
     setCreateWebDidModalVisible(false);
   }
-
+  const handleOnImportDriversLicenseModalClose = () => {
+    setImportDriversLicenseModalVisible(false);
+  }
   const handleOnOrgModalClose = () => {
     setOrgModalVisible(false);
   }
@@ -669,7 +673,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         console.info("create web did ...")
         setCreateWebDidModalVisible(true)
       }
-    
+      if (lastUserResponse.toLowerCase().includes("import drivers license")) {
+        console.info("import drivers license ...")
+        setImportDriversLicenseModalVisible(true)
+      }
     } catch (error)
     {
 
@@ -1636,6 +1643,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         <CreateWebDidModal
           isVisible={isCreateWebDidModalVisible}
           onClose={handleOnCreateWebDidModalClose}
+        />
+        <ImportDriversLicenseModal
+          isVisible={isImportDriversLicenseModalVisible}
+          onClose={handleOnImportDriversLicenseModalClose}
         />
         <OrgModal
           orgName={newOrgName?newOrgName:""}
