@@ -12,7 +12,9 @@ import { useWallectConnectContext } from "../context/walletConnectContext";
 import { Command } from "../models/Command"
 import {MagnifyingGlassIcon} from "@heroicons/react/24/outline";
 
-import WelcomeModal from './WelcomeModal';  
+import WelcomeModal from './WelcomeModal';
+
+import '../custom_styles.css'
 
 interface WelcomePageProps {
   className: string;
@@ -42,14 +44,14 @@ const WelcomePage: React.FC<WelcomePageProps> = ({className, appCommand}) => {
     useEffect(() => {
         loadOrganizations();
       }, [ orgDid ]);
-  
-  
-  
+
+
+
     useEffect(() => {
       //const sortedOrganizations = [...organizations];  // Sort by timestamp if not already sorted
       //const sortedOrganizations = [...organizations].sort((a, b) => b.name - a.name);  // Sort by timestamp if not already sorted
     }, [organizations]);
-  
+
 
     const onSelectOrganization = async(orgDid: string) => {
         setOrgDid(orgDid)
@@ -64,10 +66,10 @@ const WelcomePage: React.FC<WelcomePageProps> = ({className, appCommand}) => {
                       entityId: att.entityId,
                     }
       appCommand(cmd)
-      
+
 
     }
-  
+
     const loadOrganizations = async () => {
         AttestationService.loadOrganizations().then(organizations => {
             setOrganizations(organizations);
@@ -75,17 +77,16 @@ const WelcomePage: React.FC<WelcomePageProps> = ({className, appCommand}) => {
             console.error("Error loading organizations:", error);
         });
     };
-    
+
     const handleSearch = async (searchString: string) => {
       console.info("hello world")
     }
-  
-  
+
+
     return (
-      <div className="welcome-page flex h-screen">
+      <div className="custom welcome-page flex">
         <WelcomeModal />
       </div>
-      
     );
 };
 

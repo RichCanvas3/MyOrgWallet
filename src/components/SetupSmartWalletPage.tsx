@@ -12,7 +12,9 @@ import { useWallectConnectContext } from "../context/walletConnectContext";
 import { Command } from "../models/Command"
 import {MagnifyingGlassIcon} from "@heroicons/react/24/outline";
 
-import SetupSmartWalletModal from './SetupSmartWalletModal';  
+import SetupSmartWalletModal from './SetupSmartWalletModal';
+
+import '../custom_styles.css'
 
 interface SetupSmartWalletPageProps {
   className: string;
@@ -42,14 +44,14 @@ const SetupSmartWalletPage: React.FC<SetupSmartWalletPageProps> = ({className, a
     useEffect(() => {
         loadOrganizations();
       }, [ orgDid ]);
-  
-  
-  
+
+
+
     useEffect(() => {
       //const sortedOrganizations = [...organizations];  // Sort by timestamp if not already sorted
       //const sortedOrganizations = [...organizations].sort((a, b) => b.name - a.name);  // Sort by timestamp if not already sorted
     }, [organizations]);
-  
+
 
     const onSelectOrganization = async(orgDid: string) => {
         setOrgDid(orgDid)
@@ -64,10 +66,10 @@ const SetupSmartWalletPage: React.FC<SetupSmartWalletPageProps> = ({className, a
                       entityId: att.entityId,
                     }
       appCommand(cmd)
-      
+
 
     }
-  
+
     const loadOrganizations = async () => {
         AttestationService.loadOrganizations().then(organizations => {
             setOrganizations(organizations);
@@ -75,17 +77,16 @@ const SetupSmartWalletPage: React.FC<SetupSmartWalletPageProps> = ({className, a
             console.error("Error loading organizations:", error);
         });
     };
-    
+
     const handleSearch = async (searchString: string) => {
       console.info("hello world")
     }
-  
-  
+
+
     return (
-      <div className="onboarding-page flex h-screen">
+      <div className="custom onboarding-page flex">
         <SetupSmartWalletModal />
       </div>
-      
     );
 };
 

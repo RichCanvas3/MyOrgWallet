@@ -194,8 +194,8 @@ const WelcomeModal: React.FC = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2, bgcolor: 'background.default' }}>
-      <Card sx={{ position: 'absolute', top: '150px', maxWidth: 600, width: '100%', p: 3, boxShadow: 3, borderRadius: 2 }}>
+    <Box className="custom" sx={{ minHeight: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2, bgcolor: 'background.default' }}>
+      <Card sx={{ position: 'relative', maxWidth: 600, width: '100%', p: 3, boxShadow: 3, borderRadius: 2 }}>
         <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <Box sx={{ textAlign: 'center' }}>
             <Typography variant="h3" sx={{marginBottom: '30px'}}>Welcome</Typography>
@@ -287,10 +287,10 @@ const WelcomeModal: React.FC = () => {
           {/* Navigation buttons */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 2 }}>
             {currentStep > 1
-              ? <Button variant="outlined" onClick={handlePreviousStep} startIcon={<ArrowBack />}>Back</Button>
+              ? <Button className="outlined" variant="outlined" onClick={handlePreviousStep} startIcon={<ArrowBack />}>Back</Button>
               : <Box />
             }
-            <Button
+            <Button className="solid"
               variant="contained"
               onClick={handleNextStep}
               disabled={isSubmitting}

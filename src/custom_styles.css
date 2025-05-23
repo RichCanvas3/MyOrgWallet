@@ -5,3 +5,29 @@ a.colored_link {
 a.colored_link:hover {
   color: rgb(255, 0, 242);
 }
+
+div.custom {
+  min-height: calc(100vh - 64px); /* View height minus the height of the header */
+}
+
+code.error {
+  font-size: 14px;
+  background-color: rgb(255, 208, 208);
+  color: rgb(131, 0, 0);
+}
+
+button.connect:hover {
+  background-color: rgb(0, 210, 11);
+}
+
+button.disconnect:hover {
+  background-color: rgb(210, 0, 0);
+}
+
+button.solid:hover {
+  background-color: rgb(4, 0, 210);
+}
+
+button.outlined:hover {
+  background-color: rgb(188, 255, 253);
+}

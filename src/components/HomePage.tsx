@@ -137,11 +137,11 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
             justifyContent: 'center',
           }}
         >
-          <Button variant="contained" size="large" onClick={handleWelcome}>
+          <Button className="solid" variant="contained" size="large" onClick={handleWelcome}>
             Get Started
           </Button>
 
-          <Button variant="outlined" size="large" onClick={handleLearnMore}>
+          <Button className="outlined" variant="outlined" size="large" onClick={handleLearnMore}>
             Learn More
           </Button>
         </Box>
@@ -180,7 +180,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
             Connect to your externally owned account (EOA).
           </Typography>
 
-          <Button variant="contained" size="large" onClick={handleConnect} sx={{backgroundColor: '#48ba2f'}}>
+          <Button className="connect" variant="contained" size="large" onClick={handleConnect} sx={{backgroundColor: '#48ba2f'}}>
             Connect Wallet
           </Button>
         </Box>
@@ -204,7 +204,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
             View smart wallets on the chain.
           </Typography>
 
-          <Button variant="outlined" size="large" onClick={handleOrg}>
+          <Button className="outlined" variant="outlined" size="large" onClick={handleOrg}>
              View All
           </Button>
         </Box>

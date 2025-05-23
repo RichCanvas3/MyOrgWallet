@@ -16,6 +16,7 @@ import { Check, ArrowBack } from '@mui/icons-material';
 
 import { useWallectConnectContext } from "../context/walletConnectContext";
 
+import '../custom_styles.css'
 
 interface Step {
   id: number;
@@ -128,9 +129,9 @@ const SetupSmartWalletModal: React.FC = () => {
 
       Make sure your browser is connected to your MetaMask account and that OP Mainnnet is configured properly - this is required. <br/><br/>
 
-      Watch <a className="colored_link" href="https://youtu.be/nVbJUDLtYCM" target="_blank">How to Configure OP Mainnet</a> if you are stuck or are getting the error. <code>"Unrecognized chain ID '0xa. Try adding the chain using wallet_addEthereumChain first." </code><br><br>
+      Watch <a className="colored_link" href="https://youtu.be/nVbJUDLtYCM" target="_blank">How to Configure OP Mainnet</a> if you are stuck or are getting the error: <code className="error">"Unrecognized chain ID 0xa." </code> <br><br>
 
-      This local wallet account will be the owner of your newly created Personal Smart Wallet and Organization Smart Wallet.`
+      This local wallet account will be the owner of your newly created personal smart wallet and organization smart wallet.`
       , onClick: handleWalletConnect },
     { label: 'Build Smart Wallets', description: `
 
@@ -157,9 +158,9 @@ const SetupSmartWalletModal: React.FC = () => {
         `, onClick: handlePermissions },
   ][currentStep - 1];
   return (
-    <Box sx={{ minHeight: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2, bgcolor: 'background.default' }}>
+    <Box className="custom" sx={{ minHeight: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2, bgcolor: 'background.default' }}>
       <Card sx={{ maxWidth: 600, width: '100%', p: 3, boxShadow: 3, borderRadius: 2 }}>
-        <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}> {/* position: 'relative', maxWidth: 600, width: '100%', p: 3, boxShadow: 3, borderRadius: 2 }} */}
           {/* Header */}
           <Box textAlign="center">
             <Typography variant="h4">Build Your Smart Wallet</Typography>
@@ -232,6 +233,7 @@ const SetupSmartWalletModal: React.FC = () => {
           <Box sx={{ textAlign: 'center', mt: 2 }}>
             <Typography variant="body1">{`Step ${currentStep}: ${steps[currentStep - 1]?.title}`}</Typography>
             <Button
+              className="solid"
               variant="contained"
               onClick={stepAction?.onClick}
               disabled={isSubmitting}
@@ -249,6 +251,7 @@ const SetupSmartWalletModal: React.FC = () => {
           <Box sx={{ display: 'flex', justifyContent: 'flex-start', pt: 2 }}>
             {currentStep > 1 && (
               <Button
+                className="outlined"
                 variant="outlined"
                 startIcon={<ArrowBack />}
                 onClick={() => {
