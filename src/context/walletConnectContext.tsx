@@ -1265,12 +1265,7 @@ export const useWalletConnect = () => {
 
       if (owner && signatory) {
 
-          // setup veramo agent and masca api
-          const veramoAgent = await setupVeramoAgent(privateIssuerDid)
-          setVeramoAgent(veramoAgent)
 
-          console.info("setup snap")
-          const mascaApi = await setupSnap(owner)
 
 
         console.info("owner and signatory are defined")
@@ -1307,7 +1302,12 @@ export const useWalletConnect = () => {
         let privateIssuerDid = 'did:pkh:eip155:10:' + privateIssuerOwner.address
         setPrivateIssuerDid(privateIssuerDid)
         
-        
+        // setup veramo agent and masca api
+        const veramoAgent = await setupVeramoAgent(privateIssuerDid)
+        setVeramoAgent(veramoAgent)
+
+        console.info("setup snap")
+        const mascaApi = await setupSnap(owner)
         
 
         if (orgIndivDelegation && orgAccountClient) {
