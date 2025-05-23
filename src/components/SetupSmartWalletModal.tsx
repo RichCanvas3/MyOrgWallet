@@ -125,8 +125,11 @@ const SetupSmartWalletModal: React.FC = () => {
   const stepAction = [
     { label: 'Connect EOA Wallet - Use OP Mainnet', description: `
       <b>No wallet funds are required to get started with MyOrgWallet</b> <br/><br/>
+
       Make sure your browser is connected to your MetaMask account and that OP Mainnnet is configured properly - this is required. <br/><br/>
-      Watch <a href="https://youtu.be/nVbJUDLtYCM" target="_blank">How to Configure OP Mainnet</a> if you are stuck or are getting the error. <code>"Unrecognized chain ID '0xa. Try adding the chain using wallet_addEthereumChain first." </code><br><br>
+
+      Watch <a className="colored_link" href="https://youtu.be/nVbJUDLtYCM" target="_blank">How to Configure OP Mainnet</a> if you are stuck or are getting the error. <code>"Unrecognized chain ID '0xa. Try adding the chain using wallet_addEthereumChain first." </code><br><br>
+
       This local wallet account will be the owner of your newly created Personal Smart Wallet and Organization Smart Wallet.`
       , onClick: handleWalletConnect },
     { label: 'Build Smart Wallets', description: `
@@ -139,7 +142,7 @@ const SetupSmartWalletModal: React.FC = () => {
 
       <br>
 
-      Watch <a href="https://youtu.be/B5mAdz4A5Y8" target="_blank">How to Create Smart Wallets on MyOrgWallet</a> to see these steps in action.`
+      Watch <a className="colored_link" href="https://youtu.be/B5mAdz4A5Y8" target="_blank">How to Create Smart Wallets on MyOrgWallet</a> to see these steps in action.`
       , onClick: handleBuildWallet },
     { label: 'Grant Attestation Permissions', description: `
 
@@ -150,7 +153,7 @@ const SetupSmartWalletModal: React.FC = () => {
 
       <br>
 
-      Watch <a href="https://youtu.be/B5mAdz4A5Y8" target="_blank">How to Create Smart Wallets on MyOrgWallet</a> to see these steps in action.
+      Watch <a className="colored_link" href="https://youtu.be/B5mAdz4A5Y8" target="_blank">How to Create Smart Wallets on MyOrgWallet</a> to see these steps in action.
         `, onClick: handlePermissions },
   ][currentStep - 1];
   return (

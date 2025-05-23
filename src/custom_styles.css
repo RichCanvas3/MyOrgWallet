@@ -1,0 +1,7 @@
+a.colored_link {
+  color: blue;
+}
+
+a.colored_link:hover {
+  color: rgb(255, 0, 242);
+}
