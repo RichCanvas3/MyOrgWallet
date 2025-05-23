@@ -78,13 +78,16 @@
   flex-direction: column;
   background-color: var(--white);
   color: var(--black);
-  background: var(--white)
+  background: var(--white);
+  width: 50vw;
 }
 .organization-page {
   background: var(--white);
+  width: 100vw;
 }
 .organization-list-container {
   background: var(--white);
+  width: 100vw;
 }
 .organization-list li {
   background: var(--white);
