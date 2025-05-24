@@ -95,6 +95,7 @@ const ImportDriversLicenseModal: React.FC<ImportDriversLicenseModalProps> = ({is
   useEffect(() => {
 
     if (isVisible) {
+      console.info("get drivers licenses url: ", GET_URI)
       const fetchDriversLicenses = async () => {
         const getDriversLicenses = GET_URI
         const res = await axios.get(getDriversLicenses)
@@ -105,6 +106,7 @@ const ImportDriversLicenseModal: React.FC<ImportDriversLicenseModalProps> = ({is
       })
 
 
+      console.info("get drivers license session id using uri: ", STARTSESSION_URI)
       const fetchSession = async () => {
         const res = await axios.get(STARTSESSION_URI)
         console.info("set drivers licent qr code request session: ", res.data)
