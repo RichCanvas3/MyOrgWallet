@@ -21,6 +21,8 @@ import AttestationService from "../service/AttestationService"
 import { OrgAttestation, RegisteredDomainAttestation } from "../models/Attestation"
 import { domainSeparator } from 'viem';
 
+import '../custom_styles.css'
+
 interface Step {
   id: number;
   title: string;
@@ -192,14 +194,14 @@ const WelcomeModal: React.FC = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2, bgcolor: 'background.default' }}>
-      <Card sx={{ position: 'absolute', top: '150px', maxWidth: 600, width: '100%', p: 3, boxShadow: 3, borderRadius: 2 }}>
+    <Box className="custom" sx={{ minHeight: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2, bgcolor: 'background.default' }}>
+      <Card sx={{ position: 'relative', maxWidth: 600, width: '100%', p: 3, boxShadow: 3, borderRadius: 2 }}>
         <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <Box sx={{ textAlign: 'center' }}>
             <Typography variant="h3" sx={{marginBottom: '30px'}}>Welcome</Typography>
             <Typography variant="body2" sx={{ mt: 1 }}>Complete these steps to verify your organization and create your smart wallets.</Typography>
-            <Typography variant="body2" sx={{ mt: 1 }}>Before beginning, make sure you have a <a href="https://metamask.io/" target="_blank">MetaMask</a> account.</Typography>
-            <Typography variant="body2" sx={{ mt: 1 }}>Watch <a href="https://youtu.be/BI3S2YsL-po" target="_blank">How to Set Up MetaMask</a>.</Typography>
+            <Typography variant="body2" sx={{ mt: 1 }}>Before beginning, make sure you have a <a className="colored_link" href="https://metamask.io/" target="_blank">MetaMask</a> account.</Typography>
+            <Typography variant="body2" sx={{ mt: 1 }}>Watch <a className="colored_link" href="https://youtu.be/BI3S2YsL-po" target="_blank">How to Set Up MetaMask</a>.</Typography>
           </Box>
 
           {/* Stepper */}
@@ -285,10 +287,10 @@ const WelcomeModal: React.FC = () => {
           {/* Navigation buttons */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 2 }}>
             {currentStep > 1
-              ? <Button variant="outlined" onClick={handlePreviousStep} startIcon={<ArrowBack />}>Back</Button>
+              ? <Button className="outlined" variant="outlined" onClick={handlePreviousStep} startIcon={<ArrowBack />}>Back</Button>
               : <Box />
             }
-            <Button
+            <Button className="solid"
               variant="contained"
               onClick={handleNextStep}
               disabled={isSubmitting}

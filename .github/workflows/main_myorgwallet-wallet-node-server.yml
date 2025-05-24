@@ -44,7 +44,6 @@ jobs:
           retention-days: 10
 
   deploy:
-    if: false
     runs-on: ubuntu-latest
     needs: build
     environment:

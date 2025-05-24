@@ -3,86 +3,104 @@
 
 ## Description
 
-MyOrgWallet is a cutting-edge Web3 digital wallet designed for organizations, empowering seamless and secure interactions in decentralized ecosystems. For this hackathon, build innovative applications leveraging MyOrgWallet’s advanced features:
+MyOrgWallet is a cutting-edge Web3 digital wallet designed for organizations, empowering seamless and secure interactions in decentralized ecosystems.
 
-[Watch the myOrgWallet video](https://wallet.myorgwallet.io/MyOrgWalletDemo.mp4)
+[Watch the MyOrgWallet demo video](https://youtu.be/2WAkvM0JogA)
 
-### Account Abstraction (AA): 
+### Account Abstraction (AA):
 
 Utilize ERC-4337 to enable smart contract wallets, supporting gasless transactions and flexible user experiences without traditional private key management. Simplify onboarding with paymasters and bundled transactions.
 
-### Delegation: 
+### Delegation:
 
-Implement delegated authority, allowing myOrgWallet users to define and publish verifiable credentials, attestations, zero-knowledge proof on the blockchain under a single deligated metamask signed delegation.
+Implement delegated authority, allowing myOrgWallet users to define and publish verifiable credentials, attestations, zero-knowledge proof on the blockchain under a single delegated metamask signed delegation.
 
-### Verifiable Credentials (VCs): 
+### Verifiable Credentials (VCs):
 
 Issue and verify fraud-proof digital credentials (e.g., certifications, memberships) using W3C standards, stored securely in user MetaMask wallets. Enable selective disclosure for privacy-preserving identity verification.
 
-### Published Attestations: 
+### Published Attestations:
 
 MyOrgWallet empowers business to publish business attestations, associated with their verifiable credentials. Attestations are discoverable on-chain and linked to verifiable zero-knowledge-proofs.
 
-### Zero-Knowledge Proofs (ZKPs): 
+### Zero-Knowledge Proofs (ZKPs):
 
 Integrate ZKPs to prove attributes (e.g., website ownership, compliance) without revealing sensitive data, enhancing privacy in eCommerce and trust frameworks.
 
-### AI Chatbot: 
+### AI Chatbot:
 
 Develop an AI-powered chatbot within MyOrgWallet to assist users, answer queries, and guide credential management, leveraging natural language processing for intuitive interactions.
 
-### Agentic AI Web Scraping: 
+### Agentic AI Web Scraping:
 
 Build autonomous AI agents that traverse the web data (e.g., verify state registration or domain ownership) to inform decision-making, integrating with MyOrgWallet for secure data handling and credential issuance.
 
-### Credential Issuer: 
+### Credential Issuer:
+
 Create tools for organizations to issue VCs (e.g., employee badges, supplier certifications) via MyOrgWallet, using blockchain for immutability and cryptographic signatures for trust.
 
-### Challenge: 
+### Challenge:
+
 Design a solution showcasing these features, such as a decentralized eCommerce platform where MyOrgWallet verifies supplier credentials, delegates transaction authority to AI agents, and uses ZKPs for privacy. Compete for prizes by demonstrating scalability, user experience, and Web3 innovation!
 
 ## Explanation, Functions, and Features
 
 ### Organization Smart Wallet (AA) and Individuals Smart Wallet (AA) linked to EOA account (no funds required)
-- Connect to Individuals EOA that has no funds (newly create metamask account within metmask wallet)
-- Generate and Deploy Individual Smart Wallet (AA) that is driven from (owned by) an individuals EOA
-- Generate and Deploy Organization Smart Wallet (AA) that is associated with the first Individual's Smart Wallet (AA)
+
+- Connect to an individual'ss EOA that has no funds (newly create MetaMask account within MetaMask wallet).
+- Generate and deploy individual smart wallet (AA) that is driven from (owned by) an individuals EOA.
+- Generate and deploy organization smart wallet (AA) that is associated with the first individual's smart wallet (AA).
+
 ### Organization (AA) to Individual (AA) Delegation -  give Individuals (AA) rights to create attestations for Organization
-- Create a Delegation "from" the Oranization Smart Wallet (AA) "to" the Individuals Smart Wallet (AA)
-- Save that this Indiv-to-Org Delegation for future use.  Stored in Indiv-to-Org on-chain attestation
-- Create chained Delegation from Indiv-to-Org Delegation to Burner Account. Store delegation in browser local storage for subsequent onchain smart wallet user operations
+
+- Create a delegation "from" the organization smart wallet (AA) "to" the individual's smart wallet (AA).
+- Save that this indiv-to-org delegation for future use. Stored in indiv-to-org on-chain attestation.
+- Create chained delegation from indiv-to-org delegation to burner Account. Store delegation in browser local storage for subsequent onchain smart wallet user operations.
+
 ### Org-to-Indiv Delegation chained to Burner Delegation - support multiple user-operations to creating Organization and Individual Attestations
-- Create a burner Account
-- Create a stored Chained Delegation from Ind-Org Delegation to Burner Account in support of Organization level smart wallet user operations
-- Create a stored Delegation from  Individual Smart Wallet (AA) to support Individual level smart wallet user operations
+
+- Create a burner Account.
+- Create a stored chained delegation from Ind-Org delegation to burner account in support of organization level smart wallet user operations.
+- Create a stored delegation from individual smart wallet (AA) to support individual level smart wallet user operations.
+
 ### Issue Verifiable Credentials (VC) associated with Individuals (AA) and Organization (AA), DID references
-- Create a set of Verifiable Credentials for the Individual Smart Wallet (AA).  Similar to Humanity Protocol use-case
-- Create a set of Verifiable Credentials for the Organization Smart Wallet (AA).  Unique to Org Wallet Company Goals
-- Credential sets created with the use of an Agentic AI model (OpenAI) which scraped publically available company information through the web.
+
+- Create a set of verifiable credentials for the individual smart wallet (AA). Similar to humanity protocol use-case.
+- Create a set of verifiable credentials for the organization smart wallet (AA). Unique to org wallet company goals.
+- Credential sets created with the use of an agentic AI model (OpenAI) which scraped publically available company information through the web.
 - Company information includes name, id number, form, status, formation date, state, and address.
-- Agentic AI model is given direction through the use of an app-inbedded chatbot
+- Agentic AI model is given direction through the use of an app-embedded chatbot.
+
 ### Publish VC related Attestations (on-chain Organization and Individual) and associated Zero Knowledge Proofs
-- Generate a Zero Knowledge Proof for each Verifiable Credential (associated with Smart Wallets) and attach to attestation.
-- Create Attestations using entry point user op to EAS Contract.  Using Paymaster, Bundler and delegationChain RedeemDelegation.
+
+- Generate a ZKP for each verifiable credential (associated with smart wallets) and attach to attestation.
+- Create attestations using entry point user op to EAS contract. Using Paymaster, Bundler and delegationChain RedeemDelegation.
+
 ### Link second Individuals (AA) to Organization (AA)
-- Second Individual domain name link to published Organization (AA) attestation domain name
-- Second Individual create Individual (AA) only with domain name Attestation
-- First Individual is prompted with new associated Individual (AA) accounts and they create a Delegation from Org AA to Second Indiv AA
-- Second Individual now has rights to add attestations to Organization AA.  This is done via burner chained delegation when they connect in
+
+- Second individual domain name link to published organization (AA) attestation domain name.
+- Second individual creates individual (AA) only with domain name attestation.
+- First individual is prompted with new associated individual (AA) accounts and they create a delegation from org AA to second individual AA.
+- Second individual now has rights to add attestations to organization AA. This is done via burner chained delegation when they connect in.
+
 ### All published Individual and Organization attestations and zero-knowledge proofs are on-chain
-- 3rd Party can search and explore an Organizations attestations and leadership information
+
+- 3rd party can search and explore an organizations attestations and leadership information.
+
 ### Multi-User Operations via Bundler and Paymaster
-- Bundle/batch multiple EAS Contract Users Operations in single Bundled request
-### Individuals fully control their account and attestations.  Individuals jointly manage Organizations Attestations
+
+- Bundle/batch multiple EAS contract users operations in single bundled request.
+
+### Individuals fully control their account and attestations. Individuals jointly manage Organizations Attestations
 
 <img src="./public/delegation.jpeg" width="600px">
 
 ## Goals
 
 * Provide an organization a digital wallet (Account Abstraction) to manage their organizational and individual attestations.
-* Use a modern web3 stack and leverage latest metamask capabilities
-* Intuitive AI chat driven UI.  No metamask permission popups within main application (one time permission popups during initial onboarding)
-* Role based (via delegation) security.  On-chain based on domain and leveraged by all dApps.  
+* Use a modern web3 stack and leverage latest MetaMask capabilities.
+* Intuitive AI chat driven UI. No MetaMask permission popups within main application (one time permission popups during initial onboarding).
+* Role based (via delegation) security. On-chain based on domain and leveraged by all dApps.
 
 ## Architecture
 
@@ -106,8 +124,6 @@ Design a solution showcasing these features, such as a decentralized eCommerce p
 * Lavague
 * Veramo (future)
 * Masca Snap (future)
-
-
 
 ## Requirements
 

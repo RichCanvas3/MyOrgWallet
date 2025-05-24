@@ -8,8 +8,8 @@ import {
   AccordionDetails,
   Grid,
   Typography,
-  Paper, 
-  Tab, 
+  Paper,
+  Tab,
 
   Tabs as MuiTabs
 } from '@mui/material';
@@ -143,8 +143,7 @@ return (
   flexDirection="column"
   justifyContent="flex-start"
   alignItems="flex-start"
-  bgcolor="grey.50"
-  minHeight="100vh"
+  height="750px" /* Will most likely have to change in the future, temp fix */
   width="100%"
 >
   <TabContext value={tabValue}>
