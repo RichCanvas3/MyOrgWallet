@@ -9,8 +9,8 @@ import {
   AccordionDetails,
   Grid,
   Typography,
-  Paper, 
-  Tab, 
+  Paper,
+  Tab,
 
   Tabs as MuiTabs
 } from '@mui/material';
@@ -115,19 +115,19 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({className, appComm
         attestationsEmitter.off('attestationChangeEvent', handleAttestationChange);
       };
 
-      
+
 
 
 
     }, [orgDid]);
-  
-  
-  
+
+
+
     useEffect(() => {
       //const sortedOrganizations = [...organizations];  // Sort by timestamp if not already sorted
       //const sortedOrganizations = [...organizations].sort((a, b) => b.name - a.name);  // Sort by timestamp if not already sorted
     }, [organizations]);
-  
+
     // Initialize expanded state when categories change
     useEffect(() => {
       setExpandedCategories(
@@ -148,18 +148,18 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({className, appComm
                       entityId: att.entityId,
                     }
       appCommand(cmd)
-      
+
 
     }
-  
 
-    
+
+
     const handleSearch = async (searchString: string) => {
-      console.info("hello world")
+      console.info(searchString)
     }
-  
+
     const OrganizationListItemMemo = React.memo(OrganizationListItem);
-  
+
     // Filter and group
     const filtered = attestations.filter(a =>
         a.entityId?.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -170,7 +170,7 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({className, appComm
         //console.info("return acc: ", acc)
         return acc;
     }, {} as Record<string, Attestation[]>);
-    
+
 
     return (
       <div className="organization-page flex h-screen">
@@ -210,7 +210,7 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({className, appComm
           >
             <div className="flex flex-col gap-1 pb-1 text-sm">
               <div className="relative overflow-x-hidden" style={{ height: "auto", opacity: 1 }}>
-                <ol className="flex flex-wrap gap-2">
+                <ol>
                   {organizations.map((organization, index) => (
                     <OrganizationListItemMemo
                       key={organization.id}
@@ -289,7 +289,7 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({className, appComm
                 </Box>
         </div>
       </div>
-      
+
     );
 };
 

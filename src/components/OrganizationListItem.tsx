@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {ChatBubbleLeftIcon, CheckIcon, PencilSquareIcon, TrashIcon, XMarkIcon} from "@heroicons/react/24/outline";
+import {ChatBubbleLeftIcon, CheckIcon, PencilSquareIcon, TrashIcon, XMarkIcon, BuildingOfficeIcon} from "@heroicons/react/24/outline";
 import AttestationService from "../service/AttestationService";
 import {Organization} from "../models/Organization"
 import {iconProps} from "../svg";
@@ -28,20 +28,20 @@ const OrganizationListItem: React.FC<OrganizationListItemProps> = ({
     onSelectOrganization(organization.orgDid);
   };
 
-  
+
   return (
     <li key={organization.orgDid} className="organization-list-item">
       <button
         onClick={() => selectOrganization()}
         type="button"
       >
-        <div className="organization-card">
+        {/* <div className="organization-card"> */}
           <div className="organization-header">
-            <ChatBubbleLeftIcon className="organization-icon" />
+            <BuildingOfficeIcon className="organization-icon" stroke="grey" />
             <span className="organization-name">{organization.name}</span>
           </div>
           <div className="organization-date">{organization.issuedate}</div>
-        </div>
+        {/* </div> */}
       </button>
     </li>
   );
