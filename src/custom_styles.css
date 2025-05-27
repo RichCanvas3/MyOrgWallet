@@ -10,6 +10,11 @@ div.custom {
   min-height: calc(100vh - 64px); /* View height minus the height of the header */
 }
 
+div.about_container {
+  width: 90vh;
+  margin: 0 auto;
+}
+
 code.error {
   font-size: 14px;
   background-color: rgb(255, 208, 208);
@@ -30,4 +35,11 @@ button.solid:hover {
 
 button.outlined:hover {
   background-color: rgb(188, 255, 253);
+}
+
+@media (width <= 800px) {
+  div.about_container {
+    width: auto;
+    margin: auto;
+  }
 }

@@ -142,7 +142,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
           </Button>
 
           <Button className="outlined" variant="outlined" size="large" onClick={handleLearnMore}>
-            Learn More
+            About Us
           </Button>
         </Box>
       </Box>
