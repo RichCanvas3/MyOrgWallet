@@ -11,7 +11,7 @@ div.custom {
 }
 
 div.about_container {
-  width: 90vh;
+  width: 960px;
   margin: 0 auto;
 }
 
@@ -39,7 +39,6 @@ button.outlined:hover {
 
 @media (width <= 800px) {
   div.about_container {
-    width: auto;
-    margin: auto;
+    width: 80%;
   }
 }
