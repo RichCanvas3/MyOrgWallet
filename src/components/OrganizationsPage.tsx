@@ -11,14 +11,11 @@ import {
   Typography,
   Paper,
   Tab,
-
   Tabs as MuiTabs
 } from '@mui/material';
+
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-
 import {useNavigate} from 'react-router-dom';
-
-
 import { Organization } from "../models/Organization"
 import OrganizationListItem from "./OrganizationListItem"
 
@@ -35,6 +32,7 @@ import {
   Attestation,
   AttestationCategory,
 } from '../models/Attestation';
+
 import {
   AttestationCard,
 } from './AttestationCard';
@@ -44,23 +42,16 @@ interface OrganizationsPageProps {
   appCommand: (cmd: Command) => void;
 }
 
-
-const OrganizationsPage: React.FC<OrganizationsPageProps> = ({className, appCommand}) => {
-
+  const OrganizationsPage: React.FC<OrganizationsPageProps> = ({className, appCommand}) => {
     const [organizations, setOrganizations] = useState<Organization[]>([]);
     const [searchInputValue, setSearchInputValue] = useState("");
-
     const [orgDid, setOrgDid] = useState<string>();
-
     const [categories, setCategories] = useState<AttestationCategory[]>([]);
     const [attestations, setAttestations] = useState<Attestation[]>([]);
-
     const [currentCategories, setCurrentCategories] = useState<AttestationCategory[]>([]);
-
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
     const [selectedId, setSelectedId] = useState<string | null>(null);
-
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const [showSearchOptions, setShowSearchOptions] = useState(false);
 
@@ -79,12 +70,14 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({className, appComm
     };
 
     const loadOrganizations = async () => {
-      AttestationService.loadOrganizations().then(organizations => {
+      AttestationService.loadOrganizations()
+        .then(organizations => {
           setOrganizations(organizations);
-      }).catch(error => {
+        })
+        .catch(error => {
           console.error("Error loading organizations:", error);
-      });
-  };
+        });
+    };
 
     // Load data on orgDid change
     useEffect(() => {
@@ -94,16 +87,17 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({className, appComm
           setAttestations(atts)
         })
 
-
         AttestationService.loadAttestationCategories().then((cats) => {
           setCategories(cats)
 
           let currentCategories = []
+
           for (const cat of cats) {
               if (cat.class == "organization") {
                   currentCategories.push(cat)
               }
           }
+
           setCurrentCategories(currentCategories)
         })
       }
@@ -111,17 +105,11 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({className, appComm
       loadOrganizations()
 
       attestationsEmitter.on('attestationChangeEvent', handleAttestationChange);
+
       return () => {
         attestationsEmitter.off('attestationChangeEvent', handleAttestationChange);
       };
-
-
-
-
-
     }, [orgDid]);
-
-
 
     useEffect(() => {
       //const sortedOrganizations = [...organizations];  // Sort by timestamp if not already sorted
@@ -139,23 +127,24 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({className, appComm
         setOrgDid(orgDid)
     }
 
-
-
     const onSelectAttestation = async(att: Attestation) => {
       const cmd : Command = {
-                      action: "show",
-                      did: att.attester,
-                      entityId: att.entityId,
-                    }
+                    action: "show",
+                    did: att.attester,
+                    entityId: att.entityId,
+                  }
       appCommand(cmd)
-
-
     }
 
-
-
+    // Search the organizations based on the input
     const handleSearch = async (searchString: string) => {
-      console.info(searchString)
+      const lowerSearch = searchString.toLowerCase();
+
+      const filteredOrganizations = organizations.filter(org =>
+        org.name.toLowerCase().includes(lowerSearch)
+      );
+
+      setOrganizations(filteredOrganizations);
     }
 
     const OrganizationListItemMemo = React.memo(OrganizationListItem);
@@ -170,7 +159,6 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({className, appComm
         //console.info("return acc: ", acc)
         return acc;
     }, {} as Record<string, Attestation[]>);
-
 
     return (
       <div className="organization-page flex h-screen">

@@ -41,4 +41,10 @@ button.outlined:hover {
   div.about_container {
     width: 80%;
   }
+
+  div.modal-dialog {
+    min-width: 200px;
+    max-width: 448px;
+    min-height: 400px;
+  }
 }
