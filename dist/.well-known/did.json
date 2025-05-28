@@ -1,0 +1,21 @@
+{
+  "@context": "https://www.w3.org/ns/did/v1",
+  "id": "did:web:wallet.myorgwallet.io",
+  "verificationMethod": [
+    {
+      "id": "did:web:wallet.myorgwallet.io#owner",
+      "type": "JsonWebKey2020",
+      "controller": "did:web:wallet.myorgwallet.io",
+      "publicKeyJwk": {
+        "kty": "EC",
+        "crv": "secp256k1",
+        "x": "BPiT95B6JJqABg-dKUSfyZm2qJKYWX7qjyu2ZguD1gk",
+        "y": "CLINeoekaPqX-f_lqWlFZPQhSCBre3CPZlwxWYXqtMM5"
+      }
+    }
+  ],
+  "authentication": [
+    "did:web:wallet.myorgwallet.io#owner"
+  ]
+}
+
