@@ -98,6 +98,7 @@ jobs:
               { "name": "LINKEDIN_CLIENT_SECRET", "value": "${{ secrets.LINKEDIN_CLIENT_SECRET }}" },
               { "name": "X_CLIENT_ID", "value": "${{ secrets.X_CLIENT_ID }}" },
               { "name": "X_CLIENT_SECRET", "value": "${{ secrets.X_CLIENT_SECRET }}" },
+              { "name": "API_URL", "value": "${{ secrets.API_URL }}" },
               { "name": "SHOPIFY_SHOP_NAME", "value": "${{ secrets.SHOPIFY_SHOP_NAME }}" },
               { "name": "SHOPIFY_CLIENT_ID", "value": "${{ secrets.SHOPIFY_CLIENT_ID }}" },
               { "name": "SHOPIFY_CLIENT_SECRET", "value": "${{ secrets.SHOPIFY_CLIENT_SECRET }}" },
