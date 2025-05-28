@@ -6,6 +6,14 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection:', reason);
 });
 
+process.on('SIGTERM', () => {
+  console.log('Received SIGTERM. Shutting down gracefully.');
+  process.exit(0);
+});
+process.on('exit', (code) => {
+  console.log(`Process exiting with code: ${code}`);
+});
+
 import express from 'express';
 import axios from 'axios';
 import cors from 'cors';
