@@ -682,7 +682,10 @@ export const useWalletConnect = () => {
 
             }
 
-
+            if (orgAccountClient) {
+              console.info("&&&&&&&&&&&&&&&&&&&&&&&& org account address: ", orgAccountClient.address)
+            }
+            
             
             /*
             const message = 'Hello, MetaMask Delegator!';
@@ -898,7 +901,7 @@ export const useWalletConnect = () => {
       for (let i = 0; i < tryCount; i++) {
 
         // build individuals AA for EOA Connected Wallet
-        const indivAccountClient = await toMetaMaskSmartAccount({
+        const accountClient = await toMetaMaskSmartAccount({
           client: publicClient,
           implementation: Implementation.Hybrid,
           deployParams: [owner, [], [], []],
@@ -906,11 +909,11 @@ export const useWalletConnect = () => {
           deploySalt: toHex(startSeed),
         });
 
-        const indivAddress = await indivAccountClient.getAddress()
+        const address = await accountClient.getAddress()
 
-        if (isBlacklisted(indivAddress) == false) {
-          console.info("valid indivAccountClient at address: ", indivAddress)
-          return indivAccountClient
+        if (isBlacklisted(address) == false) {
+          console.info("valid accountClient at address: ", address)
+          return accountClient
         } 
       }
       return undefined

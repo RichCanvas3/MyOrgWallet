@@ -6,7 +6,6 @@ import dotenv from 'dotenv';
 import helmet from 'helmet';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Ed25519VerificationKey2020 } from '@digitalbazaar/ed25519-verification-key-2020';
 
 import querystring from 'querystring'; // For query string parsing
 import { generateKeyPairSync, createPrivateKey, createPublicKey } from 'crypto';
@@ -391,6 +390,7 @@ const verificationCodes = new Map();
     res.json({ received: true })
   })
 
+  /*
   app.get('/apikey', async (req, res) => {  
         Ed25519VerificationKey2020.generate().then((keyPair) => {
                     const vals = keyPair.export({ publicKey: true, privateKey: true })
@@ -398,6 +398,7 @@ const verificationCodes = new Map();
 
                   })  
   });
+  */
 
   app.get('/', (req, res) => {
     console.log('Health check route called');
