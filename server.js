@@ -59,7 +59,6 @@ try {
     'SHOPIFY_CLIENT_SECRET',
     'SHOPIFY_SHOP_NAME'
   ];
-  
 
   for (const envVar of requiredEnvVars) {
     if (!process.env[envVar]) {
@@ -122,9 +121,6 @@ const verificationCodes = new Map();
       res.status(500).json({ error: err.message });
     }
   });
-
-  const port = process.env.PORT || 8080;
-  console.log('Reached listen block');
 
   app.get('/json', async (req, res) => {
     const filename = String(req.query.filename || 'data.json');
@@ -215,8 +211,6 @@ const verificationCodes = new Map();
       res.status(500).send('Failed to get access token.');
     }
   });
-
-  console.log('Reached listen block 1');
 
   app.get('/x-callback', async (req, res) => {
     console.info('X callback route called');
@@ -357,8 +351,6 @@ const verificationCodes = new Map();
     }
   });
 
-  console.log('Reached listen block 2');
-
   app.post('/verify-code', (req, res) => {
     console.info('Verify code route called');
     const { email, code } = req.body;
@@ -401,8 +393,6 @@ const verificationCodes = new Map();
     res.json(session)
   })
 
-  console.log('Reached listen block 3');
-
   app.post('/session/:sessionId', (req, res) => {
     const sessionId = req.params.sessionId
     const data = req.body
@@ -422,7 +412,6 @@ const verificationCodes = new Map();
     res.json({ received: true })
   })
 
-  /*
   app.get('/apikey', async (req, res) => {  
         Ed25519VerificationKey2020.generate().then((keyPair) => {
                     const vals = keyPair.export({ publicKey: true, privateKey: true })
@@ -430,7 +419,6 @@ const verificationCodes = new Map();
 
                   })  
   });
-  */
 
   app.get('/', (req, res) => {
     console.log('Health check route called');
@@ -448,6 +436,7 @@ const verificationCodes = new Map();
     res.status(500).json({ error: 'Internal Server Error' });
   });
 
+  const port = process.env.PORT || 8080;
   console.log('Starting server on port', port, '...');
   app.listen(port, () => {
     console.log(`Server running on port ${port}`);
@@ -455,6 +444,7 @@ const verificationCodes = new Map();
     console.error('Server failed to start:', error.message, error.stack);
     process.exit(1);
   });
+
 
 } catch (error) {
   console.error('Failed to initialize server:', error.message, error.stack);
