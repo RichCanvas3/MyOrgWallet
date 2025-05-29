@@ -90,6 +90,7 @@ jobs:
           slot-name: 'Production'
           app-settings-json: |
             [
+              { "name": "SCM_DO_BUILD_DURING", "value": "false", "slotSetting": true },
               { "name": "VITE_API_URL", "value": "${{ secrets.VITE_API_URL }}" },
               { "name": "VITE_BASE_PATH", "value": "${{ secrets.VITE_BASE_PATH }}" },
               { "name": "VITE_LINKEDIN_REDIRECT_URI", "value": "${{ secrets.VITE_LINKEDIN_REDIRECT_URI }}" },
