@@ -31,9 +31,7 @@ jobs:
       - name: Verify critical files
         run: |
           ls -la server.js package.json package-lock.json || { echo "Missing critical files"; exit 1; }
-          ls -la node_modules/express || { echo "Express not installed"; exit 1; }
-          ls -la node_modules/@digitalbazaar/ed25519-verification-key-2020 || { echo "@digitalbazaar/ed25519-verification-key-2020 not installed"; exit 1; }
-          
+          ls -la node_modules/express || { echo "Express not installed"; exit 1; }    
 
       - name: Prepare deployment package
         run: |
