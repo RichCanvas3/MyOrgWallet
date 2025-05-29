@@ -1,3 +1,25 @@
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection:', reason);
+});
+
+process.on('SIGTERM', () => {
+  console.error('Received SIGTERM. Shutting down gracefully at', new Date().toISOString());
+  process.exit(0);
+});
+
+process.on('exit', (code) => {
+  console.error(`Process exiting with code: ${code} at`, new Date().toISOString());
+});
+
+// Force flush logs
+process.stdout.on('finish', () => {
+  console.error('stdout finished');
+});
+
 import express from 'express';
 import axios from 'axios';
 import cors from 'cors';
@@ -37,6 +59,7 @@ try {
     'SHOPIFY_CLIENT_SECRET',
     'SHOPIFY_SHOP_NAME'
   ];
+  
 
   for (const envVar of requiredEnvVars) {
     if (!process.env[envVar]) {

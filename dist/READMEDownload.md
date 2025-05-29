@@ -4,7 +4,7 @@
 
 MyOrgWallet is a cutting-edge Web3 digital wallet designed for organizations, empowering seamless and secure interactions in decentralized ecosystems. For this hackathon, build innovative applications leveraging MyOrgWallet’s advanced features:
 
-[Watch the myOrgWallet video](./MyOrgWalletVideo.mp4)
+[Watch the myOrgWallet video](https://wallet.myorgwallet.io/MyOrgWalletDemo.mp4)
 
 ### Account Abstraction (AA): 
 

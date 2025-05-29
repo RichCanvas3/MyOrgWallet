@@ -87,7 +87,7 @@
 }
 .organization-list-container {
   background: var(--white);
-  width: 100vw;
+  width: 50vw;
 }
 .organization-list li {
   background: var(--white);
@@ -498,7 +498,7 @@ textarea:focus {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--black);
+  background: var(--light-gray-1);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -507,7 +507,7 @@ textarea:focus {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #777777;
+  background: #9e9e9e;
 }
 
 /* AppBar and Toolbar */
@@ -935,6 +935,7 @@ textarea:focus {
 
 /* Organization List Item */
 .organization-list-item {
+  margin: 10px 0px;
   background-color: var(--white); /* #FFFFFF */
   color: var(--black); /* #000000 */
   position: relative;
@@ -947,12 +948,12 @@ textarea:focus {
 .organization-list-item button {
   display: flex;
   width: 100%;
-  padding: var(--padding-1); /* 8px, replaces py-3 px-3 */
+  padding: var(--padding-2); /* 8px, replaces py-3 px-3 */
   align-items: center;
   gap: var(--gap-1); /* 8px, replaces gap-3 */
-  background-color: var(--white); /* #FFFFFF */
+  background-color: var(--light-gray-3); /* #FFFFFF */
   border: var(--border-2); /* 1px solid #D1D5DB */
-  border-radius: var(--radius-2); /* 6px, replaces rounded-md */
+  border-radius: 6px; /* 6px, replaces rounded-md */
   cursor: pointer;
   text-align: left;
   transition: background-color 0.2s;
@@ -960,7 +961,7 @@ textarea:focus {
 }
 
 .organization-list-item button:hover {
-  background-color: var(--light-gray-3); /* #F0F0F0 */
+  background-color: var(--light-gray-1); /* #F0F0F0 */
 }
 
 .organization-list-item.selected button {
@@ -1000,16 +1001,19 @@ textarea:focus {
 
 /* orgDid and issuedate */
 .organization-list-item .organization-did,
-.organization-list-item .organization-date {
+.organization-list-item {
   color: var(--black); /* #000000, replaces text-gray-600 and text-gray-500 */
   font-size: 14px;
-  margin-left: calc(var(--padding-2) * 2); /* 32px, replaces ml-8 */
   margin-top: var(--padding-1); /* 8px, replaces mt-1 */
   text-align: left;
 }
 
-
-
+.organization-date {
+  color: rgb(138, 138, 138); /* #000000, replaces text-gray-600 and text-gray-500 */
+  font-size: 14px;
+  margin-left: calc(var(--padding-2) * 2); /* 32px, replaces ml-8 */
+  text-align: left;
+}
 
 /* Media Queries */
 @media (min-width: 1280px) {

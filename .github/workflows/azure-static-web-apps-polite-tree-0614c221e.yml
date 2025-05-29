@@ -34,6 +34,7 @@ jobs:
           echo "VITE_X_REDIRECT_URI=${{ secrets.VITE_X_REDIRECT_URI }}" >> .env
           echo "VITE_SHOPIFY_REDIRECT_URI=${{ secrets.VITE_SHOPIFY_REDIRECT_URI }}" >> .env
           echo "VITE_PROVER_API_URL=${{ secrets.VITE_PROVER_API_URL }}" >> .env
+          echo "VITE_ORGSERVICE_API_URL=${{ secrets.VITE_ORGSERVICE_API_URL }}" >> .env
           echo "VITE_ISSUER_EOA_PRIVATE_KEY=${{ secrets.VITE_ISSUER_EOA_PRIVATE_KEY }}" >> .env
           echo "VITE_OPENAPI_KEY=${{ secrets.VITE_OPENAPI_KEY }}" >> .env
           echo "VITE_DEFAULT_MODEL=${{ secrets.VITE_DEFAULT_MODEL }}" >> .env
