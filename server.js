@@ -7,11 +7,17 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 process.on('SIGTERM', () => {
-  console.log('Received SIGTERM. Shutting down gracefully.');
+  console.error('Received SIGTERM. Shutting down gracefully at', new Date().toISOString());
   process.exit(0);
 });
+
 process.on('exit', (code) => {
-  console.log(`Process exiting with code: ${code}`);
+  console.error(`Process exiting with code: ${code} at`, new Date().toISOString());
+});
+
+// Force flush logs
+process.stdout.on('finish', () => {
+  console.error('stdout finished');
 });
 
 import express from 'express';
@@ -54,6 +60,7 @@ try {
     'SHOPIFY_CLIENT_SECRET',
     'SHOPIFY_SHOP_NAME'
   ];
+  
 
   for (const envVar of requiredEnvVars) {
     if (!process.env[envVar]) {
