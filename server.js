@@ -123,6 +123,9 @@ const verificationCodes = new Map();
     }
   });
 
+  const port = process.env.PORT || 8080;
+  console.log('Reached listen block');
+
   app.get('/json', async (req, res) => {
     const filename = String(req.query.filename || 'data.json');
     const file = bucket.file(filename);
@@ -212,6 +215,8 @@ const verificationCodes = new Map();
       res.status(500).send('Failed to get access token.');
     }
   });
+
+  console.log('Reached listen block 1');
 
   app.get('/x-callback', async (req, res) => {
     console.info('X callback route called');
@@ -352,6 +357,8 @@ const verificationCodes = new Map();
     }
   });
 
+  console.log('Reached listen block 2');
+
   app.post('/verify-code', (req, res) => {
     console.info('Verify code route called');
     const { email, code } = req.body;
@@ -393,6 +400,8 @@ const verificationCodes = new Map();
     sessions[sessionId] = { status: 'pending', session }
     res.json(session)
   })
+
+  console.log('Reached listen block 3');
 
   app.post('/session/:sessionId', (req, res) => {
     const sessionId = req.params.sessionId
@@ -439,7 +448,6 @@ const verificationCodes = new Map();
     res.status(500).json({ error: 'Internal Server Error' });
   });
 
-  const port = process.env.PORT || 8080;
   console.log('Starting server on port', port, '...');
   app.listen(port, () => {
     console.log(`Server running on port ${port}`);
