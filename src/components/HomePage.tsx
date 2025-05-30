@@ -3,10 +3,11 @@ import {useContext, useEffect, useRef, useState} from 'react';
 import { WagmiProvider, useAccount, useConnect, useWalletClient } from 'wagmi';
 
 import { Typography, Card, Button, Box, Paper } from "@mui/material";
-
+import BusinessIcon from '@mui/icons-material/Business';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 
 import { useNavigate } from "react-router-dom";
+import { BuildingOfficeIcon, WalletIcon, ArrowRightCircleIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 
 interface HomePageProps {
   className: string;
@@ -44,6 +45,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
         console.info("........ response from login: ", loginResp)
         if (loginResp) {
           await connect(loginResp.owner, loginResp.signatory, "", "", "")
+
         }
 
       }
@@ -88,7 +90,6 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
   };
 
   return (
-
     <Box
       sx={{
         position: 'relative',
@@ -97,18 +98,21 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: 'background.default',
+        bgcolor: 'white',
         flexDirection: 'column',
         p: 2,
         gap: 4
       }}
     >
 
-      {/* Wallet */}
+      {/* Wallet & About Us Container */}
 
-      <Box
+      {/* <Box
         sx={{
           bgcolor: 'background.default',
+          height: '250px',
+          width: '100%',
+          maxWidth: 800,
           padding: '20px',
           boxShadow: 3,
           borderRadius: 2,
@@ -117,15 +121,18 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
           gap: 3,
           justifyContent: 'center',
           alignItems: 'center',
+          p: 3
         }}
       >
+
+        <WalletIcon className="organization-icon" stroke="#2563EB" />
 
         <Typography variant="h6" color="text.primary" sx={{ fontWeight: 'bold' }}>
           Wallet
         </Typography>
 
         <Typography variant="subtitle2" color="var(--dark-gray-7)">
-          Create your individual and organizational smart wallets.
+          Create individual and organizational smart wallets.
         </Typography>
 
         <Box
@@ -145,12 +152,88 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
             About Us
           </Button>
         </Box>
-      </Box>
+      </Box> */}
+
+      {/* Currently Being Edited */}
 
       <Box
         sx={{
-          maxWidth: 700,
+          maxWidth: 800,
           width: '100%',
+          height: '250px',
+          p: 3,
+          boxShadow: 3,
+          borderRadius: 2,
+          display: 'flex',
+          gap: 3,
+          justifyContent: 'center',
+        }}
+      >
+
+        {/* Wallet */}
+
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 2,
+          }}
+        >
+
+          <WalletIcon className="organization-icon" stroke="#2563EB" />
+
+          <Typography variant="h6" color="text.primary" sx={{ fontWeight: 'bold' }}>
+            Wallet
+          </Typography>
+
+          <Typography variant="subtitle2" color="var(--dark-gray-7)">
+            Create individual and organizational smart wallets.
+          </Typography>
+
+          <Button className="solid" variant="contained" size="large" onClick={handleWelcome}>
+            Get Started
+          </Button>
+        </Box>
+
+        {/* About Us */}
+
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 2,
+          }}
+        >
+
+          <UserGroupIcon className="organization-icon" stroke="#2563EB" />
+
+          <Typography variant="h6" color="text.primary" sx={{ fontWeight: 'bold' }}>
+            About Us
+          </Typography>
+
+          <Typography variant="subtitle2" color="var(--dark-gray-7)">
+            Learn more about who we are and what we do.
+          </Typography>
+
+          <Button className="outlined" variant="outlined" size="large" onClick={handleLearnMore}>
+             About Us
+          </Button>
+        </Box>
+      </Box>
+
+      {/* Log In & Organizations/Leaders Container */}
+
+      <Box
+        sx={{
+          maxWidth: 800,
+          width: '100%',
+          height: '250px',
           p: 3,
           boxShadow: 3,
           borderRadius: 2,
@@ -168,16 +251,19 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
+            justifyContent: 'center',
             gap: 2,
           }}
         >
+
+          <ArrowRightCircleIcon className="organization-icon" stroke="#2563EB" />
 
           <Typography variant="h6" color="text.primary" sx={{ fontWeight: 'bold' }}>
             Log In
           </Typography>
 
           <Typography variant="subtitle2" color="var(--dark-gray-7)">
-            Connect to your externally owned account (EOA).
+            Connect to your Externally Owned Account (EOA).
           </Typography>
 
           <Button className="connect" variant="contained" size="large" onClick={handleConnect} sx={{backgroundColor: '#48ba2f'}}>
@@ -193,15 +279,19 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
+            justifyContent: 'center',
             gap: 2,
           }}
         >
+
+          <BuildingOfficeIcon className="organization-icon" stroke="#2563EB" />
+
           <Typography variant="h6" color="text.primary" sx={{ fontWeight: 'bold' }}>
-            Organizations & Leaders
+            Organizations
           </Typography>
 
           <Typography variant="subtitle2" color="var(--dark-gray-7)">
-            View smart wallets on the chain.
+            View all organizational and individual smart wallets.
           </Typography>
 
           <Button className="outlined" variant="outlined" size="large" onClick={handleOrg}>
