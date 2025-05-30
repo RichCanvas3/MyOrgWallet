@@ -55,14 +55,14 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
 
   const [activeTab, setActiveTab] = useState<'info' | 'vc' | 'vc-raw' | 'zk' | 'rzk' | 'at' >('vc');
   const { veramoAgent, mascaApi } = useWallectConnectContext();
-  
+
 
   const handleClose = () => {
     console.info("close attestation modal")
 
     onClose();
   };
-  
+
   // Async function defined inside the component
   const handleInitOperations = async () => {
     if (did) {
@@ -79,7 +79,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
         //   PRIVATE DATA
         const alchemyRpcUrl = ALCHEMY_RPC_URL
 
-    
+
         //  get org account information
         const ACCOUNT_INFO_SMART_CONTRACT = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
         const accountBalanceUrl = `https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
@@ -107,7 +107,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
             console.log("No resolver found for", name);
             return null;
           }
-      
+
           // Fetch the avatar text record
           const avatar = await resolver.getText("avatar");
           console.log("Avatar URI:", avatar);
@@ -115,7 +115,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
           if (avatar) {
             setOrgEthAvatar(avatar)
           }
-          
+
 
 
 
@@ -178,7 +178,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
         console.log("No resolver found for", name);
         return null;
       }
-  
+
       // Fetch the avatar text record
       const avatar = await resolver.getText("avatar");
       console.log("Avatar URI:", avatar);
@@ -192,10 +192,10 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
     if (avatar) {
       setOrgEthAvatar(avatar)
     }
-    
+
   })
   */
-  
+
 
 
 
@@ -205,7 +205,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
 
     console.info(" >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  is visible       ")
     setAttestation(undefined);
-    setCredential(undefined); 
+    setCredential(undefined);
     setPublicKey(undefined);
     setVcZkProof(undefined);
     setVcRevokeZkProof(undefined);
@@ -262,11 +262,11 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
 
                 /*
                 let websiteAtt = att as WebsiteAttestation
-      
-                
+
+
                 console.info("attestation id: ", websiteAtt.uid)
                 console.info("org id: ", websiteAtt.attester)
-        
+
                 if (websiteAtt?.hash) {
                   console.info("hash: ", websiteAtt.hash)
                 }
@@ -305,15 +305,15 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                   })
 
 
-                  
+
                 }
-                  
+
 
                 if (att.proof && att.vccomm && att.vciss && att.attester) {
                   ZkProofService.getVcZkProof(att.proof, att.vccomm, att.vciss, att.attester).then((vcZkProof) => {
                     setVcZkProof(vcZkProof)
                     if (vcZkProof.isValid && att.vccomm) {
-                      
+
                       AttestationService.getVcRevokedAttestation(att.attester, att.vccomm).then((revokeResponse) => {
 
                         if (revokeResponse.proof && revokeResponse.proof != "" && att.vccomm) {
@@ -327,13 +327,13 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                               setVerified(true)
                             }
                           })
-                          
+
                         }
                         else {
                           setVerified(true)
                         }
 
-         
+
 
                       })
                       /*
@@ -345,30 +345,30 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                         else {
                           setVerified(true)
                         }
-                      }) 
+                      })
                         */
                     }
                     else {
                       setVerified(false)
                     }
                   })
-                  
+
                 }
-            
+
 
                 setAttestation(att)
 
               }
-  
-      
+
+
             })
           }
 
-        
+
 
       }
     }
-    
+
   }, [isVisible]);
 
 
@@ -410,7 +410,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
 
 
   return (
-    
+
     <Transition show={isVisible} as={React.Fragment}>
   <div className="modal-overlay">
     <Transition.Child
@@ -426,12 +426,12 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
         {/* Header */}
         <div id="user-settings-header" className="modal-header">
           <h1 className="modal-title">{attestation?.entityId} attestation</h1>
-          
+
           <button onClick={handleClose} className="close-button">
             <XMarkIcon className="close-icon" aria-hidden="true" />
           </button>
         </div>
- 
+
         {/* Content */}
         <div className="modal-content">
           {/* Tabs */}
@@ -508,16 +508,23 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                         </div>
                       </div>
                     ) : (
-                      <div></div>
+                      <div>
+                        <p> No information is available at this time. Please check back later. </p>
+                      </div>
                     )}
                   </div>
                 )}
               </div>
             )}
+
             {activeTab === 'vc-raw' && (
-              <div className="tab-panel" style={{ maxHeight: '600px', overflowY: 'auto' }}>
+              <div className="tab-panel" style={{ maxHeight: '600px', overflowY: 'auto', color: 'white', backgroundColor: '#0e0e5e', fontSize: '12px'}}>
                 <div style={{ whiteSpace: 'pre-wrap' }}>
-                  {JSON.stringify(credential, null, 2)}
+                  <pre>
+                    <code>
+                      {JSON.stringify(credential, null, 2)}
+                    </code>
+                  </pre>
                 </div>
               </div>
             )}
@@ -552,11 +559,12 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                         </p>
                       )}
                     </div>
-                    
+
                   </div>
                 )}
               </div>
             )}
+
             {activeTab === 'at' && (
               <div className="tab-panel">
                 <h2 className="panel-title">Attestation</h2>
