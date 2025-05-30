@@ -91,7 +91,6 @@ jobs:
               { "name": "VITE_X_REDIRECT_URI", "value": "${{ secrets.VITE_X_REDIRECT_URI }}" },
               { "name": "VITE_SHOPIFY_REDIRECT_URI", "value": "${{ secrets.VITE_SHOPIFY_REDIRECT_URI }}" },
               { "name": "VITE_PROVER_API_URL", "value": "${{ secrets.VITE_PROVER_API_URL }}" },
-              { "name": "VITE_ORGSERVICE_API_URL", "value": "${{ secrets.VITE_ORGSERVICE_API_URL }}" },
               { "name": "GCLOUD_BUCKET_NAME", "value": "${{ secrets.GCLOUD_BUCKET_NAME }}" },
               { "name": "GOOGLE_APPLICATION_CREDENTIALS", "value": "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" },
               { "name": "LINKEDIN_CLIENT_ID", "value": "${{ secrets.LINKEDIN_CLIENT_ID }}" },
