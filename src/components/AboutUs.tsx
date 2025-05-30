@@ -8,7 +8,7 @@ function AboutUs() {
 
         <h2> Manage <b>your</b> organization's digital identity, credentials, and profile; store them securely within your MetaMask wallet, and publish organizational attestations on the smart web. </h2>
 
-        <p><a className="colored_link" href="https://youtu.be/2WAkvM0JogA"> See MyOrgWallet in action. </a></p>
+        <p><a className="colored_link" href="https://youtu.be/2WAkvM0JogA" target="_blank"> See MyOrgWallet in action. </a></p>
 
         <h2>How It Works</h2>
 
