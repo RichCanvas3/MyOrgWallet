@@ -37,6 +37,12 @@ button.outlined:hover {
   background-color: rgb(188, 255, 253);
 }
 
+.organization-icon:hover {
+  stroke: rgb(0, 187, 255);
+  filter: drop-shadow(0 0 2em #00bfff);
+  transition: 1s;
+}
+
 @media (width <= 800px) {
   div.about_container {
     width: 80%;
@@ -46,5 +52,27 @@ button.outlined:hover {
     min-width: 200px;
     max-width: 448px;
     min-height: 400px;
+    max-height: 80%;
+    overflow-x: auto;
+    position: relative;
+  }
+
+  button.close-button {
+    background: red;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+  }
+
+  button.close-button:hover {
+    background: rgb(229, 0, 0);
+  }
+
+  svg.close-icon {
+    stroke: white;
+  }
+
+  .organization-icon {
+    display: none;
   }
 }

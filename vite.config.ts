@@ -26,10 +26,7 @@ export default defineConfig({
       }),],
     server: {
 
-      host: true,
-      allowedHosts: [
-        '4c7d-2601-280-4901-46d0-acf3-1ecc-51ba-dc0f.ngrok-free.app'
-      ],
+        host: '0.0.0.0',
         port: 5173,
         // Proxy API requests to the backend server
         proxy: {
