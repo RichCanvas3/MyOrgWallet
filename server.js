@@ -12,6 +12,7 @@ import { createHash, publicDecrypt } from 'crypto';
 import * as base64 from '@ethersproject/base64';
 import { publicKeyToAddress } from 'viem/accounts';
 import bodyParser from 'body-parser';
+import { v4 as uuidv4 } from 'uuid';
 import { Storage } from '@google-cloud/storage';
 
 // Initialize application
@@ -89,11 +90,12 @@ const generateCode = () => {
   return code;
 };
 
-const storage = new Storage();
-const bucket = storage.bucket(process.env.GCLOUD_BUCKET_NAME);
-console.log(`Initialized Google Cloud Storage bucket: ${process.env.GCLOUD_BUCKET_NAME}`);
+//const storage = new Storage();
+//const bucket = storage.bucket(process.env.GCLOUD_BUCKET_NAME);
+//console.log(`Initialized Google Cloud Storage bucket: ${process.env.GCLOUD_BUCKET_NAME}`);
 
-// Save JSON: POST /json?filename=whatever.json
+// Save JSON to google cloud storage: POST /json?filename=whatever.json
+/*
 app.post('/json', async (req, res) => {
   console.log('Handling POST /json');
   const filename = String(req.query.filename || 'data.json');
@@ -113,8 +115,10 @@ app.post('/json', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+*/
 
-// Retrieve JSON: GET /json?filename=whatever.json
+// Retrieve JSON from google cloud storage: GET /json?filename=whatever.json
+/*
 app.get('/json', async (req, res) => {
   console.log('Handling GET /json');
   const filename = String(req.query.filename || 'data.json');
@@ -131,6 +135,7 @@ app.get('/json', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+*/
 
 // LinkedIn OAuth callback
 app.get('/linkedin-callback', async (req, res) => {
@@ -423,6 +428,51 @@ process.on('unhandledRejection', (reason, promise) => {
   });
   process.exit(1);
 });
+
+const driversLicenseStore = []
+app.get('/driverslicenses', (req, res) => {
+  res.json(driversLicenseStore)
+})
+
+const sessions = {}
+app.get('/startsession', (req, res) => {
+  const sessionId = uuidv4()
+  const url = process.env.API_URL + '/session/' + sessionId
+
+  // Expected data fields (simulate mDL data request)
+  const session = {
+    sessionId,
+    callbackUrl: `${url}`,
+    request: {
+      docType: 'mDL',
+      requestedItems: ['given_name', 'family_name', 'height', 'eye_colour'],
+      nonce: uuidv4()
+    }
+  }
+
+  sessions[sessionId] = { status: 'pending', session }
+  res.json(session)
+})
+
+app.post('/session/:sessionId', (req, res) => {
+  const sessionId = req.params.sessionId
+  const data = req.body
+
+
+  if (!sessions[sessionId]) {
+    return res.status(404).json({ error: 'Invalid session' })
+  }
+
+  sessions[sessionId].status = 'received'
+  sessions[sessionId].data = data
+
+  driversLicenseStore.push(data)
+
+  console.log('✅ Received mDL data:', data)
+  res.json({ received: true })
+})
+
+
 
 // Start the server
 const port = process.env.PORT || 4000;

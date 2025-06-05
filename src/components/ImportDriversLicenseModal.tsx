@@ -40,7 +40,7 @@ import {
   Tab, 
   Tabs as MuiTabs } from "@mui/material";
 import EditableTextBox from "./EditableTextBox";
-import { TripOriginRounded } from '@mui/icons-material';
+import { ConstructionOutlined, TripOriginRounded } from '@mui/icons-material';
 
 
 import {
@@ -108,12 +108,15 @@ const ImportDriversLicenseModal: React.FC<ImportDriversLicenseModalProps> = ({is
 
       console.info("get drivers license session id using uri: ", STARTSESSION_URI)
       const fetchSession = async () => {
+        console.info("fetch drivers license session from server: ", STARTSESSION_URI )
         const res = await axios.get(STARTSESSION_URI)
-        console.info("set drivers licent qr code request session: ", res.data)
+        console.info("set drivers license qr code request session: ", res.data)
         setSession(res.data)
       }
 
-      fetchSession()
+      fetchSession().then(() => {
+        console.info("fetch drivers license session from server")
+      })
 
     }
     
