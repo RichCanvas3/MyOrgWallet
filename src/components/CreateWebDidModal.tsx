@@ -111,6 +111,8 @@ const CreateWebDidModal: React.FC<CreateWebDidModalProps> = ({isVisible, onClose
           signature
         );
         const pubKeyNoPrefix = recoveredPubKey.slice(2); // Remove '0x04'
+
+        /*
         const x = pubKeyNoPrefix.slice(0, 64); // First 32 bytes (64 hex chars)
         const y = pubKeyNoPrefix.slice(64); // Last 32 bytes (64 hex chars)
 
@@ -122,6 +124,7 @@ const CreateWebDidModal: React.FC<CreateWebDidModalProps> = ({isVisible, onClose
 
         const xBase64url = toBase64url(x);
         const yBase64url = toBase64url(y);
+        */
 
         const domain = domainAttestation.domain
         const webDidJson = {
@@ -131,12 +134,7 @@ const CreateWebDidModal: React.FC<CreateWebDidModalProps> = ({isVisible, onClose
             "id": "did:web:" + domain + "#owner",
             "type": "JsonWebKey2020",
             "controller": "did:web:" + domain,
-            "publicKeyJwk": {
-              "kty": "EC",
-              "crv": "secp256k1",
-              "x": xBase64url,
-              "y": yBase64url
-            }
+            "publicKeyHex": pubKeyNoPrefix
           }],
           "authentication": [
             "did:web:" + domain + "#owner"

@@ -16,8 +16,11 @@ export const createInjectedProviderSignatoryFactory: SignatoryFactoryConfigurato
     }
 
     const login = async () => {
+      console.info("request eth chainid");
       const selectedNetwork = await provider.request({ method: "eth_chainId" });
+      console.info("request eth chainid selectedNetwork: ", selectedNetwork);
       if (parseInt(selectedNetwork) !== chain.id) {
+        console.info("wrong chain selected, switching to: ", chain.id);
         await provider.request({
           method: "wallet_switchEthereumChain",
           params: [

@@ -2,6 +2,8 @@ import * as React from 'react';
 import {useContext, useEffect, useRef, useState} from 'react';
 import { WagmiProvider, useAccount, useConnect, useWalletClient } from 'wagmi';
 
+import detectEthereumProvider from '@metamask/detect-provider';
+
 import { Typography, Card, Button, Box, Paper } from "@mui/material";
 
 import { useWallectConnectContext } from "../context/walletConnectContext";
@@ -20,10 +22,21 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
 
   const navigate = useNavigate();
   const { data: walletClient } = useWalletClient();
-
+  const [hasProvider, setHasProvider] = useState<boolean | null>(null);
 
   const { selectedSignatory, signatory, connect, isIndividualConnected } = useWallectConnectContext();
   const { isConnected } = useAccount();
+
+  useEffect(() => {
+    console.info("............ detecting ethereum provider...");
+    const detectProvider = async () => {
+      const provider = await detectEthereumProvider();
+      console.info("............ detected ethereum provider: ", provider);
+      setHasProvider(Boolean(provider));
+    };
+    console.info("............ calling detectProvider");
+    detectProvider();
+  }, []);
 
   useEffect(() => {
     console.info("check if going to chat: ", isConnected, isIndividualConnected)
@@ -56,9 +69,40 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
       if (error.message === "Signatory not configured") {
         // Handle this specific error with a user-friendly message
         alert("Please configure your wallet signatory before connecting.");
+      } else if (error.message.startsWith("Unrecognized chain ID")) {
+
+        const optimismParams = {
+          chainId: '0xa', // 0xa is hexadecimal for 10
+          chainName: 'Optimism',
+          nativeCurrency: {
+            name: 'Ether',
+            symbol: 'ETH',
+            decimals: 18,
+          },
+          rpcUrls: ['https://mainnet.optimism.io'],
+          blockExplorerUrls: ['https://optimistic.etherscan.io'],
+        };
+
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [optimismParams],
+          });
+        } catch (error) {
+        }
+
+        if (selectedSignatory) {
+          const loginResp = await selectedSignatory.login()
+          console.info("........ response from login: ", loginResp)
+          if (loginResp) {
+            await connect(loginResp.owner, loginResp.signatory, "", "", "")
+          }
+        }
+
+        //alert("Please go to metamask extension and add Optimism");
       } else {
         // Generic error fallback
-        alert("An error occurred while connecting your wallet.");
+        alert("An error occurred " + error.message);
       }
     }
   };

@@ -6,6 +6,7 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+
   define: {
     // Mock process.env for compatibility
     'process.env': {
@@ -24,6 +25,11 @@ export default defineConfig({
         },
       }),],
     server: {
+
+      host: true,
+      allowedHosts: [
+        '4c7d-2601-280-4901-46d0-acf3-1ecc-51ba-dc0f.ngrok-free.app'
+      ],
         port: 5173,
         // Proxy API requests to the backend server
         proxy: {
