@@ -33,7 +33,7 @@ jobs:
       - name: Prepare deployment package
         run: |
           mkdir deploy
-          cp -r server.js package.json package-lock.json node_modules/ deploy/
+          cp -r server.js package.json package-lock.json deploy/
           zip -r release.zip deploy
 
       - name: Upload artifact for deployment job
