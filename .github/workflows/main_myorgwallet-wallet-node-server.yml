@@ -100,5 +100,7 @@ jobs:
               { "name": "SHOPIFY_SHOP_NAME", "value": "${{ secrets.SHOPIFY_SHOP_NAME }}" },
               { "name": "SHOPIFY_CLIENT_ID", "value": "${{ secrets.SHOPIFY_CLIENT_ID }}" },
               { "name": "SHOPIFY_CLIENT_SECRET", "value": "${{ secrets.SHOPIFY_CLIENT_SECRET }}" },
-              { "name": "SENDGRID_API_KEY", "value": "${{ secrets.SENDGRID_API_KEY }}" }
+              { "name": "SENDGRID_API_KEY", "value": "${{ secrets.SENDGRID_API_KEY }}" },
+              { "name": "API_URL", "value": "${{ secrets.API_URL }}" },
+              { "name": "VITE_ORGSERVICE_API_URL", "value": "${{ secrets.VITE_ORGSERVICE_API_URL }}" }
             ]
