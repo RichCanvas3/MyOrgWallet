@@ -335,7 +335,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
           </Typography>
 
           <Typography variant="subtitle2" color="var(--dark-gray-7)">
-            View all organizational and individual smart wallets.
+            View all organizational and individual smart walletss.
           </Typography>
 
           <Button className="outlined" variant="outlined" size="large" onClick={handleOrg}>
