@@ -1,3 +1,6 @@
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
 name: Build and deploy Node.js app to Azure Web App - MyOrgWallet-Wallet-Node-Server
 
 on:
@@ -10,42 +13,30 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: read #This is required for actions/checkout
 
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
           node-version: '20.x'
-          cache: 'npm' # Cache npm dependencies to speed up builds
 
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Build front-end and CSS
-        run: npm run build
-
-      - name: Verify critical files
+      - name: npm install, build, and test
         run: |
-          ls -la server.js package.json package-lock.json || { echo "Missing critical files"; exit 1; }
-          ls -la node_modules/express || { echo "Express not installed"; exit 1; }
+          npm install
+          npm run build --if-present
+          npm run test --if-present
 
-      - name: Prepare deployment package
-        run: |
-          mkdir deploy
-          cp -r server.js package.json package-lock.json startup.sh dist/ public/ deploy/
-          chmod +x deploy/startup.sh
-          zip -r release.zip deploy
+      - name: Zip artifact for deployment
+        run: zip release.zip ./* -r
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
           path: release.zip
-          retention-days: 10
 
   deploy:
     runs-on: ubuntu-latest
@@ -54,8 +45,8 @@ jobs:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
-      id-token: write
-      contents: read
+      id-token: write #This is required for requesting the JWT
+      contents: read #This is required for actions/checkout
 
     steps:
       - name: Download artifact from build job
@@ -63,48 +54,21 @@ jobs:
         with:
           name: node-app
 
-      - name: Unzip artifact
+      - name: Unzip artifact for deployment
         run: unzip release.zip
-
+      
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_C9451C0B762749E88DB6D686279FF2BD }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_ED19A14E83FD4E50BA73F4C96D8D5885 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_FF2CF21BA34844819EDFCD6D904B20D4 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_A70374670ECA43D6978F25EF906E0A9E }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_C579F071E3CD49E396F0896287D60795 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_8A0E484522C146B1B3E5E3050C17BB23 }}
 
-      - name: Deploy to Azure Web App
+      - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'MyOrgWallet-Wallet-Node-Server'
           slot-name: 'Production'
-          package: ./deploy
-      
-      # Set environment variables for deployment, including sensitive ones
-      - name: Configure App Service environment variables
-        uses: azure/appservice-settings@v1
-        with:
-          app-name: 'MyOrgWallet-Wallet-Node-Server'
-          slot-name: 'Production'
-          app-settings-json: |
-            [
-              { "name": "VITE_API_URL", "value": "${{ secrets.VITE_API_URL }}" },
-              { "name": "VITE_BASE_PATH", "value": "${{ secrets.VITE_BASE_PATH }}" },
-              { "name": "VITE_LINKEDIN_REDIRECT_URI", "value": "${{ secrets.VITE_LINKEDIN_REDIRECT_URI }}" },
-              { "name": "VITE_X_REDIRECT_URI", "value": "${{ secrets.VITE_X_REDIRECT_URI }}" },
-              { "name": "VITE_SHOPIFY_REDIRECT_URI", "value": "${{ secrets.VITE_SHOPIFY_REDIRECT_URI }}" },
-              { "name": "VITE_PROVER_API_URL", "value": "${{ secrets.VITE_PROVER_API_URL }}" },
-              { "name": "GCLOUD_BUCKET_NAME", "value": "${{ secrets.GCLOUD_BUCKET_NAME }}" },
-              { "name": "GOOGLE_APPLICATION_CREDENTIALS", "value": "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}" },
-              { "name": "LINKEDIN_CLIENT_ID", "value": "${{ secrets.LINKEDIN_CLIENT_ID }}" },
-              { "name": "LINKEDIN_CLIENT_SECRET", "value": "${{ secrets.LINKEDIN_CLIENT_SECRET }}" },
-              { "name": "X_CLIENT_ID", "value": "${{ secrets.X_CLIENT_ID }}" },
-              { "name": "X_CLIENT_SECRET", "value": "${{ secrets.X_CLIENT_SECRET }}" },
-              { "name": "SHOPIFY_SHOP_NAME", "value": "${{ secrets.SHOPIFY_SHOP_NAME }}" },
-              { "name": "SHOPIFY_CLIENT_ID", "value": "${{ secrets.SHOPIFY_CLIENT_ID }}" },
-              { "name": "SHOPIFY_CLIENT_SECRET", "value": "${{ secrets.SHOPIFY_CLIENT_SECRET }}" },
-              { "name": "SENDGRID_API_KEY", "value": "${{ secrets.SENDGRID_API_KEY }}" },
-              { "name": "API_URL", "value": "${{ secrets.API_URL }}" },
-              { "name": "VITE_ORGSERVICE_API_URL", "value": "${{ secrets.VITE_ORGSERVICE_API_URL }}" }
-            ]
+          package: .
+          
