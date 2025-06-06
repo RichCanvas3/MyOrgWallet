@@ -10,14 +10,8 @@ export PORT=${PORT:-8080}
 echo "Checking dependencies..."
 if [ ! -d "node_modules" ]; then
   echo "Installing dependencies..."
-  npm ci --omit=dev  # Faster & reproducible in production
+  npm ci --omit=dev  # Production install
 fi
-
-echo "Running CSS build..."
-npm run build:css || echo "Skipping CSS build..."
-
-echo "Running Vite build..."
-npm run build || echo "Skipping Vite build..."
 
 echo "Starting server..."
 npm start
