@@ -15,15 +15,50 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     permissions:
-       id-token: write
-       contents: read
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: true
           lfs: false
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Write .env file
+        run: |
+          echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
+          echo "VITE_BASE_PATH=${{ secrets.VITE_BASE_PATH }}" >> .env
+          echo "VITE_LINKEDIN_REDIRECT_URI=${{ secrets.VITE_LINKEDIN_REDIRECT_URI }}" >> .env
+          echo "VITE_X_REDIRECT_URI=${{ secrets.VITE_X_REDIRECT_URI }}" >> .env
+          echo "VITE_SHOPIFY_REDIRECT_URI=${{ secrets.VITE_SHOPIFY_REDIRECT_URI }}" >> .env
+          echo "VITE_PROVER_API_URL=${{ secrets.VITE_PROVER_API_URL }}" >> .env
+          echo "VITE_ORGSERVICE_API_URL=${{ secrets.VITE_ORGSERVICE_API_URL }}" >> .env
+          echo "VITE_ISSUER_EOA_PRIVATE_KEY=${{ secrets.VITE_ISSUER_EOA_PRIVATE_KEY }}" >> .env
+          echo "VITE_OPENAPI_KEY=${{ secrets.VITE_OPENAPI_KEY }}" >> .env
+          echo "VITE_DEFAULT_MODEL=${{ secrets.VITE_DEFAULT_MODEL }}" >> .env
+          echo "VITE_DEFAULT_SYSTEM_PROMPT=${{ secrets.VITE_DEFAULT_SYSTEM_PROMPT }}" >> .env
+          echo "VITE_DEFAULT_ASSISTANT_PROMPT=${{ secrets.VITE_DEFAULT_ASSISTANT_PROMPT }}" >> .env
+          echo "VITE_WEB3_AUTH_NETWORK=${{ secrets.VITE_WEB3_AUTH_NETWORK }}" >> .env
+          echo "VITE_WEB3_AUTH_CLIENT_ID=${{ secrets.VITE_WEB3_AUTH_CLIENT_ID }}" >> .env
+          echo "VITE_RPC_URL=${{ secrets.VITE_RPC_URL }}" >> .env
+          echo "VITE_BUNDLER_URL=${{ secrets.VITE_BUNDLER_URL }}" >> .env
+          echo "VITE_PAYMASTER_URL=${{ secrets.VITE_PAYMASTER_URL }}" >> .env
+          echo "VITE_METAMASK_STORAGE_ID=${{ secrets.VITE_METAMASK_STORAGE_ID }}" >> .env
+          echo "VITE_METAMASK_STORAGE_KEY=${{ secrets.VITE_METAMASK_STORAGE_KEY }}" >> .env
+          echo "VITE_ALCHEMY_RPC_URL=${{ secrets.VITE_ALCHEMY_RPC_URL }}" >> .env
+          echo "VITE_ETHERSCAN_API_KEY=${{ secrets.VITE_ETHERSCAN_API_KEY }}" >> .env
+          echo "VITE_X_CLIENT_ID=${{ secrets.VITE_X_CLIENT_ID }}" >> .env
+          echo "VITE_LINKEDIN_CLIENT_ID=${{ secrets.VITE_LINKEDIN_CLIENT_ID }}" >> .env
+          echo "VITE_SHOPIFY_CLIENT_ID=${{ secrets.VITE_SHOPIFY_CLIENT_ID }}" >> .env
+
+      - name: Build the app
+        run: npm run build
+          
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
+
       - name: Get Id Token
         uses: actions/github-script@v6
         id: idtoken
