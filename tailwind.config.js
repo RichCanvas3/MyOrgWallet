@@ -25,7 +25,5 @@ module.exports = {
   variants: {
     extend: {},
   },
-  plugins: [
-    new webpack.ProvidePlugin(),
-  ],
+  plugins: [ ],
 }

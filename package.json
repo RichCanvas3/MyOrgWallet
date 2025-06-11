@@ -125,9 +125,9 @@
     "typescript": "^5.2.2"
   },
   "scripts": {
-    "build:css": "postcss src/index.css -o src/tailwind.css",
+    "build:css": "postcss src/index.css -o public/tailwind.css",
     "dev": "vite --host",
-    "build": "node --max-old-space-size=8192 ./node_modules/.bin/vite build",
+    "build": "npm run build:css && node --max-old-space-size=8192 ./node_modules/.bin/vite build",
     "preview": "vite preview",
     "start": "node server.js"
   },
