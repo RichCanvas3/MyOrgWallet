@@ -175,6 +175,60 @@ class VerifiableCredentialsService {
       return vc;
     }
 
+    static async createAccountVC(
+      entityId: string,
+      issuerDid: string,
+      accountDid: string,
+      orgDid: string,
+      accountName: string,
+      coaCode: string,
+      coaCategory: string,
+    ): Promise<VerifiableCredential> {
+      let vc : VerifiableCredential = {
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
+        type: ["VerifiableCredential", "OrgCredential"],
+        issuer: issuerDid, 
+        issuanceDate: new Date().toISOString(),
+        credentialSubject: {
+          id: accountDid,
+          orgDid: orgDid,
+          accountName: accountName,
+          coaCode: coaCode,
+          coaCategory: coaCategory,
+          platform: "richcanvas",
+          provider: entityId
+        }
+      }
+    
+      return vc;
+    }
+
+    static async createOrgAccountVC(
+      entityId: string,
+      issuerDid: string,
+      accountDid: string,
+      orgDid: string,
+      accountName: string,
+      delegation: string,
+    ): Promise<VerifiableCredential> {
+      let vc : VerifiableCredential = {
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
+        type: ["VerifiableCredential", "OrgCredential"],
+        issuer: issuerDid, 
+        issuanceDate: new Date().toISOString(),
+        credentialSubject: {
+          accountDid: orgDid,
+          orgDid: orgDid,
+          accountName: accountName,
+          delegation: delegation,
+          platform: "richcanvas",
+          provider: entityId
+        }
+      }
+    
+      return vc;
+    }
+
     static async createStateRegistrationVC(
       entityId: string,
       orgDid: string,
@@ -260,12 +314,13 @@ class VerifiableCredentialsService {
 
 
     
-    static async createIndivOrgVC(
+    static async createOrgIndivVC(
       entityId: string,
+      orgDid: string,
       indivDid: string,
+      indName: string,
+      delegation: string,
       issuerDid: string,
-      emailType: string,
-      email: string
     ): Promise<VerifiableCredential> {
       let vc : VerifiableCredential = {
         "@context": ["https://www.w3.org/2018/credentials/v1"],
@@ -273,9 +328,11 @@ class VerifiableCredentialsService {
         issuer: issuerDid, 
         issuanceDate: new Date().toISOString(),
         credentialSubject: {
-          id: indivDid,
-          type: emailType,
-          email: email,
+          orgId: orgDid,
+          indivId: indivDid,
+          indivName: indName,
+          delegation: delegation,
+          issuerDid: issuerDid,
           verifiedMethod: "oAuth",
           platform: "richcanvas",
           provider: entityId

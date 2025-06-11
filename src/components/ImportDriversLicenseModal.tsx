@@ -1,12 +1,6 @@
 import * as React from 'react';
 import {useContext, useEffect, useRef, useState} from 'react';
-import { keccak256, toUtf8Bytes } from 'ethers';
-import { encodeFunctionData, hashMessage, createPublicClient, createWalletClient, WalletClient, toHex, http, zeroAddress, publicActions, custom, verifyMessage  } from "viem";
-import { optimism } from "viem/chains";
 import axios from 'axios'
-
-import { ethers } from 'ethers';
-import { recoverPublicKey } from "@ethersproject/signing-key";
 
 import QRCode from 'react-qr-code'
 
@@ -22,47 +16,7 @@ import AttestationService from '../service/AttestationService';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import { useWalletClient } from 'wagmi';
 
-import { IndivAttestation, RegisteredDomainAttestation } from "../models/Attestation"
 
-import {AttestationCard } from "./AttestationCard"
-
-import { 
-  TextField, 
-  Button, 
-  Typography, 
-  Box, 
-  Paper,
-  InputAdornment,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Grid,
-  Tab, 
-  Tabs as MuiTabs } from "@mui/material";
-import EditableTextBox from "./EditableTextBox";
-import { ConstructionOutlined, TripOriginRounded } from '@mui/icons-material';
-
-
-import {
-  Implementation,
-  toMetaMaskSmartAccount,
-  type MetaMaskSmartAccount,
-  type DelegationStruct,
-  createDelegation,
-  DelegationFramework,
-  SINGLE_DEFAULT_MODE,
-  getExplorerTransactionLink,
-  getExplorerAddressLink,
-  createExecution,
-  getDelegationHashOffchain,
-  Delegation
-} from "@metamask/delegation-toolkit";
-
-
-
-import { IndivOrgAttestation } from "../models/Attestation"
-
-import VerifiableCredentialsService from "../service/VerifiableCredentialsService"
 
 
 interface ImportDriversLicenseModalProps {

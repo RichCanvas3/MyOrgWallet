@@ -12,7 +12,7 @@ import {OrgAttestation} from '../models/Attestation';
 import AttestationService from '../service/AttestationService';
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService'
 import { useWallectConnectContext } from "../context/walletConnectContext";
-import { useWalletClient } from "wagmi"
+import { useWalletClient, useAccount } from "wagmi"
 import { TextField, Button, Typography, Box, Paper } from "@mui/material";
 
 import { keccak256, toUtf8Bytes } from 'ethers';
@@ -29,11 +29,11 @@ interface OrgModalProps {
 
 const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
 
-  const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const { veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, signatory, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, setOrgNameValue } = useWallectConnectContext();
   const { data: walletClient }= useWalletClient()
+  const { chain } = useAccount();
 
   const [name, setName] = useState("");
 
@@ -61,7 +61,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
-      if (fullVc && signatory && orgAccountClient && walletClient) {
+      if (fullVc && signatory && chain && orgAccountClient && walletClient) {
       
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -83,7 +83,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
         const walletSigner = await provider.getSigner()
 
         console.info("AttestationService add org attestation")
-        const uid = await AttestationService.addOrgAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+        const uid = await AttestationService.addOrgAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         setOrgNameValue(orgName)
 
         if (location.pathname.startsWith("/chat/c/")) {

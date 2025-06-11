@@ -159,18 +159,28 @@ const App = () => {
       setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
+    if (cmd.action == "edit" && cmd.entityId == "account" && cmd.did) {
+      setSelectedEntityId("account")
+      setSelectedDid(cmd.did)
+      setAttestationViewModalVisible(true)
+    }
+    if (cmd.action == "edit" && cmd.entityId == "org-account" && cmd.did) {
+      setSelectedEntityId("org-account")
+      setSelectedDid(cmd.did)
+      setAttestationViewModalVisible(true)
+    }
     if (cmd.action == "show" && cmd.entityId == "indiv" && cmd.did) {
       setSelectedEntityId("indiv")
       setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "indiv-org" && cmd.did) {
-      setSelectedEntityId("indiv-org")
+    if (cmd.action == "edit" && cmd.entityId == "org-indiv" && cmd.did) {
+      setSelectedEntityId("org-indiv")
       setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "indiv-org" && cmd.did) {
-      setSelectedEntityId("indiv-org")
+    if (cmd.action == "show" && cmd.entityId == "org-indiv" && cmd.did) {
+      setSelectedEntityId("org-indiv")
       setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }

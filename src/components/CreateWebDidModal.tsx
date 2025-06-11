@@ -1,8 +1,7 @@
 import * as React from 'react';
 import {useContext, useEffect, useRef, useState} from 'react';
-import { keccak256, toUtf8Bytes } from 'ethers';
 import { encodeFunctionData, hashMessage, createPublicClient, createWalletClient, WalletClient, toHex, http, zeroAddress, publicActions, custom, verifyMessage  } from "viem";
-import { optimism } from "viem/chains";
+
 
 import { ethers } from 'ethers';
 import { recoverPublicKey } from "@ethersproject/signing-key";
@@ -57,7 +56,7 @@ import {
 
 
 
-import { IndivOrgAttestation } from "../models/Attestation"
+import { OrgIndivAttestation } from "../models/Attestation"
 
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService"
 

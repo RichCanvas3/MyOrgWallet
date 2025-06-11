@@ -6,7 +6,7 @@ import { useImperativeHandle, forwardRef, useEffect  } from 'react';
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService'
 import AttestationService from '../service/AttestationService';
 import {SocialAttestation} from '../models/Attestation';
-import { useWalletClient } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { ethers } from 'ethers';
 
 import { useWallectConnectContext } from "../context/walletConnectContext";
@@ -51,7 +51,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
   
   const { } = props;
   const { veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, indivAccountClient, indivDid, privateIssuerDid } = useWallectConnectContext();
-  const { data: walletClient } = useWalletClient();
+  const { chain } = useAccount();
 
 
   const openLinkedInPopup = () => {
@@ -99,7 +99,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
           const fullVc = result.vc
           const proof = result.proof
 
-          if (proof && fullVc && indivAccountClient && indivIssuerDelegation) {
+          if (proof && fullVc && chain && indivAccountClient && indivIssuerDelegation) {
           
             // add attestation
             const hash = keccak256(toUtf8Bytes("hash value"));
@@ -122,7 +122,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
             const walletSigner = await provider.getSigner()
   
             console.info("proof: ", proof)
-            const uid = await AttestationService.addSocialAttestation(attestation, walletSigner, [indivIssuerDelegation], indivAccountClient, burnerAccountClient)
+            const uid = await AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivIssuerDelegation], indivAccountClient, burnerAccountClient)
           
             console.info(">>>>>>>>>>>>>>>>>  added attestation complete: ", uid)
 

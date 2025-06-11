@@ -9,7 +9,7 @@ import { ethers } from 'ethers';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import AttestationService from '../service/AttestationService';
 import { WebsiteAttestation } from '../models/Attestation';
-import { useWalletClient } from 'wagmi';
+import { useWalletClient, useAccount } from 'wagmi';
 
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService';
 
@@ -35,6 +35,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
   const { } = props;
   const { veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
+  const { chain } = useAccount();
 
   const openShopifyPopup = () => {
 
@@ -69,7 +70,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
       var shopifyUrl = res.data.shop.domain
       var websiteType = "commerce"
 
-      if (orgDid && shopifyUrl && walletClient && mascaApi && privateIssuerAccount && orgAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && privateIssuerDid) {
+      if (orgDid && chain && shopifyUrl && walletClient && mascaApi && privateIssuerAccount && orgAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && privateIssuerDid) {
 
         const provider = new ethers.BrowserProvider(window.ethereum);
         await window.ethereum.request({ method: "eth_requestAccounts" });
@@ -97,7 +98,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
             proof: proof
           };
 
-          const uid = await AttestationService.addWebsiteAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+          const uid = await AttestationService.addWebsiteAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
           console.info("add shopify attestation complete")
 
         }

@@ -6,7 +6,7 @@ import { ethers } from 'ethers';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 
 import { keccak256, toUtf8Bytes } from 'ethers';
-import { useWalletClient } from 'wagmi';
+import { useWalletClient, useAccount } from 'wagmi';
 import ConversationService from "../service/ConversationService"
 import {ChatMessage, MessageType, Role} from "../models/ChatCompletion";
 
@@ -15,6 +15,7 @@ import { SocialAttestation } from '../models/Attestation'
 
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService'
 import {X_CLIENT_ID} from "../config";
+import { chainConfig } from 'viem/zksync';
 
 interface XProfile {
   sub: string; 
@@ -45,6 +46,7 @@ const entityId = "x"
 const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
 
   const { data: walletClient } = useWalletClient();
+  const { chain } = useAccount();
 
   const { } = props;
   const { veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
@@ -109,7 +111,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
-        if (proof && fullVc && orgAccountClient && indivIssuerDelegation && walletClient) {
+        if (proof && fullVc && chain && orgAccountClient && indivIssuerDelegation && walletClient) {
         
           // add attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
@@ -131,7 +133,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
           await window.ethereum.request({ method: "eth_requestAccounts" });
           const walletSigner = await provider.getSigner()
 
-          const uid = AttestationService.addSocialAttestation(attestation, walletSigner, [indivIssuerDelegation], orgAccountClient, burnerAccountClient)
+          const uid = AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivIssuerDelegation], orgAccountClient, burnerAccountClient)
           console.info("add social attestation complete")
 
           if (location.pathname.startsWith("/chat/c/")) {

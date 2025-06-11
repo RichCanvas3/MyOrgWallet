@@ -18,6 +18,7 @@ import { TabContext, TabList, TabPanel } from '@mui/lab';
 
 import SearchIcon from '@mui/icons-material/Search';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import {
   Attestation,
   AttestationCategory,
@@ -77,8 +78,10 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
 
   // Handle real-time changes
   const handleAttestationChange = (event: AttestationChangeEvent) => {
+    console.info("Attestation change event received:", event);
     if (event.action === 'add' && event.attestation) {
       const att = event.attestation;
+      console.info("New attestation to be added:", att);
       if (!attestations.find(a => a.entityId === att.entityId)) {
         setAttestations(prev => [att, ...prev]);
       }
@@ -93,13 +96,14 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
   // Load data on orgDid change
   useEffect(() => {
     if (orgDid && indivDid && tabValue) {
+      console.info("Loading attestations for orgDid:", orgDid, "indivDid:", indivDid);
       AttestationService.loadRecentAttestationsTitleOnly(orgDid, indivDid).then((atts) => {
-        //console.info("set attestations in Attestation Section: ", atts)
+        console.info("Loaded attestations:", atts);
         setAttestations(atts)
       })
 
-
       AttestationService.loadAttestationCategories().then((cats) => {
+        console.info("Loaded categories:", cats);
         setCategories(cats)
 
         let currentCategories = []
@@ -108,19 +112,15 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
                 currentCategories.push(cat)
             }
         }
+        console.info("Filtered categories for class", tabValue, ":", currentCategories);
         setCurrentCategories(currentCategories)
       })
     }
-
-
 
     attestationsEmitter.on('attestationChangeEvent', handleAttestationChange);
     return () => {
       attestationsEmitter.off('attestationChangeEvent', handleAttestationChange);
     };
-
-
-
   }, [orgDid]);
 
 
@@ -129,10 +129,13 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
   const filtered = attestations.filter(a =>
       a.entityId?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
-  //console.info("filtered: ", filtered, attestations)
+  console.info("Filtered attestations:", filtered, "from total:", attestations.length);
   const grouped = currentCategories.reduce((acc, cat) => {
-      acc[cat.name] = filtered.filter(a => a.category === cat.name && a.class === cat.class);
-      //console.info("return acc: ", acc)
+      acc[cat.name] = filtered.filter(a => {
+          console.info("Checking attestation:", a, "against category:", cat);
+          return a.category === cat.name && a.class === cat.class;
+      });
+      console.info("Grouped attestations for category", cat.name, ":", acc[cat.name]);
       return acc;
   }, {} as Record<string, Attestation[]>);
 
@@ -147,7 +150,7 @@ return (
   width="100%"
 >
   <TabContext value={tabValue}>
-    {/* ── HEADER: Tabs + Search ─────────────────────────────── */}
+    {/* ── HEADER: Title + Tabs + Search ─────────────────────────────── */}
     <Box
       display="flex"
       alignItems="center"
@@ -157,11 +160,21 @@ return (
       px={2}
       sx={{ borderBottom: 1, borderColor: 'divider' }}
     >
-      {/* Tabs */}
-      <TabList onChange={handleTabChange} aria-label="Attestation tabs">
-        <Tab label="Individual" value="individual" />
-        <Tab label="Organization" value="organization" sx={{ ml: 2 }} />
-      </TabList>
+      <Box display="flex" alignItems="center" gap={2}>
+        {/* Title with Icon */}
+        <Box display="flex" alignItems="center" gap={1}>
+          <VerifiedUserIcon color="primary" />
+          <Typography variant="h6" color="primary">
+            Attestations
+          </Typography>
+        </Box>
+        
+        {/* Tabs */}
+        <TabList onChange={handleTabChange} aria-label="Attestation tabs">
+          <Tab label="Individual" value="individual" />
+          <Tab label="Organization" value="organization" sx={{ ml: 2 }} />
+        </TabList>
+      </Box>
 
       {/* Search */}
       <TextField

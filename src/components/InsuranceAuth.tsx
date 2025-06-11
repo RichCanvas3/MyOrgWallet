@@ -6,7 +6,7 @@ import { ethers } from 'ethers';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import AttestationService from '../service/AttestationService';
 import { InsuranceAttestation } from '../models/Attestation';
-import { useWalletClient } from 'wagmi';
+import { useWalletClient, useAccount } from 'wagmi';
 
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService';
 
@@ -25,6 +25,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
   const { } = props;
   const { veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
+  const { chain } = useAccount(); 
 
   
 
@@ -41,7 +42,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
-        if (proof && fullVc && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+        if (proof && fullVc && chain && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
         
           const provider = new ethers.BrowserProvider(window.ethereum);
           await window.ethereum.request({ method: "eth_requestAccounts" });
@@ -65,7 +66,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
             proof: proof
           };
 
-          const uid = await AttestationService.addInsuranceAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+          const uid = await AttestationService.addInsuranceAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
           console.info("add insurance attestation complete")
 
 

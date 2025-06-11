@@ -56,6 +56,9 @@ import DeleteAttestationsModal from './DeleteAttestationsModal';
 import ApproveLeaderModal from './ApproveLeaderModal';
 import CreateWebDidModal from './CreateWebDidModal';
 import ImportDriversLicenseModal from './ImportDriversLicenseModal';
+import AddCreditCardModal from './AddCreditCardModal';
+import AddMainSavingsModal from './AddMainSavingsModal';
+import AddPettyCashModal from './AddPettyCashModal';  
 import OrgModal from './OrgModal';  
 
 
@@ -137,7 +140,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const [isApproveLeaderModalVisible, setApproveLeaderModalVisible] = useState(false);
   const [isCreateWebDidModalVisible, setCreateWebDidModalVisible] = useState(false);
   const [isImportDriversLicenseModalVisible, setImportDriversLicenseModalVisible] = useState(false);
-    
+  const [isAddCreditCardModalVisible, setAddCreditCardModalVisible] = useState(false);
+  const [isAddMainSavingsModalVisible, setAddMainSavingsModalVisible] = useState(false);
+  const [isAddPettyCashModalVisible, setAddPettyCashModalVisible] = useState(false);
+
   const [isOrgModalVisible, setOrgModalVisible] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
 
@@ -155,6 +161,15 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   }
   const handleOnImportDriversLicenseModalClose = () => {
     setImportDriversLicenseModalVisible(false);
+  }
+  const handleOnAddCreditCardModalClose = () => {
+    setAddCreditCardModalVisible(false);
+  }
+  const handleOnAddMainSavingsModalClose = () => {
+    setAddMainSavingsModalVisible(false);
+  }
+  const handleOnAddPettyCashModalClose = () => {
+    setAddPettyCashModalVisible(false);
   }
   const handleOnOrgModalClose = () => {
     setOrgModalVisible(false);
@@ -676,6 +691,18 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       if (lastUserResponse.toLowerCase().includes("import drivers license")) {
         console.info("import drivers license ...")
         setImportDriversLicenseModalVisible(true)
+      }
+      if (lastUserResponse.toLowerCase().includes("add credit card")) {
+        console.info("add credit card ...")
+        setAddCreditCardModalVisible(true)
+      }
+      if (lastUserResponse.toLowerCase().includes("add savings account")) {
+        console.info("add savings account ...")
+        setAddMainSavingsModalVisible(true)
+      }
+      if (lastUserResponse.toLowerCase().includes("add petty cash account")) {
+        console.info("add petty cash account ...")
+        setAddPettyCashModalVisible(true)
       }
     } catch (error)
     {
@@ -1647,6 +1674,18 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         <ImportDriversLicenseModal
           isVisible={isImportDriversLicenseModalVisible}
           onClose={handleOnImportDriversLicenseModalClose}
+        />
+        <AddCreditCardModal
+          isVisible={isAddCreditCardModalVisible}
+          onClose={handleOnAddCreditCardModalClose}
+        />
+        <AddMainSavingsModal
+          isVisible={isAddMainSavingsModalVisible}
+          onClose={handleOnAddMainSavingsModalClose}
+        />
+        <AddPettyCashModal
+          isVisible={isAddPettyCashModalVisible}
+          onClose={handleOnAddPettyCashModalClose}
         />
         <OrgModal
           orgName={newOrgName?newOrgName:""}

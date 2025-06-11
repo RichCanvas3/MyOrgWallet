@@ -6,8 +6,9 @@ import {CloseSideBarIcon, iconProps, OpenSideBarIcon} from "../svg";
 import {useTranslation} from 'react-i18next';
 import Tooltip from "./Tooltip";
 
-import AttestationSection from "./AttestationSection";
+import MainSection from "./MainSection";
 import { Attestation } from "../models/Attestation"
+import { Account } from "../models/Account"
 import { Command } from "../models/Command"
 
 import { useWallectConnectContext } from "../context/walletConnectContext";
@@ -31,16 +32,18 @@ const RightSide: React.FC<RightSideProps> = ({className, appCommand}) => {
     fullName: null,
   });
 
-
-
   const handleSelectAttestation = (att: Attestation) => {
     const cmd : Command = {
-                    action: "edit",
-                    did: att.attester,
-                    entityId: att.entityId,
-                  }
+      action: "edit",
+      did: att.attester,
+      entityId: att.entityId,
+    }
     appCommand(cmd)
-    
+  };
+
+  const handleSelectAccount = (account: Account) => {
+    // TODO: Implement account selection handling
+    console.log('Selected account:', account);
   };
 
   useEffect(() => {
@@ -49,17 +52,20 @@ const RightSide: React.FC<RightSideProps> = ({className, appCommand}) => {
   }, []);
 
   return (
-        <div className={`${className} `}>
-        
-          <div className="scrollbar-trigger relative flex-1 items-start border-white/20">
-            <h2 className="sr-only">Attestation history</h2>
-            <nav className="flex flex-col p-2" aria-label="Attestation history">
-              <AttestationSection orgDid={orgDid} indivDid={indivDid} onSelectAttestation={handleSelectAttestation}/>
-            </nav>
-          </div>
+    <div className={`${className}`}>
+      <div className="scrollbar-trigger relative flex-1 items-start border-white/20">
+        <h2 className="sr-only">Attestation and Account Management</h2>
+        <nav className="flex flex-col p-2" aria-label="Main navigation">
+          <MainSection 
+            orgDid={orgDid} 
+            indivDid={indivDid} 
+            onSelectAttestation={handleSelectAttestation}
+            onSelectAccount={handleSelectAccount}
+          />
+        </nav>
       </div>
-  )
-
-}
+    </div>
+  );
+};
 
 export default RightSide;

@@ -2,7 +2,6 @@ import * as React from 'react';
 import {useContext, useEffect, useRef, useState} from 'react';
 import { keccak256, toUtf8Bytes } from 'ethers';
 import { encodeFunctionData, hashMessage, createPublicClient, createWalletClient, WalletClient, toHex, http, zeroAddress, publicActions, custom, verifyMessage  } from "viem";
-import { optimism } from "viem/chains";
 import { ethers } from 'ethers';
 
 import {
@@ -15,11 +14,10 @@ import {Transition} from '@headlessui/react';
 
 import AttestationService from '../service/AttestationService';
 import { useWallectConnectContext } from "../context/walletConnectContext";
-import { useWalletClient } from 'wagmi';
+import { useAccount } from 'wagmi';
 
-import { TextField, Button, Typography, Box, Paper } from "@mui/material";
-import EditableTextBox from "./EditableTextBox";
-import { TripOriginRounded } from '@mui/icons-material';
+import { Button, Paper } from "@mui/material";
+
 
 
 import {
@@ -37,7 +35,7 @@ import {
   Delegation
 } from "@metamask/delegation-toolkit";
 
-import { IndivOrgAttestation } from "../models/Attestation"
+import { OrgIndivAttestation } from "../models/Attestation"
 
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService"
 
@@ -50,11 +48,10 @@ interface DeleteAttestationsModalProps {
 
 const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisible, onClose}) => {
 
-  const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const { veramoAgent, mascaApi, signatory, privateIssuerAccount, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, burnerAccountClient } = useWallectConnectContext();
-  const { data: walletClient } = useWalletClient();
+  const { chain } = useAccount();
 
 
   const handleClose = () => {
@@ -65,7 +62,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
 
   const handleDeleteOrgAttestations = async () => {
     console.info("delete attestations")
-    if (orgDid && orgIndivDelegation && orgIssuerDelegation && indivIssuerDelegation && burnerAccountClient) {
+    if (orgDid && chain && orgIndivDelegation && orgIssuerDelegation && indivIssuerDelegation && burnerAccountClient) {
       console.info("delete org attestations")
       const attestations = await AttestationService.loadRecentAttestationsTitleOnly(orgDid, "")
       if (attestations && attestations.length > 0) {
@@ -74,7 +71,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
         await window.ethereum.request({ method: "eth_requestAccounts" });
         const walletSigner = await provider.getSigner()
 
-        const rslt = await AttestationService.deleteAttestations(attestations, walletSigner, [orgIssuerDelegation, orgIndivDelegation], burnerAccountClient)
+        const rslt = await AttestationService.deleteAttestations(chain, attestations, walletSigner, [orgIssuerDelegation, orgIndivDelegation], burnerAccountClient)
         console.info("delete organization attestations is done ")
       }
 
@@ -83,7 +80,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
   }
 
   const handleDeleteIndivAttestations = async () => {
-    if (indivDid && indivIssuerDelegation && burnerAccountClient) {
+    if (chain && indivDid && indivIssuerDelegation && burnerAccountClient) {
       console.info("delete indiv attestations")
       const attestations = await AttestationService.loadRecentAttestationsTitleOnly("", indivDid)
       if (attestations && attestations.length > 0) {
@@ -92,7 +89,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
         await window.ethereum.request({ method: "eth_requestAccounts" });
         const walletSigner = await provider.getSigner()
 
-        const rsl = await AttestationService.deleteAttestations(attestations, walletSigner, [indivIssuerDelegation], burnerAccountClient)
+        const rsl = await AttestationService.deleteAttestations(chain, attestations, walletSigner, [indivIssuerDelegation], burnerAccountClient)
         console.info("delete all individual attestations is done ")
 
       }
@@ -109,7 +106,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
       const walletClient = signatory.walletClient
 
       const publicClient = createPublicClient({
-                chain: optimism,
+                chain: chain,
                 transport: http(),
               });
       
@@ -139,12 +136,12 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
       //}
 
       
-      const samIndivAttestation = await AttestationService.getIndivOrgAttestation(samIndivDid, AttestationService.IndivOrgSchemaUID, "indiv-org");
+      const samIndivAttestation = await AttestationService.getOrgIndivAttestation(samIndivDid, AttestationService.OrgIndivSchemaUID, "org-indiv");
 
       let samOrgIndivDel : any | undefined
       let samDelegationOrgAddress : `0x${string}` | undefined
       if (samIndivAttestation) {
-        samOrgIndivDel = JSON.parse((samIndivAttestation as IndivOrgAttestation).rolecid)
+        samOrgIndivDel = JSON.parse((samIndivAttestation as OrgIndivAttestation).delegation)
         if (samIndivAccountClient.address == samOrgIndivDel.delegate) {
           console.info("*********** valid individual attestation so lets use this org address")
           // need to validate signature at some point
@@ -175,20 +172,20 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
           signature,
         }
 
-
+        const delegationJsonStr = JSON.stringify(samOrgIndivDel)
 
         //  create delegation to sam attestation
 
         const samIndivName = ""
 
-        const vc = await VerifiableCredentialsService.createIndivOrgVC("indiv-org", orgDid, privateIssuerDid, samIndivDid, samIndivName);
-        const result = await VerifiableCredentialsService.createCredential(vc, "indiv-org", orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+        const vc = await VerifiableCredentialsService.createOrgIndivVC("org-indiv", orgDid, samIndivDid, samIndivName, delegationJsonStr, privateIssuerDid);
+        const result = await VerifiableCredentialsService.createCredential(vc, "org-indiv", orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
 
         console.info("result of create credential: ", result)
         const fullVc = result.vc
         const proof = result.proof
 
-        if (fullVc && proof && orgIssuerDelegation && orgIndivDelegation) {
+        if (fullVc && proof && chain && orgIssuerDelegation && orgIndivDelegation && burnerAccountClient) {
 
           console.info("&&&&&&&&&&&&&&&&&&&&&&& AttestationService add indiv attestation")
 
@@ -196,14 +193,14 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
         
           // now create attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
-          const attestation: IndivOrgAttestation = {
+          const attestation: OrgIndivAttestation = {
             indivDid: samIndivDid,
             name: indivName,
-            rolecid: JSON.stringify(samOrgIndivDel),
+            delegation: JSON.stringify(samOrgIndivDel),
             attester: orgDid,
             class: "organization",
             category: "leaders",
-            entityId: "indiv-org",
+            entityId: "org-indiv",
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,
@@ -215,7 +212,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
           await window.ethereum.request({ method: "eth_requestAccounts" });
           const walletSigner = await provider.getSigner()
           
-          const uid = await AttestationService.addIndivOrgAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+          const uid = await AttestationService.addOrgIndivAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         }
 
 
@@ -224,7 +221,6 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
         console.info("************************   SAM's Delegation ************")
         console.info("samCFOEOA: ", samCFOEOA)
         console.info("to: ", samIndivAccountClient.address)
-        console.info("from: ", orgAccountClient.address)
         console.info(" del: ", samOrgIndivDel)
       }
 
