@@ -30,6 +30,8 @@ import AttestationService, {
   AttestationChangeEvent,
   attestationsEmitter,
 } from '../service/AttestationService';
+import { chainConfig } from 'viem/zksync';
+import { useAccount } from 'wagmi';
 
 interface AttestationSectionProps {
   orgDid?: string;
@@ -53,11 +55,12 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
+    const { chain } = useAccount();
+
 
     const handleTabChange = (_: SyntheticEvent, newValue: string) => {
 
         setTabValue(newValue as 'individual' | 'organization');
-
 
         let currentCategories = []
         for (const cat of categories) {
@@ -78,10 +81,8 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
 
   // Handle real-time changes
   const handleAttestationChange = (event: AttestationChangeEvent) => {
-    console.info("Attestation change event received:", event);
     if (event.action === 'add' && event.attestation) {
       const att = event.attestation;
-      console.info("New attestation to be added:", att);
       if (!attestations.find(a => a.entityId === att.entityId)) {
         setAttestations(prev => [att, ...prev]);
       }
@@ -95,15 +96,12 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
 
   // Load data on orgDid change
   useEffect(() => {
-    if (orgDid && indivDid && tabValue) {
-      console.info("Loading attestations for orgDid:", orgDid, "indivDid:", indivDid);
-      AttestationService.loadRecentAttestationsTitleOnly(orgDid, indivDid).then((atts) => {
-        console.info("Loaded attestations:", atts);
+    if (orgDid && indivDid && chain && tabValue) {
+      AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, indivDid).then((atts) => {
         setAttestations(atts)
       })
 
       AttestationService.loadAttestationCategories().then((cats) => {
-        console.info("Loaded categories:", cats);
         setCategories(cats)
 
         let currentCategories = []
@@ -112,7 +110,6 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
                 currentCategories.push(cat)
             }
         }
-        console.info("Filtered categories for class", tabValue, ":", currentCategories);
         setCurrentCategories(currentCategories)
       })
     }
@@ -129,13 +126,10 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
   const filtered = attestations.filter(a =>
       a.entityId?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
-  console.info("Filtered attestations:", filtered, "from total:", attestations.length);
   const grouped = currentCategories.reduce((acc, cat) => {
       acc[cat.name] = filtered.filter(a => {
-          console.info("Checking attestation:", a, "against category:", cat);
           return a.category === cat.name && a.class === cat.class;
       });
-      console.info("Grouped attestations for category", cat.name, ":", acc[cat.name]);
       return acc;
   }, {} as Record<string, Attestation[]>);
 

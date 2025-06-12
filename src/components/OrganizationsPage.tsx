@@ -54,6 +54,7 @@ interface OrganizationsPageProps {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const [showSearchOptions, setShowSearchOptions] = useState(false);
+    const { chain } = useAccount();
 
     const handleAttestationChange = (event: AttestationChangeEvent) => {
       if (event.action === 'add' && event.attestation) {
@@ -70,7 +71,7 @@ interface OrganizationsPageProps {
     };
 
     const loadOrganizations = async () => {
-      AttestationService.loadOrganizations()
+      AttestationService.loadOrganizations(chain)
         .then(organizations => {
           setOrganizations(organizations);
         })
@@ -82,7 +83,7 @@ interface OrganizationsPageProps {
     // Load data on orgDid change
     useEffect(() => {
       if (orgDid) {
-        AttestationService.loadRecentAttestationsTitleOnly(orgDid, "").then((atts) => {
+        AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, "").then((atts) => {
           //console.info("set attestations in Attestation Section: ", atts)
           setAttestations(atts)
         })
@@ -102,7 +103,10 @@ interface OrganizationsPageProps {
         })
       }
 
-      loadOrganizations()
+      if (chain) {
+        loadOrganizations()
+      }
+      
 
       attestationsEmitter.on('attestationChangeEvent', handleAttestationChange);
 

@@ -27,6 +27,7 @@ import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Account, AccountType, ACCOUNT_TYPES } from '../models/Account';
 import { AccountAttestation } from '../models/Attestation';
+import { useAccount } from 'wagmi';
 
 interface ChartOfAccountsSectionProps {
   onSelectAccount?: (account: Account) => void;
@@ -40,6 +41,7 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
   // Add state for view type
   const [viewType, setViewType] = useState<'chart' | 'list'>('chart');
   const [listAccounts, setListAccounts] = useState<Account[]>([]);
+  const { chain } = useAccount();
 
   const [accounts, setAccounts] = useState<Account[]>([
     /* ───────────────────────── ASSETS (1xxx) ───────────────────────── */
@@ -412,9 +414,9 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
 
   // Load attestations and update both chart and list accounts
   useEffect(() => {
-    if (orgDid) {
+    if (orgDid && chain) {
       console.info("Loading attestations for orgDid:", orgDid);
-      AttestationService.loadRecentAttestationsTitleOnly(orgDid, "").then((atts) => {
+      AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, "").then((atts) => {
         console.info("Loaded attestations:", atts);
         const newAccounts = [...accounts];
         const newListAccounts: Account[] = [];

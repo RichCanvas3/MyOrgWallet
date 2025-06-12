@@ -12,7 +12,7 @@ import { VerifiableCredential } from '../models/VerifiableCredential'
 import { VcZkProof, VcRevokeZkProof } from '../models/ZkProof'
 import {Attestation, WebsiteAttestation} from '../models/Attestation';
 import AttestationService from '../service/AttestationService';
-import { ALCHEMY_RPC_URL, ETHERSCAN_API_KEY } from "../config";
+import { ALCHEMY_RPC_URL, ETHERSCAN_API_KEY, ETHERSCAN_URL } from "../config";
 
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService"
 import ZkProofService from "../service/ZkProofService"
@@ -20,7 +20,6 @@ import { useWalletClient, useAccount, useConnect, useEnsName, useEnsAvatar, useD
 import { getCachedResponse, putCachedResponse, putCachedValue } from "../service/CachedService"
 
 import { useWallectConnectContext } from "../context/walletConnectContext";
-
 
 
 
@@ -55,6 +54,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
 
   const [activeTab, setActiveTab] = useState<'info' | 'vc' | 'vc-raw' | 'zk' | 'rzk' | 'at' >('vc');
   const { veramoAgent, mascaApi } = useWallectConnectContext();
+  const { chain } = useAccount();
 
 
   const handleClose = () => {
@@ -67,7 +67,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
   const handleInitOperations = async () => {
     if (did) {
 
-      const address = did.replace("did:pkh:eip155:10:", "") as `0x${string}`
+      const address = did.replace("did:pkh:eip155:" + chain?.id + ":", "") as `0x${string}`
 
       console.info("org address: ", address)
 
@@ -150,7 +150,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
   }, [did, entityId]);
 
 
-  const address = did.replace("did:pkh:eip155:10:", "") as `0x${string}`
+  const address = did.replace("did:pkh:eip155:" + chain?.id + ":", "") as `0x${string}`
 
 
   // reverse lookup from address to ens name
@@ -318,9 +318,9 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                 if (att.proof && att.vccomm && att.vciss && att.attester) {
                   ZkProofService.getVcZkProof(att.proof, att.vccomm, att.vciss, att.attester).then((vcZkProof) => {
                     setVcZkProof(vcZkProof)
-                    if (vcZkProof.isValid && att.vccomm) {
+                    if (vcZkProof.isValid && att.vccomm && chain) {
 
-                      AttestationService.getVcRevokedAttestation(att.attester, att.vccomm).then((revokeResponse) => {
+                      AttestationService.getVcRevokedAttestation(chain, att.attester, att.vccomm).then((revokeResponse) => {
 
                         if (revokeResponse.proof && revokeResponse.proof != "" && att.vccomm) {
 
@@ -581,8 +581,8 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                   <strong>DID:</strong>{' '}
                   <a
                     href={
-                      'https://optimistic.etherscan.io/address/' +
-                      attestation?.attester.replace("did:pkh:eip155:10:", "")
+                      ETHERSCAN_URL + '/address/' +
+                      attestation?.attester.replace("did:pkh:eip155:" + chain?.id + "", "")
                     }
                     target="_blank"
                     rel="noopener noreferrer"
@@ -595,7 +595,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                   <p className="panel-text">
                     <strong>Attestation ID:</strong>{' '}
                     <a
-                      href={'https://optimism.easscan.org/attestation/view/' + attestation?.uid}
+                      href={ETHERSCAN_URL + '/attestation/view/' + attestation?.uid}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="panel-link"
@@ -608,7 +608,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                   <p className="panel-text">
                     <strong>Schema ID:</strong>{' '}
                     <a
-                      href={'https://optimism.easscan.org/schema/view/' + attestation?.schemaId}
+                      href={ETHERSCAN_URL + '/schema/view/' + attestation?.schemaId}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="panel-link"
@@ -627,8 +627,8 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                     <strong>VC Issuer:</strong>{' '}
                     <a
                       href={
-                        'https://optimistic.etherscan.io/address/' +
-                        attestation?.vciss.replace("did:pkh:eip155:10:", "")
+                        ETHERSCAN_URL + 'address/' +
+                        attestation?.vciss.replace("did:pkh:eip155:" + chain?.id + ":", "")
                       }
                       target="_blank"
                       rel="noopener noreferrer"

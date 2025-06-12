@@ -133,7 +133,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
       accountBalance: selectedAccount.balance
     }
 
-    const accountDid = "did:pkh:eip155:10:" + selectedAccount.address.toLowerCase()
+    const accountDid = "did:pkh:eip155" + chain?.id + ":" + selectedAccount.address.toLowerCase()
 
 
 

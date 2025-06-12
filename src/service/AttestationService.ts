@@ -29,7 +29,7 @@ import { encodeNonce } from "permissionless/utils"
 
 import { error } from "console";
 
-import {WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, BUNDLER_URL, PAYMASTER_URL} from "../config";
+import {WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, BUNDLER_URL, PAYMASTER_URL, EAS_GRAPHQL_URL} from "../config";
 
 const STORE_URL = `${import.meta.env.VITE_API_URL}/json`;
 
@@ -74,12 +74,9 @@ export interface AttestationChangeEvent {
 
 
 
-const OPTIMISM_EAS_GRAPHQL_URL = "https://optimism.easscan.org/graphql";
-  
-
-
+const CHAIN_EAS_GRAPHQL_URL = EAS_GRAPHQL_URL || "https://sepolia.easscan.org/graphql";
 const easApolloClient = new ApolloClient({
-  uri: OPTIMISM_EAS_GRAPHQL_URL,
+  uri: CHAIN_EAS_GRAPHQL_URL,
   cache: new InMemoryCache(),
 });
 
@@ -118,12 +115,12 @@ class AttestationService {
 
 
 
-  static async setEntityAttestations(orgDid: string, indivDid: string) {
+  static async setEntityAttestations(chain: Chain, orgDid: string, indivDid: string) {
 
     let entities = this.DefaultEntities
 
-    const orgAddress = orgDid.replace("did:pkh:eip155:10:", "")
-    const indivAddress = indivDid.replace("did:pkh:eip155:10:", "")
+    const orgAddress = orgDid.replace("did:pkh:eip155:" + chain?.id, "")
+    const indivAddress = indivDid.replace("did:pkh:eip155:" + chain?.id, "")
 
     let exists = false
     const query = gql`
@@ -215,7 +212,7 @@ class AttestationService {
             else {
               const att : Attestation = {
                 entityId: entity.name,
-                attester: "did:pkh:eip155:10:" + item.attester,
+                attester: "did:pkh:eip155:" + chain?.id + ":" + item.attester,
                 uid: item.id,
                 schemaId: item.schemaId,
                 hash: "",
@@ -279,9 +276,9 @@ class AttestationService {
     return ""
 
   }
-  static async getVcRevokedAttestation(orgDid: string, vccomm: string) {
+  static async getVcRevokedAttestation(chain: Chain, orgDid: string, vccomm: string) {
 
-    const address = orgDid.replace("did:pkh:eip155:10:", "")
+    const address = orgDid.replace("did:pkh:eip155:" + chain?.id + ":", "")
 
     let exists = false
     const query = gql`
@@ -481,7 +478,7 @@ class AttestationService {
     return attestation.entityId
 
   }
-  static constructIndivAttestation(uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
+  static constructIndivAttestation(chain: Chain, uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
 
     let vccomm : string | undefined
     let vcsig : string | undefined
@@ -518,7 +515,7 @@ class AttestationService {
     }
 
 
-    const attesterDid = "did:pkh:eip155:10:" + attester
+    const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && orgdid != undefined && name != undefined) {
       //console.info("set to indiv attestation with name: ", name)
       const att : IndivAttestation = {
@@ -592,7 +589,7 @@ class AttestationService {
     return attestation.entityId
 
   }
-  static constructOrgIndivAttestation(uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
+  static constructOrgIndivAttestation(chain: Chain, uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
 
     let vccomm : string | undefined
     let vcsig : string | undefined
@@ -632,7 +629,7 @@ class AttestationService {
     }
 
 
-    const attesterDid = "did:pkh:eip155:10:" + attester
+    const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && indivdid != undefined && name != undefined && delegation != undefined) {
       const att : OrgIndivAttestation = {
         displayName: name,
@@ -708,7 +705,7 @@ class AttestationService {
     return attestation.entityId
 
   }
-  static constructOrgAttestation(uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
+  static constructOrgAttestation(chain: Chain, uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
 
     let vccomm : string | undefined
     let vcsig : string | undefined
@@ -741,7 +738,7 @@ class AttestationService {
     }
 
 
-    const attesterDid = "did:pkh:eip155:10:" + attester
+    const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
       if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && name != undefined) {
         //console.info("set to org attestation with name: ", name)
         const att : OrgAttestation = {
@@ -816,7 +813,7 @@ class AttestationService {
     return attestation.entityId
 
   }
-  static constructAccountAttestation(uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
+  static constructAccountAttestation(chain: Chain, uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
 
     let vccomm : string | undefined
     let vcsig : string | undefined
@@ -826,13 +823,9 @@ class AttestationService {
     let coacode : string | undefined
     let coacategory : string | undefined
 
-    console.info("Constructing account attestation with data:", {uid, schemaId, entityId, attester, hash});
-    console.info("Decoded data:", decodedData);
-
     for (const field of decodedData) {
       let fieldName = field["name"]
       let fieldValue = field["value"].value as string
-      console.info("Processing field:", fieldName, "with value:", fieldValue);
 
       if (fieldName == "hash") {
         hash = fieldValue
@@ -861,15 +854,8 @@ class AttestationService {
     }
 
 
-    const attesterDid = "did:pkh:eip155:10:" + attester
+    const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
       if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && name != undefined && coacode != undefined && coacategory != undefined) {
-        console.info("Creating account attestation with:", {
-          name,
-          coacode,
-          coacategory,
-          class: "organization",
-          category: "wallet"
-        });
         const att : AccountAttestation = {
           displayName: name,
           class: "organization",
@@ -890,15 +876,6 @@ class AttestationService {
   
         return att
       } else {
-        console.info("Missing required fields for account attestation:", {
-          uid,
-          schemaId,
-          entityId,
-          hash,
-          name,
-          coacode,
-          coacategory
-        });
       }
     
     
@@ -910,14 +887,11 @@ class AttestationService {
   static OrgAccountSchema = this.BaseSchema + "string accountdid, string name, string delegation"
   static async addOrgAccountAttestation(chain: Chain, attestation: OrgAccountAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {
 
-    console.info("....... add org account attestation signer: ", signer)
     eas.connect(signer)
 
     const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
     const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
 
-
-    //console.info("attestation: ", attestation)
 
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.name) {
 
@@ -953,7 +927,7 @@ class AttestationService {
     return attestation.entityId
 
   }
-  static constructOrgAccountAttestation(uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
+  static constructOrgAccountAttestation(chain: Chain, uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
 
     let vccomm : string | undefined
     let vcsig : string | undefined
@@ -994,7 +968,7 @@ class AttestationService {
     }
 
 
-    const attesterDid = "did:pkh:eip155:10:" + attester
+    const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
       if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && name != undefined && accountDid != undefined && delegation != undefined) {
         //console.info("set to org account attestation with name: ", name)
         const att : OrgAccountAttestation = {
@@ -1090,7 +1064,7 @@ class AttestationService {
 
     let result2 = await this.addSocialAttestation(attestation, signer, orgAccountClient)
   }
-  static constructSocialAttestation(uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
+  static constructSocialAttestation(chain: Chain, uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
 
 
     let vccomm : string | undefined
@@ -1128,7 +1102,7 @@ class AttestationService {
     }
 
 
-    const attesterDid = "did:pkh:eip155:10:" + attester
+    const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && name != undefined) {
       //console.info("set to social attestation with name: ", name)
       const att : SocialAttestation = {
@@ -1196,7 +1170,7 @@ class AttestationService {
     return attestation.entityId
 
   }
-  static constructRegisteredDomainAttestation(uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
+  static constructRegisteredDomainAttestation(chain: Chain, uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
 
     let vccomm : string | undefined
     let vcsig : string | undefined
@@ -1229,7 +1203,7 @@ class AttestationService {
     }
 
 
-    const attesterDid = "did:pkh:eip155:10:" + attester
+    const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
       if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && domain != undefined) {
         //console.info("set to org attestation with name: ", name)
         const att : RegisteredDomainAttestation = {
@@ -1303,7 +1277,7 @@ class AttestationService {
     return attestation.entityId
 
   }
-  static constructStateRegistrationAttestation(uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
+  static constructStateRegistrationAttestation(chain: Chain, uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
 
     let vccomm : string | undefined
     let vcsig : string | undefined
@@ -1352,7 +1326,7 @@ class AttestationService {
     }
 
 
-    const attesterDid = "did:pkh:eip155:10:" + attester
+    const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && proof != undefined && name != undefined && idnumber && status && formationdate && locationaddress) {
       //console.info("set to social attestation with name: ", name)
       const att : StateRegistrationAttestation = {
@@ -1428,7 +1402,7 @@ class AttestationService {
 
     return attestation.entityId
   }
-  static constructEmailAttestation(uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
+  static constructEmailAttestation(chain: Chain, uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
 
     let vccomm : string | undefined
     let vcsig : string | undefined
@@ -1465,7 +1439,7 @@ class AttestationService {
     }
 
 
-    const attesterDid = "did:pkh:eip155:10:" + attester
+    const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && type && email) {
       //console.info("set to social attestation with name: ", name)
       const att : EmailAttestation = {
@@ -1559,7 +1533,7 @@ class AttestationService {
 
     return attestation.entityId
   }
-  static constructWebsiteAttestation(uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
+  static constructWebsiteAttestation(chain: Chain, uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
 
     let vccomm : string | undefined
     let vcsig : string | undefined
@@ -1605,7 +1579,7 @@ class AttestationService {
 
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && vccomm != undefined && vcsig != undefined && vciss != undefined  && url != undefined && type != undefined) {
       
-      const attesterDid = "did:pkh:eip155:10:" + attester
+      const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
       const att : WebsiteAttestation = {
         displayName: url,
         uid: uid,
@@ -1669,7 +1643,7 @@ class AttestationService {
 
     return attestation.entityId
   }
-  static constructInsuranceAttestation(uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
+  static constructInsuranceAttestation(chain: Chain, uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
 
     let vccomm : string | undefined
     let vcsig : string | undefined
@@ -1685,7 +1659,7 @@ class AttestationService {
     console.info("entity id: ", entityId)
     */
 
-    const attesterDid = "did:pkh:eip155:10:" + attester
+    const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
     //console.info("construct insurance attestation with data: ", decodedData)
     for (const field of decodedData) {
       let fieldName = field["name"]
@@ -1784,7 +1758,7 @@ class AttestationService {
 
     return attestation.entityId
   }
-  static constructIndivEmailAttestation(uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
+  static constructIndivEmailAttestation(chain: Chain, uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
 
     let vccomm : string | undefined
     let vcsig : string | undefined
@@ -1821,7 +1795,7 @@ class AttestationService {
     }
 
 
-    const attesterDid = "did:pkh:eip155:10:" + attester
+    const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && type && email) {
       //console.info("set to social attestation with name: ", name)
       const att : EmailAttestation = {
@@ -2052,10 +2026,10 @@ class AttestationService {
     return attestationCategories
   }
 
-  static async loadRecentAttestationsTitleOnly(orgDid: string, indivDid: string): Promise<Attestation[]> {
+  static async loadRecentAttestationsTitleOnly(chain: Chain, orgDid: string, indivDid: string): Promise<Attestation[]> {
 
-    const orgAddress = orgDid.replace("did:pkh:eip155:10:", "")
-    const indivAddress = indivDid.replace("did:pkh:eip155:10:", "")
+    const orgAddress = orgDid.replace("did:pkh:eip155:" + chain?.id + ":", "")
+    const indivAddress = indivDid.replace("did:pkh:eip155:"  + chain?.id + ":", "")
 
     try {
 
@@ -2125,53 +2099,53 @@ class AttestationService {
             // construct correct attestation
             let att : Attestation | undefined
             if (entityId == "indiv") {
-              att = this.constructIndivAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "account") {
-              att = this.constructAccountAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructAccountAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "org-account") {
-              att = this.constructOrgAccountAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructOrgAccountAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "org") {
-              att = this.constructOrgAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructOrgAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "org-indiv") {
-              att = this.constructOrgIndivAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructOrgIndivAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "linkedin") {
-              att = this.constructSocialAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructSocialAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "x") {
-              att = this.constructSocialAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructSocialAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "shopify") {
-              att = this.constructWebsiteAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructWebsiteAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "insurance") {
-              att = this.constructInsuranceAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructInsuranceAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "state-registration") {
-              att = this.constructStateRegistrationAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructStateRegistrationAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "domain") {
-              att = this.constructRegisteredDomainAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructRegisteredDomainAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "website") {
-              att = this.constructWebsiteAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructWebsiteAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "email") {
-              att = this.constructEmailAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructEmailAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "indiv-email") {
-              att = this.constructIndivEmailAttestation(item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructIndivEmailAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
 
 
             if (att == undefined) {
               att = {
                 uid: item.id,
-                attester: "did:pkh:eip155:10:" + item.attester,
+                attester: "did:pkh:eip155:" + chain?.id + ":" + item.attester,
                 schemaId: item.schemaId,
                 entityId: entityId,
                 url: "https://www.richcanvas3.com",
@@ -2180,7 +2154,7 @@ class AttestationService {
             }
             else {
               att.uid = item.id,
-              att.attester = "did:pkh:eip155:10:" + item.attester,
+              att.attester = "did:pkh:eip155:" + chain?.id + ":" + item.attester,
               att.schemaId = item.schemaId,
               entityId = entityId
             }
@@ -2252,7 +2226,7 @@ class AttestationService {
   }
   
   
-  static async loadOrganizations(): Promise<Organization[]> {
+  static async loadOrganizations(chain: Chain): Promise<Organization[]> {
     try {
 
       let exists = false
@@ -2296,7 +2270,7 @@ class AttestationService {
 
           //console.info("data: ", decodedData)
 
-          orgDid = "did:pkh:eip155:10:" + item.attester
+          orgDid = "did:pkh:eip155:" + chain?.id + ":" + item.attester
 
           if (this.isBlacklisted(orgDid) == false) {
 
@@ -2373,12 +2347,12 @@ class AttestationService {
     return false
   }
   
-  static async getAttestationByDidAndSchemaId(did: string, schemaId: string, entityId: string): Promise<Attestation | undefined> {
+  static async getAttestationByDidAndSchemaId(chain: Chain, did: string, schemaId: string, entityId: string): Promise<Attestation | undefined> {
 
     //console.info("get attestation by address and schemaId and entityId: ", address, schemaId, entityId)
     let rtnAttestation : Attestation | undefined
 
-    const address = did.replace("did:pkh:eip155:10:", "")
+    const address = did.replace("did:pkh:eip155:" + chain?.id + ":", "")
 
 
     let exists = false
@@ -2409,7 +2383,7 @@ class AttestationService {
           const decodedData = schemaEncoder.decodeData(item.data);
           if (this.checkEntity(entityId, decodedData)) {
             console.info("construct indiv attestation")
-            rtnAttestation = this.constructIndivAttestation(item.id, item.schemaId, entityId, address, "", decodedData)
+            rtnAttestation = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
           }
         }
         if (schemaId == this.OrgIndivSchemaUID) {
@@ -2418,7 +2392,7 @@ class AttestationService {
           const decodedData = schemaEncoder.decodeData(item.data);
           if (this.checkEntity(entityId, decodedData)) {
             console.info("construct org indiv attestation")
-            rtnAttestation = this.constructOrgIndivAttestation(item.id, item.schemaId, entityId, address, "", decodedData)
+            rtnAttestation = this.constructOrgIndivAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
             console.info("returned att: ", rtnAttestation)
           }
         }
@@ -2427,7 +2401,7 @@ class AttestationService {
           const decodedData = schemaEncoder.decodeData(item.data);
           if (this.checkEntity(entityId, decodedData)) {
             console.info("construct org attestation")
-            rtnAttestation = this.constructOrgAttestation(item.id, item.schemaId, entityId, address, "", decodedData)
+            rtnAttestation = this.constructOrgAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
           }
         }
         if (schemaId == this.AccountSchemaUID) {
@@ -2435,7 +2409,7 @@ class AttestationService {
           const decodedData = schemaEncoder.decodeData(item.data);
           if (this.checkEntity(entityId, decodedData)) {
             console.info("construct account attestation")
-            rtnAttestation = this.constructAccountAttestation(item.id, item.schemaId, entityId, address, "", decodedData)
+            rtnAttestation = this.constructAccountAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
           }
         }
         if (schemaId == this.OrgAccountSchemaUID) {
@@ -2443,7 +2417,7 @@ class AttestationService {
           const decodedData = schemaEncoder.decodeData(item.data);
           if (this.checkEntity(entityId, decodedData)) {
             console.info("construct org account attestation")
-            rtnAttestation = this.constructOrgAccountAttestation(item.id, item.schemaId, entityId, address, "", decodedData)
+            rtnAttestation = this.constructOrgAccountAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
           }
         }
         if (schemaId == this.StateRegistrationSchemaUID) {
@@ -2451,7 +2425,7 @@ class AttestationService {
           const decodedData = schemaEncoder.decodeData(item.data);
           if (this.checkEntity(entityId, decodedData)) {
             console.info("construct state reg attestation")
-            rtnAttestation = this.constructStateRegistrationAttestation(item.id, item.schemaId, entityId, address, "", decodedData)
+            rtnAttestation = this.constructStateRegistrationAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
           }
         }
         if (schemaId == this.RegisteredDomainSchemaUID) {
@@ -2459,7 +2433,7 @@ class AttestationService {
           const decodedData = schemaEncoder.decodeData(item.data);
           if (this.checkEntity(entityId, decodedData)) {
             console.info("construct domain attestation")
-            rtnAttestation = this.constructRegisteredDomainAttestation(item.id, item.schemaId, entityId, address, "", decodedData)
+            rtnAttestation = this.constructRegisteredDomainAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
           }
         }
         if (schemaId == this.SocialSchemaUID) {
@@ -2467,7 +2441,7 @@ class AttestationService {
           const decodedData = schemaEncoder.decodeData(item.data);
           if (this.checkEntity(entityId, decodedData)) {
             console.info(">>>>>>>>>>>>>>> construct social attestation: ", entityId)
-            rtnAttestation = this.constructSocialAttestation(item.id, item.schemaId, entityId, address, "", decodedData)
+            rtnAttestation = this.constructSocialAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
           }
         }
         if (schemaId == this.WebsiteSchemaUID) {
@@ -2475,7 +2449,7 @@ class AttestationService {
           const decodedData = schemaEncoder.decodeData(item.data);
           if (this.checkEntity(entityId, decodedData)) {
             console.info(">>>>>>>>>>>>>>> construct website attestation: ", entityId)
-            rtnAttestation = this.constructWebsiteAttestation(item.id, item.schemaId, entityId, address, "", decodedData)
+            rtnAttestation = this.constructWebsiteAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
           }
         }
         if (schemaId == this.InsuranceSchemaUID) {
@@ -2483,7 +2457,7 @@ class AttestationService {
           const decodedData = schemaEncoder.decodeData(item.data);
           if (this.checkEntity(entityId, decodedData)) {
             console.info(">>>>>>>>>>>>>>> construct insurance attestation: ", entityId)
-            rtnAttestation = this.constructInsuranceAttestation(item.id, item.schemaId, entityId, address, "", decodedData)
+            rtnAttestation = this.constructInsuranceAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
           }
         }
         if (schemaId == this.EmailSchemaUID) {
@@ -2491,7 +2465,7 @@ class AttestationService {
           const decodedData = schemaEncoder.decodeData(item.data);
           if (this.checkEntity(entityId, decodedData)) {
             console.info(">>>>>>>>>>>>>>> construct email attestation: ", entityId)
-            rtnAttestation = this.constructEmailAttestation(item.id, item.schemaId, entityId, address, "", decodedData)
+            rtnAttestation = this.constructEmailAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
           }
         }
         if (schemaId == this.IndivEmailSchemaUID) {
@@ -2499,7 +2473,7 @@ class AttestationService {
           const decodedData = schemaEncoder.decodeData(item.data);
           if (this.checkEntity(entityId, decodedData)) {
             console.info(">>>>>>>>>>>>>>> construct indiv email attestation: ", entityId)
-            rtnAttestation = this.constructIndivEmailAttestation(item.id, item.schemaId, entityId, address, "", decodedData)
+            rtnAttestation = this.constructIndivEmailAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
           }
         }
       }
@@ -2510,7 +2484,7 @@ class AttestationService {
     return rtnAttestation;
   }
 
-  static async getRegisteredDomainAttestations(domain: string, schemaId: string, entityId: string): Promise<Attestation[] | undefined> {
+  static async getRegisteredDomainAttestations(chain: Chain, domain: string, schemaId: string, entityId: string): Promise<Attestation[] | undefined> {
 
     //console.info("get attestation by address and schemaId and entityId: ", address, schemaId, entityId)
     let rtnAttestation : Attestation | undefined
@@ -2542,7 +2516,7 @@ class AttestationService {
         const decodedData = schemaEncoder.decodeData(item.data);
         if (this.checkEntity(entityId, decodedData)) {
           const orgAddress = item.attester
-          const att = this.constructRegisteredDomainAttestation(item.id, item.schemaId, entityId, orgAddress, "", decodedData)
+          const att = this.constructRegisteredDomainAttestation(chain, item.id, item.schemaId, entityId, orgAddress, "", decodedData)
           if ((att as RegisteredDomainAttestation).domain.toLowerCase() == domain.toLowerCase()) {
             rtnAttestations.push(att as RegisteredDomainAttestation)
           }
@@ -2554,7 +2528,7 @@ class AttestationService {
     return rtnAttestations;
 }
   
-static async getIndivsNotApprovedAttestations(orgDid: string): Promise<IndivAttestation[] | undefined> {
+static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Promise<IndivAttestation[] | undefined> {
 
   const entityId = "indiv"
   const schemaId = AttestationService.IndivSchemaUID
@@ -2585,10 +2559,10 @@ static async getIndivsNotApprovedAttestations(orgDid: string): Promise<IndivAtte
     const schemaEncoder = new SchemaEncoder(this.IndivSchema);
     const decodedData = schemaEncoder.decodeData(item.data);
     if (this.checkEntity(entityId, decodedData)) {
-      const indAtt = this.constructIndivAttestation(item.id, item.schemaId, entityId, item.attester, "", decodedData)
+      const indAtt = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, item.attester, "", decodedData)
       if (indAtt && (indAtt as IndivAttestation).orgDid.toLowerCase() == orgDid.toLowerCase()) {
         const indivDid = indAtt.attester
-        const indOrgAtt = await this.getOrgIndivAttestation(indivDid, this.OrgIndivSchemaUID, "org-indiv")
+        const indOrgAtt = await this.getOrgIndivAttestation(chain, indivDid, this.OrgIndivSchemaUID, "org-indiv")
         if (!indOrgAtt) {
           rtnAttestations.push(indAtt as IndivAttestation)
         }
@@ -2601,7 +2575,7 @@ static async getIndivsNotApprovedAttestations(orgDid: string): Promise<IndivAtte
   return rtnAttestations;
 }
 
-  static async getOrgIndivAttestation(indivDid: string, schemaId: string, entityId: string): Promise<Attestation | undefined> {
+  static async getOrgIndivAttestation(chain: Chain, indivDid: string, schemaId: string, entityId: string): Promise<Attestation | undefined> {
 
     console.info("get org indiv attestation by address and schemaId and entityId: ", indivDid, schemaId, entityId)
     let rtnAttestation : Attestation | undefined
@@ -2632,9 +2606,8 @@ static async getIndivsNotApprovedAttestations(orgDid: string): Promise<IndivAtte
         const decodedData = schemaEncoder.decodeData(item.data);
         if (this.checkEntity(entityId, decodedData)) {
           const orgAddress = item.attester
-          const att = this.constructOrgIndivAttestation(item.id, item.schemaId, entityId, orgAddress, "", decodedData)
+          const att = this.constructOrgIndivAttestation(chain, item.id, item.schemaId, entityId, orgAddress, "", decodedData)
           if ((att as OrgIndivAttestation).indivDid.toLowerCase() == indivDid.toLowerCase()) {
-            console.info("found attestation for orgIndiv: ", att)
             rtnAttestation = att
             break
           }

@@ -20,8 +20,10 @@ import { useWallectConnectContext } from "../context/walletConnectContext";
 import AttestationService from "../service/AttestationService"
 import { OrgAttestation, RegisteredDomainAttestation } from "../models/Attestation"
 import { domainSeparator } from 'viem';
+import { useAccount } from 'wagmi';
 
 import '../custom_styles.css'
+import { chainIdNetworkParamsMapping } from '@blockchain-lab-um/masca-connector';
 
 interface Step {
   id: number;
@@ -40,6 +42,7 @@ const WelcomeModal: React.FC = () => {
   const [showEmailVerification, setShowEmailVerification] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'info' as 'info' | 'success' | 'error' });
+  const { chain } = useAccount();
 
   const { setIndivAndOrgInfo, setOrgNameValue, setOrgDidValue, checkIfDIDBlacklisted } = useWallectConnectContext();
 
@@ -115,17 +118,18 @@ const WelcomeModal: React.FC = () => {
       // get ready for step 3
       // if email is for existing registered domain then set org name
       const domain = getDomainFromEmail(email)
-      if (domain) {
+      if (domain && chain) {
         console.info("domain: ", domain)
+        console.info("chain: ", chain)
         setOrgNameValue("")
         setOrgDidValue("")
-        const registeredDomainAttestations = await AttestationService.getRegisteredDomainAttestations(domain, AttestationService.RegisteredDomainSchemaUID, "domain")
+        const registeredDomainAttestations = await AttestationService.getRegisteredDomainAttestations(chain, domain, AttestationService.RegisteredDomainSchemaUID, "domain")
         if (registeredDomainAttestations) {
           for (const registeredDomainAttestation of registeredDomainAttestations) {
 
             console.info("registered domain: ", registeredDomainAttestation)
             const orgDid = registeredDomainAttestation.attester
-            const orgAttestation = await AttestationService.getAttestationByDidAndSchemaId(orgDid, AttestationService.OrgSchemaUID, "org")
+            const orgAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, orgDid, AttestationService.OrgSchemaUID, "org")
             if (orgAttestation) {
 
               const orgDidValue = (orgAttestation as OrgAttestation).attester
@@ -146,7 +150,7 @@ const WelcomeModal: React.FC = () => {
 
               }
               else {
-                console.info("blacklisted so do not continue: ", orgDidValue)
+                console.info("blacklisted so don't use it: ", orgDidValue)
               }
             }
 

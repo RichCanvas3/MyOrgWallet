@@ -14,7 +14,11 @@ import {MagnifyingGlassIcon} from "@heroicons/react/24/outline";
 
 import WelcomeModal from './WelcomeModal';
 
+import { useAccount } from 'wagmi';
+
 import '../custom_styles.css'
+
+import { type Chain } from 'viem'
 
 interface WelcomePageProps {
   className: string;
@@ -33,16 +37,18 @@ const WelcomePage: React.FC<WelcomePageProps> = ({className, appCommand}) => {
 
     const [orgDid, setOrgDid] = useState<string>();
 
+    const { chain } = useAccount();
+
     const encoder = new TextEncoder();
 
     const [refreshAttestations, setRefreshAttestations] = useState(0);
 
     useEffect(() => {
-      loadOrganizations();
+      loadOrganizations(chain);
     }, []);
 
     useEffect(() => {
-        loadOrganizations();
+        loadOrganizations(chain);
       }, [ orgDid ]);
 
 
@@ -70,12 +76,10 @@ const WelcomePage: React.FC<WelcomePageProps> = ({className, appCommand}) => {
 
     }
 
-    const loadOrganizations = async () => {
-        AttestationService.loadOrganizations().then(organizations => {
-            setOrganizations(organizations);
-        }).catch(error => {
-            console.error("Error loading organizations:", error);
-        });
+    const loadOrganizations = async (chain: Chain | undefined) => {
+        if (!chain) return;
+        const organizations = await AttestationService.loadOrganizations(chain)
+        setOrganizations(organizations);
     };
 
     const handleSearch = async (searchString: string) => {

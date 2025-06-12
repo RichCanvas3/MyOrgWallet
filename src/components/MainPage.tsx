@@ -217,8 +217,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   
   useEffect(() => {
-    if (orgAccountClient && orgDid && indivDid) {
-      AttestationService.setEntityAttestations(orgDid, indivDid).then((ents) => {
+    if (orgAccountClient && chain &&orgDid && indivDid) {
+      AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
 
         console.info("setentities")
         if (ents != undefined) {

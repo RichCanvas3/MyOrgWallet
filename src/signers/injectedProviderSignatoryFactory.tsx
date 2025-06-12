@@ -9,6 +9,8 @@ export const createInjectedProviderSignatoryFactory: SignatoryFactoryConfigurato
   (config: SignatoryFactoryConfig) => {
     const { chain } = config;
 
+    console.info("...... chain: ", chain)
+
     const provider = (window as any).ethereum;
 
     if (!provider) {

@@ -64,7 +64,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
     console.info("delete attestations")
     if (orgDid && chain && orgIndivDelegation && orgIssuerDelegation && indivIssuerDelegation && burnerAccountClient) {
       console.info("delete org attestations")
-      const attestations = await AttestationService.loadRecentAttestationsTitleOnly(orgDid, "")
+      const attestations = await AttestationService.loadRecentAttestationsTitleOnly(chain,orgDid, "")
       if (attestations && attestations.length > 0) {
 
         const provider = new ethers.BrowserProvider(window.ethereum);
@@ -82,7 +82,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
   const handleDeleteIndivAttestations = async () => {
     if (chain && indivDid && indivIssuerDelegation && burnerAccountClient) {
       console.info("delete indiv attestations")
-      const attestations = await AttestationService.loadRecentAttestationsTitleOnly("", indivDid)
+      const attestations = await AttestationService.loadRecentAttestationsTitleOnly(chain,"", indivDid)
       if (attestations && attestations.length > 0) {
 
         const provider = new ethers.BrowserProvider(window.ethereum);
@@ -101,7 +101,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
 
   const handleAddSamCFO = async (event: React.MouseEvent<HTMLButtonElement>) => {
 
-    if (signatory && orgDid && privateIssuerDid && indivIssuerDelegation) {
+    if (signatory && orgDid && privateIssuerDid && indivIssuerDelegation && chain) {
 
       const walletClient = signatory.walletClient
 
@@ -126,7 +126,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
       console.info("%%%%%%%%% other individual EOA address: ", samCFOEOA)
       console.info("%%%%%%%%% other individual AA address: ", samIndivAccountClient.address)
 
-      const samIndivDid = 'did:pkh:eip155:10:' + samIndivAccountClient.address
+      const samIndivDid = 'did:pkh:eip155:' + chain?.id + ':' + samIndivAccountClient.address
 
       //let samOrgIndivDel = null
       //try {
@@ -136,7 +136,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
       //}
 
       
-      const samIndivAttestation = await AttestationService.getOrgIndivAttestation(samIndivDid, AttestationService.OrgIndivSchemaUID, "org-indiv");
+      const samIndivAttestation = await AttestationService.getOrgIndivAttestation(chain, samIndivDid, AttestationService.OrgIndivSchemaUID, "org-indiv");
 
       let samOrgIndivDel : any | undefined
       let samDelegationOrgAddress : `0x${string}` | undefined

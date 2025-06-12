@@ -11,6 +11,8 @@ import { useWallectConnectContext } from "../context/walletConnectContext";
 import { useNavigate } from "react-router-dom";
 import { BuildingOfficeIcon, WalletIcon, ArrowRightCircleIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 
+import {ISSUER_PRIVATE_KEY, WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, ETHERSCAN_URL, BUNDLER_URL, PAYMASTER_URL} from "../config";
+
 interface HomePageProps {
   className: string;
 }
@@ -27,6 +29,8 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
 
   const { selectedSignatory, signatory, connect, isIndividualConnected } = useWallectConnectContext();
   const { isConnected } = useAccount();
+
+  
 
   useEffect(() => {
     console.info("............ detecting ethereum provider...");
@@ -56,9 +60,8 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
         console.info("........ selected signatory login ....... ")
         const loginResp = await selectedSignatory.login()
         console.info("........ response from login: ", loginResp)
-        if (loginResp) {
+        if (loginResp && loginResp.signatory && loginResp.owner) {
           await connect(loginResp.owner, loginResp.signatory, "", "", "")
-
         }
 
       }
@@ -66,29 +69,29 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
       //if (walletAuthRef.current) {
       //  walletAuthRef.current.openWalletPopup()
       //}
-    } catch (error) {
+    } catch (error: any) {
 
       if (error.message === "Signatory not configured") {
         // Handle this specific error with a user-friendly message
         alert("Please configure your wallet signatory before connecting.");
       } else if (error.message.startsWith("Unrecognized chain ID")) {
 
-        const optimismParams = {
-          chainId: '0xa', // 0xa is hexadecimal for 10
-          chainName: 'Optimism',
+        const params = {
+          //chainId: '0xa', // 0xa is hexadecimal for 10
+          //chainName: 'Optimism',
           nativeCurrency: {
             name: 'Ether',
             symbol: 'ETH',
             decimals: 18,
           },
-          rpcUrls: ['https://mainnet.optimism.io'],
-          blockExplorerUrls: ['https://optimistic.etherscan.io'],
+          rpcUrls: [RPC_URL],
+          blockExplorerUrls: [ETHERSCAN_URL],
         };
 
         try {
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
-            params: [optimismParams],
+            params: [params],
           });
         } catch (error) {
         }

@@ -86,7 +86,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
       console.info("approve it: ", att)
 
       console.info("************************   CREATE DELEGATION FOR: ", att.name)
-      const leaderIndivAddress = att.attester.replace('did:pkh:eip155:10:', '') as `0x${string}`
+      const leaderIndivAddress = att.attester.replace('did:pkh:eip155:' + chain?.id + ':', '') as `0x${string}`
       const leaderIndivDid = att.attester
 
       console.info("Selected Person to add: ", att.name)
@@ -156,9 +156,9 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
 
   useEffect(() => {
     //console.info("populate indiv atts")
-    if (orgDid) {
+    if (orgDid && chain) {
       //console.info("got did")
-      AttestationService.getIndivsNotApprovedAttestations(orgDid).then((atts) => {
+      AttestationService.getIndivsNotApprovedAttestations(chain, orgDid).then((atts) => {
         if (atts) {
           setAttestations(atts)
         }

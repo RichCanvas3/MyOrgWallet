@@ -16,4 +16,6 @@ export const LINKEDIN_CLIENT_ID: string = import.meta.env.VITE_LINKEDIN_CLIENT_I
 export const SHOPIFY_CLIENT_ID: string = import.meta.env.VITE_SHOPIFY_CLIENT_ID;
 export const ALCHEMY_RPC_URL: string = import.meta.env.VITE_ALCHEMY_RPC_URL;
 export const ETHERSCAN_API_KEY: string = import.meta.env.VITE_ETHERSCAN_API_KEY;
+export const ETHERSCAN_URL: string = import.meta.env.VITE_ETHERSCAN_URL;
+export const EAS_GRAPHQL_URL: string = import.meta.env.VITE_EAS_GRAPHQL_URL;
 

@@ -13,7 +13,7 @@ import { addressResolverAbi } from 'viem/_types/constants/abis';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 
 import { TextField, Button, Typography, Box, Paper } from "@mui/material";
-import EditableTextBox from "./EditableTextBox";
+import { useAccount } from 'wagmi';
 
 interface XModalProps {
   isVisible: boolean;
@@ -23,7 +23,6 @@ interface XModalProps {
 
 const XModal: React.FC<XModalProps> = ({isVisible, onClose}) => {
 
-  const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const { indivDid, indivAccountClient } = useWallectConnectContext();
@@ -31,6 +30,7 @@ const XModal: React.FC<XModalProps> = ({isVisible, onClose}) => {
   const [attestation, setAttestation] = useState<Attestation | null>(null);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
+  const { chain } = useAccount(); 
 
 
   const handleClose = () => {
@@ -60,9 +60,9 @@ const XModal: React.FC<XModalProps> = ({isVisible, onClose}) => {
 
     if (isVisible) {
       // get x attestation
-      if (indivDid) {
+      if (indivDid && chain) {
 
-        AttestationService.getAttestationByDidAndSchemaId(indivDid, AttestationService.SocialSchemaUID, "x").then((att) => {
+        AttestationService.getAttestationByDidAndSchemaId(chain, indivDid, AttestationService.SocialSchemaUID, "x").then((att) => {
           if (att) {
             setAttestation(att)
           }

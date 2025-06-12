@@ -3,7 +3,7 @@ import {useContext, useEffect, useRef, useState} from 'react';
 
 import {useNavigate} from 'react-router-dom';
 
-//import { WalletAuthRef } from "./WalletAuth"
+import { useAccount } from 'wagmi';
 import { Organization } from "../models/Organization"
 import AttestationService, { attestationsEmitter } from "../service/AttestationService";
 import { Attestation } from "../models/Attestation"
@@ -36,6 +36,8 @@ const SetupSmartWalletPage: React.FC<SetupSmartWalletPageProps> = ({className, a
     const encoder = new TextEncoder();
 
     const [refreshAttestations, setRefreshAttestations] = useState(0);
+
+    const { chain } = useAccount();
 
     useEffect(() => {
       loadOrganizations();
@@ -71,12 +73,14 @@ const SetupSmartWalletPage: React.FC<SetupSmartWalletPageProps> = ({className, a
     }
 
     const loadOrganizations = async () => {
-        AttestationService.loadOrganizations().then(organizations => {
-            setOrganizations(organizations);
-        }).catch(error => {
-            console.error("Error loading organizations:", error);
-        });
-    };
+      if (chain) {
+        AttestationService.loadOrganizations(chain).then(organizations => {
+                setOrganizations(organizations);
+            }).catch(error => {
+                console.error("Error loading organizations:", error);
+            });
+        };
+      }
 
     const handleSearch = async (searchString: string) => {
       console.info("hello world")
