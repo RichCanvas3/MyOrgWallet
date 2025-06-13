@@ -18,4 +18,6 @@ export const ALCHEMY_RPC_URL: string = import.meta.env.VITE_ALCHEMY_RPC_URL;
 export const ETHERSCAN_API_KEY: string = import.meta.env.VITE_ETHERSCAN_API_KEY;
 export const ETHERSCAN_URL: string = import.meta.env.VITE_ETHERSCAN_URL;
 export const EAS_GRAPHQL_URL: string = import.meta.env.VITE_EAS_GRAPHQL_URL;
+export const EAS_CONTRACT_ADDRESS: string = import.meta.env.VITE_EAS_CONTRACT_ADDRESS;
+export const CHAIN_NAME: string = import.meta.env.VITE_CHAIN_NAME;
 

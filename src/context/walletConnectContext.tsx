@@ -71,7 +71,7 @@ import {
 import type { IKey, TKeyType, IDIDManager, ICredentialIssuer, ICredentialVerifier, IResolver, IDataStore, IKeyManager, VerifiableCredential, IVerifyResult } from '@veramo/core';
 
 import { privateKeyToAccount, PrivateKeyAccount, generatePrivateKey } from "viem/accounts";
-import {ISSUER_PRIVATE_KEY, WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, ETHERSCAN_URL, BUNDLER_URL, PAYMASTER_URL} from "../config";
+import {ISSUER_PRIVATE_KEY, WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, ETHERSCAN_URL, BUNDLER_URL, PAYMASTER_URL, CHAIN_NAME} from "../config";
 
 import type {
   SignatoryFactory,
@@ -118,7 +118,7 @@ import AttestationService from "../service/AttestationService";
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService";
 import { Navigate } from "react-router-dom";
 
-const defaultChain = optimism
+const defaultChain = CHAIN_NAME == "optimism" ? optimism : CHAIN_NAME == "sepolia" ? sepolia : CHAIN_NAME == "linea" ? linea : optimism
 
 // Define missing types
 export type CredentialJwtOrJSON = { proof: { jwt: string } } | Record<string, unknown>;
@@ -771,7 +771,7 @@ export const useWalletConnect = () => {
                 signature,
               }
 
-              await DelegationService.saveDelegationToStorage(ownerEOAAddress, orgAccountClient.address, burnerAccountClient.address, { ...orgIssuerDel, salt: BigInt(orgIssuerDel.salt) })
+              await DelegationService.saveDelegationToStorage(ownerEOAAddress, orgAccountClient.address, burnerAccountClient.address, orgIssuerDel)
             }
 
             if (orgIssuerDel) {
@@ -1009,7 +1009,8 @@ export const useWalletConnect = () => {
           console.info("is indivAccountClient deployed: ", isDeployed)
           if (isDeployed == false) {
 
-            console.info("create pimlico client   ")
+            console.info("individual account is getting deployed: ", indivAccountClient.address)
+
             const pimlicoClient = createPimlicoClient({
               transport: http(BUNDLER_URL),
             });
@@ -1052,7 +1053,7 @@ export const useWalletConnect = () => {
                 ...fee,
               });
 
-              console.info("send user operation - done")
+              console.info("individual account is deployed - done")
               const { receipt } = await bundlerClient!.waitForUserOperationReceipt({
                 hash: userOperationHash,
               });
@@ -1064,7 +1065,7 @@ export const useWalletConnect = () => {
   
 
           // get attestation for individual account abstraction address
-          console.info("get org indiv attestation for indiv did: ", indivDid)
+          console.info(": ", indivDid)
           const orgIndivAttestation = await AttestationService.getOrgIndivAttestation(chain, indivDid, AttestationService.OrgIndivSchemaUID, "org-indiv");
 
 
@@ -1206,9 +1207,8 @@ export const useWalletConnect = () => {
             */
 
             orgAddressValue = orgAccountClient.address
-            orgDidValue = 'did:pkh:eip155:' + chain?.id + ':' + orgAddressValue.toLowerCase()
+            orgDidValue = 'did:pkh:eip155:' + chain?.id + ':' + orgAddressValue
 
-            console.info("))))))))))))))) setOrgDidValue: ", orgDidValue)
             setOrgDid(orgDidValue)
             setOrgAccountClient(orgAccountClient)
 
@@ -1216,7 +1216,7 @@ export const useWalletConnect = () => {
             console.info("is orgAccountClient deployed: ", isDeployed)
             if (isDeployed == false) {
 
-              console.info("deploy org indiv, create bundler client for chain: ", chain)
+              console.info("org account is getting deployed: ", orgAccountClient.address)
 
               const pimlicoClient = createPimlicoClient({
                 transport: http(BUNDLER_URL),
@@ -1248,7 +1248,7 @@ export const useWalletConnect = () => {
                 ...fee,
               });
 
-              console.info("send user operation - done")
+              console.info("org account is deployed - done")
               const { receipt } = await bundlerClient!.waitForUserOperationReceipt({
                 hash: userOperationHash,
               });
@@ -1314,27 +1314,99 @@ export const useWalletConnect = () => {
           signatory: { account: burnerAccount },
           deploySalt: toHex(10),
         })
+
+        console.info("******* burner EOA: ", burnerAccount.address)
         setBurnerAccountClient(burnerAccountClient)
 
+        console.info("********* burner account client: ", burnerAccountClient.address)
+        let isDeployed = await burnerAccountClient.isDeployed()
+        console.info("******is burnerAccountClient deployed: ", isDeployed)
+        if (isDeployed == false) {
 
+          console.info("burner account is getting deployed: ", burnerAccountClient.address)
+
+          const pimlicoClient = createPimlicoClient({
+            transport: http(BUNDLER_URL),
+          });
+
+          //const paymasterClient = createPaymasterClient({
+          //  transport: http(PAYMASTER_URL),
+          //});
+
+          console.info("create bundler client ", BUNDLER_URL, PAYMASTER_URL)
+          const bundlerClient = createBundlerClient({
+                          transport: http(BUNDLER_URL),
+                          paymaster: true,
+                          chain: chain,
+                          paymasterContext: {
+                            mode:             'SPONSORED',
+                          },
+                        });
+
+          console.info("get gas price") 
+          const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+
+          console.info("deploy burnerAccountClient", burnerAccountClient)
+          try {
+            console.info("send user operation with bundlerClient: ", bundlerClient)
+            //const mx = BigInt(500_000_000_000_000_000)
+            //const fee = {
+            //  maxFeePerGas: mx,
+            //  maxPriorityFeePerGas: mx,
+            //}
+
+            console.info("fee: ", fee)
+            const userOperationHash = await bundlerClient!.sendUserOperation({
+              account: burnerAccountClient,
+              calls: [
+                {
+                  to: zeroAddress,
+                },
+              ],
+              //paymaster: paymasterClient,
+              ...fee,
+            });
+
+            console.info("burnerAccountClient account is deployed - done")
+            const { receipt } = await bundlerClient!.waitForUserOperationReceipt({
+              hash: userOperationHash,
+            });
+          }
+          catch (error) { 
+            console.info("error deploying burnerAccountClient: ", error)
+          }
+        }
+        
+
+        console.info("********* ISSUER_PRIVATE_KEY: ", ISSUER_PRIVATE_KEY)
         const privateIssuerOwner = privateKeyToAccount(ISSUER_PRIVATE_KEY as `0x${string}`);
         setPrivateIssuerAccount(privateIssuerOwner)
 
+        console.info("********* privateIssuer AA address: ", privateIssuerOwner.address)
         let privateIssuerDid = 'did:pkh:eip155:' + chain?.id + ':' + privateIssuerOwner.address
         setPrivateIssuerDid(privateIssuerDid)
         
         // setup veramo agent and masca api
+        console.info("setup veramo for issuer aa did: ", privateIssuerDid)
         const veramoAgent = await setupVeramoAgent(privateIssuerDid)
         setVeramoAgent(veramoAgent)
 
+        console.info("setup snap for owner: ", owner)
         const mascaApi = await setupSnap(owner)
+
+        console.info("orgIndivDelegation: ", orgIndivDelegation)
+        console.info("orgAccountClient: ", orgAccountClient)
 
         if (orgIndivDelegation && orgAccountClient) {
 
           // setup delegation for org to issuer -> redelegation of orgIndivDel
           let orgIssuerDel  = null
+          console.info("get delegation from storage: ", owner, orgAccountClient.address, burnerAccountClient.address)
           orgIssuerDel = await DelegationService.getDelegationFromStorage(owner, orgAccountClient.address, burnerAccountClient.address)
           if (orgIssuerDel == null && indivDid && indivAccountClient) {
+
+            console.info("indivDid: ", indivDid)
+            console.info("indivAccountClient: ", indivAccountClient)
 
             const parentDelegationHash = getDelegationHashOffchain(orgIndivDelegation);
             orgIssuerDel = createDelegation({
@@ -1345,6 +1417,7 @@ export const useWalletConnect = () => {
             });
 
 
+            console.info("sign delegation")
             const signature = await indivAccountClient.signDelegation({
               delegation: orgIssuerDel,
             });
@@ -1355,14 +1428,17 @@ export const useWalletConnect = () => {
               signature,
             }
 
-            await DelegationService.saveDelegationToStorage(owner, orgAccountClient.address, burnerAccountClient.address, { ...orgIssuerDel, salt: BigInt(orgIssuerDel.salt) })
+            console.info("save delegation to storage")
+            await DelegationService.saveDelegationToStorage(owner, orgAccountClient.address, burnerAccountClient.address, orgIssuerDel)
           }
 
+          console.info("orgIssuerDel: ", orgIssuerDel)
           if (orgIssuerDel) {
             setOrgIssuerDelegation(orgIssuerDel as Delegation)
           }
 
           // add new org attestation
+          console.info("add new org attestation")
           const addOrgAttestation = async (mascaApi: any) => {
 
             console.info("*********** ADD ORG ATTESTATION ****************")

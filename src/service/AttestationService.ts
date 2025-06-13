@@ -29,7 +29,7 @@ import { encodeNonce } from "permissionless/utils"
 
 import { error } from "console";
 
-import {WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, BUNDLER_URL, PAYMASTER_URL, EAS_GRAPHQL_URL} from "../config";
+import {WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, BUNDLER_URL, PAYMASTER_URL, EAS_GRAPHQL_URL, EAS_CONTRACT_ADDRESS} from "../config";
 
 const STORE_URL = `${import.meta.env.VITE_API_URL}/json`;
 
@@ -82,8 +82,8 @@ const easApolloClient = new ApolloClient({
 });
 
 
-const EAS_CONTRACT_ADDRESS = "0x4200000000000000000000000000000000000021"; 
-const eas = new EAS(EAS_CONTRACT_ADDRESS);
+const easContractAddress = EAS_CONTRACT_ADDRESS ||"0x4200000000000000000000000000000000000021"; 
+const eas = new EAS(easContractAddress);
 
 
 
