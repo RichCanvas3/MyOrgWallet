@@ -27,39 +27,35 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
   const { data: walletClient } = useWalletClient();
   const [hasProvider, setHasProvider] = useState<boolean | null>(null);
 
-  const { selectedSignatory, signatory, connect, isIndividualConnected } = useWallectConnectContext();
+  const { selectedSignatory, signatory, connect, isIndividualConnected, orgDid, indivDid } = useWallectConnectContext();
   const { isConnected } = useAccount();
 
   
 
   useEffect(() => {
-    console.info("............ detecting ethereum provider...");
+
     const detectProvider = async () => {
       const provider = await detectEthereumProvider();
-      console.info("............ detected ethereum provider: ", provider);
+
       setHasProvider(Boolean(provider));
     };
-    console.info("............ calling detectProvider");
     detectProvider();
   }, []);
 
   useEffect(() => {
-    console.info("check if going to chat: ", isConnected, isIndividualConnected)
     // if wallet is defined and we have not defined smart wallet
-    if (isConnected && isIndividualConnected && !location.pathname.startsWith('/readme')) {
-      console.info(".......... navigate to chat")
+    if (isConnected && isIndividualConnected && orgDid && indivDid && !location.pathname.startsWith('/readme')) {
+      console.info(".......... navigate to chat: ", isConnected, isIndividualConnected, orgDid, indivDid)
       navigate('/chat/')
     } else  {
       //console.info("...... error")
     }
-  }, [isConnected, isIndividualConnected]);
+  }, [isConnected, isIndividualConnected, orgDid, indivDid]);
 
   const handleConnect = async () => {
     try {
       if (selectedSignatory) {
-        console.info("........ selected signatory login ....... ")
         const loginResp = await selectedSignatory.login()
-        console.info("........ response from login: ", loginResp)
         if (loginResp && loginResp.signatory && loginResp.owner) {
           await connect(loginResp.owner, loginResp.signatory, "", "", "")
         }

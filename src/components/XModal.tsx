@@ -25,12 +25,12 @@ const XModal: React.FC<XModalProps> = ({isVisible, onClose}) => {
 
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { indivDid, indivAccountClient } = useWallectConnectContext();
+  const { chain, indivDid, indivAccountClient } = useWallectConnectContext();
 
   const [attestation, setAttestation] = useState<Attestation | null>(null);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
-  const { chain } = useAccount(); 
+ 
 
 
   const handleClose = () => {

@@ -72,7 +72,7 @@ const CreateWebDidModal: React.FC<CreateWebDidModalProps> = ({isVisible, onClose
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { veramoAgent, mascaApi, signatory, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, burnerAccountClient } = useWallectConnectContext();
+  const { chain, veramoAgent, mascaApi, signatory, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, burnerAccountClient } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   const [attestations, setAttestations] = useState<IndivAttestation[]>([]);
@@ -90,58 +90,59 @@ const CreateWebDidModal: React.FC<CreateWebDidModalProps> = ({isVisible, onClose
     async function createWebDidJson() {
 
       // test with https://resolver.identity.foundation/
-      
-      const attestation = await AttestationService.getAttestationByDidAndSchemaId(orgDid, AttestationService.RegisteredDomainSchemaUID, "domain")
-      if (attestation) {
+      if (chain && orgDid) {
+        const attestation = await AttestationService.getAttestationByDidAndSchemaId(chain, orgDid, AttestationService.RegisteredDomainSchemaUID, "domain")
+        if (attestation) {
 
-        const domainAttestation = attestation as RegisteredDomainAttestation
+          const domainAttestation = attestation as RegisteredDomainAttestation
 
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        const signer = await provider.getSigner();
-        console.info("...........signer: ", signer)
-        //const address = await signer.getAddress();
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          await provider.send("eth_requestAccounts", []);
+          const signer = await provider.getSigner();
+          console.info("...........signer: ", signer)
+          //const address = await signer.getAddress();
 
-        // Use ethers to sign a message and recover the public key
-        const message = "get_public_key";
-        const signature = await signer.signMessage(message);
-        const recoveredPubKey = recoverPublicKey(
-          hashMessage(message),
-          signature
-        );
-        const pubKeyNoPrefix = recoveredPubKey.slice(2); // Remove '0x04'
+          // Use ethers to sign a message and recover the public key
+          const message = "get_public_key";
+          const signature = await signer.signMessage(message);
+          const recoveredPubKey = recoverPublicKey(
+            hashMessage(message),
+            signature
+          );
+          const pubKeyNoPrefix = recoveredPubKey.slice(2); // Remove '0x04'
 
-        /*
-        const x = pubKeyNoPrefix.slice(0, 64); // First 32 bytes (64 hex chars)
-        const y = pubKeyNoPrefix.slice(64); // Last 32 bytes (64 hex chars)
+          /*
+          const x = pubKeyNoPrefix.slice(0, 64); // First 32 bytes (64 hex chars)
+          const y = pubKeyNoPrefix.slice(64); // Last 32 bytes (64 hex chars)
 
-        // Convert to base64url
-        const toBase64url = (hex: any) => {
-          const buffer = Buffer.from(hex, 'hex');
-          return buffer.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        };
+          // Convert to base64url
+          const toBase64url = (hex: any) => {
+            const buffer = Buffer.from(hex, 'hex');
+            return buffer.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+          };
 
-        const xBase64url = toBase64url(x);
-        const yBase64url = toBase64url(y);
-        */
+          const xBase64url = toBase64url(x);
+          const yBase64url = toBase64url(y);
+          */
 
-        const domain = domainAttestation.domain
-        const webDidJson = {
-          "@context": "https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1",
-          "id": "did:web:" + domain,
-          "verificationMethod": [{
-            "id": "did:web:" + domain + "#owner",
-            "type": "JsonWebKey2020",
-            "controller": "did:web:" + domain,
-            "publicKeyHex": pubKeyNoPrefix
-          }],
-          "authentication": [
-            "did:web:" + domain + "#owner"
-          ]
+          const domain = domainAttestation.domain
+          const webDidJson = {
+            "@context": "https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1",
+            "id": "did:web:" + domain,
+            "verificationMethod": [{
+              "id": "did:web:" + domain + "#owner",
+              "type": "JsonWebKey2020",
+              "controller": "did:web:" + domain,
+              "publicKeyHex": pubKeyNoPrefix
+            }],
+            "authentication": [
+              "did:web:" + domain + "#owner"
+            ]
+          }
+
+          setWebDidJson(webDidJson)
+
         }
-
-        setWebDidJson(webDidJson)
-
       }
 
     }

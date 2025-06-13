@@ -74,9 +74,10 @@ export interface AttestationChangeEvent {
 
 
 
-const CHAIN_EAS_GRAPHQL_URL = EAS_GRAPHQL_URL || "https://sepolia.easscan.org/graphql";
+const graphQLUrl = EAS_GRAPHQL_URL || "https://optimism.easscan.org/graphql";
+
 const easApolloClient = new ApolloClient({
-  uri: CHAIN_EAS_GRAPHQL_URL,
+  uri: graphQLUrl,
   cache: new InMemoryCache(),
 });
 
@@ -119,8 +120,9 @@ class AttestationService {
 
     let entities = this.DefaultEntities
 
-    const orgAddress = orgDid.replace("did:pkh:eip155:" + chain?.id, "")
-    const indivAddress = indivDid.replace("did:pkh:eip155:" + chain?.id, "")
+    const orgAddress = orgDid.replace("did:pkh:eip155:" + chain?.id + ":", "")
+    const indivAddress = indivDid.replace("did:pkh:eip155:" + chain?.id + ":", "")
+
 
     let exists = false
     const query = gql`
@@ -143,6 +145,8 @@ class AttestationService {
 
     // cycle through aes attestations and update entity with attestation info
     for (const item of data.attestations) {
+
+      //console.info("attestationitem: ", item)
 
       // check if this aes attestation is from a valid schema
       let schema : string | undefined
@@ -202,8 +206,7 @@ class AttestationService {
           if (entity != undefined) {
             //console.info("...... found entity: ", entity.name)
             if (entity.name == "org") {
-
-              let att = this.constructOrgAttestation(item.id, item.schemaId, entityId, orgAddress, hash, decodedData)
+              let att = this.constructOrgAttestation(chain, item.id, item.schemaId, entityId, orgAddress, hash, decodedData)
               if (att != undefined) {
                 entity.attestation = att
               }
@@ -2053,6 +2056,8 @@ class AttestationService {
 
       const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
 
+      console.info("................... data: ", data)
+
       const attestations : Attestation[] = []
       for (const item of data.attestations) {
 
@@ -2067,6 +2072,8 @@ class AttestationService {
 
           
           if (schema) {
+
+            console.info("item: ", item)
 
             let entityId = "entityId"
             let hash = ""
@@ -2164,7 +2171,6 @@ class AttestationService {
           }
       
       }
-      //console.info("return attestations: ", attestations)
       return attestations;
       
     } catch (error) {
@@ -2188,20 +2194,8 @@ class AttestationService {
   };
 
 
-  static async loadBlacklist() {
 
-    /*
-    const filename = "blacklist"
-
-    const res = await fetch(`${STORE_URL}?filename=${filename}`);
-    const json = await res.json();
-    if (json.success) {
-      console.info("blacklist data: ", json.data)
-      this.Blacklisted = json.data
-    } 
-    */
-
-    this.Blacklisted =  [
+  static Blacklisted =  [
     {'did': 'did:pkh:eip155:10:0x478df0535850b01cBE24AA2DAd295B2968d24B67'},
     {'did': 'did:pkh:eip155:10:0x89AA108af44d340Be28034965c760Dd1Bb289189'},
     {'did': 'did:pkh:eip155:10:0x64b10fC4001023f2Be205eD83b7bf05f1bC2716C'},
@@ -2209,15 +2203,20 @@ class AttestationService {
     {'did': 'did:pkh:eip155:10:0x97D9d517A2948ae4eF9076b01492c7981e787B81'},
     {'did': 'did:pkh:eip155:10:0xb201929847147A25B5701F6f2c4058f3d3836c57'},
     {'did': 'did:pkh:eip155:10:0xd07ad34308111AC10EC883326A7DB9e77b4Da5A9'},
-    {'did': 'did:pkh:eip155:10:0xd07ad34308111AC10EC883326A7DB9e77b4Da5A9'}
+    {'did': 'did:pkh:eip155:10:0xd07ad34308111AC10EC883326A7DB9e77b4Da5A9'},
+    {'did': 'did:pkh:eip155:10:0x547329A545144379D1DA8aB6D61003b63AB2dcb2'},
+    {'did': 'did:pkh:eip155:10:0x3c7fBd352C116C1d1453592073d0e8c9470142e7'},
+    {'did': 'did:pkh:eip155:10:0x367D2330bf05DF35cF5E9d8866aCcCfA2cB52761'},
+    {'did': 'did:pkh:eip155:10:0x1fe5E70A1E6927a70998e37673786DC04608BC80'},
   ]
 
-  };
 
   static isBlacklisted(did: string) : boolean {
 
-    for (const item of this.Blacklisted) {
-      if (item.did == did) {
+
+
+    for (const item of AttestationService.Blacklisted) {
+      if (item.did.toLowerCase() == did.toLowerCase()) {
         return true
       }
     }
@@ -2246,8 +2245,7 @@ class AttestationService {
           }
         }`;
 
-      //console.info(".... query: ", query)
-      //console.info("..... execute query .......")
+
       const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
 
       const organizations : Organization[] = []
@@ -2302,10 +2300,6 @@ class AttestationService {
             //console.info("name: ", name)
             //console.info("orgDid: ", orgDid)
             //console.info("issuedate: ", issuedate)
-
-            if (item.schemaId == this.OrgSchemaUID) {
-
-            }
 
             if (name && name != "") {
               let org : Organization = {
@@ -2382,7 +2376,6 @@ class AttestationService {
           const schemaEncoder = new SchemaEncoder(this.IndivSchema);
           const decodedData = schemaEncoder.decodeData(item.data);
           if (this.checkEntity(entityId, decodedData)) {
-            console.info("construct indiv attestation")
             rtnAttestation = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
           }
         }
@@ -2393,14 +2386,12 @@ class AttestationService {
           if (this.checkEntity(entityId, decodedData)) {
             console.info("construct org indiv attestation")
             rtnAttestation = this.constructOrgIndivAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-            console.info("returned att: ", rtnAttestation)
           }
         }
         if (schemaId == this.OrgSchemaUID) {
           const schemaEncoder = new SchemaEncoder(this.OrgSchema);
           const decodedData = schemaEncoder.decodeData(item.data);
           if (this.checkEntity(entityId, decodedData)) {
-            console.info("construct org attestation")
             rtnAttestation = this.constructOrgAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
           }
         }
@@ -2525,6 +2516,7 @@ class AttestationService {
       
     }
 
+    console.info("return attestations array b: ", rtnAttestations)
     return rtnAttestations;
 }
   
@@ -2577,7 +2569,6 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
 
   static async getOrgIndivAttestation(chain: Chain, indivDid: string, schemaId: string, entityId: string): Promise<Attestation | undefined> {
 
-    console.info("get org indiv attestation by address and schemaId and entityId: ", indivDid, schemaId, entityId)
     let rtnAttestation : Attestation | undefined
 
     let exists = false
@@ -2619,11 +2610,6 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
     return rtnAttestation;
   }
 
-
-
-
-
-  static Blacklisted : any[] = []
 
 
   static DefaultEntities : Entity[] = [

@@ -36,8 +36,7 @@ const SetupSmartWalletPage: React.FC<SetupSmartWalletPageProps> = ({className, a
     const encoder = new TextEncoder();
 
     const [refreshAttestations, setRefreshAttestations] = useState(0);
-
-    const { chain } = useAccount();
+    const { chain  } = useWallectConnectContext();
 
     useEffect(() => {
       loadOrganizations();

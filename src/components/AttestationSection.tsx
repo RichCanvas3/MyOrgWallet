@@ -30,8 +30,7 @@ import AttestationService, {
   AttestationChangeEvent,
   attestationsEmitter,
 } from '../service/AttestationService';
-import { chainConfig } from 'viem/zksync';
-import { useAccount } from 'wagmi';
+import { useWallectConnectContext } from "../context/walletConnectContext";
 
 interface AttestationSectionProps {
   orgDid?: string;
@@ -54,9 +53,7 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
     const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-
-    const { chain } = useAccount();
-
+    const { chain } = useWallectConnectContext();
 
     const handleTabChange = (_: SyntheticEvent, newValue: string) => {
 

@@ -5,7 +5,7 @@ import { Address, Chain } from "viem";
 export type SignatoryFactoryConfig = {
   web3AuthClientId: string;
   web3AuthNetwork: OPENLOGIN_NETWORK_TYPE;
-  chain: Chain;
+  chain?: Chain;
   rpcUrl: string;
 };
 

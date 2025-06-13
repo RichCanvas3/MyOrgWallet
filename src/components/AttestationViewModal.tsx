@@ -53,8 +53,8 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
   const [ orgEthAvatar, setOrgEthAvatar] = useState<string>("");
 
   const [activeTab, setActiveTab] = useState<'info' | 'vc' | 'vc-raw' | 'zk' | 'rzk' | 'at' >('vc');
-  const { veramoAgent, mascaApi } = useWallectConnectContext();
-  const { chain } = useAccount();
+  const { chain, veramoAgent, mascaApi } = useWallectConnectContext();
+
 
 
   const handleClose = () => {
@@ -203,7 +203,6 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
 
   useEffect(() => {
 
-    console.info(" >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  is visible       ")
     setAttestation(undefined);
     setCredential(undefined);
     setPublicKey(undefined);
@@ -257,8 +256,8 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
             schemaUid = AttestationService.WebsiteSchemaUID
           }
           //console.info("go get shopify attestation: ", did)
-          if (did) {
-            AttestationService.getAttestationByDidAndSchemaId(did, schemaUid, entityId).then((att) => {
+          if (did && chain) {
+            AttestationService.getAttestationByDidAndSchemaId(chain, did, schemaUid, entityId).then((att) => {
 
               console.info("att: ", att)
               if (att) {

@@ -59,9 +59,9 @@ const AddPettyCashModal: React.FC<AddPettyCashModalProps> = ({ isVisible, onClos
 
   const BASE_URL_PROVER = import.meta.env.VITE_PROVER_API_URL  || 'http://localhost:3051';
 
-  const { veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, signatory, indivDid, indivName, indivAccountClient } = useWallectConnectContext();
+  const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, signatory, indivDid, indivName, indivAccountClient } = useWallectConnectContext();
 
-  const { isConnected, chain } = useAccount();
+  const { isConnected } = useAccount();
 
   useEffect(() => {
     const getAccounts = async () => {

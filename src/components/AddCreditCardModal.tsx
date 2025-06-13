@@ -64,9 +64,9 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
 
   const BASE_URL_PROVER = import.meta.env.VITE_PROVER_API_URL  || 'http://localhost:3051';
 
-  const { veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, signatory, indivDid, indivName, indivAccountClient } = useWallectConnectContext();
+  const { chain,veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, signatory, indivDid, indivName, indivAccountClient } = useWallectConnectContext();
 
-  const { isConnected, chain } = useAccount();
+  const { isConnected } = useAccount();
 
 
   useEffect(() => {
@@ -133,7 +133,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
       accountBalance: selectedAccount.balance
     }
 
-    const accountDid = "did:pkh:eip155" + chain?.id + ":" + selectedAccount.address.toLowerCase()
+    const accountDid = "did:pkh:eip155" + chain?.id + ":" + selectedAccount.address
 
 
 

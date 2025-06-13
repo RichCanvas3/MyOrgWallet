@@ -42,9 +42,8 @@ const WelcomeModal: React.FC = () => {
   const [showEmailVerification, setShowEmailVerification] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'info' as 'info' | 'success' | 'error' });
-  const { chain } = useAccount();
 
-  const { setIndivAndOrgInfo, setOrgNameValue, setOrgDidValue, checkIfDIDBlacklisted } = useWallectConnectContext();
+  const { chain, setIndivAndOrgInfo, setOrgNameValue, setOrgDidValue, checkIfDIDBlacklisted } = useWallectConnectContext();
 
   const steps: Step[] = [
     { id: 1, title: 'Your Name',      isActive: currentStep === 1, isCompleted: currentStep > 1 },
@@ -172,9 +171,7 @@ const WelcomeModal: React.FC = () => {
       }
       setIsSubmitting(true);
 
-      setIndivAndOrgInfo(fullName, organizationName, email).then(() => {
-        console.info("updated individual info")
-      })
+      await setIndivAndOrgInfo(fullName, organizationName, email)
 
       setTimeout(() => {
 

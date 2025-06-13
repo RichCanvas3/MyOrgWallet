@@ -36,8 +36,7 @@ const WelcomePage: React.FC<WelcomePageProps> = ({className, appCommand}) => {
     const [showSearchOptions, setShowSearchOptions] = useState(false);
 
     const [orgDid, setOrgDid] = useState<string>();
-
-    const { chain } = useAccount();
+    const { chain } = useWallectConnectContext();
 
     const encoder = new TextEncoder();
 

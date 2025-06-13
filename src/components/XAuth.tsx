@@ -46,10 +46,9 @@ const entityId = "x"
 const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
 
   const { data: walletClient } = useWalletClient();
-  const { chain } = useAccount();
 
   const { } = props;
-  const { veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
+  const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
 
   
 

@@ -50,8 +50,8 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
 
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { veramoAgent, mascaApi, signatory, privateIssuerAccount, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, burnerAccountClient } = useWallectConnectContext();
-  const { chain } = useAccount();
+  const { chain, veramoAgent, mascaApi, signatory, privateIssuerAccount, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, burnerAccountClient } = useWallectConnectContext();
+
 
 
   const handleClose = () => {

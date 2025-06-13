@@ -14,6 +14,8 @@ import {
   Tabs as MuiTabs
 } from '@mui/material';
 
+import { Chain } from 'viem';
+
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {useNavigate} from 'react-router-dom';
 import { Organization } from "../models/Organization"
@@ -43,6 +45,9 @@ interface OrganizationsPageProps {
 }
 
   const OrganizationsPage: React.FC<OrganizationsPageProps> = ({className, appCommand}) => {
+
+    const { chain } = useWallectConnectContext();
+
     const [organizations, setOrganizations] = useState<Organization[]>([]);
     const [searchInputValue, setSearchInputValue] = useState("");
     const [orgDid, setOrgDid] = useState<string>();
@@ -54,7 +59,7 @@ interface OrganizationsPageProps {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const [showSearchOptions, setShowSearchOptions] = useState(false);
-    const { chain } = useAccount();
+
 
     const handleAttestationChange = (event: AttestationChangeEvent) => {
       if (event.action === 'add' && event.attestation) {
@@ -70,7 +75,8 @@ interface OrganizationsPageProps {
       }
     };
 
-    const loadOrganizations = async () => {
+
+    const loadOrganizations = async (chain: Chain) => {
       AttestationService.loadOrganizations(chain)
         .then(organizations => {
           setOrganizations(organizations);
@@ -80,11 +86,14 @@ interface OrganizationsPageProps {
         });
     };
 
+
+
     // Load data on orgDid change
     useEffect(() => {
-      if (orgDid) {
+      
+      if (chain && orgDid) {
+        console.info(".......... load data for orgDid: ", orgDid)
         AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, "").then((atts) => {
-          //console.info("set attestations in Attestation Section: ", atts)
           setAttestations(atts)
         })
 
@@ -103,9 +112,25 @@ interface OrganizationsPageProps {
         })
       }
 
+      attestationsEmitter.on('attestationChangeEvent', handleAttestationChange);
+
+      return () => {
+        attestationsEmitter.off('attestationChangeEvent', handleAttestationChange);
+      };
+    }, [chain,orgDid]);
+
+
+    
+    // Load data on orgDid change
+    useEffect(() => {
+      
       if (chain) {
-        loadOrganizations()
+        loadOrganizations(chain)
       }
+
+      
+      
+
       
 
       attestationsEmitter.on('attestationChangeEvent', handleAttestationChange);
@@ -113,7 +138,8 @@ interface OrganizationsPageProps {
       return () => {
         attestationsEmitter.off('attestationChangeEvent', handleAttestationChange);
       };
-    }, [orgDid]);
+    }, [chain]);
+    
 
     useEffect(() => {
       //const sortedOrganizations = [...organizations];  // Sort by timestamp if not already sorted

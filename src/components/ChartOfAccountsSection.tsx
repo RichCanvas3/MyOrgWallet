@@ -36,12 +36,11 @@ interface ChartOfAccountsSectionProps {
 const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
   onSelectAccount,
 }) => {
-  const { veramoAgent, mascaApi, signatory, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, burnerAccountClient } = useWallectConnectContext();
+  const { chain, veramoAgent, mascaApi, signatory, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, burnerAccountClient } = useWallectConnectContext();
   
   // Add state for view type
   const [viewType, setViewType] = useState<'chart' | 'list'>('chart');
   const [listAccounts, setListAccounts] = useState<Account[]>([]);
-  const { chain } = useAccount();
 
   const [accounts, setAccounts] = useState<Account[]>([
     /* ───────────────────────── ASSETS (1xxx) ───────────────────────── */
@@ -724,10 +723,7 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
     </Paper>
   );
 
-  // Add debug logging for render
-  console.info("Current view type:", viewType);
-  console.info("Current list accounts:", listAccounts);
-  console.info("Current chart accounts:", accounts);
+
 
   return (
     <Box

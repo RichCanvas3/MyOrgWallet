@@ -134,7 +134,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const { data: walletClient } = useWalletClient();
 
-  const { veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, setOrgNameValue } = useWallectConnectContext();
+  const { chain,veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, setOrgNameValue } = useWallectConnectContext();
 
   const [isDeleteAttestationsModalVisible, setDeleteAttestationsModalVisible] = useState(false);
   const [isApproveLeaderModalVisible, setApproveLeaderModalVisible] = useState(false);
@@ -147,7 +147,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const [isOrgModalVisible, setOrgModalVisible] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
 
-  const { isConnected, address: web3ModalAddress, chain } = useAccount();
+  const { isConnected } = useAccount();
 
 
   const handleOnDeleteAttestationsModalClose = () => {
@@ -217,13 +217,12 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   
   useEffect(() => {
-    if (orgAccountClient && chain &&orgDid && indivDid) {
+    if (orgAccountClient && chain && orgDid && indivDid) {
+
       AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
 
-        console.info("setentities")
         if (ents != undefined) {
 
-          console.info("ents: ", ents)
           setEntities(ents)
 
           for (const entity of ents) {

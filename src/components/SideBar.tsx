@@ -19,7 +19,7 @@ const Sidebar: React.FC<SidebarProps> = ({className, isSidebarCollapsed, toggleS
   const {t} = useTranslation();
   const navigate = useNavigate();
   const [isSettingsModalVisible, setSettingsModalVisible] = useState(false);
-  const { isConnected, address: web3ModalAddress, chain } = useAccount();
+  const { isConnected  } = useAccount();
 
   const handleNewChat = () => {
     if (isConnected && !location.pathname.startsWith('/readme')) {

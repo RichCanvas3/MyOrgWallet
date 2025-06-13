@@ -27,7 +27,7 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose}) => {
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { signer, indivDid, indivAccountClient } = useWallectConnectContext();
+  const { chain, indivDid, indivAccountClient } = useWallectConnectContext();
   const { data: walletClient }= useWalletClient()
 
   const [attestation, setAttestation] = useState<Attestation | null>(null);
@@ -42,15 +42,15 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose}) => {
 
 
   const handleSave = () => {
-    if (signer && indivAccountClient && walletClient) {
+    if (indivAccountClient && walletClient) {
 
       let att = attestation as SocialAttestation
       att.name = name
       att.url = url
 
       console.info("update social attestation: ", att)
-      AttestationService.updateSocialAttestation(att, signer, indivAccountClient, walletClient).then((rsl) => {
-      })
+      //AttestationService.updateSocialAttestation(att, signer, indivAccountClient, walletClient).then((rsl) => {
+      //})
 
     };
 
@@ -62,8 +62,8 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose}) => {
 
     if (isVisible) {
       // get linkedin attestation
-      if (indivDid && indivAccountClient) {
-        AttestationService.getAttestationByDidAndSchemaId(indivDid, AttestationService.SocialSchemaUID, "linkedin").then((att) => {
+      if (indivDid && chain && indivAccountClient) {
+        AttestationService.getAttestationByDidAndSchemaId(chain, indivDid, AttestationService.SocialSchemaUID, "linkedin").then((att) => {
           if (att) {
             setAttestation(att)
           }
