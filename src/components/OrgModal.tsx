@@ -45,7 +45,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
 
   async function addOrgAttestation(orgName: string) {
 
-    console.info("*********** ADD ORG ATTESTATION ****************")
+    console.info("*********** ADD ORG ATTESTATION 1 ****************")
 
     const entityId = "org"
 

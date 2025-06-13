@@ -807,7 +807,7 @@ export const useWalletConnect = () => {
                   signature,
                 }
 
-                await DelegationService.saveDelegationToStorage(ownerEOAAddress, indivAccountClient.address, burnerAccountClient.address, { ...indivIssuerDel, salt: BigInt(indivIssuerDel.salt) })
+                await DelegationService.saveDelegationToStorage(ownerEOAAddress, indivAccountClient.address, burnerAccountClient.address, indivIssuerDel)
               }
 
               setIndivIssuerDelegation(indivIssuerDel as Delegation)
@@ -939,9 +939,18 @@ export const useWalletConnect = () => {
       return undefined
     }
 
-    const findValidExistingOrgAccount = async(orgAddressValue: `0x${string}`, owner: `0x${string}`, publicClient: any) : Promise<ToMetaMaskSmartAccountReturnType<Implementation.Hybrid> | undefined> => {
+    const findValidExistingOrgAccount = async(
+      orgAddressValue: `0x${string}`, 
+      owner: `0x${string}`, 
+      publicClient: any,
+      signatory: any
+    ) : Promise<ToMetaMaskSmartAccountReturnType<Implementation.Hybrid> | undefined> => {
 
       console.info("findValidExistingOrgAccount: ", orgAddressValue)
+      console.info("owner: ", owner)
+      console.info("publicClient: ", publicClient)
+      console.info("signatory: ", signatory)
+
       const orgAccountClient = await toMetaMaskSmartAccount({
         address: orgAddressValue,
         client: publicClient,
@@ -950,11 +959,14 @@ export const useWalletConnect = () => {
         signatory: signatory,
       });
 
+      console.info("orgAccountClient 1: ", orgAccountClient.getAddress())
       const orgAddress = await orgAccountClient.getAddress()
       console.info("is blacklisted")
       if (isBlacklisted(orgAddress) == false) {
+        console.info("orgAccountClient is not blacklisted")
         return orgAccountClient
       }
+      console.info("orgAccountClient is blacklisted")
       return undefined
     }
 
@@ -1136,7 +1148,8 @@ export const useWalletConnect = () => {
 
 
               // validate orgAddressValue is valid and not blacklisted
-              const ownerOrgAccount = await findValidExistingOrgAccount(orgAddressValue, owner, publicClient)
+
+              const ownerOrgAccount = await findValidExistingOrgAccount(orgAddressValue, owner, publicClient, signatory)
               if (!ownerOrgAccount) {
                 console.info("*********** ownerOrgAccount is not valid 3, not found or blacklisted")
                 isOwner = false
@@ -1155,17 +1168,17 @@ export const useWalletConnect = () => {
               console.info("==========>  the user is owner of org or has been given delegatee access to it ")
               console.info("isOwner: ", isOwner)
               console.info("orgIndivDel: ", orgIndivDel)
-              console.info("==========> go back and user signin connect =============>")
-              return
+              //console.info("==========> go back and user signin connect =============>")
+              //return
 
-              /*
+              
               orgAccountClient = await toMetaMaskSmartAccount({
                 address: orgAddressValue,
                 client: publicClient,
                 implementation: Implementation.Hybrid,
                 deployParams: [owner, [], [], []],
                 signatory: signatory,
-                deploySalt: toHex(10),
+
               });
               
 
@@ -1178,7 +1191,7 @@ export const useWalletConnect = () => {
               orgDidValue = 'did:pkh:eip155:' + chain?.id + ':' + orgAddressValue
               setOrgDid(orgDidValue)
               setOrgAccountClient(orgAccountClient)
-              */
+
             }
             else {
               console.info("==========>  the user does not have access to org account abstraction ")
@@ -1395,7 +1408,7 @@ export const useWalletConnect = () => {
         const mascaApi = await setupSnap(owner)
 
         console.info("orgIndivDelegation: ", orgIndivDelegation)
-        console.info("orgAccountClient: ", orgAccountClient)
+        console.info("orgAccountClient 2: ", orgAccountClient)
 
         if (orgIndivDelegation && orgAccountClient) {
 
@@ -1441,7 +1454,7 @@ export const useWalletConnect = () => {
           console.info("add new org attestation")
           const addOrgAttestation = async (mascaApi: any) => {
 
-            console.info("*********** ADD ORG ATTESTATION ****************")
+            console.info("*********** ADD ORG ATTESTATION 2 ****************")
 
             const provider = new ethers.BrowserProvider(window.ethereum);
             await window.ethereum.request({ method: "eth_requestAccounts" });
@@ -1575,7 +1588,7 @@ export const useWalletConnect = () => {
         
             if (mascaApi && walletSigner && walletClient && privateIssuerAccount && indivDid && orgDid && orgIssuerDel) {
 
-              console.info("*********** ADD INDIV ATTESTATION ****************")
+              console.info("*********** ADD ORG INDIV ATTESTATION 2 ****************")
 
               let indName = "indiv name"
               if (indivName) {
@@ -1663,7 +1676,7 @@ export const useWalletConnect = () => {
 
 
             console.info("&&&&&&&&&&&&&& Save indIssuerDelegation: ", indivIssuerDel)
-            await DelegationService.saveDelegationToStorage(owner, indivAccountClient.address, burnerAccountClient.address, { ...indivIssuerDel, salt: BigInt(indivIssuerDel.salt) })
+            await DelegationService.saveDelegationToStorage(owner, indivAccountClient.address, burnerAccountClient.address, indivIssuerDel)
           }
 
           setIndivIssuerDelegation(indivIssuerDel as Delegation)
@@ -1674,7 +1687,7 @@ export const useWalletConnect = () => {
           // add indiv  attestation
           const addIndivAttestation = async (mascaApi: any) => {
 
-            console.info("*********** ADD INDIV ATTESTATION ****************")
+            console.info("*********** ADD INDIV ATTESTATION 1 ****************")
             const provider = new ethers.BrowserProvider(window.ethereum);
             await window.ethereum.request({ method: "eth_requestAccounts" });
             const walletSigner = await provider.getSigner()
