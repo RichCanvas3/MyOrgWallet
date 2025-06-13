@@ -546,7 +546,8 @@ class AttestationService {
     return undefined
   }
 
-  static OrgIndivSchemaUID = "0x637acc7b7b5b2868ba2a63c89396ac89b15b514ffe6c0ace6a47bb6d3f069871"
+  //static OrgIndivSchemaUID = "0x637acc7b7b5b2868ba2a63c89396ac89b15b514ffe6c0ace6a47bb6d3f069871"
+  static OrgIndivSchemaUID = "0x98cdf7e4974fd1fcb341a97759fb86047b467edd20640c1217e8175be0cb588f"
   static OrgIndivSchema = this.BaseSchema + "string indivdid, string name, string delegation"
   static async addOrgIndivAttestation(chain: Chain, attestation: OrgIndivAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {
 
@@ -1132,7 +1133,7 @@ class AttestationService {
     return undefined
   }
 
-  static RegisteredDomainSchemaUID = "0x6a4f62a76d14e37a9885e66fbec0f37562a371ba6eb2e9907a65849ebe4f04f8"
+  static RegisteredDomainSchemaUID = "0x46cef8b693d083d23a62f6ae9c58f88cbb8380ed3000d6f5a1af20c084dc82c9"
   static RegisteredDomainSchema = this.BaseSchema + "string domain, uint64 domaincreationdate"
   static async addRegisteredDomainAttestation(chain: Chain, attestation: RegisteredDomainAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {
 
