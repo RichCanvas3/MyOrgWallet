@@ -744,7 +744,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
           console.info("fields: ", proof, fullVc, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, walletClient)
           console.info("orgIndivDelegation: ", orgIndivDelegation)
-          if (proof && fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+          if (chain && proof && fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
           
             // now create attestation
             const hash = keccak256(toUtf8Bytes("hash value"));
@@ -771,7 +771,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             const walletSigner = await provider.getSigner()
 
             console.info("add state registration attestation")
-            const uid = await AttestationService.addStateRegistrationAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+            const uid = await AttestationService.addStateRegistrationAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
             console.info("add registration attestation complete")
     
             entities?.forEach((ent) => {

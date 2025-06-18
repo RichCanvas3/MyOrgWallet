@@ -279,7 +279,7 @@ const AddPettyCashModal: React.FC<AddPettyCashModalProps> = ({ isVisible, onClos
                   </button>
                 )}
                 <h1 className="text-lg font-semibold">
-                  {selectedAccount ? 'Name Credit Card Account' : 'Import Credit Card'}
+                  {selectedAccount ? 'Add Petty Cash Account' : 'Add Petty Cash Account'}
                 </h1>
               </div>
               <button

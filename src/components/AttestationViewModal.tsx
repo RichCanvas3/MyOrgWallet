@@ -1,18 +1,24 @@
 import * as React from 'react';
 import {useContext, useEffect, useRef, useState} from 'react';
-import { ethers, formatEther } from "ethers";
+import { ethers, namehash  } from "ethers";
 import {
   XMarkIcon
 } from "@heroicons/react/24/outline";
 import './UserSettingsModal.css';
 import {useTranslation} from 'react-i18next';
 import {Transition} from '@headlessui/react';
+import { createPublicClient, http, createWalletClient, parseEther } from 'viem';
+import { sepolia } from 'viem/chains';
+import { createEnsPublicClient } from '@ensdomains/ensjs';
+import { createPublicClient as createViemPublicClient } from 'viem';
+import { sepolia as sepoliaChain } from 'viem/chains';
+
 
 import { VerifiableCredential } from '../models/VerifiableCredential'
 import { VcZkProof, VcRevokeZkProof } from '../models/ZkProof'
 import {Attestation, WebsiteAttestation} from '../models/Attestation';
 import AttestationService from '../service/AttestationService';
-import { ALCHEMY_RPC_URL, ETHERSCAN_API_KEY, ETHERSCAN_URL } from "../config";
+import { RPC_URL, ALCHEMY_RPC_URL, ETHERSCAN_API_KEY, ETHERSCAN_URL, EAS_URL } from "../config";
 
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService"
 import ZkProofService from "../service/ZkProofService"
@@ -21,16 +27,12 @@ import { getCachedResponse, putCachedResponse, putCachedValue } from "../service
 
 import { useWallectConnectContext } from "../context/walletConnectContext";
 
-
-
 interface AttestationViewModalProps {
   did: string;
   entityId: string;
   isVisible: boolean;
   onClose: () => void;
 }
-
-
 
 const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityId, isVisible, onClose}) => {
 
@@ -53,9 +55,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
   const [ orgEthAvatar, setOrgEthAvatar] = useState<string>("");
 
   const [activeTab, setActiveTab] = useState<'info' | 'vc' | 'vc-raw' | 'zk' | 'rzk' | 'at' >('vc');
-  const { chain, veramoAgent, mascaApi } = useWallectConnectContext();
-
-
+  const { chain, veramoAgent, mascaApi, signatory } = useWallectConnectContext();
 
   const handleClose = () => {
     console.info("close attestation modal")
@@ -67,9 +67,12 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
   const handleInitOperations = async () => {
     if (did) {
 
-      const address = did.replace("did:pkh:eip155:" + chain?.id + ":", "") as `0x${string}`
-
+      //const address = did.replace("did:pkh:eip155:" + chain?.id + ":", "") as `0x${string}`
+      const address = signatory.walletClient.account.address
       console.info("org address: ", address)
+      console.info("signatory address: ", signatory.walletClient.account.address)
+
+      
 
       console.info("call handle init operations")
       const cacheKey = address
@@ -81,7 +84,6 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
 
 
         //  get org account information
-        const ACCOUNT_INFO_SMART_CONTRACT = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
         const accountBalanceUrl = `https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
         const res = await fetch(accountBalanceUrl)
         const balance = await res.json()
@@ -91,6 +93,55 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
         const provider = new ethers.JsonRpcProvider(alchemyRpcUrl);
         let name = await provider.lookupAddress(address)
         console.info("----------------> lookup address: ", name )
+
+
+        /*
+
+        const ensClient = createEnsPublicClient({
+          chain: sepolia,
+          transport: http(RPC_URL),
+        });
+
+        // Set the name record for richcanvas.eth
+        try {
+
+          const ENS_REGISTRY_ADDRESS = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e'; // Sepolia ENS Registry
+          const PUBLIC_RESOLVER_ADDRESS = '0x8FADE66B79cC9f707aB26799354482EB93a5B7dD';
+          const ENSRegistryABI = [
+            'function setResolver(bytes32 node, address resolver) external'
+          ];
+
+          const node = namehash("richcanvas.eth");
+          const ensRegistry = new ethers.Contract(ENS_REGISTRY_ADDRESS, ENSRegistryABI, signatory.walletClient);
+
+          const tx = await ensRegistry.setResolver(node, PUBLIC_RESOLVER_ADDRESS);
+          console.log('Setting resolver tx sent:', tx.hash);
+
+          await tx.wait();
+          console.log('✅ Resolver set successfully');
+
+
+
+
+          // Get the name for the address
+          const name = await ensClient.getName({
+            address: address as `0x${string}`,
+          });
+          console.log("Current ENS name:", name);
+
+          // Get the address for the name
+          const ensAddress = await ensClient.getAddressRecord({
+            name: 'richcanvas.eth',
+          });
+          console.log("Current ENS address:", ensAddress);
+
+          // Note: The ENS SDK doesn't provide direct methods for setting records
+          // You would need to use the contract methods directly or use a different SDK
+          console.log("To set the address record, you need to use the contract methods directly");
+        } catch (error) {
+          console.error("Error getting ENS record:", error);
+        }
+        */
 
         if (name) {
           setOrgEthName(name)
@@ -581,7 +632,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                   <a
                     href={
                       ETHERSCAN_URL + '/address/' +
-                      attestation?.attester.replace("did:pkh:eip155:" + chain?.id + "", "")
+                      attestation?.attester.replace("did:pkh:eip155:" + chain?.id + ":", "")
                     }
                     target="_blank"
                     rel="noopener noreferrer"
@@ -594,7 +645,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                   <p className="panel-text">
                     <strong>Attestation ID:</strong>{' '}
                     <a
-                      href={ETHERSCAN_URL + '/attestation/view/' + attestation?.uid}
+                      href={EAS_URL + '/attestation/view/' + attestation?.uid}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="panel-link"
@@ -607,7 +658,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                   <p className="panel-text">
                     <strong>Schema ID:</strong>{' '}
                     <a
-                      href={ETHERSCAN_URL + '/schema/view/' + attestation?.schemaId}
+                      href={EAS_URL + '/schema/view/' + attestation?.schemaId}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="panel-link"
@@ -626,7 +677,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                     <strong>VC Issuer:</strong>{' '}
                     <a
                       href={
-                        ETHERSCAN_URL + 'address/' +
+                        ETHERSCAN_URL + '/address/' +
                         attestation?.vciss.replace("did:pkh:eip155:" + chain?.id + ":", "")
                       }
                       target="_blank"

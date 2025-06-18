@@ -589,9 +589,11 @@ export const useWalletConnect = () => {
             let localIndivDid : string | undefined = 'did:pkh:eip155:' + chain?.id + ':' + indivAccountClient.address
             
 
-
+            console.info("********** getOrgIndivAttestation 10: ", localIndivDid)
             const orgIndivAttestation = await AttestationService.getOrgIndivAttestation(chain, localIndivDid, AttestationService.OrgIndivSchemaUID, "org-indiv");
+            console.info("********** orgIndivAttestation: ", orgIndivAttestation)
             const indivAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, localIndivDid, AttestationService.IndivSchemaUID, "indiv")
+            console.info("********** indivAttestation: ", indivAttestation)
             if (indivAttestation) {
               setIndivName((indivAttestation as IndivAttestation).name)
             }
@@ -611,11 +613,13 @@ export const useWalletConnect = () => {
             let orgIndivDel : any | undefined
             let delegationOrgAddress : `0x${string}` | undefined
             if (orgIndivAttestation) {
+              console.info("********** orgIndivAttestation: ", orgIndivAttestation)
               orgIndivDel = JSON.parse((orgIndivAttestation as OrgIndivAttestation).delegation)
               if (localIndivAddress == orgIndivDel.delegate) {
                 // need to validate signature at some point
                 delegationOrgAddress = orgIndivDel.delegator
 
+                console.info("********** orgIndivDel 1: ", orgIndivDel)
                 setOrgIndivDelegation(orgIndivDel)
               }
             }
@@ -731,6 +735,7 @@ export const useWalletConnect = () => {
             console.log("isValidSignatureCall:", isValidSignature); // should be EIP1271_MAGIC_VALUE(0x1626ba7e)
             */
 
+            console.info("********** orgIndivDel 2: ", orgIndivDel)
             if (orgIndivDel) {
               setOrgIndivDelegation(orgIndivDel)
             }
@@ -774,6 +779,7 @@ export const useWalletConnect = () => {
               await DelegationService.saveDelegationToStorage(ownerEOAAddress, orgAccountClient.address, burnerAccountClient.address, orgIssuerDel)
             }
 
+            console.info("********** orgIssuerDel: ", orgIssuerDel)
             if (orgIssuerDel) {
               setOrgIssuerDelegation(orgIssuerDel as Delegation)
             }
@@ -888,7 +894,7 @@ export const useWalletConnect = () => {
         return undefined
       }
 
-            if (signatory == undefined) {
+      if (signatory == undefined) {
         console.info("*********** signatory is not defined")  
         return undefined
       }
@@ -1001,7 +1007,7 @@ export const useWalletConnect = () => {
           });
           */
           
-
+          console.info("find valid indiv account with owner: ", owner)
           const indivAccountClient = await findValidIndivAccount(owner, signatory, publicClient)
           if (!indivAccountClient) {
             console.info("*********** indivAccountClient is not valid")
@@ -1019,9 +1025,10 @@ export const useWalletConnect = () => {
           // if indivAccountClient is not deployed then deploy it
           let isDeployed = await indivAccountClient.isDeployed()
           console.info("is indivAccountClient deployed: ", isDeployed)
+       
           if (isDeployed == false) {
 
-            console.info("individual account is getting deployed: ", indivAccountClient.address)
+            console.info("individual AA getting deployed: ", indivAccountClient.address)
 
             const pimlicoClient = createPimlicoClient({
               transport: http(BUNDLER_URL),
@@ -1044,16 +1051,17 @@ export const useWalletConnect = () => {
             console.info("get gas price") 
             const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
 
-            console.info("deploy indivAccountClient", indivAccountClient)
+            console.info("deploy indivAccount EOA address: ", owner)
+            console.info("deploy indivAccountClient AA address: ", indivAccountClient.address)
             try {
-              console.info("send user operation with bundlerClient: ", bundlerClient)
-              //const mx = BigInt(500_000_000_000_000_000)
-              //const fee = {
-              //  maxFeePerGas: mx,
-              //  maxPriorityFeePerGas: mx,
-              //}
+              console.info("send user operation with bundlerClient 2: ", bundlerClient)
 
               console.info("fee: ", fee)
+              const fee2 = {maxFeePerGas: 412596685n, maxPriorityFeePerGas: 412596676n}
+              console.info("fee2: ", fee2)  
+
+              const initCode = bundlerClient.initCode;
+
               const userOperationHash = await bundlerClient!.sendUserOperation({
                 account: indivAccountClient,
                 calls: [
@@ -1061,8 +1069,7 @@ export const useWalletConnect = () => {
                     to: zeroAddress,
                   },
                 ],
-                //paymaster: paymasterClient,
-                ...fee,
+                ...fee2,
               });
 
               console.info("individual account is deployed - done")
@@ -1074,6 +1081,7 @@ export const useWalletConnect = () => {
               console.info("error deploying indivAccountClient: ", error)
             }
           }
+
   
 
           // get attestation for individual account abstraction address
@@ -1103,6 +1111,7 @@ export const useWalletConnect = () => {
           let orgIndivDel : any | undefined
           if (orgIndivAttestation) {
             orgIndivDel = JSON.parse((orgIndivAttestation as OrgIndivAttestation).delegation)
+            console.info("********** orgIndivDel 3: ", orgIndivDel)
             setOrgIndivDelegation(orgIndivDel)
 
             if (indivAddress == orgIndivDel.delegate) {
@@ -1227,6 +1236,7 @@ export const useWalletConnect = () => {
 
             let isDeployed = await orgAccountClient.isDeployed()
             console.info("is orgAccountClient deployed: ", isDeployed)
+
             if (isDeployed == false) {
 
               console.info("org account is getting deployed: ", orgAccountClient.address)
@@ -1266,9 +1276,11 @@ export const useWalletConnect = () => {
                 hash: userOperationHash,
               });
             }
+ 
   
             
             // setup delegation between them
+            console.info("setup delegation between - org and indiv: ", orgAccountClient.address, indivAccountClient.address)
             orgIndivDel = createDelegation({
               to: indivAccountClient.address,
               from: orgAccountClient.address,
@@ -1283,7 +1295,7 @@ export const useWalletConnect = () => {
               ...orgIndivDel,
               signature,
             }
-  
+            console.info("********** orgIndivDel 4: ", orgIndivDel)
             setOrgIndivDelegation(orgIndivDel)
 
           }
@@ -1359,7 +1371,9 @@ export const useWalletConnect = () => {
           console.info("get gas price") 
           const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
 
-          console.info("deploy burnerAccountClient", burnerAccountClient)
+          console.info("deploy burnerAccount EOA address: ", burnerAccount.address)
+          console.info("deploy burnerAccountClient AA address: ", burnerAccountClient.address)
+
           try {
             console.info("send user operation with bundlerClient: ", bundlerClient)
             //const mx = BigInt(500_000_000_000_000_000)

@@ -386,6 +386,7 @@ class VerifiableCredentialsService {
       console.info("got vcs: ", vcs)
       for (const vc of vcs.data) {
         console.info("****************** vc: ", vc)
+        console.info("****************** entityId: ", entityId)
         if (vc.data.credentialSubject?.provider?.toLowerCase() == entityId.toLowerCase()) {
 
           const credentialJSON = JSON.stringify(vc.data);

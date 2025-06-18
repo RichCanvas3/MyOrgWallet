@@ -280,7 +280,7 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
                   </button>
                 )}
                 <h1 className="text-lg font-semibold">
-                  {selectedAccount ? 'Name Credit Card Account' : 'Import Credit Card'}
+                  {selectedAccount ? 'Savings Account' : 'Add Savings Account'}
                 </h1>
               </div>
               <button

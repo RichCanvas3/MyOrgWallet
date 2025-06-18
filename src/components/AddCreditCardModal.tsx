@@ -220,9 +220,17 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
         const fullVc = result.vc
         const proof = result.proof
 
+        console.info("********** fullVc: ", fullVc)
+        console.info("********** chain: ", chain)
+        console.info("********** indivAccountClient: ", indivAccountClient)
+        console.info("********** burnerAccountClient: ", burnerAccountClient)
+        console.info("********** orgIssuerDelegation: ", orgIssuerDelegation)
+        console.info("********** orgIndivDelegation: ", orgIndivDelegation)
+        console.info("********** orgAccountClient: ", orgAccountClient)
         if (fullVc && chain && indivAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient) {
 
           // now create attestation
+          console.info("********** add org account attestation ****************")
           const hash = keccak256(toUtf8Bytes("hash value"));
           const attestation: OrgAccountAttestation = {
               name: accountName,
@@ -284,9 +292,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
                     <ArrowLeftIcon className="h-5 w-5" />
                   </button>
                 )}
-                <h1 className="text-lg font-semibold">
-                  {selectedAccount ? 'Name Credit Card Account' : 'Import Credit Card'}
-                </h1>
+                <h1 className="modal-title text-lg font-semibold">{('Add Credit Card')}</h1>
               </div>
               <button
                 onClick={handleClose}

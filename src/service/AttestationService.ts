@@ -29,7 +29,7 @@ import { encodeNonce } from "permissionless/utils"
 
 import { error } from "console";
 
-import {WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, BUNDLER_URL, PAYMASTER_URL, EAS_GRAPHQL_URL, EAS_CONTRACT_ADDRESS} from "../config";
+import {WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, BUNDLER_URL, PAYMASTER_URL, EAS_URL, EAS_CONTRACT_ADDRESS} from "../config";
 
 const STORE_URL = `${import.meta.env.VITE_API_URL}/json`;
 
@@ -74,10 +74,10 @@ export interface AttestationChangeEvent {
 
 
 
-const graphQLUrl = EAS_GRAPHQL_URL || "https://optimism.easscan.org/graphql";
+const graphQLUrl = EAS_URL || "https://optimism.easscan.org";
 
 const easApolloClient = new ApolloClient({
-  uri: graphQLUrl,
+  uri: graphQLUrl + "/graphql",
   cache: new InMemoryCache(),
 });
 
@@ -2074,7 +2074,7 @@ class AttestationService {
           
           if (schema) {
 
-            console.info("item: ", item)
+            //console.info("item: ", item)
 
             let entityId = "entityId"
             let hash = ""
@@ -2555,6 +2555,8 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
       const indAtt = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, item.attester, "", decodedData)
       if (indAtt && (indAtt as IndivAttestation).orgDid.toLowerCase() == orgDid.toLowerCase()) {
         const indivDid = indAtt.attester
+
+        console.info("********** getOrgIndivAttestation 15: ", indivDid)
         const indOrgAtt = await this.getOrgIndivAttestation(chain, indivDid, this.OrgIndivSchemaUID, "org-indiv")
         if (!indOrgAtt) {
           rtnAttestations.push(indAtt as IndivAttestation)
@@ -2589,7 +2591,9 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
       }`;
 
     const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
-    //console.info(">>>>>>>>>>>>>>>>>>> data: ", data)
+    console.info(">>>>>>>>>>>>>>>>>>> data: ", data)
+    console.info(">>>>>>>>>>>>>>>>>>> entityId: ", entityId)
+    console.info(">>>>>>>>>>>>>>>>>>> indivDid: ", indivDid)
 
     // cycle through aes attestations and update entity with attestation info
     for (const item of data.attestations) {
@@ -2599,6 +2603,7 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
         if (this.checkEntity(entityId, decodedData)) {
           const orgAddress = item.attester
           const att = this.constructOrgIndivAttestation(chain, item.id, item.schemaId, entityId, orgAddress, "", decodedData)
+          console.info("********** att: ", att)
           if ((att as OrgIndivAttestation).indivDid.toLowerCase() == indivDid.toLowerCase()) {
             rtnAttestation = att
             break
@@ -2608,6 +2613,7 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
       
     }
 
+    console.info("********** OrgIndivSchema rtnAttestation: ", rtnAttestation)
     return rtnAttestation;
   }
 
