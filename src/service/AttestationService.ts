@@ -357,6 +357,8 @@ class AttestationService {
     const key1 = BigInt(Date.now())      // or some secure random
     const nonce1 = encodeNonce({ key: key1, sequence: 0n })
 
+    console.info("********** store attestation: ", schema, encodedData)
+
     let tx = await eas.attest({
       schema: schema,
       data: {
@@ -770,11 +772,13 @@ class AttestationService {
   }
 
 
-  static AccountSchemaUID = "0xe837d6e7eb9595a57b901e3893132f892f8c62e6ba5502db753d9486c0f09462"
+  static AccountSchemaUID = "0xddbd5a9c08ba2b56e9a108bc204619962ce2555e60ca3f959b1fdba811dd1597"
   static AccountSchema = this.BaseSchema + "string name, string coacode, string coacategory"
-  static async addAccountAttestation(chain: Chain, attestation: AccountAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {
+  static async addAccountAttestation(chain: Chain, attestation: AccountAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], indivAccountClient: MetaMaskSmartAccount, indivDelegateClient: MetaMaskSmartAccount): Promise<string> {
 
-    console.info("....... add account attestation signer: ", signer)
+    console.info("....... add account attestation attestation: ", attestation)
+    console.info("...... delegation chain: ", delegationChain)
+
     eas.connect(signer)
 
     const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
@@ -805,7 +809,7 @@ class AttestationService {
         ];
 
         const encodedData = schemaEncoder.encodeData(schemaItems);
-        await AttestationService.storeAttestation(chain, this.AccountSchemaUID, encodedData, orgAccountClient, orgDelegateClient, delegationChain)
+        await AttestationService.storeAttestation(chain, this.AccountSchemaUID, encodedData, indivAccountClient, indivDelegateClient, delegationChain)
 
         let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
         attestationsEmitter.emit('attestationChangeEvent', event);
@@ -862,7 +866,7 @@ class AttestationService {
       if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && name != undefined && coacode != undefined && coacategory != undefined) {
         const att : AccountAttestation = {
           displayName: name,
-          class: "organization",
+          class: "individual",
           category: "wallet",
           entityId: entityId,
           attester: attesterDid,
@@ -1066,7 +1070,7 @@ class AttestationService {
       let rsl = await trx.wait()
     }
 
-    let result2 = await this.addSocialAttestation(attestation, signer, orgAccountClient)
+    let result2 = await this.addSocialAttestation(chain, attestation, signer, orgAccountClient)
   }
   static constructSocialAttestation(chain: Chain, uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
 

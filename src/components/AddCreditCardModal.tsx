@@ -64,7 +64,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
 
   const BASE_URL_PROVER = import.meta.env.VITE_PROVER_API_URL  || 'http://localhost:3051';
 
-  const { chain,veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, signatory, indivDid, indivName, indivAccountClient } = useWallectConnectContext();
+  const { chain,veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, signatory, indivDid, indivName, indivAccountClient } = useWallectConnectContext();
 
   const { isConnected } = useAccount();
 
@@ -175,14 +175,15 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
 
     if (walletSigner && walletClient && privateIssuerAccount && orgDid && mascaApi && privateIssuerDid) {
 
+      console.info("********** lets doo it create account vc ****************")
+
         const vc = await VerifiableCredentialsService.createAccountVC(entityId, privateIssuerDid, accountDid, orgDid, accountName, coaCode, coaCategory);
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
 
-        if (fullVc && chain && indivAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient) {
+        if (fullVc && chain && indivDid && indivAccountClient && burnerAccountClient && indivIssuerDelegation && indivAccountClient) {
         
-          const delegationJsonStr = ""
 
           // now create attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
@@ -190,8 +191,8 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
               name: accountName,
               coaCode: coaCode,
               coaCategory: coaCategory,
-              attester: orgDid,
-              class: "organization",
+              attester: indivDid,
+              class: "individual",
               category: "wallet",
               entityId: entityId,
               hash: hash,
@@ -201,7 +202,8 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
               proof: proof
           };
 
-          const uid = await AttestationService.addAccountAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+          console.info("********** add account attestation a: ", attestation)
+          const uid = await AttestationService.addAccountAttestation(chain, attestation, walletSigner, [indivIssuerDelegation], indivAccountClient, burnerAccountClient)
         }
     }
 
@@ -247,6 +249,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
               proof: proof
           };
 
+          console.info("********** add org account attestation 1: ", attestation)
           const uid = await AttestationService.addOrgAccountAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         }
     }

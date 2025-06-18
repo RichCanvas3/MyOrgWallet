@@ -809,7 +809,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
-      if (proof && fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+      if (proof && fullVc && chain && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
       
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -831,7 +831,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         await window.ethereum.request({ method: "eth_requestAccounts" });
         const walletSigner = await provider.getSigner()
 
-        const uid = await AttestationService.addRegisteredDomainAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+        const uid = await AttestationService.addRegisteredDomainAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         console.info("add org domain attestation complete")
 
         entities?.forEach((ent) => {
@@ -858,7 +858,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
-      if (proof && fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+      if (proof && chain && fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
       
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -880,7 +880,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         await window.ethereum.request({ method: "eth_requestAccounts" });
         const walletSigner = await provider.getSigner()
 
-        const uid = await AttestationService.addWebsiteAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+        const uid = await AttestationService.addWebsiteAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         console.info("add website attestation complete")
 
         entities?.forEach((ent) => {
@@ -909,7 +909,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
-      if (proof && fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+      if (proof && chain &&fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
       
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -931,7 +931,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         await window.ethereum.request({ method: "eth_requestAccounts" });
         const walletSigner = await provider.getSigner()
 
-        const uid = await AttestationService.addEmailAttestation(attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+        const uid = await AttestationService.addEmailAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         console.info("add email attestation complete")
 
         entities?.forEach((ent) => {
