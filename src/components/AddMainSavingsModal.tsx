@@ -163,10 +163,7 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
     const walletClient = signatory.walletClient
     let entityId = "org-account"
 
-    console.info("********** accountDid: ", accountDid  )
-    console.info("********** accountName: ", accountName  )
-    console.info("********** coaCode: ", coaCode  )
-    console.info("********** coaCategory: ", coaCategory)
+
 
     if (walletSigner && walletClient && privateIssuerAccount && orgDid && mascaApi && privateIssuerDid) {
 
@@ -188,7 +185,7 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
               coaCategory: coaCategory,
               attester: orgDid,
               class: "organization",
-              category: "wallet",
+              category: "account",
               entityId: entityId,
               hash: hash,
               vccomm: (fullVc.credentialSubject as any).commitment.toString(),

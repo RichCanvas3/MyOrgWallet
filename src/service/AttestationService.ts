@@ -860,7 +860,7 @@ class AttestationService {
         const att : AccountAttestation = {
           displayName: accountname,
           class: "individual",
-          category: "wallet",
+          category: "account",
           entityId: entityId,
           attester: attesterDid,
           schemaId: schemaId,
@@ -986,7 +986,7 @@ class AttestationService {
         const att : OrgAccountDelAttestation = {
           displayName: accountname,
           class: "organization",
-          category: "wallet",
+          category: "account",
           entityId: entityId,
           attester: attesterDid,
           schemaId: schemaId,
@@ -1108,7 +1108,7 @@ class AttestationService {
         const att : OrgAccountAttestation = {
           displayName: accountname,
           class: "organization",
-          category: "wallet",
+          category: "account",
           entityId: entityId,
           attester: attesterDid,
           schemaId: schemaId,
@@ -2114,6 +2114,11 @@ class AttestationService {
       {
         class: "organization",
         name: "leaders",
+        id: "10"
+      },
+      {
+        class: "organization",
+        name: "account",
         id: "20"
       },
       {
@@ -2144,6 +2149,11 @@ class AttestationService {
       {
         class: "individual",
         name: "wallet",
+        id: "80"
+      },
+      {
+        class: "individual",
+        name: "account",
         id: "80"
       },
       {
@@ -2187,8 +2197,6 @@ class AttestationService {
 
 
       const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
-
-      console.info("................... data: ", data)
 
       const attestations : Attestation[] = []
       for (const item of data.attestations) {
@@ -2237,7 +2245,7 @@ class AttestationService {
 
             // construct correct attestation
             let att : Attestation | undefined
-            console.info(">>>>>>>>>> entityId: ", entityId)
+
             if (entityId == "indiv") {
               att = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
@@ -2699,7 +2707,7 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
       if (indAtt && (indAtt as IndivAttestation).orgDid.toLowerCase() == orgDid.toLowerCase()) {
         const indivDid = indAtt.attester
 
-        console.info("********** getOrgIndivAttestation 15: ", indivDid)
+
         const indOrgAtt = await this.getOrgIndivAttestation(chain, indivDid, this.OrgIndivSchemaUID, "org-indiv")
         if (!indOrgAtt) {
           rtnAttestations.push(indAtt as IndivAttestation)
@@ -2734,9 +2742,7 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
       }`;
 
     const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
-    console.info(">>>>>>>>>>>>>>>>>>> data: ", data)
-    console.info(">>>>>>>>>>>>>>>>>>> entityId: ", entityId)
-    console.info(">>>>>>>>>>>>>>>>>>> indivDid: ", indivDid)
+
 
     // cycle through aes attestations and update entity with attestation info
     for (const item of data.attestations) {
@@ -2746,7 +2752,6 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
         if (this.checkEntity(entityId, decodedData)) {
           const orgAddress = item.attester
           const att = this.constructOrgIndivAttestation(chain, item.id, item.schemaId, entityId, orgAddress, "", decodedData)
-          console.info("********** att: ", att)
           if ((att as OrgIndivAttestation).indivDid.toLowerCase() == indivDid.toLowerCase()) {
             rtnAttestation = att
             break

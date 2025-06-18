@@ -59,17 +59,24 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
   const [accountName, setAccountName] = useState('');
   const [coaCode, setCoaCode] = useState('');
   const [coaCategory, setCoaCategory] = useState('');
+  const [fundingAmount, setFundingAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const BASE_URL_PROVER = import.meta.env.VITE_PROVER_API_URL  || 'http://localhost:3051';
 
-  const { chain,veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, signatory, indivDid, indivName, indivAccountClient } = useWallectConnectContext();
+  const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, signatory, indivDid, indivName, indivAccountClient } = useWallectConnectContext();
 
   const { isConnected } = useAccount();
 
 
   useEffect(() => {
+
+
+
+
+
+    
     const getAccounts = async () => {
       if (isVisible && window.ethereum) {
         try {
@@ -99,6 +106,26 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
           console.error('Error fetching accounts:', error);
           setError('Failed to fetch accounts from MetaMask');
         }
+
+        if (chain && orgDid) {
+          console.info("---------> get savings account ")
+          const attestations = await AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, "")
+          const savingsAccountAtt = attestations.find((att: any) => att.entityId === "org-account")
+          const savingsAccountDID = savingsAccountAtt?.attester
+          console.info("---------> savingsAccountDID: ", savingsAccountDID)
+
+          const savingsAccountAddress = savingsAccountDID?.replace("did:pkh:eip155:" + chain?.id + ":", "")
+
+          const balance = await window.ethereum!.request({
+            method: 'eth_getBalance',
+            params: [savingsAccountAddress, 'latest']
+          }) as string;
+  
+          if (savingsAccountDID) {
+            //setSavingsAccountDID(savingsAccountDID)
+          }
+
+        }
       }
     };
 
@@ -113,11 +140,12 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
   const handleBack = () => {
     setSelectedAccount(null);
     setAccountName('');
+    setFundingAmount('');
     setError(null);
   };
 
   const handleSave = async () => {
-    if (!selectedAccount || !accountName || !coaCode || !coaCategory) {
+    if (!selectedAccount || !accountName || !coaCode || !coaCategory || !fundingAmount) {
       setError('Missing required information');
       return;
     }
@@ -134,6 +162,10 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
     }
 
     const accountDid = "did:pkh:eip155" + chain?.id + ":" + selectedAccount.address
+
+    
+
+
 
 
 
@@ -220,13 +252,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
         const fullVc = result.vc
         const proof = result.proof
 
-        console.info("********** fullVc: ", fullVc)
-        console.info("********** chain: ", chain)
-        console.info("********** indivAccountClient: ", indivAccountClient)
-        console.info("********** burnerAccountClient: ", burnerAccountClient)
-        console.info("********** orgIssuerDelegation: ", orgIssuerDelegation)
-        console.info("********** orgIndivDelegation: ", orgIndivDelegation)
-        console.info("********** orgAccountClient: ", orgAccountClient)
+
         if (fullVc && chain && indivAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient) {
 
           // now create attestation
@@ -249,13 +275,13 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
               proof: proof
           };
 
-          console.info("********** add org account attestation 1: ", attestation)
           const uid = await AttestationService.addOrgAccountDelAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         }
     }
 
     setSelectedAccount(null);
     setAccountName('');
+    setFundingAmount('');
     setError(null);
     onClose();
 
@@ -264,6 +290,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
   const handleClose = () => {
     setSelectedAccount(null);
     setAccountName('');
+    setFundingAmount('');
     setError(null);
     onClose();
   };
@@ -348,11 +375,20 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
                     placeholder="Enter the Chart of Accounts category"
                   />
 
+                  <TextField
+                    fullWidth
+                    label="Funding Amount"
+                    variant="outlined"
+                    value={fundingAmount}
+                    onChange={(e) => setFundingAmount(e.target.value)}
+                    placeholder="Enter the funding amount"
+                  />
+
                   <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
                     <Button
                       variant="contained"
                       onClick={handleSave}
-                      disabled={!accountName || !coaCode || !coaCategory || isLoading}
+                      disabled={!accountName || !coaCode || !coaCategory || !fundingAmount || isLoading}
                     >
                       {isLoading ? <CircularProgress size={24} /> : 'Save'}
                     </Button>

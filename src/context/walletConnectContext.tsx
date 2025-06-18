@@ -426,7 +426,6 @@ export const useWalletConnect = () => {
         meta: { alias: 'my-eth-key' },
       });
 
-      console.info(".... privateIssuerDid: ", privateIssuerDid)
       if (privateIssuerDid){
         await veramoAgent.didManagerImport({
                 did: privateIssuerDid,
@@ -484,9 +483,6 @@ export const useWalletConnect = () => {
         });
       }
 
-
-
-      console.info("owner address: ", ownerAddress)
       const mascaRslt = await enableMasca(ownerAddress, {
         snapId: snapId,
         supportedMethods: ['did:ethr', 'did:key', 'did:pkh'], // Specify supported DID methods
@@ -588,12 +584,9 @@ export const useWalletConnect = () => {
             let localIndivAddress: `0x${string}` | undefined = await indivAccountClient.getAddress() as `0x${string}`
             let localIndivDid : string | undefined = 'did:pkh:eip155:' + chain?.id + ':' + indivAccountClient.address
             
-
-            console.info("********** getOrgIndivAttestation 10: ", localIndivDid)
             const orgIndivAttestation = await AttestationService.getOrgIndivAttestation(chain, localIndivDid, AttestationService.OrgIndivSchemaUID, "org-indiv");
-            console.info("********** orgIndivAttestation: ", orgIndivAttestation)
             const indivAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, localIndivDid, AttestationService.IndivSchemaUID, "indiv")
-            console.info("********** indivAttestation: ", indivAttestation)
+
             if (indivAttestation) {
               setIndivName((indivAttestation as IndivAttestation).name)
             }
@@ -601,7 +594,6 @@ export const useWalletConnect = () => {
               localIndivAddress = undefined
               localIndivDid = undefined
               indivAccountClient = undefined
-              console.info("*********** org-indiv is not defined")
             }
               
             // connect to org account abstraction
@@ -613,13 +605,12 @@ export const useWalletConnect = () => {
             let orgIndivDel : any | undefined
             let delegationOrgAddress : `0x${string}` | undefined
             if (orgIndivAttestation) {
-              console.info("********** orgIndivAttestation: ", orgIndivAttestation)
+
               orgIndivDel = JSON.parse((orgIndivAttestation as OrgIndivAttestation).delegation)
               if (localIndivAddress == orgIndivDel.delegate) {
                 // need to validate signature at some point
                 delegationOrgAddress = orgIndivDel.delegator
 
-                console.info("********** orgIndivDel 1: ", orgIndivDel)
                 setOrgIndivDelegation(orgIndivDel)
               }
             }
@@ -735,7 +726,7 @@ export const useWalletConnect = () => {
             console.log("isValidSignatureCall:", isValidSignature); // should be EIP1271_MAGIC_VALUE(0x1626ba7e)
             */
 
-            console.info("********** orgIndivDel 2: ", orgIndivDel)
+
             if (orgIndivDel) {
               setOrgIndivDelegation(orgIndivDel)
             }
@@ -743,7 +734,6 @@ export const useWalletConnect = () => {
             let orgIssuerDel  = null
             if (orgAccountClient) {
               localOrgDid = 'did:pkh:eip155:' + chain?.id + ':' + orgAccountClient.address
-              console.info(".......... org did: ",   localOrgDid)
 
               setOrgDid(localOrgDid)
               setOrgAccountClient(orgAccountClient)
@@ -779,7 +769,6 @@ export const useWalletConnect = () => {
               await DelegationService.saveDelegationToStorage(ownerEOAAddress, orgAccountClient.address, burnerAccountClient.address, orgIssuerDel)
             }
 
-            console.info("********** orgIssuerDel: ", orgIssuerDel)
             if (orgIssuerDel) {
               setOrgIssuerDelegation(orgIssuerDel as Delegation)
             }
@@ -913,7 +902,6 @@ export const useWalletConnect = () => {
         const address = await accountClient.getAddress()
 
         if (isBlacklisted(address) == false) {
-          console.info("indiv account client: ", address)
           return accountClient
         } 
       }
@@ -1111,7 +1099,6 @@ export const useWalletConnect = () => {
           let orgIndivDel : any | undefined
           if (orgIndivAttestation) {
             orgIndivDel = JSON.parse((orgIndivAttestation as OrgIndivAttestation).delegation)
-            console.info("********** orgIndivDel 3: ", orgIndivDel)
             setOrgIndivDelegation(orgIndivDel)
 
             if (indivAddress == orgIndivDel.delegate) {
@@ -1280,7 +1267,6 @@ export const useWalletConnect = () => {
   
             
             // setup delegation between them
-            console.info("setup delegation between - org and indiv: ", orgAccountClient.address, indivAccountClient.address)
             orgIndivDel = createDelegation({
               to: indivAccountClient.address,
               from: orgAccountClient.address,
@@ -1295,7 +1281,6 @@ export const useWalletConnect = () => {
               ...orgIndivDel,
               signature,
             }
-            console.info("********** orgIndivDel 4: ", orgIndivDel)
             setOrgIndivDelegation(orgIndivDel)
 
           }

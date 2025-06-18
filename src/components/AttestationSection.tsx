@@ -123,8 +123,18 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
   const filtered = attestations.filter(a =>
       a.entityId?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+  
+  // Remove duplicates based on uid, entityId, and attester combination
+  const uniqueAttestations = filtered.filter((att, index, self) => 
+    index === self.findIndex(a => 
+      a.uid === att.uid && 
+      a.entityId === att.entityId && 
+      a.attester === att.attester
+    )
+  );
+  
   const grouped = currentCategories.reduce((acc, cat) => {
-      acc[cat.name] = filtered.filter(a => {
+      acc[cat.name] = uniqueAttestations.filter(a => {
           return a.category === cat.name && a.class === cat.class;
       });
       return acc;
@@ -211,7 +221,7 @@ return (
       >
         {currentCategories.map(cat => (
           <Accordion
-            key={cat.id}
+            key={`${cat.id}-${cat.name}-${cat.class}`}
             expanded={!!expandedCategories[cat.name]}
             onChange={() =>
               setExpandedCategories(prev => ({
@@ -234,9 +244,9 @@ return (
             <AccordionDetails>
               {grouped[cat.name]?.length ? (
                 <Grid container spacing={2}>
-                  {grouped[cat.name].map(att => (
+                  {grouped[cat.name].map((att, index) => (
                     <Grid
-                      key={att.uid}
+                      key={`${att.uid}-${att.entityId}-${att.attester}-${index}`}
                     >
                       <AttestationCard
                         attestation={att}
