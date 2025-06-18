@@ -181,8 +181,6 @@ class VerifiableCredentialsService {
       accountDid: string,
       orgDid: string,
       accountName: string,
-      coaCode: string,
-      coaCategory: string,
     ): Promise<VerifiableCredential> {
       let vc : VerifiableCredential = {
         "@context": ["https://www.w3.org/2018/credentials/v1"],
@@ -193,8 +191,37 @@ class VerifiableCredentialsService {
           id: accountDid,
           orgDid: orgDid,
           accountName: accountName,
+
+          platform: "richcanvas",
+          provider: entityId
+        }
+      }
+    
+      return vc;
+    }
+
+    static async createOrgAccountDelVC(
+      entityId: string,
+      issuerDid: string,
+      accountDid: string,
+      orgDid: string,
+      accountName: string,
+      coaCode: string,
+      coaCategory: string,
+      delegation: string,
+    ): Promise<VerifiableCredential> {
+      let vc : VerifiableCredential = {
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
+        type: ["VerifiableCredential", "OrgCredential"],
+        issuer: issuerDid, 
+        issuanceDate: new Date().toISOString(),
+        credentialSubject: {
+          accountDid: accountDid,
+          orgDid: orgDid,
+          accountName: accountName,
           coaCode: coaCode,
           coaCategory: coaCategory,
+          delegation: delegation,
           platform: "richcanvas",
           provider: entityId
         }
@@ -209,7 +236,8 @@ class VerifiableCredentialsService {
       accountDid: string,
       orgDid: string,
       accountName: string,
-      delegation: string,
+      coaCode: string,
+      coaCategory: string,
     ): Promise<VerifiableCredential> {
       let vc : VerifiableCredential = {
         "@context": ["https://www.w3.org/2018/credentials/v1"],
@@ -217,10 +245,11 @@ class VerifiableCredentialsService {
         issuer: issuerDid, 
         issuanceDate: new Date().toISOString(),
         credentialSubject: {
-          accountDid: orgDid,
+          accountDid: accountDid,
           orgDid: orgDid,
           accountName: accountName,
-          delegation: delegation,
+          coaCode: coaCode,
+          coaCategory: coaCategory,
           platform: "richcanvas",
           provider: entityId
         }

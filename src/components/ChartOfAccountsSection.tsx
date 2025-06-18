@@ -26,7 +26,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Account, AccountType, ACCOUNT_TYPES } from '../models/Account';
-import { AccountAttestation } from '../models/Attestation';
+import { AccountAttestation, OrgAccountDelAttestation, OrgAccountAttestation } from '../models/Attestation';
 import { useAccount } from 'wagmi';
 
 interface ChartOfAccountsSectionProps {
@@ -436,13 +436,12 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
         };
 
         for (const att of atts) {
-          if (att.entityId === "account") {
-            console.info("Processing account attestation:", att);
-            const accountAtt = att as AccountAttestation;
+          if (att.entityId === "org-account-del") {
+            const accountAtt = att as OrgAccountDelAttestation;
             const acct: Account = {
               id: accountAtt.coaCategory + '-' + accountAtt.coaCode,
               code: accountAtt.coaCategory + '-' + accountAtt.coaCode,
-              name: accountAtt.name,
+              name: accountAtt.accountName,
               type: ACCOUNT_TYPES.Asset,
               balance: 0,
               level: 4,
@@ -475,10 +474,44 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
               accountsChanged = true;
             }
           }
+          if (att.entityId === "org-account") {
+            const accountAtt = att as OrgAccountAttestation;
+            const acct: Account = {
+              id: accountAtt.coaCategory + '-' + accountAtt.coaCode,
+              code: accountAtt.coaCategory + '-' + accountAtt.coaCode,
+              name: accountAtt.accountName,
+              type: ACCOUNT_TYPES.Asset,
+              balance: 0,
+              level: 4,
+              parentId: accountAtt.coaCategory,
+              children: [],
+            };
+            
+            
+            // Add to list view
+            newListAccounts.push(acct);
+            
+            // Add to chart view
+            const existingAccount = findAccountAndParent(newAccounts, acct.id);
+            if (!existingAccount) {
+              if (acct.parentId) {
+                const parentAccount = findAccountAndParent(newAccounts, acct.parentId);
+                
+                if (parentAccount) {
+                  if (!parentAccount.children) {
+                    parentAccount.children = [];
+                  }
+                  parentAccount.children.push(acct);
+                } else {
+                  newAccounts.push(acct);
+                }
+              } else {
+                newAccounts.push(acct);
+              }
+              accountsChanged = true;
+            }
+          }
         }
-
-        console.info("List accounts to be set:", newListAccounts);
-        console.info("Chart accounts to be set:", newAccounts);
 
         setListAccounts(newListAccounts);
         if (accountsChanged) {

@@ -49,15 +49,22 @@ export interface OrgIndivAttestation extends Attestation {
 }
 
 export interface AccountAttestation extends Attestation {
-  name: string,
+  accountName: string
+}
+
+export interface OrgAccountDelAttestation extends Attestation {
+  accountName: string,
+  accountDid: string,
   coaCode: string,
   coaCategory: string,
+  delegation: string,
 }
 
 export interface OrgAccountAttestation extends Attestation {
-  name: string,
+  accountName: string,
   accountDid: string,
-  delegation: string,
+  coaCode: string,
+  coaCategory: string
 }
 
 export interface SocialAttestation extends Attestation {

@@ -155,13 +155,13 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
     */
 
 
-    console.info("*********** ADD ACCOUNT ATTESTATION ****************")
+    console.info("*********** ADD ORG ACCOUNT ATTESTATION ****************")
     const provider = new ethers.BrowserProvider(window.ethereum);
     await window.ethereum.request({ method: "eth_requestAccounts" });
     const walletSigner = await provider.getSigner()
 
     const walletClient = signatory.walletClient
-    let entityId = "account"
+    let entityId = "org-account"
 
     console.info("********** accountDid: ", accountDid  )
     console.info("********** accountName: ", accountName  )
@@ -170,7 +170,7 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
 
     if (walletSigner && walletClient && privateIssuerAccount && orgDid && mascaApi && privateIssuerDid) {
 
-        const vc = await VerifiableCredentialsService.createAccountVC(entityId, privateIssuerDid, accountDid, orgDid, accountName, coaCode, coaCategory);
+        const vc = await VerifiableCredentialsService.createOrgAccountVC(entityId, privateIssuerDid, accountDid, orgDid, accountName, coaCode, coaCategory);
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
@@ -181,48 +181,11 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
 
           // now create attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
-          const attestation: AccountAttestation = {
-              name: accountName,
+          const attestation: OrgAccountAttestation = {
+              accountName: accountName,
+              accountDid: accountDid,
               coaCode: coaCode,
               coaCategory: coaCategory,
-              attester: orgDid,
-              class: "organization",
-              category: "wallet",
-              entityId: entityId,
-              hash: hash,
-              vccomm: (fullVc.credentialSubject as any).commitment.toString(),
-              vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-              vciss: privateIssuerDid,
-              proof: proof
-          };
-
-          const uid = await AttestationService.addAccountAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
-        }
-    }
-
-
-
-
-    console.info("*********** ADD ORG ACCOUNT ATTESTATION ****************")
-    entityId = "org-account"
-
-    if (walletSigner && walletClient && privateIssuerAccount && orgDid && mascaApi && privateIssuerDid) {
-
-        const delegationJsonStr = ""
-
-        const vc = await VerifiableCredentialsService.createOrgAccountVC(entityId, privateIssuerDid, accountDid, orgDid, accountName, delegationJsonStr);
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
-        const fullVc = result.vc
-        const proof = result.proof
-
-        if (fullVc && chain && indivAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient) {
-
-          // now create attestation
-          const hash = keccak256(toUtf8Bytes("hash value"));
-          const attestation: OrgAccountAttestation = {
-              name: accountName,
-              accountDid: accountDid,
-              delegation: delegationJsonStr,
               attester: orgDid,
               class: "organization",
               category: "wallet",
@@ -237,6 +200,7 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
           const uid = await AttestationService.addOrgAccountAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         }
     }
+
 
     setSelectedAccount(null);
     setAccountName('');

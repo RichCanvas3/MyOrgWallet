@@ -31,7 +31,7 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { Transition } from '@headlessui/react';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import AttestationService from '../service/AttestationService';
-import { AccountAttestation, OrgAccountAttestation } from '../models/Attestation';
+import { AccountAttestation, OrgAccountDelAttestation } from '../models/Attestation';
 
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService';
 
@@ -177,7 +177,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
 
       console.info("********** lets doo it create account vc ****************")
 
-        const vc = await VerifiableCredentialsService.createAccountVC(entityId, privateIssuerDid, accountDid, orgDid, accountName, coaCode, coaCategory);
+        const vc = await VerifiableCredentialsService.createAccountVC(entityId, privateIssuerDid, accountDid, orgDid, accountName);
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
@@ -188,9 +188,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
           // now create attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
           const attestation: AccountAttestation = {
-              name: accountName,
-              coaCode: coaCode,
-              coaCategory: coaCategory,
+              accountName: accountName,
               attester: indivDid,
               class: "individual",
               category: "wallet",
@@ -210,14 +208,14 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
 
 
 
-    console.info("*********** ADD ORG ACCOUNT ATTESTATION ****************")
-    entityId = "org-account"
+    console.info("*********** ADD ORG ACCOUNT DELEGATION ATTESTATION ****************")
+    entityId = "org-account-del"
 
     if (walletSigner && walletClient && privateIssuerAccount && orgDid && mascaApi && privateIssuerDid) {
 
         const delegationJsonStr = ""
 
-        const vc = await VerifiableCredentialsService.createOrgAccountVC(entityId, privateIssuerDid, accountDid, orgDid, accountName, delegationJsonStr);
+        const vc = await VerifiableCredentialsService.createOrgAccountDelVC(entityId, privateIssuerDid, accountDid, orgDid, accountName, coaCode, coaCategory, delegationJsonStr);
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
@@ -234,9 +232,11 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
           // now create attestation
           console.info("********** add org account attestation ****************")
           const hash = keccak256(toUtf8Bytes("hash value"));
-          const attestation: OrgAccountAttestation = {
-              name: accountName,
+          const attestation: OrgAccountDelAttestation = {
+              accountName: accountName,
               accountDid: accountDid,
+              coaCode: coaCode,
+              coaCategory: coaCategory,
               delegation: delegationJsonStr,
               attester: orgDid,
               class: "organization",
@@ -250,7 +250,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
           };
 
           console.info("********** add org account attestation 1: ", attestation)
-          const uid = await AttestationService.addOrgAccountAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+          const uid = await AttestationService.addOrgAccountDelAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         }
     }
 
