@@ -223,11 +223,11 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
     console.info("********** coaCode: ", coaCode  )
     console.info("********** coaCategory: ", coaCategory)
 
-    if (walletSigner && walletClient && privateIssuerAccount && orgDid && mascaApi && privateIssuerDid) {
+    if (walletSigner && walletClient && privateIssuerAccount && indivDid && mascaApi && privateIssuerDid) {
 
       console.info("********** lets doo it create account vc ****************")
 
-        const vc = await VerifiableCredentialsService.createAccountVC(entityId, privateIssuerDid, accountDid, orgDid, accountName);
+        const vc = await VerifiableCredentialsService.createAccountVC(entityId, privateIssuerDid, accountDid, indivDid, accountName);
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof

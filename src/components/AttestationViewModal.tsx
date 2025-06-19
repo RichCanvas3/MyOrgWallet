@@ -2,7 +2,8 @@ import * as React from 'react';
 import {useContext, useEffect, useRef, useState} from 'react';
 import { ethers, namehash  } from "ethers";
 import {
-  XMarkIcon
+  XMarkIcon,
+  TrashIcon
 } from "@heroicons/react/24/outline";
 import './UserSettingsModal.css';
 import {useTranslation} from 'react-i18next';
@@ -26,6 +27,11 @@ import { useWalletClient, useAccount, useConnect, useEnsName, useEnsAvatar, useD
 import { getCachedResponse, putCachedResponse, putCachedValue } from "../service/CachedService"
 
 import { useWallectConnectContext } from "../context/walletConnectContext";
+import { 
+  Button, 
+  Tooltip,
+  CircularProgress
+} from "@mui/material";
 
 interface AttestationViewModalProps {
   did: string;
@@ -43,6 +49,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
   const [publicKey, setPublicKey] = useState<string | undefined>(undefined);
   const [vcZkProof, setVcZkProof] = useState<VcZkProof | undefined>(undefined);
   const [vcRevokeZkProof, setVcRevokeZkProof] = useState<VcRevokeZkProof | undefined>(undefined);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -471,6 +478,29 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
     return `0x${start}...${end}`;
   }
 
+  const handleDeleteAttestation = async () => {
+    if (!attestation || !chain) return;
+    
+    setIsDeleting(true);
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      await window.ethereum.request({ method: "eth_requestAccounts" });
+      const walletSigner = await provider.getSigner();
+      
+      await AttestationService.revokeAttestation(
+        chain, 
+        attestation.uid, 
+        walletSigner
+      );
+      
+      // Close modal after successful deletion
+      handleClose();
+    } catch (error) {
+      console.error('Error deleting attestation:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
 
@@ -490,9 +520,34 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
         <div id="user-settings-header" className="modal-header">
           <h1 className="modal-title">{attestation?.entityId} attestation</h1>
 
-          <button onClick={handleClose} className="close-button">
-            <XMarkIcon className="close-icon" aria-hidden="true" />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {attestation && (
+              <Tooltip title="Delete Attestation">
+                <Button
+                  onClick={handleDeleteAttestation}
+                  disabled={isDeleting}
+                  sx={{
+                    minWidth: 'auto',
+                    p: 1,
+                    color: 'error.main',
+                    '&:hover': {
+                      backgroundColor: 'error.light',
+                      color: 'white'
+                    }
+                  }}
+                >
+                  {isDeleting ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : (
+                    <TrashIcon className="h-5 w-5" />
+                  )}
+                </Button>
+              </Tooltip>
+            )}
+            <button onClick={handleClose} className="close-button">
+              <XMarkIcon className="close-icon" aria-hidden="true" />
+            </button>
+          </div>
         </div>
 
         {/* Content */}

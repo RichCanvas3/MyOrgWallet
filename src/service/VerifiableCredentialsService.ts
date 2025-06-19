@@ -180,7 +180,7 @@ class VerifiableCredentialsService {
       entityId: string,
       issuerDid: string,
       accountDid: string,
-      orgDid: string,
+      indivDid: string,
       accountName: string,
     ): Promise<VerifiableCredential> {
       let vc : VerifiableCredential = {
@@ -190,7 +190,7 @@ class VerifiableCredentialsService {
         issuanceDate: new Date().toISOString(),
         credentialSubject: {
           id: accountDid,
-          orgDid: orgDid,
+          indivDid: indivDid,
           accountName: accountName,
 
           platform: "richcanvas",

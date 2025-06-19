@@ -254,7 +254,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
                 accountName: account.attestation?.accountName || "",
                 accountDid: account.did,
                 coaCode: account.attestation?.coaCode || "",
-                coaCategory: account.attestation?.coaCode || "",
+                coaCategory: account.attestation?.coaCategory || "",
                 orgDelegation: account.attestation?.delegation || "",
                 indivDelegation: indivDelegationJsonStr,
                 attester: indivDid,
