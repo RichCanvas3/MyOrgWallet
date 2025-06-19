@@ -26,7 +26,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Account, AccountType, ACCOUNT_TYPES } from '../models/Account';
-import { AccountAttestation, OrgAccountDelAttestation, OrgAccountAttestation } from '../models/Attestation';
+import { AccountAttestation, AccountOrgDelAttestation, OrgAccountAttestation } from '../models/Attestation';
 import { useAccount } from 'wagmi';
 
 interface ChartOfAccountsSectionProps {
@@ -436,8 +436,8 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
         };
 
         for (const att of atts) {
-          if (att.entityId === "org-account-del") {
-            const accountAtt = att as OrgAccountDelAttestation;
+          if (att.entityId === "account-org(org)") {
+            const accountAtt = att as AccountOrgDelAttestation;
             const acct: Account = {
               id: accountAtt.coaCategory + '-' + accountAtt.coaCode,
               code: accountAtt.coaCategory + '-' + accountAtt.coaCode,
@@ -474,7 +474,7 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
               accountsChanged = true;
             }
           }
-          if (att.entityId === "org-account") {
+          if (att.entityId === "account(org)") {
             const accountAtt = att as OrgAccountAttestation;
             const acct: Account = {
               id: accountAtt.coaCategory + '-' + accountAtt.coaCode,

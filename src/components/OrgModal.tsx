@@ -47,7 +47,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
 
     console.info("*********** ADD ORG ATTESTATION 1 ****************")
 
-    const entityId = "org"
+    const entityId = "org(org)"
 
     //console.info("fields: ", orgDid, privateIssuerDid, walletClient, signatory, orgAccountClient, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, walletClient)
     console.info("fields: ", orgIssuerDelegation, orgIndivDelegation)

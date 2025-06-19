@@ -52,7 +52,7 @@ export interface AccountAttestation extends Attestation {
   accountName: string
 }
 
-export interface OrgAccountDelAttestation extends Attestation {
+export interface AccountOrgDelAttestation extends Attestation {
   accountName: string,
   accountDid: string,
   coaCode: string,

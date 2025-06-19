@@ -264,49 +264,49 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
       if (did) {
 
           let schemaUid = ""
-          if (entityId == "indiv") {
+          if (entityId == "indiv(indiv)") {
             schemaUid = AttestationService.IndivSchemaUID
           }
-          if (entityId == "account") {
+          if (entityId == "account(indiv)") {
             schemaUid = AttestationService.AccountSchemaUID
           }
-          if (entityId == "org-account-del") {
-            schemaUid = AttestationService.OrgAccountDelSchemaUID
+          if (entityId == "account-org(org)") {
+            schemaUid = AttestationService.AccountOrgDelSchemaUID
           }
-          if (entityId == "org-account") {
+          if (entityId == "account(org)") {
             schemaUid = AttestationService.OrgAccountSchemaUID
           }
-          if (entityId == "org-indiv") {
+          if (entityId == "org-indiv(org)") {
             schemaUid = AttestationService.OrgIndivSchemaUID
           }
-          if (entityId == "org") {
+          if (entityId == "org(org)") {
             schemaUid = AttestationService.OrgSchemaUID
           }
-          if (entityId == "state-registration") {
+          if (entityId == "state-registration(org)") {
             schemaUid = AttestationService.StateRegistrationSchemaUID
           }
-          if (entityId == "domain") {
+          if (entityId == "domain(org)") {
             schemaUid = AttestationService.RegisteredDomainSchemaUID
           }
-          if (entityId == "shopify") {
+          if (entityId == "shopify(org)") {
             schemaUid = AttestationService.WebsiteSchemaUID
           }
-          if (entityId == "insurance") {
+          if (entityId == "insurance(org)") {
             schemaUid = AttestationService.InsuranceSchemaUID
           }
-          if (entityId == "email") {
+          if (entityId == "email(org)") {
             schemaUid = AttestationService.EmailSchemaUID
           }
-          if (entityId == "indiv-email") {
+          if (entityId == "email(indiv)") {
             schemaUid = AttestationService.IndivEmailSchemaUID
           }
-          if (entityId == "linkedin") {
+          if (entityId == "linkedin(indiv)") {
             schemaUid = AttestationService.SocialSchemaUID
           }
-          if (entityId == "x") {
+          if (entityId == "x(indiv)") {
             schemaUid = AttestationService.SocialSchemaUID
           }
-          if (entityId == "website") {
+          if (entityId == "website(org)") {
             schemaUid = AttestationService.WebsiteSchemaUID
           }
           //console.info("go get shopify attestation: ", did)

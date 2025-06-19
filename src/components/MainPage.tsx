@@ -58,7 +58,6 @@ import CreateWebDidModal from './CreateWebDidModal';
 import ImportDriversLicenseModal from './ImportDriversLicenseModal';
 import AddCreditCardModal from './AddCreditCardModal';
 import AddMainSavingsModal from './AddMainSavingsModal';
-import AddPettyCashModal from './AddPettyCashModal';  
 import OrgModal from './OrgModal';  
 
 
@@ -142,7 +141,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const [isImportDriversLicenseModalVisible, setImportDriversLicenseModalVisible] = useState(false);
   const [isAddCreditCardModalVisible, setAddCreditCardModalVisible] = useState(false);
   const [isAddMainSavingsModalVisible, setAddMainSavingsModalVisible] = useState(false);
-  const [isAddPettyCashModalVisible, setAddPettyCashModalVisible] = useState(false);
 
   const [isOrgModalVisible, setOrgModalVisible] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
@@ -167,9 +165,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   }
   const handleOnAddMainSavingsModalClose = () => {
     setAddMainSavingsModalVisible(false);
-  }
-  const handleOnAddPettyCashModalClose = () => {
-    setAddPettyCashModalVisible(false);
   }
   const handleOnOrgModalClose = () => {
     setOrgModalVisible(false);
@@ -217,6 +212,11 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   
   useEffect(() => {
+    console.info("********** orgAccountClient: ", orgAccountClient  ) 
+    console.info("********** chain: ", chain  ) 
+    console.info("********** orgDid: ", orgDid  ) 
+    console.info("********** indivDid: ", indivDid  ) 
+
     if (orgAccountClient && chain && orgDid && indivDid) {
 
       AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
@@ -699,10 +699,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         console.info("add savings account ...")
         setAddMainSavingsModalVisible(true)
       }
-      if (lastUserResponse.toLowerCase().includes("add petty cash account")) {
-        console.info("add petty cash account ...")
-        setAddPettyCashModalVisible(true)
-      }
     } catch (error)
     {
 
@@ -716,7 +712,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   async function addOrgRegistrationAttestation(st: string) {
 
-    const entityId = "state-registration"
+    const entityId = "state-registration(org)"
 
     if (orgAccountClient && walletClient) {
 
@@ -794,7 +790,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   async function addOrgDomainAttestation(domain: string) {
 
-    const entityId = "domain"
+    const entityId = "domain(org)"
     const org = await OrgService.checkDomain(domain);
     
     let orgJson = JSON.parse(org)
@@ -851,7 +847,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     
     const websiteType = "public"
 
-    const entityId = "website"
+    const entityId = "website(org)"
     if (orgDid && mascaApi && walletClient && privateIssuerAccount && orgAccountClient && burnerAccountClient && privateIssuerDid) {
 
       const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC(entityId, orgDid, privateIssuerDid, websiteType, website);
@@ -899,10 +895,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     //const org = await OrgService.checkEmail(email);
     
-    console.info("email check: ", email)
     const emailType = "info"
     
-    const entityId = "email"
+    const entityId = "email(org)"
     if (orgDid && privateIssuerDid && mascaApi && walletClient && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
 
       const vc = await VerifiableCredentialsService.createEmailVC(entityId, orgDid, privateIssuerDid, emailType, email);
@@ -949,7 +944,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   function checkLinkedinAttestation(lastAssistantResponse: string, lastUserResponse: string) {
 
     var intent = null;
-    if (lastAssistantResponse?.includes("linkedin")) {
+    if (lastAssistantResponse?.includes("linkedin(indiv)")) {
       if (lastUserResponse.includes("yes")) {
         intent = "createLinkedinAttestation"
       }
@@ -960,9 +955,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       // set attestation
       if (entities != undefined) {
         for (const entity of entities) {
-          if (entity.name == "linkedin" && entity.attestation == undefined) {
+          if (entity.name == "linkedin(indiv)" && entity.attestation == undefined) {
             let att : Attestation = {
-              entityId: "linkedin",
+              entityId: "linkedin(indiv)",
               attester: "",
               hash: "",
             }
@@ -972,7 +967,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         }
       }
 
-      return `{"validate": "linkedin"}`
+      return `{"validate": "linkedin(indiv)"}`
     }
 
     return ""
@@ -982,7 +977,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   function checkXAttestation(lastAssistantResponse: string, lastUserResponse: string) {
 
     var intent = null;
-    if (lastAssistantResponse?.includes("x")) {
+    if (lastAssistantResponse?.includes("x(indiv)")) {
       if (lastUserResponse.includes("yes")) {
         intent = "createXAttestation"
       }
@@ -993,9 +988,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       // set attestation
       if (entities != undefined) {
         for (const entity of entities) {
-          if (entity.name == "x" && entity.attestation == undefined) {
+          if (entity.name == "x(indiv)" && entity.attestation == undefined) {
             let att : Attestation = {
-              entityId: "x",
+              entityId: "x(indiv)",
               attester: "",
               hash: "",
             }
@@ -1005,7 +1000,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         }
       }
 
-      return `{"validate": "x"}`
+      return `{"validate": "x(indiv)"}`
     }
 
     return ""
@@ -1015,7 +1010,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   function checkShopifyAttestation(lastAssistantResponse: string, lastUserResponse: string) {
 
     var intent = null;
-    if (lastAssistantResponse?.includes("shopify")) {
+    if (lastAssistantResponse?.includes("shopify(org)")) {
       if (lastUserResponse.includes("yes")) {
         intent = "createShopifyAttestation"
       }
@@ -1026,7 +1021,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       // set attestation
       if (entities != undefined) {
         for (const entity of entities) {
-          if (entity.name == "shopify" && entity.attestation == undefined) {
+          if (entity.name == "shopify(org)" && entity.attestation == undefined) {
             let att : Attestation = {
               entityId: "",
               attester: "",
@@ -1038,7 +1033,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         }
       }
 
-      return `{"validate": "shopify"}`
+      return `{"validate": "shopify(org)"}`
     }
 
     return ""
@@ -1048,7 +1043,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   function checkInsuranceAttestation(lastAssistantResponse: string, lastUserResponse: string) {
 
     var intent = null;
-    if (lastAssistantResponse?.includes("insurance")) {
+    if (lastAssistantResponse?.includes("insurance(org)")) {
       if (lastUserResponse.includes("yes")) {
         intent = "createInsuranceAttestation"
       }
@@ -1059,7 +1054,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       // set attestation
       if (entities != undefined) {
         for (const entity of entities) {
-          if (entity.name == "insurance" && entity.attestation == undefined) {
+          if (entity.name == "insurance(org)" && entity.attestation == undefined) {
             let att : Attestation = {
               entityId: "",
               attester: "",
@@ -1071,7 +1066,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         }
       }
 
-      return `{"validate": "insurance"}`
+      return `{"validate": "insurance(org)"}`
     }
 
     return ""
@@ -1200,21 +1195,21 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
         if ("edit" in command) {
           let socialCommand = command["edit"]
-          if (socialCommand && socialCommand.toLowerCase() == "linkedin") {
+          if (socialCommand && socialCommand.toLowerCase() == "linkedin(indiv)") {
             //console.info("....... edit linkedin information .........")
             const cmd : Command = {
               action: "edit",
               did: indivDid,
-              entityId: "linkedin",
+              entityId: "linkedin(indiv)",
             }
             appCommand(cmd)
           }
-          if (socialCommand.toLowerCase() == "x") {
+          if (socialCommand.toLowerCase() == "x(indiv)") {
             //console.info("....... edit x information .........")
             const cmd : Command = {
               action: "edit",
               did: indivDid,
-              entityId: "linkedin",
+              entityId: "linkedin(indiv)",
             }
             appCommand(cmd)
           }
@@ -1222,15 +1217,15 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         if ("validate" in command) {
           //console.info("social edit request: ", command["validate"])
           let socialCommand = command["validate"]
-          if (socialCommand.toLowerCase() == "linkedin") {
+          if (socialCommand.toLowerCase() == "linkedin(indiv)") {
 
             if (isFirstCall) {
               linkedInAuthRef.current?.openLinkedInPopup();
             }
 
             entities?.forEach((ent) => {
-              if (ent.name == "linkedin") {
-                ent.attestation = { entityId: "linkedin", hash: "", attester: ""}
+              if (ent.name == "linkedin(indiv)") {
+                ent.attestation = { entityId: "linkedin(indiv)", hash: "", attester: ""}
               }
             })
             setEntities(entities)
@@ -1242,15 +1237,15 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             clearInputArea();
             //messageBoxRef.current?.reset();
           }
-          if (socialCommand.toLowerCase() == "x") {
+          if (socialCommand.toLowerCase() == "x(indiv)") {
 
             if (isFirstCall) {
               xAuthRef.current?.openXPopup();
             }
 
             entities?.forEach((ent) => {
-              if (ent.name == "x") {
-                ent.attestation = { entityId: "x", hash: "", attester: ""}
+              if (ent.name == "x(indiv)") {
+                ent.attestation = { entityId: "x(indiv)", hash: "", attester: ""}
               }
             })
             setEntities(entities)
@@ -1262,15 +1257,15 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             clearInputArea();
             //messageBoxRef.current?.reset();
           }
-          if (socialCommand.toLowerCase() == "shopify") {
+          if (socialCommand.toLowerCase() == "shopify(org)") {
 
             if (isFirstCall) {
               shopifyAuthRef.current?.openShopifyPopup();
             }
 
             entities?.forEach((ent) => {
-              if (ent.name == "shopify") {
-                ent.attestation = { entityId: "shopify", hash: "", attester: ""}
+              if (ent.name == "shopify(org)") {
+                ent.attestation = { entityId: "shopify(org)", hash: "", attester: ""}
               }
             })
             setEntities(entities)
@@ -1283,7 +1278,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             //messageBoxRef.current?.reset();
           }
 
-          if (socialCommand.toLowerCase() == "insurance") {
+          if (socialCommand.toLowerCase() == "insurance(org)") {
 
             console.info("isFirstCall: ", isFirstCall)
             if (isFirstCall) {
@@ -1292,8 +1287,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             }
 
             entities?.forEach((ent) => {
-              if (ent.name == "insurance") {
-                ent.attestation = { entityId: "insurance", hash: "", attester: ""}
+              if (ent.name == "insurance(org)") {
+                ent.attestation = { entityId: "insurance(org)", hash: "", attester: ""}
               }
             })
             setEntities(entities)
@@ -1346,8 +1341,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
               })
 
               entities?.forEach((ent) => {
-                if (ent.name == "state-registration") {
-                  ent.attestation = { entityId: "state-registration", hash: "", attester: ""}
+                if (ent.name == "state-registration(org)") {
+                  ent.attestation = { entityId: "state-registration(org)", hash: "", attester: ""}
                 }
               })
               //setEntities(entities)
@@ -1398,8 +1393,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
               })
 
               entities?.forEach((ent) => {
-                if (ent.name == "domain") {
-                  ent.attestation = { entityId: "domain", hash: "", attester: ""}
+                if (ent.name == "domain(org)") {
+                  ent.attestation = { entityId: "domain(org)", hash: "", attester: ""}
                 }
               })
               setEntities(entities)
@@ -1423,8 +1418,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
               })
 
               entities?.forEach((ent) => {
-                if (ent.name == "email") {
-                  ent.attestation = { entityId: "email", hash: "", attester: ""}
+                if (ent.name == "email(org)") {
+                  ent.attestation = { entityId: "email(org)", hash: "", attester: ""}
                 }
               })
               setEntities(entities)
@@ -1438,8 +1433,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           }
         }
 
-        if ("website" in command) {
-          let website = command["website"]
+        if ("website(org)" in command) {
+          let website = command["website(org)"]
           if (website) {
             if (isFirstCall) {
               addOrgWebsiteAttestation(website).then(() => {
@@ -1447,8 +1442,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
               })
 
               entities?.forEach((ent) => {
-                if (ent.name == "website") {
-                  ent.attestation = { entityId: "website", hash: "", attester: ""}
+                if (ent.name == "website(org)") {
+                  ent.attestation = { entityId: "website(org)", hash: "", attester: ""}
                 }
               })
               setEntities(entities)
@@ -1681,10 +1676,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         <AddMainSavingsModal
           isVisible={isAddMainSavingsModalVisible}
           onClose={handleOnAddMainSavingsModalClose}
-        />
-        <AddPettyCashModal
-          isVisible={isAddPettyCashModalVisible}
-          onClose={handleOnAddPettyCashModalClose}
         />
         <OrgModal
           orgName={newOrgName?newOrgName:""}

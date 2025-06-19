@@ -29,7 +29,7 @@ export interface ShopifyAuthRef {
   openShopifyPopup: () => void;
 }
 
-const entityId = "shopify"
+const entityId = "shopify(org)"
 const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) => {
 
   const { } = props;

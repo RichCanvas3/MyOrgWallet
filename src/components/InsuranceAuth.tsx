@@ -19,7 +19,7 @@ export interface InsuranceAuthRef {
 }
 
 
-const entityId = "insurance"
+const entityId = "insurance(org)"
 const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, ref) => {
 
   const { } = props;
@@ -36,7 +36,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
       var insuranceNumber = "10"
       if (privateIssuerAccount && orgDid && insuranceNumber && walletClient && orgAccountClient && burnerAccountClient && privateIssuerDid) {
 
-        const vc = await VerifiableCredentialsService.createInsuranceVC(orgDid, privateIssuerDid, insuranceNumber);
+        const vc = await VerifiableCredentialsService.createInsuranceVC(entityId, orgDid, privateIssuerDid, insuranceNumber);
 
         console.info("vc: ", JSON.stringify(vc))
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)

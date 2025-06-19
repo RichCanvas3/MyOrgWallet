@@ -122,13 +122,13 @@ const WelcomeModal: React.FC = () => {
         console.info("chain: ", chain)
         setOrgNameValue("")
         setOrgDidValue("")
-        const registeredDomainAttestations = await AttestationService.getRegisteredDomainAttestations(chain, domain, AttestationService.RegisteredDomainSchemaUID, "domain")
+        const registeredDomainAttestations = await AttestationService.getRegisteredDomainAttestations(chain, domain, AttestationService.RegisteredDomainSchemaUID, "domain(org)")
         if (registeredDomainAttestations) {
           for (const registeredDomainAttestation of registeredDomainAttestations) {
 
             console.info("registered domain: ", registeredDomainAttestation)
             const orgDid = registeredDomainAttestation.attester
-            const orgAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, orgDid, AttestationService.OrgSchemaUID, "org")
+            const orgAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, orgDid, AttestationService.OrgSchemaUID, "org(org)")
             if (orgAttestation) {
 
               const orgDidValue = (orgAttestation as OrgAttestation).attester

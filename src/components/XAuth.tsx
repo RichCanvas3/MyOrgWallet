@@ -42,7 +42,7 @@ export interface XAuthRef {
   openXPopup: () => void;
 }
 
-const entityId = "x"
+const entityId = "x(indiv)"
 const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
 
   const { data: walletClient } = useWalletClient();

@@ -31,7 +31,7 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { Transition } from '@headlessui/react';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import AttestationService from '../service/AttestationService';
-import { AccountAttestation, OrgAccountDelAttestation } from '../models/Attestation';
+import { AccountAttestation, AccountOrgDelAttestation } from '../models/Attestation';
 
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService';
 
@@ -110,7 +110,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
         if (chain && orgDid) {
           console.info("---------> get savings account ")
           const attestations = await AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, "")
-          const savingsAccountAtt = attestations.find((att: any) => att.entityId === "org-account")
+          const savingsAccountAtt = attestations.find((att: any) => att.entityId === "account(org)")
           const savingsAccountDID = savingsAccountAtt?.attester
           console.info("---------> savingsAccountDID: ", savingsAccountDID)
 
@@ -198,7 +198,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
     const walletSigner = await provider.getSigner()
 
     const walletClient = signatory.walletClient
-    let entityId = "account"
+    let entityId = "account(indiv)"
 
     console.info("********** accountDid: ", accountDid  )
     console.info("********** accountName: ", accountName  )
@@ -223,7 +223,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
               accountName: accountName,
               attester: indivDid,
               class: "individual",
-              category: "wallet",
+              category: "account",
               entityId: entityId,
               hash: hash,
               vccomm: (fullVc.credentialSubject as any).commitment.toString(),
@@ -241,13 +241,13 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
 
 
     console.info("*********** ADD ORG ACCOUNT DELEGATION ATTESTATION ****************")
-    entityId = "org-account-del"
+    entityId = "account-org(org)"
 
     if (walletSigner && walletClient && privateIssuerAccount && orgDid && mascaApi && privateIssuerDid) {
 
         const delegationJsonStr = ""
 
-        const vc = await VerifiableCredentialsService.createOrgAccountDelVC(entityId, privateIssuerDid, accountDid, orgDid, accountName, coaCode, coaCategory, delegationJsonStr);
+        const vc = await VerifiableCredentialsService.createAccountOrgDelVC(entityId, privateIssuerDid, accountDid, orgDid, accountName, coaCode, coaCategory, delegationJsonStr);
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
@@ -258,7 +258,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
           // now create attestation
           console.info("********** add org account attestation ****************")
           const hash = keccak256(toUtf8Bytes("hash value"));
-          const attestation: OrgAccountDelAttestation = {
+          const attestation: AccountOrgDelAttestation = {
               accountName: accountName,
               accountDid: accountDid,
               coaCode: coaCode,
@@ -266,7 +266,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
               delegation: delegationJsonStr,
               attester: orgDid,
               class: "organization",
-              category: "wallet",
+              category: "account",
               entityId: entityId,
               hash: hash,
               vccomm: (fullVc.credentialSubject as any).commitment.toString(),
@@ -275,7 +275,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
               proof: proof
           };
 
-          const uid = await AttestationService.addOrgAccountDelAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+          const uid = await AttestationService.addAccountOrgDelAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         }
     }
 

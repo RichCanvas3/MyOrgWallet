@@ -45,7 +45,7 @@ export interface LinkedInAuthRef {
   openLinkedInPopup: () => void;
 }
 
-const entityId = "linkedin";
+const entityId = "linkedin(indiv)";
 const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref) => {
 
   

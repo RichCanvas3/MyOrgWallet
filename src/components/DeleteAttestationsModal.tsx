@@ -17,7 +17,7 @@ import { useWallectConnectContext } from "../context/walletConnectContext";
 import { useAccount } from 'wagmi';
 
 import { Button, Paper } from "@mui/material";
-
+import { RPC_URL, } from "../config";
 
 
 import {
@@ -107,7 +107,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
 
       const publicClient = createPublicClient({
                 chain: chain,
-                transport: http(),
+                transport: http(RPC_URL),
               });
       
 
@@ -136,7 +136,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
       //}
 
       
-      const samIndivAttestation = await AttestationService.getOrgIndivAttestation(chain, samIndivDid, AttestationService.OrgIndivSchemaUID, "org-indiv");
+      const samIndivAttestation = await AttestationService.getOrgIndivAttestation(chain, samIndivDid, AttestationService.OrgIndivSchemaUID, "org-indiv(org)");
 
       let samOrgIndivDel : any | undefined
       let samDelegationOrgAddress : `0x${string}` | undefined
@@ -200,7 +200,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
             attester: orgDid,
             class: "organization",
             category: "leaders",
-            entityId: "org-indiv",
+            entityId: "org-indiv(org)",
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,

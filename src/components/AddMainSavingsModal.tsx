@@ -4,6 +4,8 @@ import { useAccount, useConnect } from 'wagmi';
 import { injected } from 'wagmi/connectors';
 import { keccak256, toUtf8Bytes } from 'ethers';
 import { ethers, AbiCoder } from 'ethers';
+import { encodeFunctionData, hashMessage, createPublicClient, createWalletClient, WalletClient, toHex, http, zeroAddress, publicActions, custom, verifyMessage, signatureToCompactSignature  } from "viem";
+
 
 
 //import { IPFSStorage } from '../service/IPFSStorage'
@@ -31,11 +33,28 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { Transition } from '@headlessui/react';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import AttestationService from '../service/AttestationService';
-import { AccountAttestation, OrgAccountAttestation } from '../models/Attestation';
+import { AccountOrgDelAttestation, OrgAccountAttestation } from '../models/Attestation';
+
+import { RPC_URL, } from "../config";
+
 
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService';
 
-
+import {
+  Implementation,
+  toMetaMaskSmartAccount,
+  type MetaMaskSmartAccount,
+  type DelegationStruct,
+  createDelegation,
+  type ToMetaMaskSmartAccountReturnType,
+  DelegationFramework,
+  SINGLE_DEFAULT_MODE,
+  getExplorerTransactionLink,
+  getExplorerAddressLink,
+  createExecution,
+  getDelegationHashOffchain,
+  Delegation
+} from "@metamask/delegation-toolkit";
 
 interface AddMainSavingsModalProps {
   isVisible: boolean;
@@ -63,6 +82,31 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
   const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, signatory, indivDid, indivName, indivAccountClient } = useWallectConnectContext();
 
   const { isConnected } = useAccount();
+
+
+
+  const findValidOrgAccount = async(owner: any, signatory: any, publicClient: any) : Promise<ToMetaMaskSmartAccountReturnType<Implementation.Hybrid> | undefined> => {
+    const startSeed = 50000
+    const tryCount = 30
+
+    for (let i = 0; i < tryCount; i++) {
+
+      // build account AA for EOA Connected Wallet
+      const accountClient = await toMetaMaskSmartAccount({
+        client: publicClient,
+        implementation: Implementation.Hybrid,
+        deployParams: [owner, [], [], []],
+        signatory: signatory,
+        deploySalt: toHex(startSeed),
+      });
+
+      const address = await accountClient.getAddress()
+      return accountClient
+    }
+    return undefined
+  }
+
+
 
   useEffect(() => {
     const getAccounts = async () => {
@@ -120,39 +164,9 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
     setIsLoading(true);
     setError(null);
 
-    console.info("handleSave ....")
-
-    const accountData = {
-      accountName: accountName,
-      accountAddress: selectedAccount.address,
-      accountBalance: selectedAccount.balance
-    }
-
-    const accountDid = "did:pkh:eip155:" + chain?.id + ":" + selectedAccount.address.toLowerCase()
 
 
-
-    /*
-    console.info("-----------> store account data")
-    const storeResp = await fetch(`${BASE_URL_PROVER}/api/account/store`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            name: accountName,
-            address: selectedAccount.address
-        }),
-    })
-
-    console.info("storeResp: ", storeResp)
-
-    const storeResults = await storeResp.json()
-    const js = JSON.parse(storeResults)
-
-    console.info("storeResults: ", js)
-    const cid = js.cid
-
-    console.info("cid result: ", cid)
-    */
+    const eoaAccountDid = "did:pkh:eip155:" + chain?.id + ":" + selectedAccount.address.toLowerCase()
 
 
     console.info("*********** ADD ORG ACCOUNT ATTESTATION ****************")
@@ -161,41 +175,105 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
     const walletSigner = await provider.getSigner()
 
     const walletClient = signatory.walletClient
-    let entityId = "org-account"
+    let entityId = "account(org)"
 
+    const publicClient = createPublicClient({
+      chain: chain,
+      transport: http(RPC_URL),
+    });
 
+    const accountClient = await findValidOrgAccount(selectedAccount.address, signatory, publicClient)
+    const accountDid = "did:pkh:eip155:" + chain?.id + ":" + accountClient?.address.toLowerCase()
 
     if (walletSigner && walletClient && privateIssuerAccount && orgDid && mascaApi && privateIssuerDid) {
 
-        const vc = await VerifiableCredentialsService.createOrgAccountVC(entityId, privateIssuerDid, accountDid, orgDid, accountName, coaCode, coaCategory);
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
-        const fullVc = result.vc
-        const proof = result.proof
+      const vc = await VerifiableCredentialsService.createOrgAccountVC(entityId, privateIssuerDid, accountDid, orgDid, accountName, coaCode, coaCategory);
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+      const fullVc = result.vc
+      const proof = result.proof
 
-        if (fullVc && chain && indivAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient) {
-        
-          const delegationJsonStr = ""
+      
 
-          // now create attestation
-          const hash = keccak256(toUtf8Bytes("hash value"));
-          const attestation: OrgAccountAttestation = {
-              accountName: accountName,
-              accountDid: accountDid,
-              coaCode: coaCode,
-              coaCategory: coaCategory,
-              attester: orgDid,
-              class: "organization",
-              category: "account",
-              entityId: entityId,
-              hash: hash,
-              vccomm: (fullVc.credentialSubject as any).commitment.toString(),
-              vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-              vciss: privateIssuerDid,
-              proof: proof
-          };
+      if (fullVc && chain && indivAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient) {
+      
+        const delegationJsonStr = ""
 
-          const uid = await AttestationService.addOrgAccountAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
-        }
+        // now create attestation
+        const hash = keccak256(toUtf8Bytes("hash value"));
+        const attestation: OrgAccountAttestation = {
+            accountName: accountName,
+            accountDid: accountDid,
+            coaCode: coaCode,
+            coaCategory: coaCategory,
+            attester: orgDid,
+            class: "organization",
+            category: "account",
+            entityId: entityId,
+            hash: hash,
+            vccomm: (fullVc.credentialSubject as any).commitment.toString(),
+            vcsig: (fullVc.credentialSubject as any).commitmentSignature,
+            vciss: privateIssuerDid,
+            proof: proof
+        };
+
+        const uid = await AttestationService.addOrgAccountAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+      }
+    }
+
+    console.info("*********** ADD ORG ACCOUNT DELEGATION ATTESTATION ****************")
+    entityId = "account-org(org)"
+
+    if (walletSigner && walletClient && accountClient &&  orgAccountClient && privateIssuerAccount && orgDid && mascaApi && privateIssuerDid) {
+
+      // setup delegation between them
+      let accountOrgDel = createDelegation({
+        to: orgAccountClient.address,
+        from: accountClient.address,
+        caveats: [] }
+      );
+
+      const signature = await accountClient.signDelegation({
+        delegation: accountOrgDel,
+      });
+
+      accountOrgDel = {
+        ...accountOrgDel,
+        signature,
+      }
+
+      const delegationJsonStr = JSON.stringify(accountOrgDel)
+
+
+      const vc = await VerifiableCredentialsService.createAccountOrgDelVC(entityId, privateIssuerDid, accountDid, orgDid, accountName, coaCode, coaCategory, delegationJsonStr);
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+      const fullVc = result.vc
+      const proof = result.proof
+
+
+      if (fullVc && chain && indivAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient) {
+
+        // now create attestation
+        console.info("********** add org account delegation attestation ****************")
+        const hash = keccak256(toUtf8Bytes("hash value"));
+        const attestation: AccountOrgDelAttestation = {
+            accountName: accountName,
+            accountDid: accountDid,
+            coaCode: coaCode,
+            coaCategory: coaCategory,
+            delegation: delegationJsonStr,
+            attester: orgDid,
+            class: "organization",
+            category: "account",
+            entityId: entityId,
+            hash: hash,
+            vccomm: (fullVc.credentialSubject as any).commitment.toString(),
+            vcsig: (fullVc.credentialSubject as any).commitmentSignature,
+            vciss: privateIssuerDid,
+            proof: proof
+        };
+
+        const uid = await AttestationService.addAccountOrgDelAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+      }
     }
 
 

@@ -520,7 +520,7 @@ export const useWalletConnect = () => {
         // this is hybrid signatory so might have a wallet client
         const publicClient = createPublicClient({
           chain: chain,
-          transport: http(),
+          transport: http(RPC_URL),
         });
 
 
@@ -584,8 +584,8 @@ export const useWalletConnect = () => {
             let localIndivAddress: `0x${string}` | undefined = await indivAccountClient.getAddress() as `0x${string}`
             let localIndivDid : string | undefined = 'did:pkh:eip155:' + chain?.id + ':' + indivAccountClient.address
             
-            const orgIndivAttestation = await AttestationService.getOrgIndivAttestation(chain, localIndivDid, AttestationService.OrgIndivSchemaUID, "org-indiv");
-            const indivAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, localIndivDid, AttestationService.IndivSchemaUID, "indiv")
+            const orgIndivAttestation = await AttestationService.getOrgIndivAttestation(chain, localIndivDid, AttestationService.OrgIndivSchemaUID, "org-indiv(org)");
+            const indivAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, localIndivDid, AttestationService.IndivSchemaUID, "indiv(indiv)")
 
             if (indivAttestation) {
               setIndivName((indivAttestation as IndivAttestation).name)
@@ -812,7 +812,7 @@ export const useWalletConnect = () => {
 
 
             if (localOrgDid) {
-              const attestation = await AttestationService.getAttestationByDidAndSchemaId(chain, localOrgDid, AttestationService.RegisteredDomainSchemaUID, "domain")
+              const attestation = await AttestationService.getAttestationByDidAndSchemaId(chain, localOrgDid, AttestationService.RegisteredDomainSchemaUID, "domain(org)")
               if (attestation) {
                 const domainAttestation = attestation as RegisteredDomainAttestation
                 const domain = domainAttestation.domain
@@ -976,7 +976,7 @@ export const useWalletConnect = () => {
 
         const publicClient = createPublicClient({
           chain: chain,
-          transport: http(),
+          transport: http(RPC_URL),
         });
 
 
@@ -1074,7 +1074,7 @@ export const useWalletConnect = () => {
 
           // get attestation for individual account abstraction address
           console.info(": ", indivDid)
-          const orgIndivAttestation = await AttestationService.getOrgIndivAttestation(chain, indivDid, AttestationService.OrgIndivSchemaUID, "org-indiv");
+          const orgIndivAttestation = await AttestationService.getOrgIndivAttestation(chain, indivDid, AttestationService.OrgIndivSchemaUID, "org-indiv(org)");
 
 
           let orgAddressValue : `0x${string}` | undefined
@@ -1303,7 +1303,7 @@ export const useWalletConnect = () => {
 
         const publicClient = createPublicClient({
           chain: chain,
-          transport: http(),
+          transport: http(RPC_URL),
         });
         const walletClient = signatory.walletClient
 
@@ -1460,7 +1460,7 @@ export const useWalletConnect = () => {
             const walletSigner = await provider.getSigner()
         
             const walletClient = signatory.walletClient
-            const entityId = "org"
+            const entityId = "org(org)"
         
 
             console.info("fields: ", orgName, orgDid, privateIssuerDid, orgIssuerDel, indivDid, mascaApi, walletSigner, walletClient)
@@ -1509,13 +1509,13 @@ export const useWalletConnect = () => {
             const walletSigner = await provider.getSigner()
         
             const walletClient = signatory.walletClient
-            const entityId = "domain"
+            const entityId = "domain(org)"
         
             if (walletSigner && walletClient && orgName && orgDid && orgIssuerDel && indivEmail && mascaApi) {
 
               console.info("*********** ADD DOMAIN ATTESTATION ****************")
 
-              const entityId = "domain"
+              const entityId = "domain(org)"
               const domainName = getDomainFromEmail(indivEmail)
 
               if (domainName && privateIssuerAccount) {
@@ -1565,7 +1565,7 @@ export const useWalletConnect = () => {
           console.info("===========> : ", indivDid, orgDid)
           if (indivDid && orgDid && chain) {
             console.info(" get att")
-            const orgAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, orgDid, AttestationService.OrgIndivSchemaUID, "org")
+            const orgAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, orgDid, AttestationService.OrgIndivSchemaUID, "org(org)")
             if (!orgAttestation) {
               console.info("=============> no org attestation so add one")
               await addOrgAttestation(mascaApi)
@@ -1583,7 +1583,7 @@ export const useWalletConnect = () => {
             const walletSigner = await provider.getSigner()
         
             const walletClient = signatory.walletClient
-            const entityId = "org-indiv"
+            const entityId = "org-indiv(org)"
         
             if (mascaApi && walletSigner && walletClient && privateIssuerAccount && indivDid && orgDid && orgIssuerDel) {
 
@@ -1637,7 +1637,7 @@ export const useWalletConnect = () => {
           }
 
           if (indivDid && orgDid) {
-            const orgIndivAttestation = await AttestationService.getOrgIndivAttestation(chain,indivDid, AttestationService.OrgIndivSchemaUID, "org-indiv")
+            const orgIndivAttestation = await AttestationService.getOrgIndivAttestation(chain,indivDid, AttestationService.OrgIndivSchemaUID, "org-indiv(org)")
             if (!orgIndivAttestation) {
               console.info("=============> no indiv attestation so add one")
               await addDomainAttestation(mascaApi)
@@ -1692,7 +1692,7 @@ export const useWalletConnect = () => {
             const walletSigner = await provider.getSigner()
         
             const walletClient = signatory.walletClient
-            const entityId = "indiv"
+            const entityId = "indiv(indiv)"
         
             if (walletSigner && walletClient && privateIssuerAccount && indivDid && orgDid && mascaApi) {
 
@@ -1738,7 +1738,7 @@ export const useWalletConnect = () => {
             const walletSigner = await provider.getSigner()
         
             const walletClient = signatory.walletClient
-            const entityId = "indiv-email"
+            const entityId = "email(indiv)"
         
             if (walletSigner && walletClient && privateIssuerAccount && indivDid && mascaApi) {
 
@@ -1783,12 +1783,12 @@ export const useWalletConnect = () => {
           }
 
           if (indivDid && orgDid && indivIssuerDel) {
-            const indivAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, indivDid, AttestationService.IndivSchemaUID, "indiv")
+            const indivAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, indivDid, AttestationService.IndivSchemaUID, "indiv(indiv)")
             if (!indivAttestation) {
               addIndivAttestation(mascaApi)
             }
 
-            const indivEmailAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, indivDid, AttestationService.IndivEmailSchemaUID, "indiv-email")
+            const indivEmailAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, indivDid, AttestationService.IndivEmailSchemaUID, "email(indiv)")
             if (!indivEmailAttestation) {
               addIndivEmailAttestation(mascaApi)
             }

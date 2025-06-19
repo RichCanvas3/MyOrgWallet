@@ -56,6 +56,7 @@ class VerifiableCredentialsService {
     }
 
     static async createInsuranceVC(
+      entityId: string,
       orgDid: string,
       issuerDid: string,
       insuranceId: string
@@ -70,7 +71,7 @@ class VerifiableCredentialsService {
           insuranceId: insuranceId,
           verifiedMethod: "OAuth",
           platform: "richcanvas",
-          provider: "insurance"
+          provider: entityId
         }
       }
     
@@ -200,7 +201,7 @@ class VerifiableCredentialsService {
       return vc;
     }
 
-    static async createOrgAccountDelVC(
+    static async createAccountOrgDelVC(
       entityId: string,
       issuerDid: string,
       accountDid: string,
