@@ -274,7 +274,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
           if (entityId == "account-org(org)") {
             schemaUid = AttestationService.AccountOrgDelSchemaUID
           }
-          if (entityId == "account-indiv(indiv)") {
+          if (entityId == "account-indiv(org)") {
             schemaUid = AttestationService.AccountIndivDelSchemaUID
           }
           if (entityId == "account(org)") {

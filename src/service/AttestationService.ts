@@ -1012,8 +1012,8 @@ class AttestationService {
     return undefined
   }
 
-  static AccountIndivDelSchemaUID = "0x9e955c8803f78f31dacb45564150e715bfa35b89fec2b2759705a171770c701c"
-  static AccountIndivDelSchema = this.BaseSchema + "string accountdid, string accountname, string coacode, string coacategory, string orgdelegation, string indivdelegation"
+  static AccountIndivDelSchemaUID = "0x65e87d897753ffd0d406cfe6096a9a279c34c8a372da0cea1b7d22d881a36483"
+  static AccountIndivDelSchema = this.BaseSchema + "string indivdid, string accountdid, string accountname, string coacode, string coacategory, string orgdelegation, string indivdelegation"
   static async addAccountIndivDelAttestation(chain: Chain, attestation: AccountIndivDelAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {
 
     eas.connect(signer)
@@ -1037,6 +1037,8 @@ class AttestationService {
           
           { name: 'proof', value: attestation.proof, type: 'string' },
 
+          { name: 'indivdid', value: attestation.indivDid, type: 'string' },
+
           { name: 'accountdid', value: attestation.accountDid, type: 'string' },
           { name: 'accountname', value: attestation.accountName, type: 'string' }, 
 
@@ -1049,6 +1051,7 @@ class AttestationService {
           { name: 'indivdelegation', value: attestation.indivDelegation, type: 'string' },
 
         ];
+        
 
         const encodedData = schemaEncoder.encodeData(schemaItems);
         await AttestationService.storeAttestation(chain,this.AccountIndivDelSchemaUID, encodedData, orgAccountClient, orgDelegateClient, delegationChain)
@@ -1075,6 +1078,7 @@ class AttestationService {
     let indivDelegation : string | undefined
     let coaCode : string | undefined
     let coaCategory : string | undefined
+    let indivDid : string | undefined
 
     for (const field of decodedData) {
       let fieldName = field["name"]
@@ -1106,6 +1110,9 @@ class AttestationService {
       if (fieldName == "accountdid") {
         accountDid = field["value"].value as string
       }
+      if (fieldName == "indivdid") {
+        indivDid = field["value"].value as string
+      }
       if (fieldName == "orgdelegation") {
         orgDelegation = field["value"].value as string
       }
@@ -1117,11 +1124,11 @@ class AttestationService {
 
     console.info(">>>>>>>>>>>>>> construct org account del attestation")
     const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
-      if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && accountname != undefined && accountDid != undefined && orgDelegation != undefined && indivDelegation != undefined && coaCode != undefined && coaCategory != undefined) {
+      if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && indivDid && accountname != undefined && accountDid != undefined && orgDelegation != undefined && indivDelegation != undefined && coaCode != undefined && coaCategory != undefined) {
         //console.info("set to org account attestation with name: ", name)
         const att : AccountIndivDelAttestation = {
           displayName: accountname,
-          class: "individual",
+          class: "organization",
           category: "account",
           entityId: entityId,
           attester: attesterDid,
@@ -1133,6 +1140,7 @@ class AttestationService {
           vciss: vciss,
           proof: proof,
           accountName: accountname,
+          indivDid: indivDid,
           coaCode: coaCode,
           coaCategory: coaCategory,
           accountDid: accountDid,
@@ -2393,7 +2401,7 @@ class AttestationService {
             if (entityId == "account-org(org)") {
               att = this.constructAccountOrgDelAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
-            if (entityId == "account-indiv(indiv)") {
+            if (entityId == "account-indiv(org)") {
               att = this.constructAccountIndivDelAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "account(org)") {
@@ -2643,37 +2651,43 @@ class AttestationService {
 
     return accounts;
   }
-  static async loadIndivAccounts(chain: Chain, indivDid: string, coaCategory: string): Promise<IndivAccount[]> {
+  static async loadIndivAccounts(chain: Chain, orgDid: string, indivDid: string, coaCategory: string): Promise<IndivAccount[]> {
 
   
-    const allAttestations = await AttestationService.loadRecentAttestationsTitleOnly(chain, "", indivDid)
+    const allAttestations = await AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, "")
 
     const accounts : IndivAccount[] = [];
 
 
     for (const att of allAttestations) {
-      if (att.entityId === "account-indiv(indiv)") {
+      if (att.entityId === "account-indiv(org)") {
         const accountAtt = att as AccountIndivDelAttestation;
-        const acct: IndivAccount = {
-          id: accountAtt.coaCategory + '-' + accountAtt.coaCode,
-          code: accountAtt.coaCategory + '-' + accountAtt.coaCode,
-          name: accountAtt.accountName,
-          did: accountAtt.accountDid,
-          type: ACCOUNT_TYPES.Asset,
-          attestation: att as AccountIndivDelAttestation,
-          balance: 0,
-          level: 4,
-          parentId: accountAtt.coaCategory,
-          children: [],
-        };
-
-        if (acct.parentId == coaCategory) {
-          accounts.push(acct);
+        if (accountAtt.indivDid == indivDid) {
+          
+          const acct: IndivAccount = {
+            id: accountAtt.coaCategory + '-' + accountAtt.coaCode,
+            code: accountAtt.coaCategory + '-' + accountAtt.coaCode,
+            name: accountAtt.accountName,
+            did: accountAtt.accountDid,
+            type: ACCOUNT_TYPES.Asset,
+            attestation: att as AccountIndivDelAttestation,
+            balance: 0,
+            level: 4,
+            parentId: accountAtt.coaCategory,
+            children: [],
+          };
+  
+          console.info("@@@@@@@@@@@@@ accountAtt found: ", coaCategory, acct.parentId)
+          if (acct.parentId == coaCategory) {
+            accounts.push(acct);
+          }
         }
+        
         
       }
     }
 
+    console.info("@@@@@@@@@@@@@ accounts: ", accounts)
     return accounts;
   }
 
@@ -3002,7 +3016,7 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
       priority: 10
     },
     {
-      name: "account-indiv(indiv)",
+      name: "account-indiv(org)",
       schemaId: this.AccountIndivDelSchemaUID,
       schema: this.AccountIndivDelSchema,
       priority: 10

@@ -57,6 +57,7 @@ import ApproveLeaderModal from './ApproveLeaderModal';
 import CreateWebDidModal from './CreateWebDidModal';
 import ImportDriversLicenseModal from './ImportDriversLicenseModal';
 import AddCreditCardModal from './AddCreditCardModal';
+import FundCreditCardModal from './FundCreditCardModal';
 import AddMainSavingsModal from './AddMainSavingsModal';
 import OrgModal from './OrgModal';  
 
@@ -140,6 +141,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const [isCreateWebDidModalVisible, setCreateWebDidModalVisible] = useState(false);
   const [isImportDriversLicenseModalVisible, setImportDriversLicenseModalVisible] = useState(false);
   const [isAddCreditCardModalVisible, setAddCreditCardModalVisible] = useState(false);
+  const [isFundCreditCardModalVisible, setFundCreditCardModalVisible] = useState(false);
   const [isAddMainSavingsModalVisible, setAddMainSavingsModalVisible] = useState(false);
 
   const [isOrgModalVisible, setOrgModalVisible] = useState(false);
@@ -162,6 +164,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   }
   const handleOnAddCreditCardModalClose = () => {
     setAddCreditCardModalVisible(false);
+  }
+  const handleOnFundCreditCardModalClose = () => {
+    setFundCreditCardModalVisible(false);
   }
   const handleOnAddMainSavingsModalClose = () => {
     setAddMainSavingsModalVisible(false);
@@ -698,6 +703,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       if (lastUserResponse.toLowerCase().includes("add savings account")) {
         console.info("add savings account ...")
         setAddMainSavingsModalVisible(true)
+      }
+      if (lastUserResponse.toLowerCase().includes("fund credit card")) {
+        console.info("fund credit card ...")
+        setFundCreditCardModalVisible(true)
       }
     } catch (error)
     {
@@ -1672,6 +1681,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         <AddCreditCardModal
           isVisible={isAddCreditCardModalVisible}
           onClose={handleOnAddCreditCardModalClose}
+        />
+        <FundCreditCardModal
+          isVisible={isFundCreditCardModalVisible}
+          onClose={handleOnFundCreditCardModalClose}
         />
         <AddMainSavingsModal
           isVisible={isAddMainSavingsModalVisible}

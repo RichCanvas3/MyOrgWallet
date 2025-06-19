@@ -65,6 +65,7 @@ export interface AccountIndivDelAttestation extends Attestation {
   accountDid: string,
   coaCode: string,
   coaCategory: string,
+  indivDid: string,
   orgDelegation: string,
   indivDelegation: string,
 }

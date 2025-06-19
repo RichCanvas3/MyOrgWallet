@@ -236,7 +236,7 @@ class VerifiableCredentialsService {
       entityId: string,
       issuerDid: string,
       accountDid: string,
-      orgDid: string,
+      indivDid: string,
       accountName: string,
       coaCode: string,
       coaCategory: string,
@@ -250,7 +250,7 @@ class VerifiableCredentialsService {
         issuanceDate: new Date().toISOString(),
         credentialSubject: {
           accountDid: accountDid,
-          orgDid: orgDid,
+          indivDid: indivDid,
           accountName: accountName,
           coaCode: coaCode,
           coaCategory: coaCategory,

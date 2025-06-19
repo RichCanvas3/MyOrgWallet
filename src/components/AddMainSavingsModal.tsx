@@ -56,6 +56,18 @@ import {
   Delegation
 } from "@metamask/delegation-toolkit";
 
+
+import {
+  createBundlerClient,
+  createPaymasterClient,
+} from "viem/account-abstraction";
+
+import { createPimlicoClient } from "permissionless/clients/pimlico";
+
+
+import { BUNDLER_URL, PAYMASTER_URL } from "../config";
+
+
 interface AddMainSavingsModalProps {
   isVisible: boolean;
   onClose: () => void;
@@ -183,6 +195,65 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
     });
 
     const accountClient = await findValidOrgAccount(selectedAccount.address, signatory, publicClient)
+    let isDeployed = await accountClient?.isDeployed()
+    console.info("is indivAccountClient deployed: ", isDeployed)
+ 
+    if (isDeployed == false) {
+      // deploy account AA
+
+      const pimlicoClient = createPimlicoClient({
+        transport: http(BUNDLER_URL),
+      });
+
+      //const paymasterClient = createPaymasterClient({
+      //  transport: http(PAYMASTER_URL),
+      //});
+
+      console.info("create bundler client ", BUNDLER_URL, PAYMASTER_URL)
+      const bundlerClient = createBundlerClient({
+                      transport: http(BUNDLER_URL),
+                      paymaster: true,
+                      chain: chain,
+                      paymasterContext: {
+                        mode:             'SPONSORED',
+                      },
+                    });
+
+      console.info("get gas price") 
+      const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+
+
+      try {
+        console.info("send user operation with bundlerClient 2: ", bundlerClient)
+
+        console.info("fee: ", fee)
+        const fee2 = {maxFeePerGas: 412596685n, maxPriorityFeePerGas: 412596676n}
+        console.info("fee2: ", fee2)  
+
+
+        const userOperationHash = await bundlerClient!.sendUserOperation({
+          account: accountClient,
+          calls: [
+            {
+              to: zeroAddress,
+            },
+          ],
+          ...fee2,
+        });
+
+        console.info(" account is deployed - done")
+        const { receipt } = await bundlerClient!.waitForUserOperationReceipt({
+          hash: userOperationHash,
+        });
+      }
+      catch (error) { 
+        console.info("error deploying accountClient: ", error)
+      }
+    }
+
+
+
+
     const accountDid = "did:pkh:eip155:" + chain?.id + ":" + accountClient?.address.toLowerCase()
 
     if (walletSigner && walletClient && privateIssuerAccount && orgDid && mascaApi && privateIssuerDid) {
@@ -240,6 +311,86 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
       }
 
       const delegationJsonStr = JSON.stringify(accountOrgDel)
+
+
+
+      //  test out delegation
+
+      // Create bundler client
+      const pimlicoClient = createPimlicoClient({
+        transport: http(BUNDLER_URL),
+      });
+
+      const bundlerClient = createBundlerClient({
+        transport: http(BUNDLER_URL),
+        paymaster: true,
+        chain: chain!,
+        paymasterContext: {
+          mode: 'SPONSORED',
+        },
+      });
+
+      // Create execution to transfer funds to credit card
+      const creditCardAddress = "0x9d09782B42A1886639D585Ee03d39A90E011c5EC"
+      const executions = [
+        {
+          target: creditCardAddress,
+          value: 10n,
+          callData: '0x' as `0x${string}`,
+        },
+      ];
+
+      console.info("@@@@@@@@@@@@@ creditCardAddress: ", creditCardAddress) 
+
+
+      const delegationChain = [accountOrgDel];
+      console.info("@@@@@@@@@@@@@ delegationChain: ", delegationChain)
+      const data = DelegationFramework.encode.redeemDelegations({
+        delegations: [delegationChain],
+        modes: [SINGLE_DEFAULT_MODE],
+        executions: [executions]
+      });
+
+      const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+      
+      console.info("@@@@@@@@@@@@@ orgAccountClient: ", orgAccountClient.address) 
+      if (orgAccountClient) {
+        const userOpHash = await bundlerClient.sendUserOperation({
+          account: orgAccountClient,
+          calls: [
+            {
+              to: orgAccountClient.address,
+              data,
+            },
+          ],
+          ...fee
+        });
+
+        const { receipt } = await bundlerClient.waitForUserOperationReceipt({
+          hash: userOpHash,
+        });
+
+
+      }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
       const vc = await VerifiableCredentialsService.createAccountOrgDelVC(entityId, privateIssuerDid, accountDid, orgDid, accountName, coaCode, coaCategory, delegationJsonStr);

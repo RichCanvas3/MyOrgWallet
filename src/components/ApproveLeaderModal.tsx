@@ -59,6 +59,19 @@ import {
   Delegation
 } from "@metamask/delegation-toolkit";
 
+
+
+import {
+  createBundlerClient,
+  createPaymasterClient,
+} from "viem/account-abstraction";
+
+import { createPimlicoClient } from "permissionless/clients/pimlico";
+import { http } from "viem";
+
+import { BUNDLER_URL, PAYMASTER_URL } from "../config";
+
+
 import { OrgIndivAttestation } from "../models/Attestation"
 
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService"
@@ -214,12 +227,12 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
 
           const indivDelegationJsonStr = JSON.stringify(indivDel)
 
-          const entityId = "account-indiv(indiv)"
+          const entityId = "account-indiv(org)"
           const vc = await VerifiableCredentialsService.createAccountIndivDelVC(
             entityId, 
             privateIssuerDid, 
             account.did || "", 
-            orgDid,
+            leaderIndivDid,
             account.attestation?.accountName || "", 
             account.attestation?.coaCode || "",
             account.attestation?.coaCategory || "",
@@ -237,6 +250,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
             // now create attestation
             const hash = keccak256(toUtf8Bytes("hash value"));
             const attestation: AccountIndivDelAttestation = {
+                indivDid: leaderIndivDid,
                 accountName: account.attestation?.accountName || "",
                 accountDid: account.did,
                 coaCode: account.attestation?.coaCode || "",
@@ -261,6 +275,81 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
 
           }
 
+
+
+
+
+
+
+
+
+
+
+
+          // see if we can move funds based on delegation
+
+          const orgDel = JSON.parse(account.attestation?.delegation);
+
+
+          console.info("@@@@@@@@@@@@@ orgDel: ", orgDel)  
+
+
+          // Create bundler client
+          const pimlicoClient = createPimlicoClient({
+            transport: http(BUNDLER_URL),
+          });
+
+          const bundlerClient = createBundlerClient({
+            transport: http(BUNDLER_URL),
+            paymaster: true,
+            chain: chain!,
+            paymasterContext: {
+              mode: 'SPONSORED',
+            },
+          });
+
+          // Create execution to transfer funds to credit card
+          const creditCardAddress = "0x9d09782B42A1886639D585Ee03d39A90E011c5EC"
+          const executions = [
+            {
+              target: creditCardAddress,
+              value: 10n,
+              callData: '0x' as `0x${string}`,
+            },
+          ];
+
+          console.info("@@@@@@@@@@@@@ creditCardAddress: ", creditCardAddress) 
+
+
+          const delegationChain = [orgDel];
+          console.info("@@@@@@@@@@@@@ delegationChain: ", delegationChain)
+          const data = DelegationFramework.encode.redeemDelegations({
+            delegations: [delegationChain],
+            modes: [SINGLE_DEFAULT_MODE],
+            executions: [executions]
+          });
+
+          const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+          
+          console.info("@@@@@@@@@@@@@ orgAccountClient: ", orgAccountClient.address) 
+          if (orgAccountClient) {
+            const userOpHash = await bundlerClient.sendUserOperation({
+              account: orgAccountClient,
+              calls: [
+                {
+                  to: orgAccountClient.address,
+                  data,
+                },
+              ],
+              ...fee
+            });
+
+            const { receipt } = await bundlerClient.waitForUserOperationReceipt({
+              hash: userOpHash,
+            });
+
+
+          }
         }
       }
     
@@ -272,7 +361,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
 
   useEffect(() => {
     if (orgDid && chain) {
-      AttestationService.loadOrgAccounts(chain, orgDid, "1110").then((accounts) => {
+      AttestationService.loadOrgAccounts(chain, orgDid, "1150").then((accounts) => {
         setSavingsAccounts(accounts);
       });
 

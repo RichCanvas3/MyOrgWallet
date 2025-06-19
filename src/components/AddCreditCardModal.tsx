@@ -297,6 +297,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
         }
     }
 
+    /*
 
     if (chain && indivDid) {
       console.info("*********** MOVE MONEY TO CREDIT ACCOUNT ****************")
@@ -368,7 +369,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
         
       }
     }
-    
+    */
 
     setSelectedAccount(null);
     setAccountName('');
