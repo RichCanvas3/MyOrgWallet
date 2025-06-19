@@ -15,10 +15,11 @@ import AttestationService from '../service/AttestationService';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import { useWalletClient, useAccount } from 'wagmi';
 
-import { IndivAttestation } from "../models/Attestation"
+import { IndivAttestation, AccountIndivDelAttestation } from "../models/Attestation"
 import { Account } from "../models/Account";
 
 import {AttestationCard } from "./AttestationCard"
+
 
 import { 
   TextField, 
@@ -131,63 +132,138 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
       console.info("to: ", leaderIndivAddress)
       console.info("from: ", orgAccountClient.address)
 
-      // Process each selected account
-      for (const accountId of selectedAccounts) {
-        const account = savingsAccounts.find(acc => acc.id === accountId);
-        if (!account) continue;
 
-        let leaderOrgIndivDel = createDelegation({
-          to: leaderIndivAddress,
-          from: orgAccountClient.address,
-          caveats: [] }
-        );
 
-        const signature = await orgAccountClient.signDelegation({
-          delegation: leaderOrgIndivDel,
-        });
+      let leaderOrgIndivDel = createDelegation({
+        to: leaderIndivAddress,
+        from: orgAccountClient.address,
+        caveats: [] }
+      );
 
-        leaderOrgIndivDel = {
-          ...leaderOrgIndivDel,
-          signature,
-        }
+      const signature = await orgAccountClient.signDelegation({
+        delegation: leaderOrgIndivDel,
+      });
 
-        const delegationJsonStr = JSON.stringify(leaderOrgIndivDel)
+      leaderOrgIndivDel = {
+        ...leaderOrgIndivDel,
+        signature,
+      }
 
-        const vc = await VerifiableCredentialsService.createOrgIndivVC("org-indiv", orgDid, leaderIndivDid, delegationJsonStr, att.name, privateIssuerDid);
-        const result = await VerifiableCredentialsService.createCredential(vc, "org-indiv", orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+      const delegationJsonStr = JSON.stringify(leaderOrgIndivDel)
 
-        console.info("result of create credential: ", result)
-        const fullVc = result.vc
-        const proof = result.proof
+      const vc = await VerifiableCredentialsService.createOrgIndivVC("org-indiv", orgDid, leaderIndivDid, delegationJsonStr, att.name, privateIssuerDid);
+      const result = await VerifiableCredentialsService.createCredential(vc, "org-indiv", orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
 
-        if (proof && fullVc && chain && orgIssuerDelegation && orgIndivDelegation && burnerAccountClient) {
+      console.info("result of create credential: ", result)
+      const fullVc = result.vc
+      const proof = result.proof
 
-          console.info("&&&&&&&&&&&&&&&&&&&&&&& AttestationService add indiv attestation")
+      if (proof && fullVc && chain && orgIssuerDelegation && orgIndivDelegation && burnerAccountClient) {
 
-          // now create attestation
-          const hash = keccak256(toUtf8Bytes("hash value"));
-          const attestation: OrgIndivAttestation = {
-            indivDid: leaderIndivDid,
-            name: att.name,
-            delegation: delegationJsonStr,
-            attester: orgDid,
-            class: "organization",
-            category: "leaders",
-            entityId: "org-indiv(org)",
-            hash: hash,
-            vccomm: (fullVc.credentialSubject as any).commitment.toString(),
-            vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-            vciss: privateIssuerDid,
-            proof: proof
-          };
+        console.info("&&&&&&&&&&&&&&&&&&&&&&& AttestationService add indiv attestation")
 
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          await window.ethereum.request({ method: "eth_requestAccounts" });
-          const walletSigner = await provider.getSigner()
-          
-          const uid = await AttestationService.addOrgIndivAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+        // now create attestation
+        const hash = keccak256(toUtf8Bytes("hash value"));
+        const attestation: OrgIndivAttestation = {
+          indivDid: leaderIndivDid,
+          name: att.name,
+          delegation: delegationJsonStr,
+          attester: orgDid,
+          class: "organization",
+          category: "leaders",
+          entityId: "org-indiv(org)",
+          hash: hash,
+          vccomm: (fullVc.credentialSubject as any).commitment.toString(),
+          vcsig: (fullVc.credentialSubject as any).commitmentSignature,
+          vciss: privateIssuerDid,
+          proof: proof
+        };
+
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        const walletSigner = await provider.getSigner()
+        
+        const uid = await AttestationService.addOrgIndivAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+
+
+        // add account to indiv
+        for (const accountId of selectedAccounts) {
+
+          const account = savingsAccounts.find(acc => acc.id === accountId);
+          if (!account) continue;
+
+
+          const parentDelegationHash = getDelegationHashOffchain(JSON.parse(account.attestation?.delegation || ""));
+          let indivDel = createDelegation({
+            to: leaderIndivAddress,
+            from: orgAccountClient.address,
+            parentDelegation: parentDelegationHash,
+            caveats: []
+          });
+
+
+          const indivDelSignature = await orgAccountClient.signDelegation({
+            delegation: indivDel,
+          });
+
+          indivDel = {
+            ...indivDel,
+            signature: indivDelSignature,
+          }
+
+
+          const indivDelegationJsonStr = JSON.stringify(indivDel)
+
+          const entityId = "account-indiv(indiv)"
+          const vc = await VerifiableCredentialsService.createAccountIndivDelVC(
+            entityId, 
+            privateIssuerDid, 
+            account.did || "", 
+            orgDid,
+            account.attestation?.accountName || "", 
+            account.attestation?.coaCode || "",
+            account.attestation?.coaCategory || "",
+            account.attestation?.delegation || "",
+            indivDelegationJsonStr
+          )           
+
+          const result = await VerifiableCredentialsService.createCredential(vc, entityId, account.did, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+          const fullVc = result.vc
+          const proof = result.proof
+
+
+          if (fullVc && indivDid && chain && indivAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient) {
+
+            // now create attestation
+            const hash = keccak256(toUtf8Bytes("hash value"));
+            const attestation: AccountIndivDelAttestation = {
+                accountName: account.attestation?.accountName || "",
+                accountDid: account.did,
+                coaCode: account.attestation?.coaCode || "",
+                coaCategory: account.attestation?.coaCode || "",
+                orgDelegation: account.attestation?.delegation || "",
+                indivDelegation: indivDelegationJsonStr,
+                attester: indivDid,
+                class: "individual",
+                category: "account",
+                entityId: entityId,
+                hash: hash,
+                vccomm: (fullVc.credentialSubject as any).commitment.toString(),
+                vcsig: (fullVc.credentialSubject as any).commitmentSignature,
+                vciss: privateIssuerDid,
+                proof: proof
+            };
+
+            const uid = await AttestationService.addAccountIndivDelAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+
+
+
+
+          }
+
         }
       }
+    
     }
     else {
       console.info(">>>>>>>>>>  YOU DO NOT HAVE PERMISSIONS TO ADD FOLKS >>>>>>>>>>")
@@ -196,7 +272,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
 
   useEffect(() => {
     if (orgDid && chain) {
-      AttestationService.loadAccounts(chain, orgDid, "1110").then((accounts) => {
+      AttestationService.loadOrgAccounts(chain, orgDid, "1110").then((accounts) => {
         setSavingsAccounts(accounts);
       });
 

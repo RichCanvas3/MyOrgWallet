@@ -231,6 +231,41 @@ class VerifiableCredentialsService {
       return vc;
     }
 
+
+    static async createAccountIndivDelVC(
+      entityId: string,
+      issuerDid: string,
+      accountDid: string,
+      orgDid: string,
+      accountName: string,
+      coaCode: string,
+      coaCategory: string,
+      orgDelegation: string,
+      indivDelegation: string,
+    ): Promise<VerifiableCredential> {
+      let vc : VerifiableCredential = {
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
+        type: ["VerifiableCredential", "OrgCredential"],
+        issuer: issuerDid, 
+        issuanceDate: new Date().toISOString(),
+        credentialSubject: {
+          accountDid: accountDid,
+          orgDid: orgDid,
+          accountName: accountName,
+          coaCode: coaCode,
+          coaCategory: coaCategory,
+          orgDelegation: orgDelegation,
+          indivDelegation: indivDelegation,
+          platform: "richcanvas",
+          provider: entityId
+        }
+      }
+    
+      return vc;
+    }
+
+    
+
     static async createOrgAccountVC(
       entityId: string,
       issuerDid: string,

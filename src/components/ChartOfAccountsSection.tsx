@@ -442,10 +442,12 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
               id: accountAtt.coaCategory + '-' + accountAtt.coaCode,
               code: accountAtt.coaCategory + '-' + accountAtt.coaCode,
               name: accountAtt.accountName,
+              did: accountAtt.accountDid,
               type: ACCOUNT_TYPES.Asset,
               balance: 0,
               level: 4,
               parentId: accountAtt.coaCategory,
+              attestation: accountAtt,
               children: [],
             };
             

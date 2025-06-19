@@ -60,6 +60,15 @@ export interface AccountOrgDelAttestation extends Attestation {
   delegation: string,
 }
 
+export interface AccountIndivDelAttestation extends Attestation {
+  accountName: string,
+  accountDid: string,
+  coaCode: string,
+  coaCategory: string,
+  orgDelegation: string,
+  indivDelegation: string,
+}
+
 export interface OrgAccountAttestation extends Attestation {
   accountName: string,
   accountDid: string,

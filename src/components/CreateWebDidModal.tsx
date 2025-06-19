@@ -28,37 +28,9 @@ import {
   Typography, 
   Box, 
   Paper,
-  InputAdornment,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Grid,
-  Tab, 
+
   Tabs as MuiTabs } from "@mui/material";
-import EditableTextBox from "./EditableTextBox";
-import { TripOriginRounded } from '@mui/icons-material';
 
-
-import {
-  Implementation,
-  toMetaMaskSmartAccount,
-  type MetaMaskSmartAccount,
-  type DelegationStruct,
-  createDelegation,
-  DelegationFramework,
-  SINGLE_DEFAULT_MODE,
-  getExplorerTransactionLink,
-  getExplorerAddressLink,
-  createExecution,
-  getDelegationHashOffchain,
-  Delegation
-} from "@metamask/delegation-toolkit";
-
-
-
-import { OrgIndivAttestation } from "../models/Attestation"
-
-import VerifiableCredentialsService from "../service/VerifiableCredentialsService"
 
 
 interface CreateWebDidModalProps {

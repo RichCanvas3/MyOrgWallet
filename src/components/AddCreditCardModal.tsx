@@ -6,6 +6,24 @@ import { keccak256, toUtf8Bytes } from 'ethers';
 import { ethers, AbiCoder } from 'ethers';
 import type { MetaMaskEthereumProvider } from '@metamask/detect-provider';
 
+import { encodeFunctionData, hashMessage, createPublicClient, createWalletClient, WalletClient, toHex, http, zeroAddress, publicActions, custom, verifyMessage, signatureToCompactSignature  } from "viem";
+
+import { createPimlicoClient } from "permissionless/clients/pimlico";
+
+import {
+  createBundlerClient,
+  createPaymasterClient,
+  UserOperationReceipt,
+} from "viem/account-abstraction";
+
+import {
+  DelegationFramework,
+  SINGLE_DEFAULT_MODE,
+} from "@metamask/delegation-toolkit";
+
+import {ISSUER_PRIVATE_KEY, WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, ETHERSCAN_URL, BUNDLER_URL, PAYMASTER_URL, CHAIN_NAME} from "../config";
+
+
 //import { IPFSStorage } from '../service/IPFSStorage'
 
 import {
@@ -278,6 +296,79 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
           const uid = await AttestationService.addAccountOrgDelAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         }
     }
+
+
+    if (chain && indivDid) {
+      console.info("*********** MOVE MONEY TO CREDIT ACCOUNT ****************")
+
+      const accounts = await AttestationService.loadIndivAccounts(chain, indivDid, "1110")
+      if (accounts.length > 0) {
+        const account = accounts[0]
+        console.info("account: ", account)
+        const indivDel = JSON.parse(account.attestation?.indivDelegation || "")
+        const orgDel = JSON.parse(account.attestation?.orgDelegation || "")
+
+        try {
+
+          const pimlicoClient = createPimlicoClient({
+            transport: http(BUNDLER_URL),
+          });
+
+
+          console.info("create bundler client ", BUNDLER_URL, PAYMASTER_URL)
+          const bundlerClient = createBundlerClient({
+                          transport: http(BUNDLER_URL),
+                          paymaster: true,
+                          chain: chain,
+                          paymasterContext: {
+                            mode:             'SPONSORED',
+                          },
+                        });
+
+          const accountAddress = account.did.replace('did:pkh:eip155:' + chain?.id + ':', '') as `0x${string}`
+          const executions = [
+            {
+              target: accountAddress,
+              value: 10n,
+            },
+          ];
+
+
+          const delegationChain = [ indivDel, orgDel ]
+          const data = DelegationFramework.encode.redeemDelegations({
+            delegations: [ delegationChain ],
+            modes: [SINGLE_DEFAULT_MODE],
+            executions: [executions]
+          });
+      
+          
+          const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+          const userOpHash = await bundlerClient.sendUserOperation({
+            account: indivAccountClient,
+            calls: [
+              {
+                to: selectedAccount.address,
+                data,
+              },
+            ],
+            ...fee
+          });
+
+
+
+          console.info("individual account is deployed - done")
+          const { receipt } = await bundlerClient!.waitForUserOperationReceipt({
+            hash: userOpHash,
+          });
+
+        }
+        catch (error) { 
+          console.info("error deploying indivAccountClient: ", error)
+        }
+        
+      }
+    }
+    
 
     setSelectedAccount(null);
     setAccountName('');

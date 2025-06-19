@@ -1,3 +1,5 @@
+import { AccountOrgDelAttestation, AccountIndivDelAttestation } from "./Attestation";
+
 export interface Account {
   id: string;
   code: string;
@@ -7,6 +9,20 @@ export interface Account {
   children?: Account[];
   parentId?: string;
   level: number;
+  did: string;
+  attestation?: AccountOrgDelAttestation;
+}
+export interface IndivAccount {
+  id: string;
+  code: string;
+  name: string;
+  type: AccountType;
+  balance: number;
+  children?: Account[];
+  parentId?: string;
+  level: number;
+  did: string;
+  attestation?: AccountIndivDelAttestation;
 }
 
 export interface AccountCategory {

@@ -196,8 +196,6 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
 
       if (fullVc && chain && indivAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient) {
       
-        const delegationJsonStr = ""
-
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
         const attestation: OrgAccountAttestation = {

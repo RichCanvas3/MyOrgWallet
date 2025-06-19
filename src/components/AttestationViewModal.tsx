@@ -261,8 +261,9 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
     setVcRevokeZkProof(undefined);
 
     if (isVisible) {
+      console.info("&&&&&&&&&&&&&&&& entityId: ", entityId)
       if (did) {
-
+        
           let schemaUid = ""
           if (entityId == "indiv(indiv)") {
             schemaUid = AttestationService.IndivSchemaUID
@@ -272,6 +273,9 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
           }
           if (entityId == "account-org(org)") {
             schemaUid = AttestationService.AccountOrgDelSchemaUID
+          }
+          if (entityId == "account-indiv(indiv)") {
+            schemaUid = AttestationService.AccountIndivDelSchemaUID
           }
           if (entityId == "account(org)") {
             schemaUid = AttestationService.OrgAccountSchemaUID

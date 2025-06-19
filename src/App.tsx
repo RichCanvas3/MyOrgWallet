@@ -149,6 +149,11 @@ const App = () => {
       setSelectedDid(cmd.did)
       setAttestationViewModalVisible(true)
     }
+    if (cmd.action == "edit" && cmd.entityId == "account-indiv(indiv)" && cmd.did) {
+      setSelectedEntityId("account-indiv(indiv)")
+      setSelectedDid(cmd.did)
+      setAttestationViewModalVisible(true)
+    }
     if (cmd.action == "edit" && cmd.entityId == "account(org)" && cmd.did) {
       setSelectedEntityId("account(org)")
       setSelectedDid(cmd.did)

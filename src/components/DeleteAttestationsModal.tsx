@@ -23,16 +23,7 @@ import { RPC_URL, } from "../config";
 import {
   Implementation,
   toMetaMaskSmartAccount,
-  type MetaMaskSmartAccount,
-  type DelegationStruct,
   createDelegation,
-  DelegationFramework,
-  SINGLE_DEFAULT_MODE,
-  getExplorerTransactionLink,
-  getExplorerAddressLink,
-  createExecution,
-  getDelegationHashOffchain,
-  Delegation
 } from "@metamask/delegation-toolkit";
 
 import { OrgIndivAttestation } from "../models/Attestation"
