@@ -709,8 +709,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         console.info("add credit card ...")
         setAddCreditCardModalVisible(true)
       }
-      if (lastUserResponse.toLowerCase().includes("add savings")) {
-        console.info("add savings ...")
+      if (lastUserResponse.toLowerCase().includes("add savings account")) {
+        console.info("add savings account ...")
         setAddSavingsModalVisible(true)
       }
       if (lastUserResponse.toLowerCase().includes("fund credit card")) {

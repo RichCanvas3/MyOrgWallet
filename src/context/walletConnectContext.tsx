@@ -1044,11 +1044,8 @@ export const useWalletConnect = () => {
             try {
               console.info("send user operation with bundlerClient 2: ", bundlerClient)
 
-              console.info("fee: ", fee)
-              const fee2 = {maxFeePerGas: 412596685n, maxPriorityFeePerGas: 412596676n}
-              console.info("fee2: ", fee2)  
 
-              const initCode = bundlerClient.initCode;
+              //const initCode = bundlerClient.initCode;
 
               const userOperationHash = await bundlerClient!.sendUserOperation({
                 account: indivAccountClient,
@@ -1057,7 +1054,7 @@ export const useWalletConnect = () => {
                     to: zeroAddress,
                   },
                 ],
-                ...fee2,
+                ...fee,
               });
 
               console.info("individual account is deployed - done")
@@ -1672,8 +1669,6 @@ export const useWalletConnect = () => {
               signature,
             }
 
-
-            console.info("&&&&&&&&&&&&&& Save indIssuerDelegation: ", indivIssuerDel)
             await DelegationService.saveDelegationToStorage(owner, indivAccountClient.address, burnerAccountClient.address, indivIssuerDel)
           }
 

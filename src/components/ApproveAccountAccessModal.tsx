@@ -52,7 +52,7 @@ const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ i
 
   useEffect(() => {
     if (isVisible && orgDid && chain) {
-      AttestationService.loadOrgAccounts(chain, orgDid, "1150").then(setAccounts);
+      AttestationService.loadOrgAccounts(chain, orgDid, "1110").then(setAccounts);
       AttestationService.getIndivsNotApprovedAttestations(chain, orgDid).then((atts) => {
         if (atts) setIndividuals(atts);
       });

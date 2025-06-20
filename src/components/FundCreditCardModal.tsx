@@ -96,7 +96,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
   const loadSavingsAccounts = async () => {
     try {
       if (orgDid && indivDid && chain) {
-        const accounts = await AttestationService.loadIndivAccounts(chain, orgDid, indivDid, "1150");
+        const accounts = await AttestationService.loadIndivAccounts(chain, orgDid, indivDid, "1110");
         setSavingsAccounts(accounts);
       }
     } catch (error) {
@@ -162,7 +162,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
           console.warn('Individual DID not available');
           continue;
         }
-        const indivAccounts = await AttestationService.loadIndivAccounts(chain!, orgDid, indivDid, "1150");
+        const indivAccounts = await AttestationService.loadIndivAccounts(chain!, orgDid, indivDid, "1110");
         const indivAccount = indivAccounts.find(acc => 
           acc.attestation?.accountName === savingsAccount.name
         );

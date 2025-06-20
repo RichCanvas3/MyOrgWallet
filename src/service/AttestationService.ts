@@ -549,7 +549,6 @@ class AttestationService {
     return undefined
   }
 
-  //static OrgIndivSchemaUID = "0x637acc7b7b5b2868ba2a63c89396ac89b15b514ffe6c0ace6a47bb6d3f069871"
   static OrgIndivSchemaUID = "0x98cdf7e4974fd1fcb341a97759fb86047b467edd20640c1217e8175be0cb588f"
   static OrgIndivSchema = this.BaseSchema + "string indivdid, string name, string delegation"
   static async addOrgIndivAttestation(chain: Chain, attestation: OrgIndivAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {

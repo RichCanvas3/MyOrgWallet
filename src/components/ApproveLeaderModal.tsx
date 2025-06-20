@@ -15,8 +15,7 @@ import AttestationService from '../service/AttestationService';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import { useWalletClient, useAccount } from 'wagmi';
 
-import { IndivAttestation, AccountIndivDelAttestation } from "../models/Attestation"
-import { Account } from "../models/Account";
+import { IndivAttestation } from "../models/Attestation"
 
 import {AttestationCard } from "./AttestationCard"
 
@@ -34,9 +33,6 @@ import {
   Grid,
   Tab, 
   Tabs as MuiTabs,
-  Checkbox,
-  FormControlLabel,
-  FormGroup,
   Stepper,
   Step,
   StepLabel } from "@mui/material";
@@ -45,31 +41,8 @@ import { TripOriginRounded } from '@mui/icons-material';
 
 
 import {
-  Implementation,
-  toMetaMaskSmartAccount,
-  type MetaMaskSmartAccount,
-  type DelegationStruct,
   createDelegation,
-  DelegationFramework,
-  SINGLE_DEFAULT_MODE,
-  getExplorerTransactionLink,
-  getExplorerAddressLink,
-  createExecution,
-  getDelegationHashOffchain,
-  Delegation
 } from "@metamask/delegation-toolkit";
-
-
-
-import {
-  createBundlerClient,
-  createPaymasterClient,
-} from "viem/account-abstraction";
-
-import { createPimlicoClient } from "permissionless/clients/pimlico";
-import { http } from "viem";
-
-import { BUNDLER_URL, PAYMASTER_URL } from "../config";
 
 
 import { OrgIndivAttestation } from "../models/Attestation"
@@ -82,7 +55,7 @@ interface ApproveLeaderModalProps {
   onClose: () => void;
 }
 
-const steps = ['Select Leader', 'Select Accounts', 'Confirm'];
+const steps = ['Select Leader', 'Confirm'];
 
 const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClose}) => {
 
@@ -91,26 +64,13 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
   const { data: walletClient } = useWalletClient();
 
   const [attestations, setAttestations] = useState<IndivAttestation[]>([]);
-  const [savingsAccounts, setSavingsAccounts] = useState<Account[]>([]);
-  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
   const [activeStep, setActiveStep] = useState(0);
   const [selectedAttestation, setSelectedAttestation] = useState<IndivAttestation | null>(null);
 
   const handleClose = () => {
     setActiveStep(0);
     setSelectedAttestation(null);
-    setSelectedAccounts([]);
     onClose();
-  };
-
-  const handleAccountSelect = (accountId: string) => {
-    setSelectedAccounts(prev => {
-      if (prev.includes(accountId)) {
-        return prev.filter(id => id !== accountId);
-      } else {
-        return [...prev, accountId];
-      }
-    });
   };
 
   const handleNext = () => {
@@ -144,8 +104,6 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
       console.info("Selected Person to add: ", att.name)
       console.info("to: ", leaderIndivAddress)
       console.info("from: ", orgAccountClient.address)
-
-
 
       let leaderOrgIndivDel = createDelegation({
         to: leaderIndivAddress,
@@ -197,163 +155,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
         const walletSigner = await provider.getSigner()
         
         const uid = await AttestationService.addOrgIndivAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
-
-        /*
-        // add account to indiv
-        for (const accountId of selectedAccounts) {
-
-          const account = savingsAccounts.find(acc => acc.id === accountId);
-          if (!account) continue;
-
-
-          const parentDelegationHash = getDelegationHashOffchain(JSON.parse(account.attestation?.delegation || ""));
-          let indivDel = createDelegation({
-            to: leaderIndivAddress,
-            from: orgAccountClient.address,
-            parentDelegation: parentDelegationHash,
-            caveats: []
-          });
-
-
-          const indivDelSignature = await orgAccountClient.signDelegation({
-            delegation: indivDel,
-          });
-
-          indivDel = {
-            ...indivDel,
-            signature: indivDelSignature,
-          }
-
-
-          const indivDelegationJsonStr = JSON.stringify(indivDel)
-
-          const entityId = "account-indiv(org)"
-          const vc = await VerifiableCredentialsService.createAccountIndivDelVC(
-            entityId, 
-            privateIssuerDid, 
-            account.did || "", 
-            leaderIndivDid,
-            account.attestation?.accountName || "", 
-            account.attestation?.coaCode || "",
-            account.attestation?.coaCategory || "",
-            account.attestation?.delegation || "",
-            indivDelegationJsonStr
-          )           
-
-          const result = await VerifiableCredentialsService.createCredential(vc, entityId, account.did, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
-          const fullVc = result.vc
-          const proof = result.proof
-
-
-          if (fullVc && indivDid && chain && indivAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient) {
-
-            // now create attestation
-            const hash = keccak256(toUtf8Bytes("hash value"));
-            const attestation: AccountIndivDelAttestation = {
-                indivDid: leaderIndivDid,
-                accountName: account.attestation?.accountName || "",
-                accountDid: account.did,
-                coaCode: account.attestation?.coaCode || "",
-                coaCategory: account.attestation?.coaCategory || "",
-                orgDelegation: account.attestation?.delegation || "",
-                indivDelegation: indivDelegationJsonStr,
-                attester: indivDid,
-                class: "individual",
-                category: "account",
-                entityId: entityId,
-                hash: hash,
-                vccomm: (fullVc.credentialSubject as any).commitment.toString(),
-                vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-                vciss: privateIssuerDid,
-                proof: proof
-            };
-
-            const uid = await AttestationService.addAccountIndivDelAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
-
-
-
-
-          }
-
-
-
-
-
-
-
-
-
-
-
-
-          // see if we can move funds based on delegation
-
-          const orgDel = JSON.parse(account.attestation?.delegation);
-
-
-          console.info("@@@@@@@@@@@@@ orgDel: ", orgDel)  
-
-
-          // Create bundler client
-          const pimlicoClient = createPimlicoClient({
-            transport: http(BUNDLER_URL),
-          });
-
-          const bundlerClient = createBundlerClient({
-            transport: http(BUNDLER_URL),
-            paymaster: true,
-            chain: chain!,
-            paymasterContext: {
-              mode: 'SPONSORED',
-            },
-          });
-
-          // Create execution to transfer funds to credit card
-          const creditCardAddress = "0x9d09782B42A1886639D585Ee03d39A90E011c5EC"
-          const executions = [
-            {
-              target: creditCardAddress,
-              value: 10n,
-              callData: '0x' as `0x${string}`,
-            },
-          ];
-
-          console.info("@@@@@@@@@@@@@ creditCardAddress: ", creditCardAddress) 
-
-
-          const delegationChain = [orgDel];
-          console.info("@@@@@@@@@@@@@ delegationChain: ", delegationChain)
-          const data = DelegationFramework.encode.redeemDelegations({
-            delegations: [delegationChain],
-            modes: [SINGLE_DEFAULT_MODE],
-            executions: [executions]
-          });
-
-          const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
-          
-          console.info("@@@@@@@@@@@@@ orgAccountClient: ", orgAccountClient.address) 
-          if (orgAccountClient) {
-            const userOpHash = await bundlerClient.sendUserOperation({
-              account: orgAccountClient,
-              calls: [
-                {
-                  to: orgAccountClient.address,
-                  data,
-                },
-              ],
-              ...fee
-            });
-
-            const { receipt } = await bundlerClient.waitForUserOperationReceipt({
-              hash: userOpHash,
-            });
-
-
-          }
-        }
-        */
       }
-    
     }
     else {
       console.info(">>>>>>>>>>  YOU DO NOT HAVE PERMISSIONS TO ADD FOLKS >>>>>>>>>>")
@@ -362,10 +164,6 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
 
   useEffect(() => {
     if (orgDid && chain) {
-      AttestationService.loadOrgAccounts(chain, orgDid, "1150").then((accounts) => {
-        setSavingsAccounts(accounts);
-      });
-
       AttestationService.getIndivsNotApprovedAttestations(chain, orgDid).then((atts) => {
         if (atts) {
           setAttestations(atts)
@@ -400,53 +198,11 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
         return (
           <>
             <Typography variant="h6" gutterBottom>
-              Select Savings Accounts for {selectedAttestation?.name}
-            </Typography>
-            <FormGroup>
-              {savingsAccounts.map(account => (
-                <FormControlLabel
-                  key={account.id}
-                  control={
-                    <Checkbox
-                      checked={selectedAccounts.includes(account.id)}
-                      onChange={() => handleAccountSelect(account.id)}
-                    />
-                  }
-                  label={`${account.name} (${account.code})`}
-                />
-              ))}
-            </FormGroup>
-            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
-              <Button onClick={handleBack}>Back</Button>
-              <Button 
-                variant="contained" 
-                onClick={handleNext}
-                disabled={selectedAccounts.length === 0}
-              >
-                Next
-              </Button>
-            </Box>
-          </>
-        );
-      case 2:
-        return (
-          <>
-            <Typography variant="h6" gutterBottom>
               Confirm Approval
             </Typography>
             <Typography variant="body1" paragraph>
-              You are about to approve {selectedAttestation?.name} as a leader for the following accounts:
+              You are about to approve {selectedAttestation?.name} as a leader for the organization.
             </Typography>
-            <Box sx={{ ml: 2, mb: 2 }}>
-              {selectedAccounts.map(accountId => {
-                const account = savingsAccounts.find(acc => acc.id === accountId);
-                return (
-                  <Typography key={accountId} variant="body2">
-                    • {account?.name} ({account?.code})
-                  </Typography>
-                );
-              })}
-            </Box>
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
               <Button onClick={handleBack}>Back</Button>
               <Button 
