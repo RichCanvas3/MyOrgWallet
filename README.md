@@ -150,7 +150,7 @@ Design a solution showcasing these features, such as a decentralized eCommerce p
 * fund credit card
     - send Eth from selected Savings account to selected Credit Card EOA
 
-* fund credit card
+
 ## Requirements
 
 * [NodeJS](https://nodejs.dev/en/)

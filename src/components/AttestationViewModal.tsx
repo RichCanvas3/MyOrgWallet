@@ -315,7 +315,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
           }
           //console.info("go get shopify attestation: ", did)
           if (did && chain) {
-            AttestationService.getAttestationByDidAndSchemaId(chain, did, schemaUid, entityId).then((att) => {
+            AttestationService.getAttestationByDidAndSchemaId(chain, did, schemaUid, entityId).then(async (att) => {
 
               console.info("att: ", att)
               if (att) {
@@ -326,14 +326,17 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                   console.info("chain id: ", chain?.id)
                   console.info("account(indiv) attestation address: ", accountAddress)
 
-                  window.ethereum!.request({
-                    method: 'eth_getBalance',
-                    params: [accountAddress, 'latest']
-                  }).then((balance: string) => {
-                    console.info("balance: ", balance)
-                    accountIndiv.accountBalance = (parseInt(balance, 16) / 1e18).toFixed(4)
-                    setAttestation(accountIndiv)
-                  });
+                  if (chain && accountAddress) {
+                    try {
+                      const provider = new ethers.JsonRpcProvider(chain.rpcUrls.default.http[0]);
+                      const balance = await provider.getBalance(accountAddress);
+                      console.info("balance: ", balance)
+                      accountIndiv.accountBalance = (Number(balance) / 1e18).toFixed(4)
+                      setAttestation(accountIndiv)
+                    } catch (error) {
+                      console.error("Error fetching balance:", error)
+                    }
+                  }
 
                 }
 

@@ -962,7 +962,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   function checkLinkedinAttestation(lastAssistantResponse: string, lastUserResponse: string) {
 
     var intent = null;
-    if (lastAssistantResponse?.includes("linkedin(indiv)")) {
+    if (lastAssistantResponse?.includes("linkedin")) {
       if (lastUserResponse.includes("yes")) {
         intent = "createLinkedinAttestation"
       }
@@ -995,7 +995,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   function checkXAttestation(lastAssistantResponse: string, lastUserResponse: string) {
 
     var intent = null;
-    if (lastAssistantResponse?.includes("x(indiv)")) {
+    if (lastAssistantResponse?.includes("x")) {
       if (lastUserResponse.includes("yes")) {
         intent = "createXAttestation"
       }
@@ -1028,7 +1028,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   function checkShopifyAttestation(lastAssistantResponse: string, lastUserResponse: string) {
 
     var intent = null;
-    if (lastAssistantResponse?.includes("shopify(org)")) {
+    if (lastAssistantResponse?.includes("shopify")) {
       if (lastUserResponse.includes("yes")) {
         intent = "createShopifyAttestation"
       }
@@ -1061,7 +1061,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   function checkInsuranceAttestation(lastAssistantResponse: string, lastUserResponse: string) {
 
     var intent = null;
-    if (lastAssistantResponse?.includes("insurance(org)")) {
+    if (lastAssistantResponse?.includes("insurance")) {
       if (lastUserResponse.includes("yes")) {
         intent = "createInsuranceAttestation"
       }
@@ -1562,7 +1562,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           if (response.isToolFunction && response.messages) {
             return response.messages
           }
-          
+          return [...prevMessages.slice(0, -1), updatedMessage];
         }
         else {
           return [...prevMessages.slice(0, -1), updatedMessage];
