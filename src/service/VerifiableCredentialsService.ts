@@ -192,7 +192,7 @@ class VerifiableCredentialsService {
           id: accountDid,
           indivDid: indivDid,
           accountName: accountName,
-
+          accountDid: accountDid,
           platform: "richcanvas",
           provider: entityId
         }

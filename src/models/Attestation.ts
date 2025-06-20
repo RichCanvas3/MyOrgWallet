@@ -48,8 +48,10 @@ export interface OrgIndivAttestation extends Attestation {
   delegation: string,
 }
 
-export interface AccountAttestation extends Attestation {
+export interface IndivAccountAttestation extends Attestation {
   accountName: string
+  accountDid: string
+  accountBalance: string | undefined
 }
 
 export interface AccountOrgDelAttestation extends Attestation {

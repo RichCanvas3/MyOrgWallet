@@ -1,6 +1,7 @@
 import {useContext, useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 import { ethers } from 'ethers';
+import { Button } from '@mui/material';
 
 import {ChatService} from "../service/ChatService";
 import {OrgService} from "../service/OrgService";
@@ -54,11 +55,12 @@ import { useAccount, useWalletClient } from 'wagmi';
 
 import DeleteAttestationsModal from './DeleteAttestationsModal';
 import ApproveLeaderModal from './ApproveLeaderModal';
+import ApproveAccountAccessModal from './ApproveAccountAccessModal';
 import CreateWebDidModal from './CreateWebDidModal';
 import ImportDriversLicenseModal from './ImportDriversLicenseModal';
 import AddCreditCardModal from './AddCreditCardModal';
 import FundCreditCardModal from './FundCreditCardModal';
-import AddMainSavingsModal from './AddMainSavingsModal';
+import AddSavingsModal from './AddSavingsModal';
 import OrgModal from './OrgModal';  
 
 
@@ -138,23 +140,26 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const [isDeleteAttestationsModalVisible, setDeleteAttestationsModalVisible] = useState(false);
   const [isApproveLeaderModalVisible, setApproveLeaderModalVisible] = useState(false);
+  const [isApproveAccountAccessModalVisible, setApproveAccountAccessModalVisible] = useState(false);
   const [isCreateWebDidModalVisible, setCreateWebDidModalVisible] = useState(false);
   const [isImportDriversLicenseModalVisible, setImportDriversLicenseModalVisible] = useState(false);
   const [isAddCreditCardModalVisible, setAddCreditCardModalVisible] = useState(false);
   const [isFundCreditCardModalVisible, setFundCreditCardModalVisible] = useState(false);
-  const [isAddMainSavingsModalVisible, setAddMainSavingsModalVisible] = useState(false);
+  const [isAddSavingsModalVisible, setAddSavingsModalVisible] = useState(false);
 
   const [isOrgModalVisible, setOrgModalVisible] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
 
   const { isConnected } = useAccount();
 
-
   const handleOnDeleteAttestationsModalClose = () => {
     setDeleteAttestationsModalVisible(false);
   }
   const handleOnApproveLeaderModalClose = () => {
     setApproveLeaderModalVisible(false);
+  }
+  const handleOnApproveAccountAccessModalClose = () => {
+    setApproveAccountAccessModalVisible(false);
   }
   const handleOnCreateWebDidModalClose = () => {
     setCreateWebDidModalVisible(false);
@@ -168,8 +173,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const handleOnFundCreditCardModalClose = () => {
     setFundCreditCardModalVisible(false);
   }
-  const handleOnAddMainSavingsModalClose = () => {
-    setAddMainSavingsModalVisible(false);
+  const handleOnAddSavingsModalClose = () => {
+    setAddSavingsModalVisible(false);
   }
   const handleOnOrgModalClose = () => {
     setOrgModalVisible(false);
@@ -231,7 +236,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           setEntities(ents)
 
           for (const entity of ents) {
-            if (entity.name == "org" && entity.attestation) {
+            if (entity.name == "org(org)" && entity.attestation) {
               setOrgNameValue((entity.attestation as OrgAttestation).name)
             }
           }
@@ -688,6 +693,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         console.info("approve leader ...")
         setApproveLeaderModalVisible(true)
       }
+      if (lastUserResponse.toLowerCase().includes("approve account access")) {
+        console.info("approve account access ...")
+        setApproveAccountAccessModalVisible(true)
+      }
       if (lastUserResponse.toLowerCase().includes("create web did")) {
         console.info("create web did ...")
         setCreateWebDidModalVisible(true)
@@ -700,9 +709,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         console.info("add credit card ...")
         setAddCreditCardModalVisible(true)
       }
-      if (lastUserResponse.toLowerCase().includes("add savings account")) {
-        console.info("add savings account ...")
-        setAddMainSavingsModalVisible(true)
+      if (lastUserResponse.toLowerCase().includes("add savings")) {
+        console.info("add savings ...")
+        setAddSavingsModalVisible(true)
       }
       if (lastUserResponse.toLowerCase().includes("fund credit card")) {
         console.info("fund credit card ...")
@@ -1325,8 +1334,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
               setOrgModalVisible(true)
 
               entities?.forEach((ent) => {
-                if (ent.name == "org") {
-                  ent.attestation = { entityId: "org", hash: "", attester: ""}
+                if (ent.name == "org(org)") {
+                  ent.attestation = { entityId: "org(org)", hash: "", attester: ""}
                 }
               })
               setEntities(entities)
@@ -1670,6 +1679,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           isVisible={isApproveLeaderModalVisible}
           onClose={handleOnApproveLeaderModalClose}
         />
+        <ApproveAccountAccessModal
+          isVisible={isApproveAccountAccessModalVisible}
+          onClose={handleOnApproveAccountAccessModalClose}
+        />
         <CreateWebDidModal
           isVisible={isCreateWebDidModalVisible}
           onClose={handleOnCreateWebDidModalClose}
@@ -1686,9 +1699,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           isVisible={isFundCreditCardModalVisible}
           onClose={handleOnFundCreditCardModalClose}
         />
-        <AddMainSavingsModal
-          isVisible={isAddMainSavingsModalVisible}
-          onClose={handleOnAddMainSavingsModalClose}
+        <AddSavingsModal
+          isVisible={isAddSavingsModalVisible}
+          onClose={handleOnAddSavingsModalClose}
         />
         <OrgModal
           orgName={newOrgName?newOrgName:""}

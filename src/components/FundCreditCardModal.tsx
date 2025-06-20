@@ -34,7 +34,7 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { Transition } from '@headlessui/react';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import AttestationService from '../service/AttestationService';
-import { AccountAttestation, AccountOrgDelAttestation, AccountIndivDelAttestation } from '../models/Attestation';
+import { IndivAccountAttestation, AccountOrgDelAttestation, AccountIndivDelAttestation } from '../models/Attestation';
 import { Account, IndivAccount } from '../models/Account';
 
 import {
@@ -61,9 +61,9 @@ interface FundCreditCardModalProps {
 const steps = ['Select Credit Card', 'Select Funding Sources', 'Enter Amount', 'Confirm Transfer'];
 
 const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, onClose }) => {
-  const [creditCardAccounts, setCreditCardAccounts] = useState<AccountAttestation[]>([]);
+  const [creditCardAccounts, setCreditCardAccounts] = useState<IndivAccountAttestation[]>([]);
   const [savingsAccounts, setSavingsAccounts] = useState<IndivAccount[]>([]);
-  const [selectedCreditCard, setSelectedCreditCard] = useState<AccountAttestation | null>(null);
+  const [selectedCreditCard, setSelectedCreditCard] = useState<IndivAccountAttestation | null>(null);
   const [selectedSavingsAccounts, setSelectedSavingsAccounts] = useState<string[]>([]);
   const [fundingAmount, setFundingAmount] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -85,7 +85,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
     try {
       if (!chain || !indivDid) return;
       const allAttestations = await AttestationService.loadRecentAttestationsTitleOnly(chain, indivDid, "");
-      const creditCards = allAttestations.filter(att => att.entityId === "account(indiv)") as AccountAttestation[];
+      const creditCards = allAttestations.filter(att => att.entityId === "account(indiv)") as IndivAccountAttestation[];
       setCreditCardAccounts(creditCards);
     } catch (error) {
       console.error('Error loading credit card accounts:', error);
@@ -96,7 +96,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
   const loadSavingsAccounts = async () => {
     try {
       if (orgDid && indivDid && chain) {
-        const accounts = await AttestationService.loadIndivAccounts(chain, orgDid, indivDid, "01");
+        const accounts = await AttestationService.loadIndivAccounts(chain, orgDid, indivDid, "1150");
         setSavingsAccounts(accounts);
       }
     } catch (error) {
@@ -105,7 +105,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
     }
   };
 
-  const handleCreditCardSelect = (creditCard: AccountAttestation) => {
+  const handleCreditCardSelect = (creditCard: IndivAccountAttestation) => {
     setSelectedCreditCard(creditCard);
     setActiveStep(1);
   };
@@ -162,8 +162,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
           console.warn('Individual DID not available');
           continue;
         }
-        const indivAccounts = await AttestationService.loadIndivAccounts(chain!, orgDid, indivDid, "01");
-        console.info("@@@@@@@@@@@@@ indivAccounts: ", indivAccounts)
+        const indivAccounts = await AttestationService.loadIndivAccounts(chain!, orgDid, indivDid, "1150");
         const indivAccount = indivAccounts.find(acc => 
           acc.attestation?.accountName === savingsAccount.name
         );
@@ -176,9 +175,6 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         // Parse delegations
         const orgDel = JSON.parse(indivAccount.attestation.orgDelegation);
         const indivDel = JSON.parse(indivAccount.attestation.indivDelegation);
-
-        console.info("@@@@@@@@@@@@@ orgDel: ", orgDel)  
-        console.info("@@@@@@@@@@@@@ indivDel: ", indivDel)  
 
         // Create bundler client
         const pimlicoClient = createPimlicoClient({
@@ -195,7 +191,9 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         });
 
         // Create execution to transfer funds to credit card
-        const creditCardAddress = selectedCreditCard.attester.replace('did:pkh:eip155:' + chain?.id + ':', '') as `0x${string}`;
+        const creditCardAddress = selectedCreditCard.accountDid.replace('did:pkh:eip155:' + chain?.id + ':', '') as `0x${string}`;
+        console.info("@@@@@@@@@@@@@ creditCardAddress: ", creditCardAddress) 
+        
         const executions = [
           {
             target: creditCardAddress,
@@ -203,9 +201,6 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
             callData: '0x' as `0x${string}`, // Empty call data for simple ETH transfer
           },
         ];
-
-        console.info("@@@@@@@@@@@@@ creditCardAddress: ", creditCardAddress) 
-        console.info("@@@@@@@@@@@@@ indiv client address: ", creditCardAddress) 
 
         const delegationChain = [indivDel, orgDel];
         const data = DelegationFramework.encode.redeemDelegations({

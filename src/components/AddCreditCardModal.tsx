@@ -49,7 +49,7 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { Transition } from '@headlessui/react';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import AttestationService from '../service/AttestationService';
-import { AccountAttestation, AccountOrgDelAttestation } from '../models/Attestation';
+import { IndivAccountAttestation, AccountOrgDelAttestation } from '../models/Attestation';
 
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService';
 
@@ -77,7 +77,6 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
   const [accountName, setAccountName] = useState('');
   const [coaCode, setCoaCode] = useState('');
   const [coaCategory, setCoaCategory] = useState('');
-  const [fundingAmount, setFundingAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -158,12 +157,11 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
   const handleBack = () => {
     setSelectedAccount(null);
     setAccountName('');
-    setFundingAmount('');
     setError(null);
   };
 
   const handleSave = async () => {
-    if (!selectedAccount || !accountName || !coaCode || !coaCategory || !fundingAmount) {
+    if (!selectedAccount || !accountName || !coaCode || !coaCategory) {
       setError('Missing required information');
       return;
     }
@@ -179,7 +177,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
       accountBalance: selectedAccount.balance
     }
 
-    const accountDid = "did:pkh:eip155" + chain?.id + ":" + selectedAccount.address
+    const accountDid = "did:pkh:eip155:" + chain?.id + ":" + selectedAccount.address
 
     
 
@@ -218,10 +216,6 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
     const walletClient = signatory.walletClient
     let entityId = "account(indiv)"
 
-    console.info("********** accountDid: ", accountDid  )
-    console.info("********** accountName: ", accountName  )
-    console.info("********** coaCode: ", coaCode  )
-    console.info("********** coaCategory: ", coaCategory)
 
     if (walletSigner && walletClient && privateIssuerAccount && indivDid && mascaApi && privateIssuerDid) {
 
@@ -237,8 +231,10 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
 
           // now create attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
-          const attestation: AccountAttestation = {
+          const attestation: IndivAccountAttestation = {
               accountName: accountName,
+              accountDid: accountDid,
+              accountBalance: "0",
               attester: indivDid,
               class: "individual",
               category: "account",
@@ -250,8 +246,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
               proof: proof
           };
 
-          console.info("********** add account attestation a: ", attestation)
-          const uid = await AttestationService.addAccountAttestation(chain, attestation, walletSigner, [indivIssuerDelegation], indivAccountClient, burnerAccountClient)
+          const uid = await AttestationService.addIndivAccountAttestation(chain, attestation, walletSigner, [indivIssuerDelegation], indivAccountClient, burnerAccountClient)
         }
     }
 
@@ -373,7 +368,6 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
 
     setSelectedAccount(null);
     setAccountName('');
-    setFundingAmount('');
     setError(null);
     onClose();
 
@@ -382,7 +376,6 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
   const handleClose = () => {
     setSelectedAccount(null);
     setAccountName('');
-    setFundingAmount('');
     setError(null);
     onClose();
   };
@@ -467,20 +460,12 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
                     placeholder="Enter the Chart of Accounts category"
                   />
 
-                  <TextField
-                    fullWidth
-                    label="Funding Amount"
-                    variant="outlined"
-                    value={fundingAmount}
-                    onChange={(e) => setFundingAmount(e.target.value)}
-                    placeholder="Enter the funding amount"
-                  />
 
                   <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
                     <Button
                       variant="contained"
                       onClick={handleSave}
-                      disabled={!accountName || !coaCode || !coaCategory || !fundingAmount || isLoading}
+                      disabled={!accountName || !coaCode || !coaCategory || isLoading}
                     >
                       {isLoading ? <CircularProgress size={24} /> : 'Save'}
                     </Button>

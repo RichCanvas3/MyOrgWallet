@@ -92,7 +92,7 @@ interface OrganizationsPageProps {
     useEffect(() => {
       
       if (chain && orgDid) {
-        console.info(".......... load data for orgDid: ", orgDid)
+        console.info("1 --- loadRecentAttestationsTitleOnly: ", orgDid)
         AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, "").then((atts) => {
           setAttestations(atts)
         })

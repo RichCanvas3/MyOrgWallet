@@ -198,7 +198,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
         
         const uid = await AttestationService.addOrgIndivAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
 
-
+        /*
         // add account to indiv
         for (const accountId of selectedAccounts) {
 
@@ -351,6 +351,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
 
           }
         }
+        */
       }
     
     }

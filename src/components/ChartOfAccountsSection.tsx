@@ -26,7 +26,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Account, AccountType, ACCOUNT_TYPES } from '../models/Account';
-import { AccountAttestation, AccountOrgDelAttestation, OrgAccountAttestation } from '../models/Attestation';
+import { IndivAccountAttestation, AccountOrgDelAttestation, OrgAccountAttestation } from '../models/Attestation';
 import { useAccount } from 'wagmi';
 
 interface ChartOfAccountsSectionProps {

@@ -8,7 +8,7 @@ import { Attestation,
   IndivAttestation, 
   OrgIndivAttestation, 
   OrgAttestation, 
-  AccountAttestation, 
+  IndivAccountAttestation, 
   OrgAccountAttestation,
   AccountOrgDelAttestation,
   AccountIndivDelAttestation,
@@ -208,8 +208,7 @@ class AttestationService {
 
           // construct correct attestation
           if (entity != undefined) {
-            //console.info("...... found entity: ", entity.name)
-            if (entity.name == "org") {
+            if (entity.name == "org(org)") {
               let att = this.constructOrgAttestation(chain, item.id, item.schemaId, entityId, orgAddress, hash, decodedData)
               if (att != undefined) {
                 entity.attestation = att
@@ -774,9 +773,9 @@ class AttestationService {
   }
 
 
-  static AccountSchemaUID = "0x5aa61e20300f19a90ea56542164519244abfe13c8529c233ef57e8d0e87f1799"
-  static AccountSchema = this.BaseSchema + "string accountname"
-  static async addAccountAttestation(chain: Chain, attestation: AccountAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], indivAccountClient: MetaMaskSmartAccount, indivDelegateClient: MetaMaskSmartAccount): Promise<string> {
+  static IndivAccountSchemaUID = "0x2d8a94eeb791da4863b7d703c51ac7c3cd7979ba7c9c7f56460a9e04d70af899"
+  static IndivAccountSchema = this.BaseSchema + "string accountname, string accountdid"
+  static async addIndivAccountAttestation(chain: Chain, attestation: IndivAccountAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], indivAccountClient: MetaMaskSmartAccount, indivDelegateClient: MetaMaskSmartAccount): Promise<string> {
 
     console.info("....... add account attestation attestation: ", attestation)
     console.info("...... delegation chain: ", delegationChain)
@@ -791,7 +790,7 @@ class AttestationService {
 
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.accountName) {
 
-      const schemaEncoder = new SchemaEncoder(this.AccountSchema);
+      const schemaEncoder = new SchemaEncoder(this.IndivAccountSchema);
       const schemaItems : SchemaItem[] = [
           { name: 'entityid', value: attestation.entityId, type: 'string' },
           { name: 'hash', value: attestation.hash, type: 'bytes32' },
@@ -805,11 +804,12 @@ class AttestationService {
           { name: 'proof', value: attestation.proof, type: 'string' },
 
           { name: 'accountname', value: attestation.accountName, type: 'string' },
+          { name: 'accountdid', value: attestation.accountDid, type: 'string' },
 
         ];
 
         const encodedData = schemaEncoder.encodeData(schemaItems);
-        await AttestationService.storeAttestation(chain, this.AccountSchemaUID, encodedData, indivAccountClient, indivDelegateClient, delegationChain)
+        await AttestationService.storeAttestation(chain, this.IndivAccountSchemaUID, encodedData, indivAccountClient, indivDelegateClient, delegationChain)
 
         let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
         attestationsEmitter.emit('attestationChangeEvent', event);
@@ -821,14 +821,14 @@ class AttestationService {
     return attestation.entityId
 
   }
-  static constructAccountAttestation(chain: Chain, uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
-
+  static constructIndivAccountAttestation(chain: Chain, uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
+    console.info("################ constructIndivAccountAttestation ......")
     let vccomm : string | undefined
     let vcsig : string | undefined
     let vciss : string | undefined
     let proof : string | undefined
     let accountname : string | undefined
-
+    let accountDid : string | undefined
 
     for (const field of decodedData) {
       let fieldName = field["name"]
@@ -852,13 +852,16 @@ class AttestationService {
       if (fieldName == "accountname") {
         accountname = fieldValue
       }
+      if (fieldName == "accountdid") {
+        accountDid = fieldValue
+      }
 
     }
 
 
     const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
-      if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && accountname != undefined) {
-        const att : AccountAttestation = {
+      if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && accountname != undefined && accountDid != undefined) {
+        const att : IndivAccountAttestation = {
           displayName: accountname,
           class: "individual",
           category: "account",
@@ -871,7 +874,8 @@ class AttestationService {
           vcsig: vcsig,
           vciss: vciss,
           proof: proof,
-          accountName: accountname
+          accountName: accountname,
+          accountDid: accountDid
         }
   
         return att
@@ -979,15 +983,13 @@ class AttestationService {
       }
     }
 
-
-    console.info(">>>>>>>>>>>>>> construct org account del attestation")
     const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
       if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && accountname != undefined && accountDid != undefined && delegation != undefined && coaCode != undefined && coaCategory != undefined) {
         //console.info("set to org account attestation with name: ", name)
         const att : AccountOrgDelAttestation = {
           displayName: accountname,
           class: "organization",
-          category: "account",
+          category: "delegations",
           entityId: entityId,
           attester: attesterDid,
           schemaId: schemaId,
@@ -1121,15 +1123,13 @@ class AttestationService {
       }
     }
 
-
-    console.info(">>>>>>>>>>>>>> construct org account del attestation")
     const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
       if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && indivDid && accountname != undefined && accountDid != undefined && orgDelegation != undefined && indivDelegation != undefined && coaCode != undefined && coaCategory != undefined) {
         //console.info("set to org account attestation with name: ", name)
         const att : AccountIndivDelAttestation = {
           displayName: accountname,
           class: "organization",
-          category: "account",
+          category: "account access",
           entityId: entityId,
           attester: attesterDid,
           schemaId: schemaId,
@@ -2197,7 +2197,7 @@ class AttestationService {
 
     for (const att of atts) {
       if (att.schemaId && att.uid) {
-        console.info("get tx")
+        
         const tx = await eas.revoke({ schema: att.schemaId, data: { uid: att.uid }})
 
         let execution = [
@@ -2220,12 +2220,13 @@ class AttestationService {
           data,
         }
 
+        console.info("delete attestation: ", att.schemaId, att.uid)
         calls.push(call)
       }
     }
 
 
-    console.info("sendUserOperation ........")
+    console.info("################# sendUserOperation ........")
     userOpHash = await bundlerClient.sendUserOperation({
       account: delegateClient,
       calls: calls,
@@ -2234,9 +2235,9 @@ class AttestationService {
 
 
     const userOperationReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
-    console.info("delete result: ", userOperationReceipt)
+    console.info("################# delete result: ", userOperationReceipt)
 
-    console.info("delete successful")
+    console.info("################# delete successful")
 
 
     let event: AttestationChangeEvent = {action: 'delete-all', entityId: ""};
@@ -2266,6 +2267,11 @@ class AttestationService {
         class: "organization",
         name: "account",
         id: "20"
+      },
+      {
+        class: "organization",
+        name: "account access",
+        id: "21"
       },
       {
         class: "organization",
@@ -2321,6 +2327,11 @@ class AttestationService {
 
     const orgAddress = orgDid.replace("did:pkh:eip155:" + chain?.id + ":", "")
     const indivAddress = indivDid.replace("did:pkh:eip155:"  + chain?.id + ":", "")
+    
+
+    console.info("############## orgAddress: ", orgAddress)
+    console.info("############## indivAddress: ", indivAddress)
+
 
     try {
 
@@ -2387,8 +2398,6 @@ class AttestationService {
               console.info("error schemaId: ", item.schemaId)
             }
 
-            //console.info("attestation: ", entityId)
-
             // construct correct attestation
             let att : Attestation | undefined
 
@@ -2396,7 +2405,8 @@ class AttestationService {
               att = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "account(indiv)") {
-              att = this.constructAccountAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              console.info("############# constructIndivAccountAttestation ......")
+              att = this.constructIndivAccountAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "account-org(org)") {
               att = this.constructAccountOrgDelAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
@@ -2760,12 +2770,12 @@ class AttestationService {
             rtnAttestation = this.constructOrgAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
           }
         }
-        if (schemaId == this.AccountSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.AccountSchema);
+        if (schemaId == this.IndivAccountSchemaUID) {
+          const schemaEncoder = new SchemaEncoder(this.IndivAccountSchema);
           const decodedData = schemaEncoder.decodeData(item.data);
           if (this.checkEntity(entityId, decodedData)) {
             console.info("construct account attestation")
-            rtnAttestation = this.constructAccountAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+            rtnAttestation = this.constructIndivAccountAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
           }
         }
         if (schemaId == this.AccountOrgDelSchemaUID) {
@@ -3005,8 +3015,8 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
     },
     {
       name: "account(indiv)",
-      schemaId: this.AccountSchemaUID,
-      schema: this.AccountSchema,
+      schemaId: this.IndivAccountSchemaUID,
+      schema: this.IndivAccountSchema,
       priority: 10
     },
     {

@@ -8,16 +8,10 @@ import {
 import './UserSettingsModal.css';
 import {useTranslation} from 'react-i18next';
 import {Transition} from '@headlessui/react';
-import { createPublicClient, http, createWalletClient, parseEther } from 'viem';
-import { sepolia } from 'viem/chains';
-import { createEnsPublicClient } from '@ensdomains/ensjs';
-import { createPublicClient as createViemPublicClient } from 'viem';
-import { sepolia as sepoliaChain } from 'viem/chains';
-
 
 import { VerifiableCredential } from '../models/VerifiableCredential'
 import { VcZkProof, VcRevokeZkProof } from '../models/ZkProof'
-import {Attestation, WebsiteAttestation} from '../models/Attestation';
+import {Attestation, IndivAccountAttestation} from '../models/Attestation';
 import AttestationService from '../service/AttestationService';
 import { RPC_URL, ALCHEMY_RPC_URL, ETHERSCAN_API_KEY, ETHERSCAN_URL, EAS_URL } from "../config";
 
@@ -62,7 +56,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
   const [ orgEthAvatar, setOrgEthAvatar] = useState<string>("");
 
   const [activeTab, setActiveTab] = useState<'info' | 'vc' | 'vc-raw' | 'zk' | 'rzk' | 'at' >('vc');
-  const { chain, veramoAgent, mascaApi, signatory } = useWallectConnectContext();
+  const { chain, veramoAgent, mascaApi, signatory, indivIssuerDelegation, orgIssuerDelegation, orgIndivDelegation, burnerAccountClient } = useWallectConnectContext();
 
   const handleClose = () => {
     console.info("close attestation modal")
@@ -268,7 +262,6 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
     setVcRevokeZkProof(undefined);
 
     if (isVisible) {
-      console.info("&&&&&&&&&&&&&&&& entityId: ", entityId)
       if (did) {
         
           let schemaUid = ""
@@ -276,7 +269,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
             schemaUid = AttestationService.IndivSchemaUID
           }
           if (entityId == "account(indiv)") {
-            schemaUid = AttestationService.AccountSchemaUID
+            schemaUid = AttestationService.IndivAccountSchemaUID
           }
           if (entityId == "account-org(org)") {
             schemaUid = AttestationService.AccountOrgDelSchemaUID
@@ -326,6 +319,23 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
 
               console.info("att: ", att)
               if (att) {
+
+                if (att.entityId == "account(indiv)") {
+                  const accountIndiv = att as IndivAccountAttestation
+                  const accountAddress = accountIndiv.accountDid?.replace("did:pkh:eip155:" + chain?.id + ":", "") as `0x${string}`
+                  console.info("chain id: ", chain?.id)
+                  console.info("account(indiv) attestation address: ", accountAddress)
+
+                  window.ethereum!.request({
+                    method: 'eth_getBalance',
+                    params: [accountAddress, 'latest']
+                  }).then((balance: string) => {
+                    console.info("balance: ", balance)
+                    accountIndiv.accountBalance = (parseInt(balance, 16) / 1e18).toFixed(4)
+                    setAttestation(accountIndiv)
+                  });
+
+                }
 
                 setAttestation(att)
 
@@ -479,19 +489,27 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
   }
 
   const handleDeleteAttestation = async () => {
-    if (!attestation || !chain) return;
+    if (!attestation || !chain || !orgIssuerDelegation || !orgIndivDelegation || !burnerAccountClient) return;
     
     setIsDeleting(true);
     try {
+      
       const provider = new ethers.BrowserProvider(window.ethereum);
       await window.ethereum.request({ method: "eth_requestAccounts" });
-      const walletSigner = await provider.getSigner();
+      const walletSigner = await provider.getSigner()
+
+      if (attestation.class == "organization") {
+        const attestations = [attestation]
+        const rslt = await AttestationService.deleteAttestations(chain, attestations, walletSigner, [orgIssuerDelegation, orgIndivDelegation], burnerAccountClient)
+        console.info("delete organization attestations is done ")
+      }
+      if (attestation.class == "individual") {
+        const attestations = [attestation]
+        const rslt = await AttestationService.deleteAttestations(chain, attestations, walletSigner, [indivIssuerDelegation], burnerAccountClient)
+        console.info("delete individual attestations is done ")
+      }
       
-      await AttestationService.revokeAttestation(
-        chain, 
-        attestation.uid, 
-        walletSigner
-      );
+
       
       // Close modal after successful deletion
       handleClose();
@@ -600,7 +618,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                 <h2 className="panel-title">Info</h2>
                 {hasInfo === true && (
                   <div>
-                    {attestation?.entityId === "org" ? (
+                    {attestation?.entityId === "org(org)" ? (
                       <div className="org-info">
                         <div>
                           <img
@@ -624,6 +642,23 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                         <div className="org-details">
                           <span className="org-did">{did}</span>
                         </div>
+                      </div>
+                    ) : attestation?.entityId === "account(indiv)" ? (
+                      <div className="account-indiv-info">
+  
+                        <div className="panel-details">
+                            <p className="panel-text">
+                              <strong>Account Name:</strong> {(attestation as any).accountName || 'N/A'}
+                            </p>
+                            <p className="panel-text">
+                              <strong>Account DID:</strong> {(attestation as any).accountDid || 'N/A'}
+                            </p>
+                            <p className="panel-text">
+                              <strong>Account Balance:</strong> {(attestation as any).accountBalance || 'N/A'}
+                            </p>
+
+                        </div>
+
                       </div>
                     ) : (
                       <div>

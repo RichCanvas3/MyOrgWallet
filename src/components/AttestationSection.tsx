@@ -95,6 +95,7 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
   useEffect(() => {
     if (orgDid && indivDid && chain && tabValue) {
       AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, indivDid).then((atts) => {
+        console.info("********** atts: ", atts)
         setAttestations(atts)
       })
 

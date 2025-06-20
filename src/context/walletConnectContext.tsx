@@ -896,7 +896,7 @@ export const useWalletConnect = () => {
           implementation: Implementation.Hybrid,
           deployParams: [owner, [], [], []],
           signatory: signatory,
-          deploySalt: toHex(startSeed),
+          deploySalt: toHex(startSeed+i),
         });
 
         const address = await accountClient.getAddress()
@@ -921,7 +921,7 @@ export const useWalletConnect = () => {
           implementation: Implementation.Hybrid,
           deployParams: [owner, [], [], []],
           signatory: signatory,
-          deploySalt: toHex(startSeed),
+          deploySalt: toHex(startSeed+i),
         });
 
         const indivAddress = await indivAccountClient.getAddress()
@@ -1305,7 +1305,6 @@ export const useWalletConnect = () => {
           chain: chain,
           transport: http(RPC_URL),
         });
-        const walletClient = signatory.walletClient
 
 
         // connect to issuer account abstraction

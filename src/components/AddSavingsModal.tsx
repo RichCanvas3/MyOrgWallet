@@ -6,37 +6,23 @@ import { keccak256, toUtf8Bytes } from 'ethers';
 import { ethers, AbiCoder } from 'ethers';
 import { encodeFunctionData, hashMessage, createPublicClient, createWalletClient, WalletClient, toHex, http, zeroAddress, publicActions, custom, verifyMessage, signatureToCompactSignature  } from "viem";
 
-
-
-//import { IPFSStorage } from '../service/IPFSStorage'
-
 import {
   XMarkIcon,
-  ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
 import {
   Box,
   Typography,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  ListItemIcon,
   Paper,
   TextField,
-  InputAdornment,
   Button,
   CircularProgress,
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import { Transition } from '@headlessui/react';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import AttestationService from '../service/AttestationService';
 import { AccountOrgDelAttestation, OrgAccountAttestation } from '../models/Attestation';
 
 import { RPC_URL, } from "../config";
-
 
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService';
 
@@ -56,7 +42,6 @@ import {
   Delegation
 } from "@metamask/delegation-toolkit";
 
-
 import {
   createBundlerClient,
   createPaymasterClient,
@@ -64,25 +49,14 @@ import {
 
 import { createPimlicoClient } from "permissionless/clients/pimlico";
 
-
 import { BUNDLER_URL, PAYMASTER_URL } from "../config";
 
-
-interface AddMainSavingsModalProps {
+interface AddSavingsModalProps {
   isVisible: boolean;
   onClose: () => void;
 }
 
-interface MetaMaskAccount {
-  address: string;
-  balance: string;
-  name: string;
-}
-
-const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, onClose }) => {
-  const [accounts, setAccounts] = useState<MetaMaskAccount[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedAccount, setSelectedAccount] = useState<MetaMaskAccount | null>(null);
+const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose }) => {
   const [accountName, setAccountName] = useState('');
   const [coaCode, setCoaCode] = useState('');
   const [coaCategory, setCoaCategory] = useState('');
@@ -93,9 +67,7 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
 
   const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, signatory, indivDid, indivName, indivAccountClient } = useWallectConnectContext();
 
-  const { isConnected } = useAccount();
-
-
+  const { isConnected, address } = useAccount();
 
   const findValidOrgAccount = async(owner: any, signatory: any, publicClient: any) : Promise<ToMetaMaskSmartAccountReturnType<Implementation.Hybrid> | undefined> => {
     const startSeed = 50000
@@ -109,77 +81,28 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
         implementation: Implementation.Hybrid,
         deployParams: [owner, [], [], []],
         signatory: signatory,
-        deploySalt: toHex(startSeed),
+        deploySalt: toHex(startSeed+i),
       });
-
-      const address = await accountClient.getAddress()
       return accountClient
+
+      // check if account already exists
+      const isDeployed = await accountClient.isDeployed()
+      if (isDeployed == false) {
+        return accountClient
+      }
+
     }
     return undefined
   }
 
-
-
-  useEffect(() => {
-    const getAccounts = async () => {
-      if (isVisible && window.ethereum) {
-        try {
-          // Request account access
-          const addresses = await window.ethereum.request({ 
-            method: 'eth_requestAccounts' 
-          }) as string[];
-
-          // Get balance for each account
-          const accountsWithDetails = await Promise.all(
-            addresses.map(async (address, index) => {
-              const balance = await window.ethereum!.request({
-                method: 'eth_getBalance',
-                params: [address, 'latest']
-              }) as string;
-              
-              return {
-                address,
-                name: `Account ${index + 1}`,
-                balance: (parseInt(balance, 16) / 1e18).toFixed(4)
-              };
-            })
-          );
-
-          setAccounts(accountsWithDetails);
-        } catch (error) {
-          console.error('Error fetching accounts:', error);
-          setError('Failed to fetch accounts from MetaMask');
-        }
-      }
-    };
-
-    getAccounts();
-  }, [isVisible]);
-
-  const handleAccountSelect = (account: MetaMaskAccount) => {
-    setSelectedAccount(account);
-    setAccountName(account.name); // Set initial name to MetaMask account name
-  };
-
-  const handleBack = () => {
-    setSelectedAccount(null);
-    setAccountName('');
-    setError(null);
-  };
-
   const handleSave = async () => {
-    if (!selectedAccount || !accountName || !coaCode || !coaCategory) {
+    if (!address || !accountName || !coaCode || !coaCategory) {
       setError('Missing required information');
       return;
     }
 
     setIsLoading(true);
     setError(null);
-
-
-
-    const eoaAccountDid = "did:pkh:eip155:" + chain?.id + ":" + selectedAccount.address.toLowerCase()
-
 
     console.info("*********** ADD ORG ACCOUNT ATTESTATION ****************")
     const provider = new ethers.BrowserProvider(window.ethereum);
@@ -194,20 +117,16 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
       transport: http(RPC_URL),
     });
 
-    const accountClient = await findValidOrgAccount(selectedAccount.address, signatory, publicClient)
+    const accountClient = await findValidOrgAccount(address, signatory, publicClient)
     let isDeployed = await accountClient?.isDeployed()
     console.info("is indivAccountClient deployed: ", isDeployed)
- 
+
     if (isDeployed == false) {
       // deploy account AA
 
       const pimlicoClient = createPimlicoClient({
         transport: http(BUNDLER_URL),
       });
-
-      //const paymasterClient = createPaymasterClient({
-      //  transport: http(PAYMASTER_URL),
-      //});
 
       console.info("create bundler client ", BUNDLER_URL, PAYMASTER_URL)
       const bundlerClient = createBundlerClient({
@@ -222,14 +141,12 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
       console.info("get gas price") 
       const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
 
-
       try {
         console.info("send user operation with bundlerClient 2: ", bundlerClient)
 
         console.info("fee: ", fee)
         const fee2 = {maxFeePerGas: 412596685n, maxPriorityFeePerGas: 412596676n}
         console.info("fee2: ", fee2)  
-
 
         const userOperationHash = await bundlerClient!.sendUserOperation({
           account: accountClient,
@@ -251,9 +168,6 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
       }
     }
 
-
-
-
     const accountDid = "did:pkh:eip155:" + chain?.id + ":" + accountClient?.address.toLowerCase()
 
     if (walletSigner && walletClient && privateIssuerAccount && orgDid && mascaApi && privateIssuerDid) {
@@ -262,8 +176,6 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
-
-      
 
       if (fullVc && chain && indivAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient) {
       
@@ -289,10 +201,12 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
       }
     }
 
-    console.info("*********** ADD ORG ACCOUNT DELEGATION ATTESTATION ****************")
-    entityId = "account-org(org)"
+
 
     if (walletSigner && walletClient && accountClient &&  orgAccountClient && privateIssuerAccount && orgDid && mascaApi && privateIssuerDid) {
+
+      console.info("*********** ADD ORG ACCOUNT DELEGATION ATTESTATION ****************")
+      entityId = "account-org(org)"
 
       // setup delegation between them
       let accountOrgDel = createDelegation({
@@ -312,92 +226,10 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
 
       const delegationJsonStr = JSON.stringify(accountOrgDel)
 
-
-
-      //  test out delegation
-
-      // Create bundler client
-      const pimlicoClient = createPimlicoClient({
-        transport: http(BUNDLER_URL),
-      });
-
-      const bundlerClient = createBundlerClient({
-        transport: http(BUNDLER_URL),
-        paymaster: true,
-        chain: chain!,
-        paymasterContext: {
-          mode: 'SPONSORED',
-        },
-      });
-
-      // Create execution to transfer funds to credit card
-      const creditCardAddress = "0x9d09782B42A1886639D585Ee03d39A90E011c5EC"
-      const executions = [
-        {
-          target: creditCardAddress,
-          value: 10n,
-          callData: '0x' as `0x${string}`,
-        },
-      ];
-
-      console.info("@@@@@@@@@@@@@ creditCardAddress: ", creditCardAddress) 
-
-
-      const delegationChain = [accountOrgDel];
-      console.info("@@@@@@@@@@@@@ delegationChain: ", delegationChain)
-      const data = DelegationFramework.encode.redeemDelegations({
-        delegations: [delegationChain],
-        modes: [SINGLE_DEFAULT_MODE],
-        executions: [executions]
-      });
-
-      const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
-      
-      console.info("@@@@@@@@@@@@@ orgAccountClient: ", orgAccountClient.address) 
-      if (orgAccountClient) {
-        const userOpHash = await bundlerClient.sendUserOperation({
-          account: orgAccountClient,
-          calls: [
-            {
-              to: orgAccountClient.address,
-              data,
-            },
-          ],
-          ...fee
-        });
-
-        const { receipt } = await bundlerClient.waitForUserOperationReceipt({
-          hash: userOpHash,
-        });
-
-
-      }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
       const vc = await VerifiableCredentialsService.createAccountOrgDelVC(entityId, privateIssuerDid, accountDid, orgDid, accountName, coaCode, coaCategory, delegationJsonStr);
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
-
 
       if (fullVc && chain && indivAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient) {
 
@@ -425,17 +257,17 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
       }
     }
 
-
-    setSelectedAccount(null);
     setAccountName('');
+    setCoaCode('');
+    setCoaCategory('');
     setError(null);
     onClose();
-
   }
 
   const handleClose = () => {
-    setSelectedAccount(null);
     setAccountName('');
+    setCoaCode('');
+    setCoaCategory('');
     setError(null);
     onClose();
   };
@@ -456,21 +288,10 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
             className="flex flex-col bg-white rounded-lg w-full max-w-md mx-auto overflow-hidden"
             style={{ maxHeight: "80vh", minWidth: "43em" }}
           >
-            {}
             <div className="flex justify-between items-center border-b border-gray-200 p-4">
-              <div className="flex items-center gap-2">
-                {selectedAccount && (
-                  <button
-                    onClick={handleBack}
-                    className="text-gray-700 hover:text-gray-900"
-                  >
-                    <ArrowLeftIcon className="h-5 w-5" />
-                  </button>
-                )}
-                <h1 className="text-lg font-semibold">
-                  {selectedAccount ? 'Savings Account' : 'Add Savings Account'}
-                </h1>
-              </div>
+              <h1 className="text-lg font-semibold">
+                Add Savings Account
+              </h1>
               <button
                 onClick={handleClose}
                 className="text-gray-700 hover:text-gray-900"
@@ -479,27 +300,24 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
               </button>
             </div>
 
-            {}
             <div className="flex flex-col p-4" style={{ height: "calc(80vh - 70px)" }}>
               {!isConnected ? (
                 <Box display="flex" flexDirection="column" alignItems="center" gap={2} p={4}>
                   <Typography variant="h6">Connect your MetaMask wallet</Typography>
-
                 </Box>
-              ) : selectedAccount ? (
-                // Account naming step
+              ) : (
                 <Box display="flex" flexDirection="column" gap={3} p={2}>
                   <Typography variant="subtitle1" color="text.secondary">
-                    Selected Account: {selectedAccount.address.slice(0, 6)}...{selectedAccount.address.slice(-4)}
+                    Connected Account: {address?.slice(0, 6)}...{address?.slice(-4)}
                   </Typography>
                   
                   <TextField
                     fullWidth
-                    label="Credit Card Account Name"
+                    label="Savings Account Name"
                     variant="outlined"
                     value={accountName}
                     onChange={(e) => setAccountName(e.target.value)}
-                    placeholder="Enter a name for this credit card account"
+                    placeholder="Enter a name for this savings account"
                     error={!!error}
                     helperText={error}
                   />
@@ -532,93 +350,6 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
                     </Button>
                   </Box>
                 </Box>
-              ) : (
-                // Account selection step
-                <Box display="flex" flexDirection="column" height="100%">
-                  <TextField
-                    fullWidth
-                    variant="outlined"
-                    placeholder="Search accounts..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    sx={{ mb: 2 }}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  
-                  <Paper 
-                    variant="outlined" 
-                    sx={{ 
-                      flex: 1,
-                      overflow: 'hidden',
-                      display: 'flex',
-                      flexDirection: 'column'
-                    }}
-                  >
-                    <List sx={{ 
-                      flex: 1,
-                      overflow: 'auto',
-                      '&::-webkit-scrollbar': {
-                        width: '8px',
-                      },
-                      '&::-webkit-scrollbar-track': {
-                        background: '#f1f1f1',
-                        borderRadius: '4px',
-                      },
-                      '&::-webkit-scrollbar-thumb': {
-                        background: '#888',
-                        borderRadius: '4px',
-                        '&:hover': {
-                          background: '#666',
-                        },
-                      },
-                    }}>
-                      {accounts
-                        .filter(account =>
-                          account.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          account.name.toLowerCase().includes(searchTerm.toLowerCase())
-                        )
-                        .map((account) => (
-                          <ListItem key={account.address} disablePadding>
-                            <ListItemButton onClick={() => handleAccountSelect(account)}>
-                              <ListItemIcon>
-                                <AccountBalanceWalletIcon />
-                              </ListItemIcon>
-                              <ListItemText
-                                primary={account.name}
-                                secondary={
-                                  <React.Fragment>
-                                    <Typography component="span" variant="body2" color="text.secondary">
-                                      {`${account.address.slice(0, 6)}...${account.address.slice(-4)}`}
-                                    </Typography>
-                                    <br />
-                                    <Typography component="span" variant="body2" color="text.secondary">
-                                      Balance: {account.balance} ETH
-                                    </Typography>
-                                  </React.Fragment>
-                                }
-                              />
-                            </ListItemButton>
-                          </ListItem>
-                        ))}
-                    </List>
-                  </Paper>
-                  
-                  {accounts.length === 0 && (
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ textAlign: 'center', mt: 2 }}
-                    >
-                      No accounts found
-                    </Typography>
-                  )}
-                </Box>
               )}
             </div>
           </div>
@@ -628,5 +359,5 @@ const AddMainSavingsModal: React.FC<AddMainSavingsModalProps> = ({ isVisible, on
   );
 };
 
-export default AddMainSavingsModal;
+export default AddSavingsModal;
  
