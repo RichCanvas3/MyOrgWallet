@@ -1451,8 +1451,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           }
         }
 
-        if ("website(org)" in command) {
-          let website = command["website(org)"]
+        if ("website" in command) {
+          let website = command["website"]
           if (website) {
             if (isFirstCall) {
               addOrgWebsiteAttestation(website).then(() => {
