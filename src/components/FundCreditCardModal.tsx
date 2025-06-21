@@ -101,7 +101,7 @@ createConfig({
     providers: [
       EVM({
         getWalletClient: () => getWalletClient(wagmiConfig),
-        switchChain: async (chainId) => {
+        switchChain: async (chainId: ChainId) => {
             console.info("*********** SWITCH CHAIN ****************")
           const chain = await switchChain(wagmiConfig, { chainId })
           return getWalletClient(wagmiConfig, { chainId: chain.id })
@@ -118,11 +118,7 @@ interface FundCreditCardModalProps {
 
 const steps = ['Select Credit Card', 'Select Funding Sources', 'Enter Amount & Token', 'Confirm Transfer'];
 
-// Token options for transfer
-const TOKEN_OPTIONS = [
-  { symbol: 'ETH', name: 'Ethereum', address: '0x0000000000000000000000000000000000000000' },
-  { symbol: 'USDC', name: 'USD Coin', address: '0x176211869cA2b568f2A7D4EE941E073a821EE1ff' },
-];
+// Token options will be determined dynamically from LiFi
 
 const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, onClose }) => {
   const [creditCardAccounts, setCreditCardAccounts] = useState<IndivAccountAttestation[]>([]);
@@ -137,7 +133,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
   const [activeStep, setActiveStep] = useState(0);
   
   // Balance states
-  const [creditCardBalances, setCreditCardBalances] = useState<{ [key: string]: string }>({});
+  const [creditCardBalances, setCreditCardBalances] = useState<{ [accountDid: string]: { ETH: string; USDC: string } }>({});
   const [savingsAccountBalances, setSavingsAccountBalances] = useState<{ [key: string]: { eth: string; usdc: string } }>({});
   const [isLoadingBalances, setIsLoadingBalances] = useState(false);
   
@@ -145,16 +141,58 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
   const [availableRoutes, setAvailableRoutes] = useState<Route[]>([]);
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
   const [isLoadingRoutes, setIsLoadingRoutes] = useState(false);
+  
+  // Available tokens state
+  const [availableTokens, setAvailableTokens] = useState<{ symbol: string; name: string; address: string }[]>([]);
+  const [isLoadingTokens, setIsLoadingTokens] = useState(false);
 
   const { chain, indivDid, orgDid, indivAccountClient, orgAccountClient, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation } = useWallectConnectContext();
   const { isConnected } = useAccount();
+
+  // Load available tokens for the current chain
+  const loadAvailableTokens = async () => {
+    if (!chain) return;
+    
+    setIsLoadingTokens(true);
+    try {
+      const tokensResponse = await getTokens({ chains: [chain.id as ChainId] });
+      const tokens = tokensResponse.tokens[chain.id as ChainId] || [];
+      
+      const nativeToken = "0x0000000000000000000000000000000000000000";
+      const usdcToken = tokens.find(token => 
+        token.symbol === 'USDC' && token.address !== nativeToken
+      )?.address || "0x176211869cA2b568f2A7D4EE941E073a821EE1ff";
+      
+      const availableTokensList = [
+        { symbol: 'ETH', name: 'Ethereum', address: nativeToken },
+        { symbol: 'USDC', name: 'USD Coin', address: usdcToken }
+      ];
+      
+      setAvailableTokens(availableTokensList);
+      if (selectedToken === '') {
+        setSelectedToken('ETH');
+      }
+    } catch (error) {
+      console.error('Error loading available tokens:', error);
+    } finally {
+      setIsLoadingTokens(false);
+    }
+  };
 
   useEffect(() => {
     if (isVisible && chain && indivDid) {
       loadCreditCardAccounts();
       loadSavingsAccounts();
+      loadAvailableTokens(); // Load tokens when modal opens
     }
   }, [isVisible, chain, indivDid]);
+
+  // Ensure tokens are loaded when reaching step 2
+  useEffect(() => {
+    if (activeStep === 2 && availableTokens.length === 0 && chain) {
+      loadAvailableTokens();
+    }
+  }, [activeStep, availableTokens.length, chain]);
 
   // Fetch balances for credit card
   const fetchCreditCardBalances = async (accountDid: string) => {
@@ -170,14 +208,19 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
       
       const { address: accountAddress, chainId: accountChainId } = extracted;
 
-      console.info("*********** ACCOUNT CHAIN ID ****************", accountChainId);
-      console.info("*********** ACCOUNT ADDRESS ****************", accountAddress);
+      console.info("*********** ACCOUNT CHAIN ID 1 ****************", accountChainId);
+      console.info("*********** ACCOUNT ADDRESS 1 ****************", accountAddress);
       
-      const tokensResponse = await getTokens({ chains: [accountChainId] });
-      const tokens = tokensResponse.tokens[accountChainId] || [];
+      const tokensResponse = await getTokens({ chains: [accountChainId as ChainId] });
+      const tokens = tokensResponse.tokens[accountChainId as ChainId] || [];
       
       const nativeToken = "0x0000000000000000000000000000000000000000";
-      const usdcToken = "0x176211869cA2b568f2A7D4EE941E073a821EE1ff";
+      // Find USDC token dynamically from the response
+      const usdcToken = tokens.find(token => 
+        token.symbol === 'USDC' && token.address !== nativeToken
+      )?.address || "0x176211869cA2b568f2A7D4EE941E073a821EE1ff"; // fallback to Linea USDC
+      
+      console.info("*********** USDC TOKEN ADDRESS 1 ****************", usdcToken);
       
       const filteredTokens = tokens.filter(item => 
         item.address === nativeToken || item.address === usdcToken
@@ -186,7 +229,17 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
       if (filteredTokens.length > 0) {
         const tokenBalances = await getTokenBalances(accountAddress, filteredTokens);
         
-        const balances: { [key: string]: string } = {};
+        // Update available tokens for the first account (they should be the same across accounts on same chain)
+        if (Object.keys(creditCardBalances).length === 0) {
+          const tokens = [
+            { symbol: 'ETH', name: 'Ethereum', address: nativeToken },
+            { symbol: 'USDC', name: 'USD Coin', address: usdcToken }
+          ];
+          setAvailableTokens(tokens);
+          setSelectedToken('ETH'); // Set default token
+        }
+        
+        const balances: { ETH: string; USDC: string } = { ETH: '0', USDC: '0' };
         
         // ETH balance
         const ethBalance = tokenBalances.find(balance => balance.address === nativeToken);
@@ -208,7 +261,10 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
           balances.USDC = '0';
         }
         
-        setCreditCardBalances(balances);
+        setCreditCardBalances(prev => ({
+          ...prev,
+          [accountDid]: balances
+        }));
       }
     } catch (error) {
       console.error('Error fetching credit card balances:', error);
@@ -230,14 +286,19 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
       
       const { address: accountAddress, chainId: accountChainId } = extracted;
 
-      console.info("*********** ACCOUNT CHAIN ID ****************", accountChainId);
-      console.info("*********** ACCOUNT ADDRESS ****************", accountAddress);
+      console.info("*********** ACCOUNT CHAIN ID 2 ****************", accountChainId);
+      console.info("*********** ACCOUNT ADDRESS 2 ****************", accountAddress);
       
-      const tokensResponse = await getTokens({ chains: [accountChainId] });
-      const tokens = tokensResponse.tokens[accountChainId] || [];
+      const tokensResponse = await getTokens({ chains: [accountChainId as ChainId] });
+      const tokens = tokensResponse.tokens[accountChainId as ChainId] || [];
       
       const nativeToken = "0x0000000000000000000000000000000000000000";
-      const usdcToken = "0x176211869cA2b568f2A7D4EE941E073a821EE1ff";
+      // Find USDC token dynamically from the response
+      const usdcToken = tokens.find(token => 
+        token.symbol === 'USDC' && token.address !== nativeToken
+      )?.address || "0x176211869cA2b568f2A7D4EE941E073a821EE1ff"; // fallback to Linea USDC
+      
+      console.info("*********** USDC TOKEN ADDRESS 2 ****************", usdcToken);
       
       const filteredTokens = tokens.filter(item => 
         item.address === nativeToken || item.address === usdcToken
@@ -258,10 +319,13 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         
         // USDC balance
         const usdcBalance = tokenBalances.find(balance => balance.address === usdcToken);
+        console.info("*********** USDC BALANCE ****************", usdcBalance);
         if (usdcBalance && usdcBalance.amount) {
+            console.info("*********** USDC BALANCE ****************", usdcBalance.amount);
           const amountBigInt = BigInt(usdcBalance.amount.toString());
           const dollars = Number(amountBigInt) / 1_000_000;
           balances.usdc = dollars.toFixed(2);
+          console.info("*********** USDC BALANCE ****************", balances.usdc);
         }
         
         setSavingsAccountBalances(prev => ({
@@ -487,8 +551,8 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
                           primary={account.accountName}
                           secondary={
                             <Box>
-                              <Typography variant="body2">Credit Card Account</Typography>
-                              <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                              <Typography variant="body2" component="div">Credit Card Account</Typography>
+                              <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }} component="div">
                                 {account.accountDid}
                               </Typography>
                               {isLoadingBalances ? (
@@ -496,12 +560,12 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
                               ) : (
                                 <Box display="flex" gap={1} mt={0.5}>
                                   <Chip 
-                                    label={`${creditCardBalances.ETH || '0'} ETH`}
+                                    label={`${creditCardBalances[account.accountDid]?.ETH || '0'} ETH`}
                                     size="small"
                                     variant="outlined"
                                   />
                                   <Chip 
-                                    label={`${creditCardBalances.USDC || '0'} USDC`}
+                                    label={`${creditCardBalances[account.accountDid]?.USDC || '0'} USDC`}
                                     size="small"
                                     variant="outlined"
                                   />
@@ -529,9 +593,12 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
             <Typography variant="h6" gutterBottom>
               Select Funding Sources for {selectedCreditCard?.accountName}
             </Typography>
+            
             <FormGroup>
               {savingsAccounts.map(account => {
                 const balances = savingsAccountBalances[account.did];
+                const extracted = extractFromAccountDid(account.did);
+                
                 return (
                   <FormControlLabel
                     key={account.id}
@@ -543,12 +610,19 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
                     }
                     label={
                       <Box>
-                        <Typography variant="body1">{account.name} ({account.code})</Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                        <Typography variant="body1" component="div">{account.name} ({account.code})</Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }} component="div">
                           {account.did}
                         </Typography>
+                        {extracted && (
+                          <Box sx={{ mt: 0.5 }}>
+                            <Typography variant="caption" sx={{ fontFamily: 'monospace', display: 'block' }} component="div">
+                              Chain ID: {extracted.chainId} | Address: {extracted.address}
+                            </Typography>
+                          </Box>
+                        )}
                         {balances && (
-                          <Box display="flex" gap={1} mt={0.5}>
+                          <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
                             <Chip 
                               label={`${balances.eth} ETH`}
                               size="small"
@@ -604,12 +678,22 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
                 value={selectedToken}
                 onChange={(e) => setSelectedToken(e.target.value)}
                 label="Token"
+                disabled={isLoadingTokens}
               >
-                {TOKEN_OPTIONS.map((token) => (
-                  <MenuItem key={token.symbol} value={token.symbol}>
-                    {token.name} ({token.symbol})
+                {isLoadingTokens ? (
+                  <MenuItem disabled>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <CircularProgress size={16} />
+                      Loading tokens...
+                    </Box>
                   </MenuItem>
-                ))}
+                ) : (
+                  availableTokens.map((token) => (
+                    <MenuItem key={token.symbol} value={token.symbol}>
+                      {token.name} ({token.symbol})
+                    </MenuItem>
+                  ))
+                )}
               </Select>
             </FormControl>
             
@@ -626,6 +710,30 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
               helperText={error}
               sx={{ mb: 2 }}
             />
+            
+            {/* Show available amounts for selected savings accounts */}
+            {selectedSavingsAccounts.length > 0 && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Available {selectedToken} in selected accounts:
+                </Typography>
+                {selectedSavingsAccounts.map(accountId => {
+                  const account = savingsAccounts.find(acc => acc.id === accountId);
+                  const balances = account ? savingsAccountBalances[account.did] : null;
+                  const availableAmount = selectedToken === 'ETH' 
+                    ? balances?.eth || '0'
+                    : balances?.usdc || '0';
+                  
+                  return (
+                    <Box key={accountId} sx={{ ml: 2, mb: 1 }}>
+                      <Typography variant="body2" sx={{ color: 'text.primary' }}>
+                        • {account?.name}: {availableAmount} {selectedToken}
+                      </Typography>
+                    </Box>
+                  );
+                })}
+              </Box>
+            )}
             
             <Alert severity="info" sx={{ mb: 2 }}>
               <Typography variant="body2">
@@ -649,72 +757,30 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
       case 3:
         return (
           <>
-            <Typography variant="h6" gutterBottom sx={{ color: 'text.primary' }}>
+            <Typography variant="h6" gutterBottom>
               Confirm Transfer
             </Typography>
-            
-            {isLoadingRoutes ? (
-              <Box display="flex" alignItems="center" gap={2} mb={2}>
-                <CircularProgress size={20} />
-                <Typography variant="body2">Finding best transfer route...</Typography>
-              </Box>
-            ) : selectedRoute ? (
-              <Alert severity="success" sx={{ mb: 2 }}>
-                <Typography variant="body2">
-                  Best route found via {selectedRoute.steps[0]?.tool || 'LiFi'}
-                </Typography>
-              </Alert>
-            ) : (
-              <Alert severity="warning" sx={{ mb: 2 }}>
-                <Typography variant="body2">
-                  No transfer routes available. Please check your balances and try a different amount.
-                </Typography>
-              </Alert>
-            )}
-            
-            <Typography variant="body1" paragraph sx={{ color: 'text.primary' }}>
-              You are about to transfer {fundingAmount} {selectedToken} to {selectedCreditCard?.accountName} from the following accounts:
-            </Typography>
-            
-            <Box sx={{ ml: 2, mb: 2 }}>
-              {selectedSavingsAccounts.map(accountId => {
-                const account = savingsAccounts.find(acc => acc.id === accountId);
-                const balances = account ? savingsAccountBalances[account.did] : null;
-                return (
-                  <Box key={accountId} sx={{ mb: 1 }}>
-                    <Typography variant="body2" sx={{ color: 'text.primary' }}>
-                      • {account?.name} ({account?.code})
-                    </Typography>
-                    {balances && (
-                      <Box display="flex" gap={1} ml={2} mt={0.5}>
-                        <Chip 
-                          label={`${balances.eth} ETH`}
-                          size="small"
-                          variant="outlined"
-                        />
-                        <Chip 
-                          label={`${balances.usdc} USDC`}
-                          size="small"
-                          variant="outlined"
-                        />
-                      </Box>
-                    )}
-                  </Box>
-                );
-              })}
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body1" component="div" gutterBottom>
+                Transfer {fundingAmount} {selectedToken} from savings account to credit card account
+              </Typography>
+              <Typography variant="body2" component="div" color="text.secondary" gutterBottom>
+                From: {selectedSavingsAccounts.map(accountId => {
+                  const account = savingsAccounts.find(acc => acc.id === accountId);
+                  return account?.name;
+                }).join(', ')}
+              </Typography>
+              <Typography variant="body2" component="div" color="text.secondary" gutterBottom>
+                To: {selectedCreditCard?.accountName}
+              </Typography>
+              <Typography variant="body2" component="div" color="text.secondary">
+                Chain: {selectedSavingsAccounts.map(accountId => {
+                  const account = savingsAccounts.find(acc => acc.id === accountId);
+                  const extracted = account?.did ? extractFromAccountDid(account.did) : null;
+                  return extracted?.chainId;
+                }).join(', ')}
+              </Typography>
             </Box>
-            
-            {selectedRoute && (
-              <Alert severity="info" sx={{ mb: 2 }}>
-                <Typography variant="body2">
-                  <strong>Transfer Details:</strong><br />
-                  Route: {selectedRoute.steps[0]?.tool || 'LiFi'}<br />
-                  Estimated Gas: {selectedRoute.gasCostUSD ? `$${parseFloat(selectedRoute.gasCostUSD).toFixed(2)}` : 'N/A'}<br />
-                  From Amount: {selectedRoute.fromAmount} {selectedRoute.fromToken.symbol}<br />
-                  To Amount: {selectedRoute.toAmount} {selectedRoute.toToken.symbol}
-                </Typography>
-              </Alert>
-            )}
             
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
               <Button onClick={handleBack}>Back</Button>
