@@ -5,11 +5,18 @@ import { keccak256, toUtf8Bytes } from 'ethers';
 import { ethers } from 'ethers';
 import { getTokens, EVM, getTokenBalances, createConfig, getRoutes, getStepTransaction, executeRoute } from '@lifi/sdk';
 
+
+import { encodeFunctionData, parseUnits } from 'viem';
+
+
+
+
+
 import type { Token, Route, LiFiStep } from '@lifi/types';
 import { ChainId } from '@lifi/types';
 
 import { getWalletClient, switchChain } from '@wagmi/core'
-import { createClient, http } from 'viem'
+import { createClient, http, parseAbi } from 'viem'
 
 import { linea, mainnet, optimism, sepolia } from "viem/chains";
 
@@ -60,6 +67,23 @@ import { createPaymasterClient, createBundlerClient } from 'viem/account-abstrac
 import { createPimlicoClient } from 'permissionless/clients/pimlico';
 import { DelegationFramework, SINGLE_DEFAULT_MODE } from '@metamask/delegation-toolkit';
 import { CallSharp } from '@mui/icons-material';
+
+const ERC20_ABI = parseAbi([
+  // Read-only
+  'function balanceOf(address) view returns (uint256)',
+  'function allowance(address owner, address spender) view returns (uint256)',
+  'function decimals() view returns (uint8)',
+
+  // Write
+  'function approve(address spender, uint256 amount) returns (bool)',
+  'function transfer(address to, uint256 amount) returns (bool)',
+  'function transferFrom(address from, address to, uint256 amount) returns (bool)',
+
+  // Events (optional, useful for indexing/logs)
+  'event Transfer(address indexed from, address indexed to, uint256 value)',
+  'event Approval(address indexed owner, address indexed spender, uint256 value)',
+]);
+const USDC_OPTIMISM = '0x7F5c764cBc14f9669B88837ca1490cCa17c31607' as const;
 
 // Utility function to extract chainId and address from accountDid
 const extractFromAccountDid = (accountDid: string): { chainId: number; address: `0x${string}` } | null => {
@@ -593,31 +617,77 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         : (parseFloat(fundingAmount) * 1e6).toString();
       const creditCardExtracted = extractFromAccountDid(selectedCreditCard.accountDid);
 
-      const includedExecutions = [
-        {
-          target: creditCardExtracted.address as `0x${string}`,
-          value: amount,
-          callData: "0x"
-        },
-      ];
+
+      if (selectedToken === 'ETH') {
+
+        // ETH
+        const includedExecutions = [
+          {
+            target: creditCardExtracted.address as `0x${string}`,
+            value: amount,
+            callData: "0x"
+          },
+        ];
 
 
-      // Encode the delegation execution
-      console.info("***********  redeemDelegations ****************");
-      const data = DelegationFramework.encode.redeemDelegations({
-        delegations: [[accountIndivDelegation, accountOrgDelegation]],
-        modes: [SINGLE_DEFAULT_MODE],
-        executions: [includedExecutions]
-      });
+        // Encode the delegation execution
+        console.info("***********  redeemDelegations ****************");
+        const data = DelegationFramework.encode.redeemDelegations({
+          delegations: [[accountIndivDelegation, accountOrgDelegation]],
+          modes: [SINGLE_DEFAULT_MODE],
+          executions: [includedExecutions]
+        });
 
-      console.info("***********  call ****************");
+        console.info("***********  call ****************");
 
-      const call = {
-        to: indivAccountClient.address,
-        data: data,
+        const call = {
+          to: indivAccountClient.address,
+          data: data,
+        }
+
+        calls.push(call)
       }
+      else {
 
-      calls.push(call)
+        // USDC
+
+        const decimals = 6
+        const value = parseUnits(amount, decimals);
+        const to = creditCardExtracted.address as `0x${string}`
+        const callData = encodeFunctionData({
+          abi: ERC20_ABI,
+          functionName: 'transfer',
+          args: [to, value],
+        });
+
+
+        const includedExecutions = [
+          {
+            target: USDC_OPTIMISM,
+            value: 0n,
+            callData: callData
+          },
+        ];
+
+
+        // Encode the delegation execution
+        console.info("***********  redeemDelegations ****************");
+        const data = DelegationFramework.encode.redeemDelegations({
+          delegations: [[accountIndivDelegation, accountOrgDelegation]],
+          modes: [SINGLE_DEFAULT_MODE],
+          executions: [includedExecutions]
+        });
+
+        console.info("***********  call ****************");
+
+        const call = {
+          to: indivAccountClient.address,
+          data: data,
+        }
+
+        calls.push(call)
+
+      }
 
       /*
       for (const step of selectedRoute.steps) {
