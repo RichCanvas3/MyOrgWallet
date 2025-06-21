@@ -149,6 +149,24 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
   const { chain, indivDid, orgDid, indivAccountClient, orgAccountClient, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation } = useWallectConnectContext();
   const { isConnected } = useAccount();
 
+  // Get token address for a specific chain
+  const getTokenAddressForChain = async (chainId: number, symbol: string): Promise<string> => {
+    try {
+      const tokensResponse = await getTokens({ chains: [chainId as ChainId] });
+      const tokens = tokensResponse.tokens[chainId as ChainId] || [];
+      
+      const nativeToken = "0x0000000000000000000000000000000000000000";
+      const token = tokens.find(token => 
+        token.symbol === symbol && token.address !== nativeToken
+      );
+      
+      return token?.address || "0x176211869cA2b568f2A7D4EE941E073a821EE1ff"; // fallback to Linea USDC
+    } catch (error) {
+      console.error(`Error getting ${symbol} address for chain ${chainId}:`, error);
+      return "0x176211869cA2b568f2A7D4EE941E073a821EE1ff"; // fallback to Linea USDC
+    }
+  };
+
   // Load available tokens for the current chain
   const loadAvailableTokens = async () => {
     if (!chain) return;
@@ -361,25 +379,28 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         console.error('Invalid savings account did format:', firstSavingsAccount.did);
         return;
       }
-      
-      const savingsAccountAddress = savingsAccountExtracted.address;
-      
-      const tokenAddress = selectedToken === 'ETH' 
+
+      // Get token addresses for both chains
+      const fromTokenAddress = selectedToken === 'ETH' 
         ? '0x0000000000000000000000000000000000000000' 
-        : '0x176211869cA2b568f2A7D4EE941E073a821EE1ff';
+        : await getTokenAddressForChain(savingsAccountExtracted.chainId, 'USDC');
+      
+      const toTokenAddress = selectedToken === 'ETH' 
+        ? '0x0000000000000000000000000000000000000000' 
+        : await getTokenAddressForChain(creditCardExtracted.chainId, 'USDC');
       
       const amount = selectedToken === 'ETH' 
         ? (parseFloat(fundingAmount) * 1e18).toString()
         : (parseFloat(fundingAmount) * 1e6).toString();
       
       const routes = await getRoutes({
-        fromChainId: chain.id,
-        toChainId: chain.id,
-        fromTokenAddress: tokenAddress,
-        toTokenAddress: tokenAddress,
+        fromChainId: savingsAccountExtracted.chainId,
+        toChainId: creditCardExtracted.chainId,
+        fromTokenAddress: fromTokenAddress,
+        toTokenAddress: toTokenAddress,
         fromAmount: amount,
-        fromAddress: savingsAccountAddress,
-        toAddress: creditCardAddress,
+        fromAddress: savingsAccountExtracted.address,
+        toAddress: creditCardExtracted.address,
       });
       
       setAvailableRoutes(routes.routes);
@@ -484,6 +505,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
     try {
       // Execute the LiFi route
+      console.info("***********  EXECUTE SELECTED ROUTE ****************", selectedRoute);
       const result = await executeRoute(selectedRoute);
       
       console.info('Transfer executed:', result);
@@ -760,26 +782,112 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
             <Typography variant="h6" gutterBottom>
               Confirm Transfer
             </Typography>
+            
             <Box sx={{ mt: 2 }}>
-              <Typography variant="body1" component="div" gutterBottom>
-                Transfer {fundingAmount} {selectedToken} from savings account to credit card account
+              <Typography variant="body1" component="div" gutterBottom sx={{ fontWeight: 'bold' }}>
+                Transfer {fundingAmount} {selectedToken}
               </Typography>
-              <Typography variant="body2" component="div" color="text.secondary" gutterBottom>
-                From: {selectedSavingsAccounts.map(accountId => {
+              
+              {/* From Account Details */}
+              <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+                <Typography variant="subtitle1" component="div" gutterBottom sx={{ fontWeight: 'bold', color: 'error.main' }}>
+                  From (Savings Accounts):
+                </Typography>
+                {selectedSavingsAccounts.map(accountId => {
                   const account = savingsAccounts.find(acc => acc.id === accountId);
-                  return account?.name;
-                }).join(', ')}
-              </Typography>
-              <Typography variant="body2" component="div" color="text.secondary" gutterBottom>
-                To: {selectedCreditCard?.accountName}
-              </Typography>
-              <Typography variant="body2" component="div" color="text.secondary">
-                Chain: {selectedSavingsAccounts.map(accountId => {
-                  const account = savingsAccounts.find(acc => acc.id === accountId);
+                  const balances = account ? savingsAccountBalances[account.did] : null;
                   const extracted = account?.did ? extractFromAccountDid(account.did) : null;
-                  return extracted?.chainId;
-                }).join(', ')}
-              </Typography>
+                  
+                  return (
+                    <Box key={accountId} sx={{ mb: 2, pl: 2, borderLeft: '2px solid #e0e0e0' }}>
+                      <Typography variant="body2" component="div" sx={{ fontWeight: 'bold' }}>
+                        {account?.name} ({account?.code})
+                      </Typography>
+                      <Typography variant="caption" component="div" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
+                        DID: {account?.did}
+                      </Typography>
+                      {extracted && (
+                        <Typography variant="caption" component="div" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
+                          Chain ID: {extracted.chainId} | Address: {extracted.address}
+                        </Typography>
+                      )}
+                      {balances && (
+                        <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                          <Chip 
+                            label={`${balances.eth} ETH`}
+                            size="small"
+                            variant="outlined"
+                          />
+                          <Chip 
+                            label={`${balances.usdc} USDC`}
+                            size="small"
+                            variant="outlined"
+                          />
+                        </Box>
+                      )}
+                    </Box>
+                  );
+                })}
+              </Paper>
+              
+              {/* To Account Details */}
+              <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+                <Typography variant="subtitle1" component="div" gutterBottom sx={{ fontWeight: 'bold', color: 'success.main' }}>
+                  To (Credit Card Account):
+                </Typography>
+                <Box sx={{ pl: 2, borderLeft: '2px solid #e0e0e0' }}>
+                  <Typography variant="body2" component="div" sx={{ fontWeight: 'bold' }}>
+                    {selectedCreditCard?.accountName}
+                  </Typography>
+                  <Typography variant="caption" component="div" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
+                    DID: {selectedCreditCard?.accountDid}
+                  </Typography>
+                  {selectedCreditCard?.accountDid && (() => {
+                    const extracted = extractFromAccountDid(selectedCreditCard.accountDid);
+                    return extracted && (
+                      <Typography variant="caption" component="div" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
+                        Chain ID: {extracted.chainId} | Address: {extracted.address}
+                      </Typography>
+                    );
+                  })()}
+                  {selectedCreditCard?.accountDid && creditCardBalances[selectedCreditCard.accountDid] && (
+                    <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                      <Chip 
+                        label={`${creditCardBalances[selectedCreditCard.accountDid].ETH} ETH`}
+                        size="small"
+                        variant="outlined"
+                      />
+                      <Chip 
+                        label={`${creditCardBalances[selectedCreditCard.accountDid].USDC} USDC`}
+                        size="small"
+                        variant="outlined"
+                      />
+                    </Box>
+                  )}
+                </Box>
+              </Paper>
+              
+              {/* Transfer Details */}
+              {selectedRoute && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  <Typography variant="body2" component="div">
+                    <strong>Transfer Route:</strong> {selectedRoute.steps[0]?.tool || 'LiFi'}<br />
+                    <strong>Estimated Gas:</strong> {selectedRoute.gasCostUSD ? `$${parseFloat(selectedRoute.gasCostUSD).toFixed(2)}` : 'N/A'}<br />
+                    <strong>From Amount:</strong> {(() => {
+                      const amount = selectedRoute.fromToken.symbol === 'ETH' 
+                        ? (parseFloat(selectedRoute.fromAmount) / 1e18).toFixed(6)
+                        : (parseFloat(selectedRoute.fromAmount) / 1e6).toFixed(2);
+                      return `${amount} ${selectedRoute.fromToken.symbol}`;
+                    })()}<br />
+                    <strong>To Amount:</strong> {(() => {
+                      const amount = selectedRoute.toToken.symbol === 'ETH' 
+                        ? (parseFloat(selectedRoute.toAmount) / 1e18).toFixed(6)
+                        : (parseFloat(selectedRoute.toAmount) / 1e6).toFixed(2);
+                      return `${amount} ${selectedRoute.toToken.symbol}`;
+                    })()}
+                  </Typography>
+                </Alert>
+              )}
             </Box>
             
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
