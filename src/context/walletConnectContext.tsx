@@ -844,10 +844,6 @@ export const useWalletConnect = () => {
             }
             
             
-            //OrgService.checkStateRegistrationLink(veramoAgent, mascaApi)
-
-            console.info("setIsIndividualConnected done")
-
           }
         }
         

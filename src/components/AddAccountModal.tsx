@@ -42,15 +42,12 @@ import VerifiableCredentialsService from '../service/VerifiableCredentialsServic
 
 import { getWalletClient, switchChain } from '@wagmi/core'
 import { createClient, http } from 'viem'
-import { WagmiProvider, createConfig as createWagmiConfig } from 'wagmi'
+import {  createConfig as createWagmiConfig } from 'wagmi'
 
 
 const optimismProvider = new ethers.JsonRpcProvider(OPTIMISM_RPC_URL);
 
-// Initialize LI.FI SDK
-createConfig({
-  integrator: 'serviceprotokenaaa', 
-});
+
 
 // Create Wagmi config
 const wagmiConfig = createWagmiConfig({

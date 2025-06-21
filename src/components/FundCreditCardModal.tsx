@@ -3,6 +3,15 @@ import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { keccak256, toUtf8Bytes } from 'ethers';
 import { ethers } from 'ethers';
+import { getTokens, EVM, getTokenBalances, createConfig, getRoutes, executeRoute } from '@lifi/sdk';
+
+import type { Token, Route } from '@lifi/types';
+import { ChainId } from '@lifi/types';
+
+import { getWalletClient, switchChain } from '@wagmi/core'
+import { createClient, http } from 'viem'
+
+import { linea, mainnet, optimism, sepolia } from "viem/chains";
 
 import {
   XMarkIcon,
@@ -27,6 +36,12 @@ import {
   Stepper,
   Step,
   StepLabel,
+  Chip,
+  Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
@@ -37,28 +52,77 @@ import AttestationService from '../service/AttestationService';
 import { IndivAccountAttestation, AccountOrgDelAttestation, AccountIndivDelAttestation } from '../models/Attestation';
 import { Account, IndivAccount } from '../models/Account';
 
-import {
-  DelegationFramework,
-  SINGLE_DEFAULT_MODE,
-  getDelegationHashOffchain,
-} from "@metamask/delegation-toolkit";
+import {  createConfig as createWagmiConfig } from 'wagmi'
 
-import {
-  createBundlerClient,
-  createPaymasterClient,
-} from "viem/account-abstraction";
+import { ETHERUM_RPC_URL, OPTIMISM_RPC_URL, SEPOLIA_RPC_URL, LINEA_RPC_URL } from "../config";
 
-import { createPimlicoClient } from "permissionless/clients/pimlico";
-import { http } from "viem";
+// Utility function to extract chainId and address from accountDid
+const extractFromAccountDid = (accountDid: string): { chainId: number; address: `0x${string}` } | null => {
+  try {
+    // Parse did:pkh:eip155:chainId:address format
+    const parts = accountDid.split(':');
+    if (parts.length === 5 && parts[0] === 'did' && parts[1] === 'pkh' && parts[2] === 'eip155') {
+      const chainId = parseInt(parts[3], 10);
+      const address = parts[4] as `0x${string}`;
+      return { chainId, address };
+    }
+    return null;
+  } catch (error) {
+    console.error('Error parsing accountDid:', error);
+    return null;
+  }
+};
 
-import { BUNDLER_URL, PAYMASTER_URL } from "../config";
+// Initialize LiFi SDK
+createConfig({
+  integrator: 'MyOrgWallet',
+  rpcUrls: {
+    [ChainId.ETH]: [ETHERUM_RPC_URL],
+    [ChainId.OPT]: [OPTIMISM_RPC_URL],
+    [ChainId.LNA]: [LINEA_RPC_URL],
+  },
+});
+
+// Create Wagmi config
+const wagmiConfig = createWagmiConfig({
+    chains: [mainnet, optimism, linea, sepolia],
+    client({ chain }) {
+      return createClient({ chain, transport: http() })
+    },
+  })
+  
+createConfig({
+    integrator: 'MyOrgWallet',
+    rpcUrls: {
+      [ChainId.ETH]: [ETHERUM_RPC_URL],
+      [ChainId.OPT]: [OPTIMISM_RPC_URL],
+      [ChainId.LNA]: [LINEA_RPC_URL],
+    },
+    providers: [
+      EVM({
+        getWalletClient: () => getWalletClient(wagmiConfig),
+        switchChain: async (chainId) => {
+            console.info("*********** SWITCH CHAIN ****************")
+          const chain = await switchChain(wagmiConfig, { chainId })
+          return getWalletClient(wagmiConfig, { chainId: chain.id })
+        },
+      }),
+    ],
+    preloadChains: false,
+  })
 
 interface FundCreditCardModalProps {
   isVisible: boolean;
   onClose: () => void;
 }
 
-const steps = ['Select Credit Card', 'Select Funding Sources', 'Enter Amount', 'Confirm Transfer'];
+const steps = ['Select Credit Card', 'Select Funding Sources', 'Enter Amount & Token', 'Confirm Transfer'];
+
+// Token options for transfer
+const TOKEN_OPTIONS = [
+  { symbol: 'ETH', name: 'Ethereum', address: '0x0000000000000000000000000000000000000000' },
+  { symbol: 'USDC', name: 'USD Coin', address: '0x176211869cA2b568f2A7D4EE941E073a821EE1ff' },
+];
 
 const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, onClose }) => {
   const [creditCardAccounts, setCreditCardAccounts] = useState<IndivAccountAttestation[]>([]);
@@ -66,10 +130,21 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
   const [selectedCreditCard, setSelectedCreditCard] = useState<IndivAccountAttestation | null>(null);
   const [selectedSavingsAccounts, setSelectedSavingsAccounts] = useState<string[]>([]);
   const [fundingAmount, setFundingAmount] = useState('');
+  const [selectedToken, setSelectedToken] = useState('ETH');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState(0);
+  
+  // Balance states
+  const [creditCardBalances, setCreditCardBalances] = useState<{ [key: string]: string }>({});
+  const [savingsAccountBalances, setSavingsAccountBalances] = useState<{ [key: string]: { eth: string; usdc: string } }>({});
+  const [isLoadingBalances, setIsLoadingBalances] = useState(false);
+  
+  // LiFi route states
+  const [availableRoutes, setAvailableRoutes] = useState<Route[]>([]);
+  const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
+  const [isLoadingRoutes, setIsLoadingRoutes] = useState(false);
 
   const { chain, indivDid, orgDid, indivAccountClient, orgAccountClient, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation } = useWallectConnectContext();
   const { isConnected } = useAccount();
@@ -81,12 +156,191 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
     }
   }, [isVisible, chain, indivDid]);
 
+  // Fetch balances for credit card
+  const fetchCreditCardBalances = async (accountDid: string) => {
+    if (!accountDid || !chain) return;
+    
+    setIsLoadingBalances(true);
+    try {
+      const extracted = extractFromAccountDid(accountDid);
+      if (!extracted) {
+        console.error('Invalid accountDid format:', accountDid);
+        return;
+      }
+      
+      const { address: accountAddress, chainId: accountChainId } = extracted;
+
+      console.info("*********** ACCOUNT CHAIN ID ****************", accountChainId);
+      console.info("*********** ACCOUNT ADDRESS ****************", accountAddress);
+      
+      const tokensResponse = await getTokens({ chains: [accountChainId] });
+      const tokens = tokensResponse.tokens[accountChainId] || [];
+      
+      const nativeToken = "0x0000000000000000000000000000000000000000";
+      const usdcToken = "0x176211869cA2b568f2A7D4EE941E073a821EE1ff";
+      
+      const filteredTokens = tokens.filter(item => 
+        item.address === nativeToken || item.address === usdcToken
+      );
+      
+      if (filteredTokens.length > 0) {
+        const tokenBalances = await getTokenBalances(accountAddress, filteredTokens);
+        
+        const balances: { [key: string]: string } = {};
+        
+        // ETH balance
+        const ethBalance = tokenBalances.find(balance => balance.address === nativeToken);
+        if (ethBalance && ethBalance.amount) {
+          const weiBigInt = typeof ethBalance.amount === 'string' ? BigInt(ethBalance.amount) : ethBalance.amount;
+          const eth = Number(weiBigInt) / 1e18;
+          balances.ETH = eth.toFixed(6);
+        } else {
+          balances.ETH = '0';
+        }
+        
+        // USDC balance
+        const usdcBalance = tokenBalances.find(balance => balance.address === usdcToken);
+        if (usdcBalance && usdcBalance.amount) {
+          const amountBigInt = BigInt(usdcBalance.amount.toString());
+          const dollars = Number(amountBigInt) / 1_000_000;
+          balances.USDC = dollars.toFixed(2);
+        } else {
+          balances.USDC = '0';
+        }
+        
+        setCreditCardBalances(balances);
+      }
+    } catch (error) {
+      console.error('Error fetching credit card balances:', error);
+    } finally {
+      setIsLoadingBalances(false);
+    }
+  };
+
+  // Fetch balances for savings accounts
+  const fetchSavingsAccountBalances = async (accountDid: string) => {
+    if (!accountDid || !chain) return;
+    
+    try {
+      const extracted = extractFromAccountDid(accountDid);
+      if (!extracted) {
+        console.error('Invalid accountDid format:', accountDid);
+        return;
+      }
+      
+      const { address: accountAddress, chainId: accountChainId } = extracted;
+
+      console.info("*********** ACCOUNT CHAIN ID ****************", accountChainId);
+      console.info("*********** ACCOUNT ADDRESS ****************", accountAddress);
+      
+      const tokensResponse = await getTokens({ chains: [accountChainId] });
+      const tokens = tokensResponse.tokens[accountChainId] || [];
+      
+      const nativeToken = "0x0000000000000000000000000000000000000000";
+      const usdcToken = "0x176211869cA2b568f2A7D4EE941E073a821EE1ff";
+      
+      const filteredTokens = tokens.filter(item => 
+        item.address === nativeToken || item.address === usdcToken
+      );
+      
+      if (filteredTokens.length > 0) {
+        const tokenBalances = await getTokenBalances(accountAddress, filteredTokens);
+        
+        const balances: { eth: string; usdc: string } = { eth: '0', usdc: '0' };
+        
+        // ETH balance
+        const ethBalance = tokenBalances.find(balance => balance.address === nativeToken);
+        if (ethBalance && ethBalance.amount) {
+          const weiBigInt = typeof ethBalance.amount === 'string' ? BigInt(ethBalance.amount) : ethBalance.amount;
+          const eth = Number(weiBigInt) / 1e18;
+          balances.eth = eth.toFixed(6);
+        }
+        
+        // USDC balance
+        const usdcBalance = tokenBalances.find(balance => balance.address === usdcToken);
+        if (usdcBalance && usdcBalance.amount) {
+          const amountBigInt = BigInt(usdcBalance.amount.toString());
+          const dollars = Number(amountBigInt) / 1_000_000;
+          balances.usdc = dollars.toFixed(2);
+        }
+        
+        setSavingsAccountBalances(prev => ({
+          ...prev,
+          [accountDid]: balances
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching savings account balances:', error);
+    }
+  };
+
+  // Get LiFi routes for transfer
+  const getTransferRoutes = async () => {
+    if (!selectedCreditCard || selectedSavingsAccounts.length === 0 || !fundingAmount || !chain) return;
+    
+    setIsLoadingRoutes(true);
+    try {
+      const creditCardExtracted = extractFromAccountDid(selectedCreditCard.accountDid);
+      if (!creditCardExtracted) {
+        console.error('Invalid credit card accountDid format:', selectedCreditCard.accountDid);
+        return;
+      }
+      
+      const creditCardAddress = creditCardExtracted.address;
+      
+      // For now, we'll get routes from the first selected savings account
+      const firstSavingsAccount = savingsAccounts.find(acc => acc.id === selectedSavingsAccounts[0]);
+      if (!firstSavingsAccount) return;
+      
+      const savingsAccountExtracted = extractFromAccountDid(firstSavingsAccount.did);
+      if (!savingsAccountExtracted) {
+        console.error('Invalid savings account did format:', firstSavingsAccount.did);
+        return;
+      }
+      
+      const savingsAccountAddress = savingsAccountExtracted.address;
+      
+      const tokenAddress = selectedToken === 'ETH' 
+        ? '0x0000000000000000000000000000000000000000' 
+        : '0x176211869cA2b568f2A7D4EE941E073a821EE1ff';
+      
+      const amount = selectedToken === 'ETH' 
+        ? (parseFloat(fundingAmount) * 1e18).toString()
+        : (parseFloat(fundingAmount) * 1e6).toString();
+      
+      const routes = await getRoutes({
+        fromChainId: chain.id,
+        toChainId: chain.id,
+        fromTokenAddress: tokenAddress,
+        toTokenAddress: tokenAddress,
+        fromAmount: amount,
+        fromAddress: savingsAccountAddress,
+        toAddress: creditCardAddress,
+      });
+      
+      setAvailableRoutes(routes.routes);
+      if (routes.routes.length > 0) {
+        setSelectedRoute(routes.routes[0]);
+      }
+    } catch (error) {
+      console.error('Error getting routes:', error);
+      setError('Failed to get transfer routes');
+    } finally {
+      setIsLoadingRoutes(false);
+    }
+  };
+
   const loadCreditCardAccounts = async () => {
     try {
       if (!chain || !indivDid) return;
       const allAttestations = await AttestationService.loadRecentAttestationsTitleOnly(chain, indivDid, "");
       const creditCards = allAttestations.filter(att => att.entityId === "account(indiv)") as IndivAccountAttestation[];
       setCreditCardAccounts(creditCards);
+      
+      // Fetch balances for all credit card accounts
+      for (const creditCard of creditCards) {
+        await fetchCreditCardBalances(creditCard.accountDid);
+      }
     } catch (error) {
       console.error('Error loading credit card accounts:', error);
       setError('Failed to load credit card accounts');
@@ -105,22 +359,35 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
     }
   };
 
-  const handleCreditCardSelect = (creditCard: IndivAccountAttestation) => {
+  const handleCreditCardSelect = async (creditCard: IndivAccountAttestation) => {
     setSelectedCreditCard(creditCard);
+    await fetchCreditCardBalances(creditCard.accountDid);
     setActiveStep(1);
   };
 
-  const handleSavingsAccountSelect = (accountId: string) => {
+  const handleSavingsAccountSelect = async (accountId: string) => {
     setSelectedSavingsAccounts(prev => {
-      if (prev.includes(accountId)) {
-        return prev.filter(id => id !== accountId);
-      } else {
-        return [...prev, accountId];
+      const newSelection = prev.includes(accountId) 
+        ? prev.filter(id => id !== accountId)
+        : [...prev, accountId];
+      
+      // Fetch balances for newly selected accounts
+      if (!prev.includes(accountId)) {
+        const account = savingsAccounts.find(acc => acc.id === accountId);
+        if (account) {
+          fetchSavingsAccountBalances(account.did);
+        }
       }
+      
+      return newSelection;
     });
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    if (activeStep === 2) {
+      // Get routes when moving to confirmation step
+      await getTransferRoutes();
+    }
     setActiveStep((prevStep) => prevStep + 1);
   };
 
@@ -132,13 +399,18 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
     setSelectedCreditCard(null);
     setSelectedSavingsAccounts([]);
     setFundingAmount('');
+    setSelectedToken('ETH');
     setError(null);
     setActiveStep(0);
+    setCreditCardBalances({});
+    setSavingsAccountBalances({});
+    setAvailableRoutes([]);
+    setSelectedRoute(null);
     onClose();
   };
 
   const handleConfirmTransfer = async () => {
-    if (!selectedCreditCard || selectedSavingsAccounts.length === 0 || !fundingAmount) {
+    if (!selectedCreditCard || selectedSavingsAccounts.length === 0 || !fundingAmount || !selectedRoute) {
       setError('Missing required information');
       return;
     }
@@ -147,87 +419,17 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
     setError(null);
 
     try {
-      const amount = parseFloat(fundingAmount);
-      if (isNaN(amount) || amount <= 0) {
-        throw new Error('Invalid amount');
-      }
-
-      // Process each selected savings account
+      // Execute the LiFi route
+      const result = await executeRoute(selectedRoute);
+      
+      console.info('Transfer executed:', result);
+      
+      // Refresh balances after transfer
+      await fetchCreditCardBalances(selectedCreditCard.accountDid);
       for (const accountId of selectedSavingsAccounts) {
-        const savingsAccount = savingsAccounts.find(acc => acc.id === accountId);
-        if (!savingsAccount) continue;
-
-        // Get the individual account delegation for this savings account
-        if (!indivDid || !orgDid || !chain) {
-          console.warn('Individual DID not available');
-          continue;
-        }
-        const indivAccounts = await AttestationService.loadIndivAccounts(chain!, orgDid, indivDid, "1110");
-        const indivAccount = indivAccounts.find(acc => 
-          acc.attestation?.accountName === savingsAccount.name
-        );
-
-        if (!indivAccount || !indivAccount.attestation) {
-          console.warn(`No individual delegation found for account: ${savingsAccount.name}`);
-          continue;
-        }
-
-        // Parse delegations
-        const orgDel = JSON.parse(indivAccount.attestation.orgDelegation);
-        const indivDel = JSON.parse(indivAccount.attestation.indivDelegation);
-
-        // Create bundler client
-        const pimlicoClient = createPimlicoClient({
-          transport: http(BUNDLER_URL),
-        });
-
-        const bundlerClient = createBundlerClient({
-          transport: http(BUNDLER_URL),
-          paymaster: true,
-          chain: chain!,
-          paymasterContext: {
-            mode: 'SPONSORED',
-          },
-        });
-
-        // Create execution to transfer funds to credit card
-        const creditCardAddress = selectedCreditCard.accountDid.replace('did:pkh:eip155:' + chain?.id + ':', '') as `0x${string}`;
-        console.info("@@@@@@@@@@@@@ creditCardAddress: ", creditCardAddress) 
-        
-        const executions = [
-          {
-            target: creditCardAddress,
-            value: BigInt(Math.floor(amount * 1e18)), // Convert to wei
-            callData: '0x' as `0x${string}`, // Empty call data for simple ETH transfer
-          },
-        ];
-
-        const delegationChain = [indivDel, orgDel];
-        const data = DelegationFramework.encode.redeemDelegations({
-          delegations: [delegationChain],
-          modes: [SINGLE_DEFAULT_MODE],
-          executions: [executions]
-        });
-
-        const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
-        
-        if (indivAccountClient) {
-          const userOpHash = await bundlerClient.sendUserOperation({
-            account: indivAccountClient,
-            calls: [
-              {
-                to: indivAccountClient.address,
-                data,
-              },
-            ],
-            ...fee
-          });
-
-          const { receipt } = await bundlerClient.waitForUserOperationReceipt({
-            hash: userOpHash,
-          });
-
-          console.info(`Transfer completed for account: ${savingsAccount.name}`, receipt);
+        const account = savingsAccounts.find(acc => acc.id === accountId);
+        if (account) {
+          await fetchSavingsAccountBalances(account.did);
         }
       }
 
@@ -283,7 +485,30 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
                         </ListItemIcon>
                         <ListItemText
                           primary={account.accountName}
-                          secondary={`Credit Card Account`}
+                          secondary={
+                            <Box>
+                              <Typography variant="body2">Credit Card Account</Typography>
+                              <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                                {account.accountDid}
+                              </Typography>
+                              {isLoadingBalances ? (
+                                <CircularProgress size={12} />
+                              ) : (
+                                <Box display="flex" gap={1} mt={0.5}>
+                                  <Chip 
+                                    label={`${creditCardBalances.ETH || '0'} ETH`}
+                                    size="small"
+                                    variant="outlined"
+                                  />
+                                  <Chip 
+                                    label={`${creditCardBalances.USDC || '0'} USDC`}
+                                    size="small"
+                                    variant="outlined"
+                                  />
+                                </Box>
+                              )}
+                            </Box>
+                          }
                         />
                       </ListItemButton>
                     </ListItem>
@@ -305,24 +530,48 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
               Select Funding Sources for {selectedCreditCard?.accountName}
             </Typography>
             <FormGroup>
-              {savingsAccounts.map(account => (
-                <FormControlLabel
-                  key={account.id}
-                  control={
-                    <Checkbox
-                      checked={selectedSavingsAccounts.includes(account.id)}
-                      onChange={() => handleSavingsAccountSelect(account.id)}
-                    />
-                  }
-                  label={`${account.name} (${account.code})`}
-                  sx={{
-                    color: 'text.primary',
-                    '& .MuiFormControlLabel-label': {
-                      color: 'text.primary',
+              {savingsAccounts.map(account => {
+                const balances = savingsAccountBalances[account.did];
+                return (
+                  <FormControlLabel
+                    key={account.id}
+                    control={
+                      <Checkbox
+                        checked={selectedSavingsAccounts.includes(account.id)}
+                        onChange={() => handleSavingsAccountSelect(account.id)}
+                      />
                     }
-                  }}
-                />
-              ))}
+                    label={
+                      <Box>
+                        <Typography variant="body1">{account.name} ({account.code})</Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                          {account.did}
+                        </Typography>
+                        {balances && (
+                          <Box display="flex" gap={1} mt={0.5}>
+                            <Chip 
+                              label={`${balances.eth} ETH`}
+                              size="small"
+                              variant="outlined"
+                            />
+                            <Chip 
+                              label={`${balances.usdc} USDC`}
+                              size="small"
+                              variant="outlined"
+                            />
+                          </Box>
+                        )}
+                      </Box>
+                    }
+                    sx={{
+                      color: 'text.primary',
+                      '& .MuiFormControlLabel-label': {
+                        color: 'text.primary',
+                      }
+                    }}
+                  />
+                );
+              })}
             </FormGroup>
             {savingsAccounts.length === 0 && (
               <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 2 }}>
@@ -346,20 +595,44 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         return (
           <>
             <Typography variant="h6" gutterBottom>
-              Enter Funding Amount
+              Enter Amount & Select Token
             </Typography>
+            
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel>Token</InputLabel>
+              <Select
+                value={selectedToken}
+                onChange={(e) => setSelectedToken(e.target.value)}
+                label="Token"
+              >
+                {TOKEN_OPTIONS.map((token) => (
+                  <MenuItem key={token.symbol} value={token.symbol}>
+                    {token.name} ({token.symbol})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            
             <TextField
               fullWidth
-              label="Amount (ETH)"
+              label={`Amount (${selectedToken})`}
               variant="outlined"
               value={fundingAmount}
               onChange={(e) => setFundingAmount(e.target.value)}
-              placeholder="Enter the amount to transfer"
+              placeholder={`Enter the amount to transfer in ${selectedToken}`}
               type="number"
-              inputProps={{ min: 0, step: 0.001 }}
+              inputProps={{ min: 0, step: selectedToken === 'ETH' ? 0.001 : 0.01 }}
               error={!!error}
               helperText={error}
+              sx={{ mb: 2 }}
             />
+            
+            <Alert severity="info" sx={{ mb: 2 }}>
+              <Typography variant="body2">
+                This will use LiFi to transfer {selectedToken} from your selected savings accounts to the credit card account.
+              </Typography>
+            </Alert>
+            
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
               <Button onClick={handleBack}>Back</Button>
               <Button 
@@ -379,29 +652,76 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
             <Typography variant="h6" gutterBottom sx={{ color: 'text.primary' }}>
               Confirm Transfer
             </Typography>
+            
+            {isLoadingRoutes ? (
+              <Box display="flex" alignItems="center" gap={2} mb={2}>
+                <CircularProgress size={20} />
+                <Typography variant="body2">Finding best transfer route...</Typography>
+              </Box>
+            ) : selectedRoute ? (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                <Typography variant="body2">
+                  Best route found via {selectedRoute.steps[0]?.tool || 'LiFi'}
+                </Typography>
+              </Alert>
+            ) : (
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                <Typography variant="body2">
+                  No transfer routes available. Please check your balances and try a different amount.
+                </Typography>
+              </Alert>
+            )}
+            
             <Typography variant="body1" paragraph sx={{ color: 'text.primary' }}>
-              You are about to transfer {fundingAmount} ETH to {selectedCreditCard?.accountName} from the following accounts:
+              You are about to transfer {fundingAmount} {selectedToken} to {selectedCreditCard?.accountName} from the following accounts:
             </Typography>
+            
             <Box sx={{ ml: 2, mb: 2 }}>
               {selectedSavingsAccounts.map(accountId => {
                 const account = savingsAccounts.find(acc => acc.id === accountId);
+                const balances = account ? savingsAccountBalances[account.did] : null;
                 return (
-                  <Typography 
-                    key={accountId} 
-                    variant="body2"
-                    sx={{ color: 'text.primary' }}
-                  >
-                    • {account?.name} ({account?.code})
-                  </Typography>
+                  <Box key={accountId} sx={{ mb: 1 }}>
+                    <Typography variant="body2" sx={{ color: 'text.primary' }}>
+                      • {account?.name} ({account?.code})
+                    </Typography>
+                    {balances && (
+                      <Box display="flex" gap={1} ml={2} mt={0.5}>
+                        <Chip 
+                          label={`${balances.eth} ETH`}
+                          size="small"
+                          variant="outlined"
+                        />
+                        <Chip 
+                          label={`${balances.usdc} USDC`}
+                          size="small"
+                          variant="outlined"
+                        />
+                      </Box>
+                    )}
+                  </Box>
                 );
               })}
             </Box>
+            
+            {selectedRoute && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                <Typography variant="body2">
+                  <strong>Transfer Details:</strong><br />
+                  Route: {selectedRoute.steps[0]?.tool || 'LiFi'}<br />
+                  Estimated Gas: {selectedRoute.gasCostUSD ? `$${parseFloat(selectedRoute.gasCostUSD).toFixed(2)}` : 'N/A'}<br />
+                  From Amount: {selectedRoute.fromAmount} {selectedRoute.fromToken.symbol}<br />
+                  To Amount: {selectedRoute.toAmount} {selectedRoute.toToken.symbol}
+                </Typography>
+              </Alert>
+            )}
+            
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
               <Button onClick={handleBack}>Back</Button>
               <Button 
                 variant="contained" 
                 onClick={handleConfirmTransfer}
-                disabled={isLoading}
+                disabled={isLoading || !selectedRoute}
                 color="primary"
               >
                 {isLoading ? <CircularProgress size={24} /> : 'Confirm Transfer'}

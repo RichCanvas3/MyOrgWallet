@@ -821,7 +821,7 @@ class AttestationService {
 
   }
   static constructIndivAccountAttestation(chain: Chain, uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
-    console.info("################ constructIndivAccountAttestation ......")
+
     let vccomm : string | undefined
     let vcsig : string | undefined
     let vciss : string | undefined
@@ -2326,10 +2326,7 @@ class AttestationService {
 
     const orgAddress = orgDid.replace("did:pkh:eip155:" + chain?.id + ":", "")
     const indivAddress = indivDid.replace("did:pkh:eip155:"  + chain?.id + ":", "")
-    
 
-    console.info("############## orgAddress: ", orgAddress)
-    console.info("############## indivAddress: ", indivAddress)
 
 
     try {
@@ -2404,7 +2401,6 @@ class AttestationService {
               att = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "account(indiv)") {
-              console.info("############# constructIndivAccountAttestation ......")
               att = this.constructIndivAccountAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "account-org(org)") {
@@ -2813,7 +2809,6 @@ class AttestationService {
           const schemaEncoder = new SchemaEncoder(this.RegisteredDomainSchema);
           const decodedData = schemaEncoder.decodeData(item.data);
           if (this.checkEntity(entityId, decodedData)) {
-            console.info("construct domain attestation")
             rtnAttestation = this.constructRegisteredDomainAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
           }
         }
@@ -2999,7 +2994,6 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
       
     }
 
-    console.info("********** OrgIndivSchema rtnAttestation: ", rtnAttestation)
     return rtnAttestation;
   }
 

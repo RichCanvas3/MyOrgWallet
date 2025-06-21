@@ -227,10 +227,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   
   useEffect(() => {
-    console.info("********** orgAccountClient: ", orgAccountClient  ) 
-    console.info("********** chain: ", chain  ) 
-    console.info("********** orgDid: ", orgDid  ) 
-    console.info("********** indivDid: ", indivDid  ) 
 
     if (orgAccountClient && chain && orgDid && indivDid) {
 
@@ -508,7 +504,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     //message = message + ", Please respond with a JSON object. Include keys like 'company_name', 'state_name', 'email' if they exist."
 
-    console.info("user message entered: ", message)
     addMessage(Role.User, MessageType.Normal, message, args, fileDataRef, sendMessage);
   };
 
@@ -1565,8 +1560,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         if (done == true) {
           // received message from AI Assitant => updatedMessage
           // go do what the AI assistant message told us to do  =>  appCommand
-          console.info("proccess Assistant Message: ", updatedMessage.content)
-          console.info("proccess Assistant Message args: ", updatedMessage.args)
           const response = processAssistantMessage(isFirstCall == 1, updatedMessage.content, updatedMessage.args, prevMessages, updatedMessage, fileDataRef);
           if (response.isToolFunction && response.messages) {
             return response.messages
