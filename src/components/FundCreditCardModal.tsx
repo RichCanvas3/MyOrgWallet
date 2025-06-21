@@ -3,9 +3,9 @@ import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { keccak256, toUtf8Bytes } from 'ethers';
 import { ethers } from 'ethers';
-import { getTokens, EVM, getTokenBalances, createConfig, getRoutes, executeRoute } from '@lifi/sdk';
+import { getTokens, EVM, getTokenBalances, createConfig, getRoutes, getStepTransaction, executeRoute } from '@lifi/sdk';
 
-import type { Token, Route } from '@lifi/types';
+import type { Token, Route, LiFiStep } from '@lifi/types';
 import { ChainId } from '@lifi/types';
 
 import { getWalletClient, switchChain } from '@wagmi/core'
@@ -54,7 +54,12 @@ import { Account, IndivAccount } from '../models/Account';
 
 import {  createConfig as createWagmiConfig } from 'wagmi'
 
-import { ETHERUM_RPC_URL, OPTIMISM_RPC_URL, SEPOLIA_RPC_URL, LINEA_RPC_URL } from "../config";
+import { ETHERUM_RPC_URL, OPTIMISM_RPC_URL, SEPOLIA_RPC_URL, LINEA_RPC_URL, BUNDLER_URL, PAYMASTER_URL } from "../config";
+
+import { createPaymasterClient, createBundlerClient } from 'viem/account-abstraction';
+import { createPimlicoClient } from 'permissionless/clients/pimlico';
+import { DelegationFramework, SINGLE_DEFAULT_MODE } from '@metamask/delegation-toolkit';
+import { CallSharp } from '@mui/icons-material';
 
 // Utility function to extract chainId and address from accountDid
 const extractFromAccountDid = (accountDid: string): { chainId: number; address: `0x${string}` } | null => {
@@ -358,13 +363,23 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
   // Get LiFi routes for transfer
   const getTransferRoutes = async () => {
-    if (!selectedCreditCard || selectedSavingsAccounts.length === 0 || !fundingAmount || !chain) return;
+    if (!selectedCreditCard || selectedSavingsAccounts.length === 0 || !fundingAmount || !chain) {
+      console.error('Missing required data for routes:', { 
+        selectedCreditCard: !!selectedCreditCard, 
+        selectedSavingsAccounts: selectedSavingsAccounts.length, 
+        fundingAmount, 
+        chain: !!chain 
+      });
+      return;
+    }
     
     setIsLoadingRoutes(true);
+    setError(null);
     try {
       const creditCardExtracted = extractFromAccountDid(selectedCreditCard.accountDid);
       if (!creditCardExtracted) {
         console.error('Invalid credit card accountDid format:', selectedCreditCard.accountDid);
+        setError('Invalid credit card account format');
         return;
       }
       
@@ -372,11 +387,16 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
       
       // For now, we'll get routes from the first selected savings account
       const firstSavingsAccount = savingsAccounts.find(acc => acc.id === selectedSavingsAccounts[0]);
-      if (!firstSavingsAccount) return;
+      if (!firstSavingsAccount) {
+        console.error('First savings account not found');
+        setError('Selected savings account not found');
+        return;
+      }
       
       const savingsAccountExtracted = extractFromAccountDid(firstSavingsAccount.did);
       if (!savingsAccountExtracted) {
         console.error('Invalid savings account did format:', firstSavingsAccount.did);
+        setError('Invalid savings account format');
         return;
       }
 
@@ -393,6 +413,17 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         ? (parseFloat(fundingAmount) * 1e18).toString()
         : (parseFloat(fundingAmount) * 1e6).toString();
       
+      console.log('Getting routes with params:', {
+        fromChainId: savingsAccountExtracted.chainId,
+        toChainId: creditCardExtracted.chainId,
+        fromTokenAddress,
+        toTokenAddress,
+        fromAmount: amount,
+        fromAddress: savingsAccountExtracted.address,
+        toAddress: creditCardExtracted.address,
+      });
+      
+      /*
       const routes = await getRoutes({
         fromChainId: savingsAccountExtracted.chainId,
         toChainId: creditCardExtracted.chainId,
@@ -402,14 +433,24 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         fromAddress: savingsAccountExtracted.address,
         toAddress: creditCardExtracted.address,
       });
+
+      
+      console.log('Routes received:', routes);
+
       
       setAvailableRoutes(routes.routes);
       if (routes.routes.length > 0) {
         setSelectedRoute(routes.routes[0]);
+        console.log('Selected route:', routes.routes[0]);
+      } else {
+        console.error('No routes available');
+        setError('No transfer routes available for this amount and token combination');
       }
+      */
+      setSelectedRoute(null);
     } catch (error) {
       console.error('Error getting routes:', error);
-      setError('Failed to get transfer routes');
+      setError('Failed to get transfer routes: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsLoadingRoutes(false);
     }
@@ -495,20 +536,137 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
   };
 
   const handleConfirmTransfer = async () => {
-    if (!selectedCreditCard || selectedSavingsAccounts.length === 0 || !fundingAmount || !selectedRoute) {
-      setError('Missing required information');
-      return;
-    }
+    //if (!selectedCreditCard || selectedSavingsAccounts.length === 0 || !fundingAmount || !selectedRoute) {
+    //  setError('Missing required information');
+    //  return;
+    //}
 
     setIsLoading(true);
     setError(null);
 
     try {
-      // Execute the LiFi route
+      // Execute the LiFi route using delegation
       console.info("***********  EXECUTE SELECTED ROUTE ****************", selectedRoute);
-      const result = await executeRoute(selectedRoute);
+
+      //await executeRoute(selectedRoute);
+
+
+  
+      const savingsAccount = savingsAccounts.find(acc => acc.id === selectedSavingsAccounts[0]);
+
+      const accountIndivDelegationStr = savingsAccount?.attestation?.indivDelegation;
+      const accountOrgDelegationStr = savingsAccount?.attestation?.orgDelegation;
       
-      console.info('Transfer executed:', result);
+      
+
+      if (!orgAccountClient && !indivAccountClient && !accountOrgDelegationStr) {
+        throw new Error('No delegations found');
+      }
+
+      const accountIndivDelegation = JSON.parse(accountIndivDelegationStr || '{}') 
+      const accountOrgDelegation = JSON.parse(accountOrgDelegationStr || '{}') 
+
+      // Setup bundler and paymaster clients
+      const paymasterClient = createPaymasterClient({
+        transport: http(PAYMASTER_URL || ''),
+      });
+
+      const pimlicoClient = createPimlicoClient({
+        transport: http(BUNDLER_URL || ''),
+      });
+
+      const bundlerClient = createBundlerClient({
+        transport: http(BUNDLER_URL || ''),
+        paymaster: paymasterClient,
+        chain: chain,
+        paymasterContext: {
+          mode: 'SPONSORED',
+        },
+      });
+
+      const calls = []
+
+
+      console.info("***********  selected credit card ****************", selectedCreditCard);
+      const amount = selectedToken === 'ETH' 
+        ? (parseFloat(fundingAmount) * 1e18).toString()
+        : (parseFloat(fundingAmount) * 1e6).toString();
+      const creditCardExtracted = extractFromAccountDid(selectedCreditCard.accountDid);
+
+      const includedExecutions = [
+        {
+          target: creditCardExtracted.address as `0x${string}`,
+          value: amount,
+          callData: "0x"
+        },
+      ];
+
+
+      // Encode the delegation execution
+      console.info("***********  redeemDelegations ****************");
+      const data = DelegationFramework.encode.redeemDelegations({
+        delegations: [[accountIndivDelegation, accountOrgDelegation]],
+        modes: [SINGLE_DEFAULT_MODE],
+        executions: [includedExecutions]
+      });
+
+      console.info("***********  call ****************");
+
+      const call = {
+        to: indivAccountClient.address,
+        data: data,
+      }
+
+      calls.push(call)
+
+      /*
+      for (const step of selectedRoute.steps) {
+
+        const tx = await getStepTransaction(step);
+        const txRequest = tx.transactionRequest;
+
+        if (!txRequest || !orgAccountClient) {
+          throw new Error('No transaction data in route');
+        }
+
+        const includedExecutions = [
+          {
+            target: txRequest.to as `0x${string}`,
+            value: BigInt(txRequest.value || '0'),
+            callData: txRequest.data as `0x${string}`,
+          },
+        ];
+
+        // Encode the delegation execution
+        const data = DelegationFramework.encode.redeemDelegations({
+          delegations: [[accountOrgDelegation]],
+          modes: [SINGLE_DEFAULT_MODE],
+          executions: [includedExecutions]
+        });
+
+        const call = {
+          to: orgAccountClient.address,
+          data: data,
+        }
+
+        calls.push(call)
+
+      }
+      */
+
+
+      //const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+      const fee = {maxFeePerGas: 412596685n, maxPriorityFeePerGas: 412596676n}
+      // Send user operation
+      const userOpHash = await bundlerClient.sendUserOperation({
+        account: indivAccountClient,
+        calls: calls,
+        paymaster: paymasterClient,
+        ...fee
+      });
+
+      const userOperationReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
+      console.info('Transfer executed:', userOperationReceipt);
       
       // Refresh balances after transfer
       await fetchCreditCardBalances(selectedCreditCard.accountDid);
@@ -526,6 +684,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
     } finally {
       setIsLoading(false);
     }
+      
   };
 
   const renderStepContent = () => {
@@ -895,12 +1054,27 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
               <Button 
                 variant="contained" 
                 onClick={handleConfirmTransfer}
-                disabled={isLoading || !selectedRoute}
+                
                 color="primary"
               >
                 {isLoading ? <CircularProgress size={24} /> : 'Confirm Transfer'}
               </Button>
             </Box>
+            
+            {/* Show loading state when fetching routes */}
+            {isLoadingRoutes && (
+              <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                <CircularProgress size={20} />
+                <Typography variant="body2">Finding transfer routes...</Typography>
+              </Box>
+            )}
+            
+            {/* Show error if routes failed to load */}
+            {error && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {error}
+              </Alert>
+            )}
           </>
         );
 
