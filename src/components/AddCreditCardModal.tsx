@@ -169,44 +169,7 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
     setIsLoading(true);
     setError(null);
 
-    console.info("handleSave ....")
-
-    const accountData = {
-      accountName: accountName,
-      accountAddress: selectedAccount.address,
-      accountBalance: selectedAccount.balance
-    }
-
     const accountDid = "did:pkh:eip155:" + chain?.id + ":" + selectedAccount.address
-
-    
-
-
-
-
-
-    /*
-    console.info("-----------> store account data")
-    const storeResp = await fetch(`${BASE_URL_PROVER}/api/account/store`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            name: accountName,
-            address: selectedAccount.address
-        }),
-    })
-
-    console.info("storeResp: ", storeResp)
-
-    const storeResults = await storeResp.json()
-    const js = JSON.parse(storeResults)
-
-    console.info("storeResults: ", js)
-    const cid = js.cid
-
-    console.info("cid result: ", cid)
-    */
-
 
     console.info("*********** ADD ACCOUNT ATTESTATION ****************")
     const provider = new ethers.BrowserProvider(window.ethereum);
@@ -218,8 +181,6 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
 
 
     if (walletSigner && walletClient && privateIssuerAccount && indivDid && mascaApi && privateIssuerDid) {
-
-      console.info("********** lets doo it create account vc ****************")
 
         const vc = await VerifiableCredentialsService.createAccountVC(entityId, privateIssuerDid, accountDid, indivDid, accountName);
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
@@ -292,79 +253,6 @@ const AddCreditCardModal: React.FC<AddCreditCardModalProps> = ({ isVisible, onCl
         }
     }
 
-    /*
-
-    if (chain && indivDid) {
-      console.info("*********** MOVE MONEY TO CREDIT ACCOUNT ****************")
-
-      const accounts = await AttestationService.loadIndivAccounts(chain, indivDid, "1110")
-      if (accounts.length > 0) {
-        const account = accounts[0]
-        console.info("account: ", account)
-        const indivDel = JSON.parse(account.attestation?.indivDelegation || "")
-        const orgDel = JSON.parse(account.attestation?.orgDelegation || "")
-
-        try {
-
-          const pimlicoClient = createPimlicoClient({
-            transport: http(BUNDLER_URL),
-          });
-
-
-          console.info("create bundler client ", BUNDLER_URL, PAYMASTER_URL)
-          const bundlerClient = createBundlerClient({
-                          transport: http(BUNDLER_URL),
-                          paymaster: true,
-                          chain: chain,
-                          paymasterContext: {
-                            mode:             'SPONSORED',
-                          },
-                        });
-
-          const accountAddress = account.did.replace('did:pkh:eip155:' + chain?.id + ':', '') as `0x${string}`
-          const executions = [
-            {
-              target: accountAddress,
-              value: 10n,
-            },
-          ];
-
-
-          const delegationChain = [ indivDel, orgDel ]
-          const data = DelegationFramework.encode.redeemDelegations({
-            delegations: [ delegationChain ],
-            modes: [SINGLE_DEFAULT_MODE],
-            executions: [executions]
-          });
-      
-          
-          const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
-          const userOpHash = await bundlerClient.sendUserOperation({
-            account: indivAccountClient,
-            calls: [
-              {
-                to: selectedAccount.address,
-                data,
-              },
-            ],
-            ...fee
-          });
-
-
-
-          console.info("individual account is deployed - done")
-          const { receipt } = await bundlerClient!.waitForUserOperationReceipt({
-            hash: userOpHash,
-          });
-
-        }
-        catch (error) { 
-          console.info("error deploying indivAccountClient: ", error)
-        }
-        
-      }
-    }
-    */
 
     setSelectedAccount(null);
     setAccountName('');

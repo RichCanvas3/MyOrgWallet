@@ -4,7 +4,7 @@ import { WagmiProvider, useAccount, useConnect, useWalletClient } from 'wagmi';
 
 import detectEthereumProvider from '@metamask/detect-provider';
 
-import { Typography, Card, Button, Box, Paper } from "@mui/material";
+import { Typography, Card, Button, Box, Paper, CircularProgress } from "@mui/material";
 import BusinessIcon from '@mui/icons-material/Business';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 
@@ -17,23 +17,17 @@ interface HomePageProps {
   className: string;
 }
 
-
-
-
-
 const HomePage: React.FC<HomePageProps> = ({className}) => {
 
   const navigate = useNavigate();
   const { data: walletClient } = useWalletClient();
   const [hasProvider, setHasProvider] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const { selectedSignatory, signatory, connect, isIndividualConnected, orgDid, indivDid } = useWallectConnectContext();
   const { isConnected } = useAccount();
 
-  
-
   useEffect(() => {
-
     const detectProvider = async () => {
       const provider = await detectEthereumProvider();
 
@@ -52,6 +46,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
   }, [isConnected, isIndividualConnected, orgDid, indivDid]);
 
   const handleConnect = async () => {
+    setIsLoading(true);
     try {
       if (selectedSignatory) {
         const loginResp = await selectedSignatory.login()
@@ -104,6 +99,8 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
         // Generic error fallback
         alert("An error occurred " + error.message);
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -308,8 +305,8 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
             Connect to your Externally Owned Account (EOA).
           </Typography>
 
-          <Button className="connect" variant="contained" size="large" onClick={handleConnect} sx={{backgroundColor: '#48ba2f'}}>
-            Connect Wallet
+          <Button className="connect" variant="contained" size="large" onClick={handleConnect} sx={{backgroundColor: '#48ba2f'}} disabled={isLoading}>
+            {isLoading ? <CircularProgress size={20} /> : 'Connect Wallet'}
           </Button>
         </Box>
 

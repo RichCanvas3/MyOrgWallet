@@ -13,7 +13,7 @@ import { VerifiableCredential } from '../models/VerifiableCredential'
 import { VcZkProof, VcRevokeZkProof } from '../models/ZkProof'
 import {Attestation, IndivAccountAttestation} from '../models/Attestation';
 import AttestationService from '../service/AttestationService';
-import { RPC_URL, ALCHEMY_RPC_URL, ETHERSCAN_API_KEY, ETHERSCAN_URL, EAS_URL } from "../config";
+import { RPC_URL,  ETHERSCAN_API_KEY, ETHERSCAN_URL, EAS_URL } from "../config";
 
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService"
 import ZkProofService from "../service/ZkProofService"
@@ -81,7 +81,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
       if (!cached && address) {
 
         //   PRIVATE DATA
-        const alchemyRpcUrl = ALCHEMY_RPC_URL
+        const alchemyRpcUrl = RPC_URL
 
 
         //  get org account information

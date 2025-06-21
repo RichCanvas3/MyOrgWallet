@@ -61,6 +61,7 @@ import ImportDriversLicenseModal from './ImportDriversLicenseModal';
 import AddCreditCardModal from './AddCreditCardModal';
 import FundCreditCardModal from './FundCreditCardModal';
 import AddSavingsModal from './AddSavingsModal';
+import AddAccountModal from './AddAccountModal';
 import OrgModal from './OrgModal';  
 
 
@@ -146,6 +147,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const [isAddCreditCardModalVisible, setAddCreditCardModalVisible] = useState(false);
   const [isFundCreditCardModalVisible, setFundCreditCardModalVisible] = useState(false);
   const [isAddSavingsModalVisible, setAddSavingsModalVisible] = useState(false);
+  const [isAddAccountModalVisible, setAddAccountModalVisible] = useState(false);
 
   const [isOrgModalVisible, setOrgModalVisible] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
@@ -175,6 +177,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   }
   const handleOnAddSavingsModalClose = () => {
     setAddSavingsModalVisible(false);
+  }
+  const handleOnAddAccountModalClose = () => {
+    setAddAccountModalVisible(false);
   }
   const handleOnOrgModalClose = () => {
     setOrgModalVisible(false);
@@ -712,6 +717,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       if (lastUserResponse.toLowerCase().includes("add savings account")) {
         console.info("add savings account ...")
         setAddSavingsModalVisible(true)
+      }
+      if (lastUserResponse.toLowerCase().includes("add account")) {
+        console.info("add account ...")
+        setAddAccountModalVisible(true)
       }
       if (lastUserResponse.toLowerCase().includes("fund credit card")) {
         console.info("fund credit card ...")
@@ -1702,6 +1711,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         <AddSavingsModal
           isVisible={isAddSavingsModalVisible}
           onClose={handleOnAddSavingsModalClose}
+        />
+        <AddAccountModal
+          isVisible={isAddAccountModalVisible}
+          onClose={handleOnAddAccountModalClose}
         />
         <OrgModal
           orgName={newOrgName?newOrgName:""}
