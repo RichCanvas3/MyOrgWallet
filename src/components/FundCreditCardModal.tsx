@@ -160,7 +160,10 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
       EVM({
         getWalletClient: () => {
           console.info("*********** GET WALLET CLIENT ****************")
-          //console.info("*********** signatory.walletClient ****************", signatory.walletClient);
+          console.info("*********** signatory.walletClient ****************", signatory.walletClient);
+          return signatory.walletClient
+
+          /*
           const provider = (window as any).ethereum;
           const owner = "0x31ed17fb99e82e02085ab4b3cbdab05489098b44" as `0x${string}`;
 
@@ -172,8 +175,9 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
           });
 
           return walletClient
+          */
 
-          //return signatory.walletClient
+          
         },
         switchChain: async (chainId: ChainId) => {
           console.info("*********** SWITCH CHAIN ****************: ", chainId);
@@ -410,13 +414,13 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
       
       
       // For now, we'll get routes from the first selected savings account
-      const firstSavingsAccount = savingsAccounts.find(acc => acc.id === selectedSavingsAccounts[0]);
+      //const firstSavingsAccount = savingsAccounts.find(acc => acc.id === selectedSavingsAccounts[0]);
 
       // test sending from Op EOA account
-      //const firstSavingsAccount =  {
-      //  accountName: "Op Saving Account",
-      //  did: "did:pkh:eip155:10:0x31ed17fb99e82e02085ab4b3cbdab05489098b44"
-      //}
+      const firstSavingsAccount =  {
+        accountName: "Op Saving Account",
+        did: "did:pkh:eip155:10:0x9cfc7E44757529769A28747F86425C682fE64653"
+      }
 
       if (!firstSavingsAccount) {
         console.error('First savings account not found');
@@ -593,6 +597,10 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
           console.info("this is a Account Abstraction and not EOA")
         }
         */
+
+        // move funds from savings account to connected EOA
+        // use delegation for that
+        // then move funds from EOA to destination Credit Card on Linea
 
         // verify that account is an EOA account
         console.info("***********  EXECUTE LiFi SELECTED ROUTE ****************");
