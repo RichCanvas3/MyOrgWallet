@@ -2298,6 +2298,11 @@ class AttestationService {
         id: "70"
       },
       {
+        class: "organization",
+        name: "delegations",
+        id: "80"
+      },
+      {
         class: "individual",
         name: "wallet",
         id: "80"
@@ -2350,6 +2355,7 @@ class AttestationService {
 
 
       const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
+      console.info("data: ", data)
 
       const attestations : Attestation[] = []
       for (const item of data.attestations) {
@@ -2365,8 +2371,6 @@ class AttestationService {
 
           
           if (schema) {
-
-            //console.info("item: ", item)
 
             let entityId = "entityId"
             let hash = ""
@@ -2448,6 +2452,7 @@ class AttestationService {
 
 
             if (att == undefined) {
+              //console.info("att is undefined: ", att, item.id)
               att = {
                 uid: item.id,
                 attester: "did:pkh:eip155:" + chain?.id + ":" + item.attester,
@@ -2458,14 +2463,17 @@ class AttestationService {
               }
             }
             else {
+              console.info("att: ", att.displayName, item.id)
               att.uid = item.id,
               att.attester = "did:pkh:eip155:" + chain?.id + ":" + item.attester,
               att.schemaId = item.schemaId,
               entityId = entityId
+
+              attestations.push(att)
             }
 
             //console.info("push att on list: ", att)
-            attestations.push(att)
+            
           }
       
       }

@@ -108,7 +108,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
   const [activeStep, setActiveStep] = useState(0);
   
   // Balance states
-  const [creditCardBalances, setCreditCardBalances] = useState<{ [accountDid: string]: { ETH: string; USDC: string } }>({});
+  const [creditCardBalances, setCreditCardBalances] = useState<{ [accountDid: string]: { USDC: string } }>({});
   const [savingsAccountBalances, setSavingsAccountBalances] = useState<{ [key: string]: { eth: string; usdc: string } }>({});
   const [isLoadingBalances, setIsLoadingBalances] = useState(false);
   
@@ -138,6 +138,17 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
     } catch (error) {
       console.error('Error parsing accountDid:', error);
       return null;
+    }
+  };
+
+  // Function to get chain name from chain ID
+  const getChainName = (chainId: number): string => {
+    switch (chainId) {
+      case 1: return 'Ethereum';
+      case 10: return 'Optimism';
+      case 59144: return 'Linea';
+      case 11155111: return 'Sepolia';
+      default: return `Chain ${chainId}`;
     }
   };
     
@@ -209,7 +220,6 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
       )?.address || "0x176211869cA2b568f2A7D4EE941E073a821EE1ff";
       
       const availableTokensList = [
-        //{ symbol: 'ETH', name: 'Ethereum', address: nativeToken },
         { symbol: 'USDC', name: 'USD Coin', address: usdcToken }
       ];
       
@@ -274,24 +284,13 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         // Update available tokens for the first account (they should be the same across accounts on same chain)
         if (Object.keys(creditCardBalances).length === 0) {
           const tokens = [
-            //{ symbol: 'ETH', name: 'Ethereum', address: nativeToken },
             { symbol: 'USDC', name: 'USD Coin', address: usdcToken }
           ];
           setAvailableTokens(tokens);
-          setSelectedToken('ETH'); // Set default token
+          setSelectedToken('USDC'); // Set default token
         }
         
-        const balances: { ETH: string; USDC: string } = { ETH: '0', USDC: '0' };
-        
-        // ETH balance
-        const ethBalance = tokenBalances.find(balance => balance.address === nativeToken);
-        if (ethBalance && ethBalance.amount) {
-          const weiBigInt = typeof ethBalance.amount === 'string' ? BigInt(ethBalance.amount) : ethBalance.amount;
-          const eth = Number(weiBigInt) / 1e18;
-          balances.ETH = eth.toFixed(6);
-        } else {
-          balances.ETH = '0';
-        }
+        const balances: { USDC: string } = { USDC: '0' };
         
         // USDC balance
         const usdcBalance = tokenBalances.find(balance => balance.address === usdcToken);
@@ -861,15 +860,27 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
                               <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }} component="div">
                                 {account.accountDid}
                               </Typography>
+                              {(() => {
+                                const extracted = extractFromAccountDid(account.accountDid);
+                                return extracted && (
+                                  <Box sx={{ mt: 0.5 }}>
+                                    <Typography variant="caption" sx={{ fontFamily: 'monospace', display: 'block' }} component="div">
+                                      <Chip 
+                                        label={getChainName(extracted.chainId)}
+                                        size="small"
+                                        color="primary"
+                                        variant="filled"
+                                        sx={{ mr: 1, fontWeight: 'bold' }}
+                                      />
+                                      Chain ID: {extracted.chainId} | Address: {extracted.address}
+                                    </Typography>
+                                  </Box>
+                                );
+                              })()}
                               {isLoadingBalances ? (
                                 <CircularProgress size={12} />
                               ) : (
                                 <Box display="flex" gap={1} mt={0.5}>
-                                  <Chip 
-                                    label={`${creditCardBalances[account.accountDid]?.ETH || '0'} ETH`}
-                                    size="small"
-                                    variant="outlined"
-                                  />
                                   <Chip 
                                     label={`${creditCardBalances[account.accountDid]?.USDC || '0'} USDC`}
                                     size="small"
@@ -923,17 +934,19 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
                         {extracted && (
                           <Box sx={{ mt: 0.5 }}>
                             <Typography variant="caption" sx={{ fontFamily: 'monospace', display: 'block' }} component="div">
+                              <Chip 
+                                label={getChainName(extracted.chainId)}
+                                size="small"
+                                color="primary"
+                                variant="filled"
+                                sx={{ mr: 1, fontWeight: 'bold' }}
+                              />
                               Chain ID: {extracted.chainId} | Address: {extracted.address}
                             </Typography>
                           </Box>
                         )}
                         {balances && (
-                          <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-                            <Chip 
-                              label={`${balances.eth} ETH`}
-                              size="small"
-                              variant="outlined"
-                            />
+                          <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                             <Chip 
                               label={`${balances.usdc} USDC`}
                               size="small"
@@ -1111,16 +1124,18 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
                       </Typography>
                       {extracted && (
                         <Typography variant="caption" component="div" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
+                          <Chip 
+                            label={getChainName(extracted.chainId)}
+                            size="small"
+                            color="primary"
+                            variant="filled"
+                            sx={{ mr: 1, fontWeight: 'bold' }}
+                          />
                           Chain ID: {extracted.chainId} | Address: {extracted.address}
                         </Typography>
                       )}
                       {balances && (
                         <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                          <Chip 
-                            label={`${balances.eth} ETH`}
-                            size="small"
-                            variant="outlined"
-                          />
                           <Chip 
                             label={`${balances.usdc} USDC`}
                             size="small"
@@ -1149,17 +1164,19 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
                     const extracted = extractFromAccountDid(selectedCreditCard.accountDid);
                     return extracted && (
                       <Typography variant="caption" component="div" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
+                        <Chip 
+                          label={getChainName(extracted.chainId)}
+                          size="small"
+                          color="primary"
+                          variant="filled"
+                          sx={{ mr: 1, fontWeight: 'bold' }}
+                        />
                         Chain ID: {extracted.chainId} | Address: {extracted.address}
                       </Typography>
                     );
                   })()}
                   {selectedCreditCard?.accountDid && creditCardBalances[selectedCreditCard.accountDid] && (
                     <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                      <Chip 
-                        label={`${creditCardBalances[selectedCreditCard.accountDid].ETH} ETH`}
-                        size="small"
-                        variant="outlined"
-                      />
                       <Chip 
                         label={`${creditCardBalances[selectedCreditCard.accountDid].USDC} USDC`}
                         size="small"

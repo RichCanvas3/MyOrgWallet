@@ -147,7 +147,7 @@ return (
   flexDirection="column"
   justifyContent="flex-start"
   alignItems="flex-start"
-  height="750px" /* Will most likely have to change in the future, temp fix */
+  height="80vh"
   width="100%"
 >
   <TabContext value={tabValue}>

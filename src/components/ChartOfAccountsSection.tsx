@@ -15,10 +15,13 @@ import {
   Tab,
   Tabs,
   Button,
+  CircularProgress,
 } from '@mui/material';
 
 import AttestationService from '../service/AttestationService';
 import { useWallectConnectContext } from "../context/walletConnectContext";
+import { getTokens, getTokenBalances } from '@lifi/sdk';
+import { ChainId } from '@lifi/types';
 
 import SearchIcon from '@mui/icons-material/Search';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -41,6 +44,10 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
   // Add state for view type
   const [viewType, setViewType] = useState<'chart' | 'list'>('chart');
   const [listAccounts, setListAccounts] = useState<Account[]>([]);
+  
+  // Balance states
+  const [accountBalances, setAccountBalances] = useState<{ [accountDid: string]: { USDC: string } }>({});
+  const [isLoadingBalances, setIsLoadingBalances] = useState(false);
 
   const [accounts, setAccounts] = useState<Account[]>([
     /* ───────────────────────── ASSETS (1xxx) ───────────────────────── */
@@ -475,6 +482,11 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
               }
               accountsChanged = true;
             }
+            
+            // Fetch balances for accounts with DIDs
+            if (acct.did) {
+              fetchAccountBalances(acct.did);
+            }
           }
           if (att.entityId === "account(org)") {
             const accountAtt = att as OrgAccountAttestation;
@@ -482,6 +494,7 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
               id: accountAtt.coaCategory + '-' + accountAtt.coaCode,
               code: accountAtt.coaCategory + '-' + accountAtt.coaCode,
               name: accountAtt.accountName,
+              did: accountAtt.accountDid,
               type: ACCOUNT_TYPES.Asset,
               balance: 0,
               level: 4,
@@ -511,6 +524,11 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
                 newAccounts.push(acct);
               }
               accountsChanged = true;
+            }
+            
+            // Fetch balances for accounts with DIDs
+            if (acct.did) {
+              fetchAccountBalances(acct.did);
             }
           }
         }
@@ -570,6 +588,8 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
     const hasChildren = Array.isArray(account.children) && account.children.length > 0;
     const isExpanded = expandedAccounts[account.id];
     const paddingLeft = account.level * 20;
+    const balances = account.did ? accountBalances[account.did] : null;
+    const extracted = account.did ? extractFromAccountDid(account.did) : null;
 
     return (
       <Box key={account.id}>
@@ -617,13 +637,38 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
                     sx={{ height: 20 }}
                   />
                 </Typography>
+                {extracted && (
+                  <Typography variant="caption" sx={{ fontFamily: 'monospace', display: 'block', mt: 0.5 }} component="div">
+                    <Chip 
+                      label={getChainName(extracted.chainId)}
+                      size="small"
+                      color="primary"
+                      variant="filled"
+                      sx={{ mr: 1, fontWeight: 'bold' }}
+                    />
+                    Chain ID: {extracted.chainId} | Address: {extracted.address}
+                  </Typography>
+                )}
+                {balances && (
+                  <Box display="flex" gap={1} mt={0.5}>
+                    <Chip 
+                      label={`${balances.USDC} USDC`}
+                      size="small"
+                      variant="outlined"
+                      color="success"
+                    />
+                  </Box>
+                )}
+                {account.did && isLoadingBalances && (
+                  <CircularProgress size={12} sx={{ mt: 0.5 }} />
+                )}
               </Box>
               <Typography
                 variant="h6"
                 color={account.balance >= 0 ? 'primary' : 'error'}
                 sx={{ minWidth: 120, textAlign: 'right' }}
               >
-                ${Math.abs(account.balance).toLocaleString()}
+                {getDisplayBalance(account)}
               </Typography>
             </Box>
           </Box>
@@ -697,68 +742,216 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
   };
 
   // Update the renderListAccount function
-  const renderListAccount = (account: Account) => (
-    <Paper
-      key={account.id}
-      elevation={0}
-      sx={{
-        p: 2,
-        cursor: 'pointer',
-        border: '1px solid',
-        borderColor: 'divider',
-        '&:hover': {
-          backgroundColor: 'action.hover',
-          borderColor: 'primary.main',
-        },
-        mb: 1,
-      }}
-    >
-      <Box display="flex" alignItems="center" justifyContent="space-between">
-        <Box 
-          flex={1} 
-          onClick={() => onSelectAccount?.(account)}
-          sx={{ cursor: 'pointer' }}
-        >
-          <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {account.code} - {account.name}
-            <Chip
-              label={account.type}
+  const renderListAccount = (account: Account) => {
+    const balances = account.did ? accountBalances[account.did] : null;
+    const extracted = account.did ? extractFromAccountDid(account.did) : null;
+
+    return (
+      <Paper
+        key={account.id}
+        elevation={0}
+        sx={{
+          p: 2,
+          cursor: 'pointer',
+          border: '1px solid',
+          borderColor: 'divider',
+          '&:hover': {
+            backgroundColor: 'action.hover',
+            borderColor: 'primary.main',
+          },
+          mb: 1,
+        }}
+      >
+        <Box display="flex" alignItems="center" justifyContent="space-between">
+          <Box 
+            flex={1} 
+            onClick={() => onSelectAccount?.(account)}
+            sx={{ cursor: 'pointer' }}
+          >
+            <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {account.code} - {account.name}
+              <Chip
+                label={account.type}
+                size="small"
+                color={getAccountTypeColor(account.type)}
+                sx={{ height: 20 }}
+              />
+            </Typography>
+            {extracted && (
+              <Typography variant="caption" sx={{ fontFamily: 'monospace', display: 'block', mt: 0.5 }} component="div">
+                <Chip 
+                  label={getChainName(extracted.chainId)}
+                  size="small"
+                  color="primary"
+                  variant="filled"
+                  sx={{ mr: 1, fontWeight: 'bold' }}
+                />
+                Chain ID: {extracted.chainId} | Address: {extracted.address}
+              </Typography>
+            )}
+            {balances && (
+              <Box display="flex" gap={1} mt={0.5}>
+                <Chip 
+                  label={`${balances.USDC} USDC`}
+                  size="small"
+                  variant="outlined"
+                  color="success"
+                />
+              </Box>
+            )}
+            {account.did && isLoadingBalances && (
+              <CircularProgress size={12} sx={{ mt: 0.5 }} />
+            )}
+          </Box>
+          <Box display="flex" alignItems="center" gap={2}>
+            <Typography
+              variant="h6"
+              color={account.balance >= 0 ? 'primary' : 'error'}
+              sx={{ minWidth: 120, textAlign: 'right' }}
+            >
+              {getDisplayBalance(account)}
+            </Typography>
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRevoke(account.id);
+              }}
               size="small"
-              color={getAccountTypeColor(account.type)}
-              sx={{ height: 20 }}
-            />
-          </Typography>
+              color="error"
+              sx={{ 
+                '&:hover': {
+                  backgroundColor: 'error.light',
+                  color: 'white',
+                }
+              }}
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Box>
         </Box>
-        <Box display="flex" alignItems="center" gap={2}>
-          <Typography
-            variant="h6"
-            color={account.balance >= 0 ? 'primary' : 'error'}
-            sx={{ minWidth: 120, textAlign: 'right' }}
-          >
-            ${Math.abs(account.balance).toLocaleString()}
-          </Typography>
-          <IconButton
-            onClick={(e) => {
-              e.stopPropagation();
-              handleRevoke(account.id);
-            }}
-            size="small"
-            color="error"
-            sx={{ 
-              '&:hover': {
-                backgroundColor: 'error.light',
-                color: 'white',
-              }
-            }}
-          >
-            <DeleteIcon />
-          </IconButton>
-        </Box>
-      </Box>
-    </Paper>
-  );
+      </Paper>
+    );
+  };
 
+  // Utility function to extract chainId and address from accountDid
+  const extractFromAccountDid = (accountDid: string): { chainId: number; address: `0x${string}` } | null => {
+    try {
+      // Parse did:pkh:eip155:chainId:address format
+      const parts = accountDid.split(':');
+      if (parts.length === 5 && parts[0] === 'did' && parts[1] === 'pkh' && parts[2] === 'eip155') {
+        const chainId = parseInt(parts[3], 10);
+        const address = parts[4] as `0x${string}`;
+        return { chainId, address };
+      }
+      return null;
+    } catch (error) {
+      console.error('Error parsing accountDid:', error);
+      return null;
+    }
+  };
 
+  // Function to get chain name from chain ID
+  const getChainName = (chainId: number): string => {
+    switch (chainId) {
+      case 1: return 'Ethereum';
+      case 10: return 'Optimism';
+      case 59144: return 'Linea';
+      case 11155111: return 'Sepolia';
+      default: return `Chain ${chainId}`;
+    }
+  };
+
+  // Fetch balances for accounts
+  const fetchAccountBalances = async (accountDid: string) => {
+    if (!accountDid || !chain) return;
+    
+    setIsLoadingBalances(true);
+    try {
+      const extracted = extractFromAccountDid(accountDid);
+      if (!extracted) {
+        console.error('Invalid accountDid format:', accountDid);
+        return;
+      }
+      
+      const { address: accountAddress, chainId: accountChainId } = extracted;
+
+      const tokensResponse = await getTokens({ chains: [accountChainId as ChainId] });
+      const tokens = tokensResponse.tokens[accountChainId as ChainId] || [];
+      
+      const nativeToken = "0x0000000000000000000000000000000000000000";
+      // Find USDC token dynamically from the response
+      const usdcToken = tokens.find(token => 
+        token.symbol === 'USDC' && token.address !== nativeToken
+      )?.address || "0x176211869cA2b568f2A7D4EE941E073a821EE1ff"; // fallback to Linea USDC
+      
+      const filteredTokens = tokens.filter(item => 
+        item.address === nativeToken || item.address === usdcToken
+      );
+      
+      if (filteredTokens.length > 0) {
+        const tokenBalances = await getTokenBalances(accountAddress, filteredTokens);
+        
+        const balances: { USDC: string } = { USDC: '0' };
+        
+        // USDC balance
+        const usdcBalance = tokenBalances.find(balance => balance.address === usdcToken);
+        if (usdcBalance && usdcBalance.amount) {
+          const amountBigInt = BigInt(usdcBalance.amount.toString());
+          const dollars = Number(amountBigInt) / 1_000_000;
+          balances.USDC = dollars.toFixed(2);
+        } else {
+          balances.USDC = '0';
+        }
+
+        console.info("*********** account balances ****************", balances);
+        
+        setAccountBalances(prev => ({
+          ...prev,
+          [accountDid]: balances
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching account balances:', error);
+    } finally {
+      setIsLoadingBalances(false);
+    }
+  };
+
+  // Function to calculate total USDC balance for an account and its children
+  const calculateTotalUSDCBalance = (account: Account): number => {
+    let total = 0;
+    
+    // Add this account's balance if it has a DID
+    if (account.did && accountBalances[account.did]) {
+      total += parseFloat(accountBalances[account.did].USDC);
+    }
+    
+    // Add children's balances recursively
+    if (account.children && account.children.length > 0) {
+      for (const child of account.children) {
+        total += calculateTotalUSDCBalance(child);
+      }
+    }
+    
+    return total;
+  };
+
+  // Function to get display balance for an account
+  const getDisplayBalance = (account: Account): string => {
+    // For accounts with children, show the total of all children
+    if (account.children && account.children.length > 0) {
+      const totalBalance = calculateTotalUSDCBalance(account);
+      return `$${totalBalance.toLocaleString()}`;
+    }
+    
+    // For leaf accounts (no children), show their individual balance
+    if (account.did && accountBalances[account.did]) {
+      return `$${parseFloat(accountBalances[account.did].USDC).toLocaleString()}`;
+    }
+    
+    // Fallback to original balance
+    return `$${Math.abs(account.balance).toLocaleString()}`;
+  };
 
   return (
     <Box
@@ -766,7 +959,7 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
       flexDirection="column"
       justifyContent="flex-start"
       alignItems="flex-start"
-      height="750px"
+      height="80vh"
       width="100%"
     >
       {/* Header with Search and View Toggle */}
