@@ -74,7 +74,7 @@ createConfig({
         },
       }),
     ],
-    preloadChains: false,
+    preloadChains: true,
   })
 
 

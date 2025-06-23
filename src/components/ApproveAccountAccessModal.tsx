@@ -84,9 +84,19 @@ const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ i
     setLoading(true);
     try {
 
+      console.info("***********  approve account access handleConfirm ****************");
+
       // Prepare delegation and attestation
       if (orgIndivDelegation && chain && orgDid && privateIssuerDid && walletClient && orgAccountClient && privateIssuerAccount && burnerAccountClient) {
         
+
+        console.info("***********  orgIndivDelegation ****************", orgIndivDelegation);
+        console.info("***********  chain ****************", chain);
+        console.info("***********  orgDid ****************", orgDid);
+        console.info("***********  privateIssuerDid ****************", privateIssuerDid);
+        console.info("***********  walletClient ****************", walletClient);
+        console.info("***********  orgAccountClient ****************", orgAccountClient);
+        console.info("***********  privateIssuerAccount ****************", privateIssuerAccount); 
 
         const accountDid = selectedAccount.attestation?.accountDid || ""
 
@@ -104,6 +114,8 @@ const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ i
         }
 
 
+        console.info("***********  selectedAccount.attestation?.delegation ****************");
+        console.info("***********  selectedAccount.attestation?.delegation ****************", selectedAccount);
         const parentDelegationHash = getDelegationHashOffchain(JSON.parse(selectedAccount.attestation?.delegation || ""));
         let indivDel = createDelegation({
           to: leaderIndivAddress,
@@ -117,13 +129,17 @@ const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ i
           delegation: indivDel,
         });
 
+        console.info("***********  indivDelSignature ****************", indivDelSignature);
+
         indivDel = {
           ...indivDel,
           signature: indivDelSignature,
         }
 
+        console.info("***********  indivDel ****************", indivDel);
 
         const indivDelegationJsonStr = JSON.stringify(indivDel)
+        console.info("***********  indivDelegationJsonStr ****************", indivDelegationJsonStr);
 
         const name = selectedAccount.attestation?.accountName + " - " + leaderIndivName
           
@@ -144,6 +160,8 @@ const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ i
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
+
+        console.info("***********  fullVc ****************", fullVc);
 
 
         if (fullVc && leaderIndivDid && chain && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient) {
@@ -171,6 +189,8 @@ const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ i
           const provider = new ethers.BrowserProvider(window.ethereum);
           await window.ethereum.request({ method: "eth_requestAccounts" });
           const walletSigner = await provider.getSigner()
+
+          console.info("***********  attestation ****************", attestation);
           const uid = await AttestationService.addAccountIndivDelAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
 
         }

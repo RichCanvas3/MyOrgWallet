@@ -4,11 +4,11 @@ import { useAccount } from 'wagmi';
 import { keccak256, toUtf8Bytes } from 'ethers';
 import { ethers } from 'ethers';
 import { getTokens, EVM, getTokenBalances, createConfig, getRoutes, getStepTransaction, executeRoute } from '@lifi/sdk';
-
+import { createWalletClient, custom, toHex, type Address } from "viem";
 
 import { encodeFunctionData, parseUnits } from 'viem';
 
-
+import { erc20Abi } from 'viem';
 
 
 
@@ -16,7 +16,7 @@ import type { Token, Route, LiFiStep } from '@lifi/types';
 import { ChainId } from '@lifi/types';
 
 import { getWalletClient, switchChain } from '@wagmi/core'
-import { createClient, http, parseAbi } from 'viem'
+import { createClient, http, parseAbi, createPublicClient } from 'viem'
 
 import { linea, mainnet, optimism, sepolia } from "viem/chains";
 
@@ -61,7 +61,7 @@ import { Account, IndivAccount } from '../models/Account';
 
 import {  createConfig as createWagmiConfig } from 'wagmi'
 
-import { ETHERUM_RPC_URL, OPTIMISM_RPC_URL, SEPOLIA_RPC_URL, LINEA_RPC_URL, BUNDLER_URL, PAYMASTER_URL } from "../config";
+import { RPC_URL, ETHERUM_RPC_URL, OPTIMISM_RPC_URL, SEPOLIA_RPC_URL, LINEA_RPC_URL, BUNDLER_URL, PAYMASTER_URL } from "../config";
 
 import { createPaymasterClient, createBundlerClient } from 'viem/account-abstraction';
 import { createPimlicoClient } from 'permissionless/clients/pimlico';
@@ -83,62 +83,8 @@ const ERC20_ABI = parseAbi([
   'event Transfer(address indexed from, address indexed to, uint256 value)',
   'event Approval(address indexed owner, address indexed spender, uint256 value)',
 ]);
-const USDC_OPTIMISM = '0x7F5c764cBc14f9669B88837ca1490cCa17c31607' as const;
-
-// Utility function to extract chainId and address from accountDid
-const extractFromAccountDid = (accountDid: string): { chainId: number; address: `0x${string}` } | null => {
-  try {
-    // Parse did:pkh:eip155:chainId:address format
-    const parts = accountDid.split(':');
-    if (parts.length === 5 && parts[0] === 'did' && parts[1] === 'pkh' && parts[2] === 'eip155') {
-      const chainId = parseInt(parts[3], 10);
-      const address = parts[4] as `0x${string}`;
-      return { chainId, address };
-    }
-    return null;
-  } catch (error) {
-    console.error('Error parsing accountDid:', error);
-    return null;
-  }
-};
-
-// Initialize LiFi SDK
-createConfig({
-  integrator: 'MyOrgWallet',
-  rpcUrls: {
-    [ChainId.ETH]: [ETHERUM_RPC_URL],
-    [ChainId.OPT]: [OPTIMISM_RPC_URL],
-    [ChainId.LNA]: [LINEA_RPC_URL],
-  },
-});
-
-// Create Wagmi config
-const wagmiConfig = createWagmiConfig({
-    chains: [mainnet, optimism, linea, sepolia],
-    client({ chain }) {
-      return createClient({ chain, transport: http() })
-    },
-  })
-  
-createConfig({
-    integrator: 'MyOrgWallet',
-    rpcUrls: {
-      [ChainId.ETH]: [ETHERUM_RPC_URL],
-      [ChainId.OPT]: [OPTIMISM_RPC_URL],
-      [ChainId.LNA]: [LINEA_RPC_URL],
-    },
-    providers: [
-      EVM({
-        getWalletClient: () => getWalletClient(wagmiConfig),
-        switchChain: async (chainId: ChainId) => {
-            console.info("*********** SWITCH CHAIN ****************")
-          const chain = await switchChain(wagmiConfig, { chainId })
-          return getWalletClient(wagmiConfig, { chainId: chain.id })
-        },
-      }),
-    ],
-    preloadChains: false,
-  })
+const USDC_OPTIMISM = '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85' as const;
+const USDC_LINEA = '0x176211869cA2b568f2A7D4EE941E073a821EE1ff' as const;
 
 interface FundCreditCardModalProps {
   isVisible: boolean;
@@ -175,8 +121,71 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
   const [availableTokens, setAvailableTokens] = useState<{ symbol: string; name: string; address: string }[]>([]);
   const [isLoadingTokens, setIsLoadingTokens] = useState(false);
 
-  const { chain, indivDid, orgDid, indivAccountClient, orgAccountClient, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation } = useWallectConnectContext();
+  const { signatory, chain, indivDid, orgDid, indivAccountClient, orgAccountClient, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation } = useWallectConnectContext();
   const { isConnected } = useAccount();
+
+  // Utility function to extract chainId and address from accountDid
+  const extractFromAccountDid = (accountDid: string): { chainId: number; address: `0x${string}` } | null => {
+    try {
+      // Parse did:pkh:eip155:chainId:address format
+      const parts = accountDid.split(':');
+      if (parts.length === 5 && parts[0] === 'did' && parts[1] === 'pkh' && parts[2] === 'eip155') {
+        const chainId = parseInt(parts[3], 10);
+        const address = parts[4] as `0x${string}`;
+        return { chainId, address };
+      }
+      return null;
+    } catch (error) {
+      console.error('Error parsing accountDid:', error);
+      return null;
+    }
+  };
+    
+  // Initialize LiFi SDK
+  const wagmiConfig = createWagmiConfig({
+    chains: [mainnet, optimism, linea, sepolia],
+    client({ chain }) {
+      console.info("*********** CHAIN ****************", chain);
+      return createClient({ chain, transport: http(RPC_URL) })
+    },
+  })
+  createConfig({
+    integrator: 'MyOrgWallet',
+    rpcUrls: {
+      [ChainId.ETH]: [ETHERUM_RPC_URL],
+      [ChainId.OPT]: [OPTIMISM_RPC_URL],
+      [ChainId.LNA]: [LINEA_RPC_URL],
+    },
+    providers: [
+      EVM({
+        getWalletClient: () => {
+          console.info("*********** GET WALLET CLIENT ****************")
+          //console.info("*********** signatory.walletClient ****************", signatory.walletClient);
+          const provider = (window as any).ethereum;
+          const owner = "0x31ed17fb99e82e02085ab4b3cbdab05489098b44" as `0x${string}`;
+
+
+          const walletClient = createWalletClient({
+            chain,
+            transport: custom(provider),
+            account: owner,
+          });
+
+          return walletClient
+
+          //return signatory.walletClient
+        },
+        switchChain: async (chainId: ChainId) => {
+          console.info("*********** SWITCH CHAIN ****************: ", chainId);
+          const chain = await switchChain(wagmiConfig, { chainId: chainId as ChainId })
+          return getWalletClient(wagmiConfig, { chainId: chain.id })
+        },
+      }),
+    ],
+    preloadChains: true,
+  })
+  
+
 
   // Get token address for a specific chain
   const getTokenAddressForChain = async (chainId: number, symbol: string): Promise<string> => {
@@ -255,9 +264,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
       
       const { address: accountAddress, chainId: accountChainId } = extracted;
 
-      console.info("*********** ACCOUNT CHAIN ID 1 ****************", accountChainId);
-      console.info("*********** ACCOUNT ADDRESS 1 ****************", accountAddress);
-      
+
       const tokensResponse = await getTokens({ chains: [accountChainId as ChainId] });
       const tokens = tokensResponse.tokens[accountChainId as ChainId] || [];
       
@@ -267,8 +274,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         token.symbol === 'USDC' && token.address !== nativeToken
       )?.address || "0x176211869cA2b568f2A7D4EE941E073a821EE1ff"; // fallback to Linea USDC
       
-      console.info("*********** USDC TOKEN ADDRESS 1 ****************", usdcToken);
-      
+
       const filteredTokens = tokens.filter(item => 
         item.address === nativeToken || item.address === usdcToken
       );
@@ -307,6 +313,8 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         } else {
           balances.USDC = '0';
         }
+
+        console.info("*********** balances ****************", balances);
         
         setCreditCardBalances(prev => ({
           ...prev,
@@ -333,9 +341,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
       
       const { address: accountAddress, chainId: accountChainId } = extracted;
 
-      console.info("*********** ACCOUNT CHAIN ID 2 ****************", accountChainId);
-      console.info("*********** ACCOUNT ADDRESS 2 ****************", accountAddress);
-      
+
       const tokensResponse = await getTokens({ chains: [accountChainId as ChainId] });
       const tokens = tokensResponse.tokens[accountChainId as ChainId] || [];
       
@@ -344,8 +350,6 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
       const usdcToken = tokens.find(token => 
         token.symbol === 'USDC' && token.address !== nativeToken
       )?.address || "0x176211869cA2b568f2A7D4EE941E073a821EE1ff"; // fallback to Linea USDC
-      
-      console.info("*********** USDC TOKEN ADDRESS 2 ****************", usdcToken);
       
       const filteredTokens = tokens.filter(item => 
         item.address === nativeToken || item.address === usdcToken
@@ -366,13 +370,10 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         
         // USDC balance
         const usdcBalance = tokenBalances.find(balance => balance.address === usdcToken);
-        console.info("*********** USDC BALANCE ****************", usdcBalance);
         if (usdcBalance && usdcBalance.amount) {
-            console.info("*********** USDC BALANCE ****************", usdcBalance.amount);
           const amountBigInt = BigInt(usdcBalance.amount.toString());
           const dollars = Number(amountBigInt) / 1_000_000;
           balances.usdc = dollars.toFixed(2);
-          console.info("*********** USDC BALANCE ****************", balances.usdc);
         }
         
         setSavingsAccountBalances(prev => ({
@@ -407,10 +408,16 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         return;
       }
       
-      const creditCardAddress = creditCardExtracted.address;
       
       // For now, we'll get routes from the first selected savings account
       const firstSavingsAccount = savingsAccounts.find(acc => acc.id === selectedSavingsAccounts[0]);
+
+      // test sending from Op EOA account
+      //const firstSavingsAccount =  {
+      //  accountName: "Op Saving Account",
+      //  did: "did:pkh:eip155:10:0x31ed17fb99e82e02085ab4b3cbdab05489098b44"
+      //}
+
       if (!firstSavingsAccount) {
         console.error('First savings account not found');
         setError('Selected savings account not found');
@@ -428,10 +435,14 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
       const fromTokenAddress = selectedToken === 'ETH' 
         ? '0x0000000000000000000000000000000000000000' 
         : await getTokenAddressForChain(savingsAccountExtracted.chainId, 'USDC');
+
+      console.info("***********  fromTokenAddress ****************", fromTokenAddress);
       
       const toTokenAddress = selectedToken === 'ETH' 
         ? '0x0000000000000000000000000000000000000000' 
         : await getTokenAddressForChain(creditCardExtracted.chainId, 'USDC');
+
+      console.info("***********  toTokenAddress ****************", toTokenAddress);
       
       const amount = selectedToken === 'ETH' 
         ? (parseFloat(fundingAmount) * 1e18).toString()
@@ -447,7 +458,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         toAddress: creditCardExtracted.address,
       });
       
-      /*
+     
       const routes = await getRoutes({
         fromChainId: savingsAccountExtracted.chainId,
         toChainId: creditCardExtracted.chainId,
@@ -467,11 +478,11 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         setSelectedRoute(routes.routes[0]);
         console.log('Selected route:', routes.routes[0]);
       } else {
-        console.error('No routes available');
-        setError('No transfer routes available for this amount and token combination');
+        setSelectedRoute(null);
+        console.error('No routes available, so handle it without LiFi');
       }
-      */
-      setSelectedRoute(null);
+      
+      
     } catch (error) {
       console.error('Error getting routes:', error);
       setError('Failed to get transfer routes: ' + (error instanceof Error ? error.message : 'Unknown error'));
@@ -560,200 +571,262 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
   };
 
   const handleConfirmTransfer = async () => {
-    //if (!selectedCreditCard || selectedSavingsAccounts.length === 0 || !fundingAmount || !selectedRoute) {
-    //  setError('Missing required information');
-    //  return;
-    //}
+
 
     setIsLoading(true);
     setError(null);
 
     try {
-      // Execute the LiFi route using delegation
-      console.info("***********  EXECUTE SELECTED ROUTE ****************", selectedRoute);
+      if (selectedRoute) {
 
-      //await executeRoute(selectedRoute);
+        /*
+        console.info(" selected route ****************", selectedRoute);
+        // execute using LiFi
+        const extracted = extractFromAccountDid(selectedSavingsAccounts[0]);
+        const address = "0x31ed17fb99e82e02085ab4b3cbdab05489098b44" as `0x${string}`
+        const publicClient = createPublicClient({
+          chain: chain, 
+          transport: http(RPC_URL),
+        });
+        const code = await publicClient.getCode({ address: address });
+        if (code === null) {
+          console.info("this is a Account Abstraction and not EOA")
+        }
+        */
 
+        // verify that account is an EOA account
+        console.info("***********  EXECUTE LiFi SELECTED ROUTE ****************");
+        await executeRoute(selectedRoute);
 
-  
-      const savingsAccount = savingsAccounts.find(acc => acc.id === selectedSavingsAccounts[0]);
+        /*
+        const savingsAccount = savingsAccounts.find(acc => acc.id === selectedSavingsAccounts[0]);
 
-      const accountIndivDelegationStr = savingsAccount?.attestation?.indivDelegation;
-      const accountOrgDelegationStr = savingsAccount?.attestation?.orgDelegation;
-      
-      
+        const accountIndivDelegationStr = savingsAccount?.attestation?.indivDelegation;
+        const accountOrgDelegationStr = savingsAccount?.attestation?.orgDelegation;
 
-      if (!orgAccountClient && !indivAccountClient && !accountOrgDelegationStr) {
-        throw new Error('No delegations found');
-      }
+        const accountIndivDelegation = JSON.parse(accountIndivDelegationStr || '{}') 
+        const accountOrgDelegation = JSON.parse(accountOrgDelegationStr || '{}') 
 
-      const accountIndivDelegation = JSON.parse(accountIndivDelegationStr || '{}') 
-      const accountOrgDelegation = JSON.parse(accountOrgDelegationStr || '{}') 
-
-      // Setup bundler and paymaster clients
-      const paymasterClient = createPaymasterClient({
-        transport: http(PAYMASTER_URL || ''),
-      });
-
-      const pimlicoClient = createPimlicoClient({
-        transport: http(BUNDLER_URL || ''),
-      });
-
-      const bundlerClient = createBundlerClient({
-        transport: http(BUNDLER_URL || ''),
-        paymaster: paymasterClient,
-        chain: chain,
-        paymasterContext: {
-          mode: 'SPONSORED',
-        },
-      });
-
-      const calls = []
-
-
-      console.info("***********  selected credit card ****************", selectedCreditCard);
-      const amount = selectedToken === 'ETH' 
-        ? (parseFloat(fundingAmount) * 1e18).toString()
-        : (parseFloat(fundingAmount) * 1e6).toString();
-      const creditCardExtracted = extractFromAccountDid(selectedCreditCard.accountDid);
-
-
-      if (selectedToken === 'ETH') {
-
-        // ETH
-        const includedExecutions = [
-          {
-            target: creditCardExtracted.address as `0x${string}`,
-            value: amount,
-            callData: "0x"
-          },
-        ];
-
-
-        // Encode the delegation execution
-        console.info("***********  redeemDelegations ****************");
-        const data = DelegationFramework.encode.redeemDelegations({
-          delegations: [[accountIndivDelegation, accountOrgDelegation]],
-          modes: [SINGLE_DEFAULT_MODE],
-          executions: [includedExecutions]
+        // Setup bundler and paymaster clients
+        const paymasterClient = createPaymasterClient({
+          transport: http(PAYMASTER_URL),
         });
 
-        console.info("***********  call ****************");
+        const pimlicoClient = createPimlicoClient({
+          transport: http(BUNDLER_URL),
+        });
 
-        const call = {
-          to: indivAccountClient.address,
-          data: data,
+        const bundlerClient = createBundlerClient({
+          transport: http(BUNDLER_URL),
+          paymaster: paymasterClient,
+          chain: chain,
+          paymasterContext: {
+            mode: 'SPONSORED',
+          },
+        });
+
+        const calls = []
+        for (const step of selectedRoute.steps) {
+
+          const tx = await getStepTransaction(step);
+          const txRequest = tx.transactionRequest;
+
+          if (!txRequest || !orgAccountClient) {
+            throw new Error('No transaction data in route');
+          }
+
+         
+          const includedExecutions = [
+            {
+              target: txRequest.to as `0x${string}`,
+              value: BigInt(txRequest.value || '0'),
+              callData: txRequest.data as `0x${string}`,
+            },
+          ];
+        
+
+          // Encode the delegation execution
+          const data = DelegationFramework.encode.redeemDelegations({
+            delegations: [[accountOrgDelegation]],
+            modes: [SINGLE_DEFAULT_MODE],
+            executions: [includedExecutions]
+          });
+
+          const call = {
+            to: orgAccountClient.address,
+            data: data,
+          }
+
+          calls.push(call)
+
         }
 
-        calls.push(call)
+
+        //const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+        const fee = {maxFeePerGas: 412596685n, maxPriorityFeePerGas: 412596676n}
+        // Send user operation
+        console.info("***********  sendUserOperation ****************");
+        const userOpHash = await bundlerClient.sendUserOperation({
+          account: orgAccountClient,
+          calls: calls,
+          paymaster: paymasterClient,
+          ...fee
+        });
+
+        console.info("***********  waitForUserOperationReceipt ****************");
+        const userOperationReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
+        console.info('Transfer executed:', userOperationReceipt);
+        */
+          
       }
       else {
+        // execute using direct transfer of USDC or ETH
+        console.info("***********  EXECUTE DIRECT TRANSFER ****************");
 
-        // USDC
+        const savingsAccount = savingsAccounts.find(acc => acc.id === selectedSavingsAccounts[0]);
 
-        const decimals = 6
-        const value = parseUnits(amount, decimals);
-        const to = creditCardExtracted.address as `0x${string}`
-        const callData = encodeFunctionData({
-          abi: ERC20_ABI,
-          functionName: 'transfer',
-          args: [to, value],
+        const accountIndivDelegationStr = savingsAccount?.attestation?.indivDelegation;
+        const accountOrgDelegationStr = savingsAccount?.attestation?.orgDelegation;
+
+        if (!orgAccountClient && !indivAccountClient && !accountOrgDelegationStr) {
+          throw new Error('No delegations found');
+        }
+
+        const accountIndivDelegation = JSON.parse(accountIndivDelegationStr || '{}') 
+        const accountOrgDelegation = JSON.parse(accountOrgDelegationStr || '{}') 
+
+        // Setup bundler and paymaster clients
+        const paymasterClient = createPaymasterClient({
+          transport: http(PAYMASTER_URL || ''),
         });
 
+        const pimlicoClient = createPimlicoClient({
+          transport: http(BUNDLER_URL || ''),
+        });
 
-        const includedExecutions = [
-          {
-            target: USDC_OPTIMISM,
-            value: 0n,
-            callData: callData
+        const bundlerClient = createBundlerClient({
+          transport: http(BUNDLER_URL || ''),
+          paymaster: paymasterClient,
+          chain: chain,
+          paymasterContext: {
+            mode: 'SPONSORED',
           },
-        ];
-
-
-        // Encode the delegation execution
-        console.info("***********  redeemDelegations ****************");
-        const data = DelegationFramework.encode.redeemDelegations({
-          delegations: [[accountIndivDelegation, accountOrgDelegation]],
-          modes: [SINGLE_DEFAULT_MODE],
-          executions: [includedExecutions]
         });
 
-        console.info("***********  call ****************");
+        const calls = []
 
-        const call = {
-          to: indivAccountClient.address,
-          data: data,
+
+        console.info("***********  selected credit card ****************", selectedCreditCard);
+        const amount = selectedToken === 'ETH' 
+          ? (parseFloat(fundingAmount) * 1e18).toString()
+          : (parseFloat(fundingAmount) * 1e6).toString();
+        const creditCardExtracted = extractFromAccountDid(selectedCreditCard.accountDid);
+
+
+        if (selectedToken === 'ETH') {
+
+          // ETH
+          console.info("******* amount eth: ", amount);
+          const includedExecutions = [
+            {
+              target: creditCardExtracted.address as `0x${string}`,
+              value: amount,
+              callData: "0x"
+            },
+          ];
+
+
+          // Encode the delegation execution
+          console.info("***********  redeemDelegations ****************");
+          const data = DelegationFramework.encode.redeemDelegations({
+            delegations: [[accountIndivDelegation, accountOrgDelegation]],
+            modes: [SINGLE_DEFAULT_MODE],
+            executions: [includedExecutions]
+          });
+
+          console.info("***********  call ****************");
+
+          const call = {
+            to: indivAccountClient.address,
+            data: data,
+          }
+
+          calls.push(call)
+        }
+        else {
+
+          // USDC
+          // use direct transfer
+          const decimals = 6
+          const value = parseUnits(fundingAmount, decimals);
+
+          console.info("******* amount value usdc: ", value);
+          //const value = BigInt(amount)
+          const to = creditCardExtracted.address as `0x${string}`
+          const callData = encodeFunctionData({
+            abi: ERC20_ABI,
+            functionName: 'transfer',
+            args: [to, value],
+          });
+
+
+          const includedExecutions = [
+            {
+              target: USDC_OPTIMISM,
+              value: 0n,
+              callData: callData
+            },
+          ];
+
+          // Encode the delegation execution
+          const data = DelegationFramework.encode.redeemDelegations({
+            delegations: [[accountIndivDelegation, accountOrgDelegation]],
+            modes: [SINGLE_DEFAULT_MODE],
+            executions: [includedExecutions]
+          });
+
+
+          const call = {
+            to: indivAccountClient.address,
+            data: data,
+          }
+
+          calls.push(call)
         }
 
-        calls.push(call)
 
-      }
-
-      /*
-      for (const step of selectedRoute.steps) {
-
-        const tx = await getStepTransaction(step);
-        const txRequest = tx.transactionRequest;
-
-        if (!txRequest || !orgAccountClient) {
-          throw new Error('No transaction data in route');
-        }
-
-        const includedExecutions = [
-          {
-            target: txRequest.to as `0x${string}`,
-            value: BigInt(txRequest.value || '0'),
-            callData: txRequest.data as `0x${string}`,
-          },
-        ];
-
-        // Encode the delegation execution
-        const data = DelegationFramework.encode.redeemDelegations({
-          delegations: [[accountOrgDelegation]],
-          modes: [SINGLE_DEFAULT_MODE],
-          executions: [includedExecutions]
+        //const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+        const fee = {maxFeePerGas: 412596685n, maxPriorityFeePerGas: 412596676n}
+        // Send user operation
+        const userOpHash = await bundlerClient.sendUserOperation({
+          account: indivAccountClient,
+          calls: calls,
+          paymaster: paymasterClient,
+          ...fee
         });
 
-        const call = {
-          to: orgAccountClient.address,
-          data: data,
+        const userOperationReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
+        console.info('Transfer executed:', userOperationReceipt);
+        
+        // Refresh balances after transfer
+        await fetchCreditCardBalances(selectedCreditCard.accountDid);
+        for (const accountId of selectedSavingsAccounts) {
+          const account = savingsAccounts.find(acc => acc.id === accountId);
+          if (account) {
+            await fetchSavingsAccountBalances(account.did);
+          }
         }
 
-        calls.push(call)
-
-      }
-      */
-
-
-      //const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
-      const fee = {maxFeePerGas: 412596685n, maxPriorityFeePerGas: 412596676n}
-      // Send user operation
-      const userOpHash = await bundlerClient.sendUserOperation({
-        account: indivAccountClient,
-        calls: calls,
-        paymaster: paymasterClient,
-        ...fee
-      });
-
-      const userOperationReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
-      console.info('Transfer executed:', userOperationReceipt);
-      
-      // Refresh balances after transfer
-      await fetchCreditCardBalances(selectedCreditCard.accountDid);
-      for (const accountId of selectedSavingsAccounts) {
-        const account = savingsAccounts.find(acc => acc.id === accountId);
-        if (account) {
-          await fetchSavingsAccountBalances(account.did);
-        }
-      }
-
-      handleClose();
-    } catch (error) {
+        handleClose();
+      } 
+    }
+    catch (error) {
       console.error('Error during transfer:', error);
       setError('Transfer failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
+
       
   };
 
@@ -1013,9 +1086,28 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
             </Typography>
             
             <Box sx={{ mt: 2 }}>
-              <Typography variant="body1" component="div" gutterBottom sx={{ fontWeight: 'bold' }}>
-                Transfer {fundingAmount} {selectedToken}
-              </Typography>
+              {/* Transfer Amount - Made more prominent */}
+              <Paper 
+                variant="outlined" 
+                sx={{ 
+                  p: 3, 
+                  mb: 3, 
+                  textAlign: 'center',
+                  border: '2px solid',
+                  borderColor: 'primary.main',
+                  backgroundColor: 'primary.50'
+                }}
+              >
+                <Typography variant="h5" component="div" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                  Transfer Amount
+                </Typography>
+                <Typography variant="h4" component="div" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+                  {fundingAmount} {selectedToken}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  From savings accounts to credit card
+                </Typography>
+              </Paper>
               
               {/* From Account Details */}
               <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
