@@ -83,8 +83,8 @@ const ERC20_ABI = parseAbi([
   'event Transfer(address indexed from, address indexed to, uint256 value)',
   'event Approval(address indexed owner, address indexed spender, uint256 value)',
 ]);
-const USDC_OPTIMISM = '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85' as const;
-const USDC_LINEA = '0x176211869cA2b568f2A7D4EE941E073a821EE1ff' as const;
+const USDC_OPTIMISM = '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85';
+const USDC_LINEA = '0x176211869cA2b568f2A7D4EE941E073a821EE1ff';
 
 interface FundCreditCardModalProps {
   isVisible: boolean;
@@ -162,21 +162,6 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
           console.info("*********** GET WALLET CLIENT ****************")
           console.info("*********** signatory.walletClient ****************", signatory.walletClient);
           return signatory.walletClient
-
-          /*
-          const provider = (window as any).ethereum;
-          const owner = "0x31ed17fb99e82e02085ab4b3cbdab05489098b44" as `0x${string}`;
-
-
-          const walletClient = createWalletClient({
-            chain,
-            transport: custom(provider),
-            account: owner,
-          });
-
-          return walletClient
-          */
-
           
         },
         switchChain: async (chainId: ChainId) => {
@@ -414,13 +399,13 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
       
       
       // For now, we'll get routes from the first selected savings account
-      //const firstSavingsAccount = savingsAccounts.find(acc => acc.id === selectedSavingsAccounts[0]);
+      const firstSavingsAccount = savingsAccounts.find(acc => acc.id === selectedSavingsAccounts[0]);
 
       // test sending from Op EOA account
-      const firstSavingsAccount =  {
-        accountName: "Op Saving Account",
-        did: "did:pkh:eip155:10:0x9cfc7E44757529769A28747F86425C682fE64653"
-      }
+      //const firstSavingsAccount =  {
+      //  accountName: "Op Saving Account",
+      //  did: "did:pkh:eip155:10:0x9cfc7E44757529769A28747F86425C682fE64653"
+      //}
 
       if (!firstSavingsAccount) {
         console.error('First savings account not found');
@@ -452,6 +437,8 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         ? (parseFloat(fundingAmount) * 1e18).toString()
         : (parseFloat(fundingAmount) * 1e6).toString();
       
+      const walletAddress = signatory.walletClient.account.address;
+
       console.log('Getting routes with params:', {
         fromChainId: savingsAccountExtracted.chainId,
         toChainId: creditCardExtracted.chainId,
@@ -459,10 +446,12 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         toTokenAddress,
         fromAmount: amount,
         fromAddress: savingsAccountExtracted.address,
+        //fromAddress: walletAddress,
         toAddress: creditCardExtracted.address,
       });
       
-     
+      
+
       const routes = await getRoutes({
         fromChainId: savingsAccountExtracted.chainId,
         toChainId: creditCardExtracted.chainId,
@@ -470,6 +459,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         toTokenAddress: toTokenAddress,
         fromAmount: amount,
         fromAddress: savingsAccountExtracted.address,
+        //fromAddress: walletAddress,
         toAddress: creditCardExtracted.address,
       });
 
@@ -574,6 +564,145 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
     onClose();
   };
 
+  const moveFundsFromSavingsAccountToWalletEOA = async () => {
+
+    // move funds from savings account to wallet EOA, use delegation for that
+    // then move funds from wallet EOA to destination Credit Card on Linea
+
+    const walletClient = signatory.walletClient;
+    const walletAddress = walletClient.account.address;
+
+    console.info("***********  walletAddress ****************", walletAddress);
+
+    const savingsAccount = savingsAccounts.find(acc => acc.id === selectedSavingsAccounts[0]);
+
+    const accountIndivDelegationStr = savingsAccount?.attestation?.indivDelegation;
+    const accountOrgDelegationStr = savingsAccount?.attestation?.orgDelegation;
+
+    if (!orgAccountClient && !indivAccountClient && !accountOrgDelegationStr) {
+      throw new Error('No delegations found');
+    }
+
+    const accountIndivDelegation = JSON.parse(accountIndivDelegationStr || '{}') 
+    const accountOrgDelegation = JSON.parse(accountOrgDelegationStr || '{}') 
+
+    // Setup bundler and paymaster clients
+    const paymasterClient = createPaymasterClient({
+      transport: http(PAYMASTER_URL),
+    });
+
+    const pimlicoClient = createPimlicoClient({
+      transport: http(BUNDLER_URL),
+    });
+
+    const bundlerClient = createBundlerClient({
+      transport: http(BUNDLER_URL),
+      paymaster: paymasterClient,
+      chain: chain,
+      paymasterContext: {
+        mode: 'SPONSORED',
+      },
+    });
+
+    const calls = []
+
+
+    console.info("***********  selected credit card 1 ****************", selectedCreditCard);
+    const amount = selectedToken === 'ETH' 
+      ? (parseFloat(fundingAmount) * 1e18).toString()
+      : (parseFloat(fundingAmount) * 1e6).toString();
+
+
+    if (selectedToken === 'ETH') {
+
+      // ETH
+      console.info("******* amount eth: ", amount);
+      const includedExecutions = [
+        {
+          target: walletAddress as `0x${string}`,
+          value: amount,
+          callData: "0x"
+        },
+      ];
+
+
+      // Encode the delegation execution
+      console.info("***********  redeemDelegations ****************");
+      const data = DelegationFramework.encode.redeemDelegations({
+        delegations: [[accountIndivDelegation, accountOrgDelegation]],
+        modes: [SINGLE_DEFAULT_MODE],
+        executions: [includedExecutions]
+      });
+
+      console.info("***********  call ****************");
+
+      const call = {
+        to: indivAccountClient.address,
+        data: data,
+      }
+
+      calls.push(call)
+    }
+    else {
+
+      // USDC
+      // use direct transfer
+      const decimals = 6
+      const value = parseUnits(fundingAmount, decimals);
+
+      console.info("******* amount value usdc: ", value);
+      //const value = BigInt(amount)
+      const to = walletAddress as `0x${string}`
+      const callData = encodeFunctionData({
+        abi: ERC20_ABI,
+        functionName: 'transfer',
+        args: [to, value],
+      });
+
+
+      const includedExecutions = [
+        {
+          target: USDC_OPTIMISM,
+          value: 0n,
+          callData: callData
+        },
+      ];
+
+      // Encode the delegation execution
+      const data = DelegationFramework.encode.redeemDelegations({
+        delegations: [[accountIndivDelegation, accountOrgDelegation]],
+        modes: [SINGLE_DEFAULT_MODE],
+        executions: [includedExecutions]
+      });
+
+
+      const call = {
+        to: indivAccountClient.address,
+        data: data,
+      }
+
+      calls.push(call)
+    }
+
+
+    //const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+    const fee = {maxFeePerGas: 412596685n, maxPriorityFeePerGas: 412596676n}
+    // Send user operation
+
+    console.info("***********  sendUserOperation to move funds from savings account to wallet EOA ****************");
+    const userOpHash = await bundlerClient.sendUserOperation({
+      account: indivAccountClient,
+      calls: calls,
+      paymaster: paymasterClient,
+      ...fee
+    });
+
+    const userOperationReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
+    console.info('Transfer executed:', userOperationReceipt);
+    
+    console.info("*************** continue on ********")
+  }
+
   const handleConfirmTransfer = async () => {
 
 
@@ -581,6 +710,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
     setError(null);
 
     try {
+      console.info("branch if route or simple transfer")
       if (selectedRoute) {
 
         /*
@@ -598,15 +728,16 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         }
         */
 
-        // move funds from savings account to connected EOA
-        // use delegation for that
-        // then move funds from EOA to destination Credit Card on Linea
+        // move funds from savings account to connected Wallet EOA
+        //await moveFundsFromSavingsAccountToWalletEOA()
+
+        console.info("************ orgAccountClient ****************", orgAccountClient.address);
 
         // verify that account is an EOA account
         console.info("***********  EXECUTE LiFi SELECTED ROUTE ****************");
-        await executeRoute(selectedRoute);
+        //await executeRoute(selectedRoute);
 
-        /*
+        
         const savingsAccount = savingsAccounts.find(acc => acc.id === selectedSavingsAccounts[0]);
 
         const accountIndivDelegationStr = savingsAccount?.attestation?.indivDelegation;
@@ -614,6 +745,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
         const accountIndivDelegation = JSON.parse(accountIndivDelegationStr || '{}') 
         const accountOrgDelegation = JSON.parse(accountOrgDelegationStr || '{}') 
+        console.info("***********  accountOrgDelegation ****************", accountOrgDelegation);
 
         // Setup bundler and paymaster clients
         const paymasterClient = createPaymasterClient({
@@ -643,6 +775,45 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
             throw new Error('No transaction data in route');
           }
 
+          console.info("***********  tx ****************", tx);
+          console.info("***********  txRequest ****************", txRequest);
+          console.info("***********  txRequest ****************", txRequest);
+
+          const liftAddress = txRequest?.to as `0x${string}`
+          const approvalAmount = BigInt((parseFloat(fundingAmount) * 1e6).toString());
+          //const approvalAmount = BigInt(txRequest.value || '0')
+
+          console.info("***********  liftAddress ****************", liftAddress);
+          console.info("***********  approvalAmount ****************", approvalAmount);
+
+          const approvalExecution = {
+            target: USDC_OPTIMISM as `0x${string}`,
+            callData: encodeFunctionData({
+              abi: parseAbi(["function approve(address,uint)"]),
+              functionName: "approve",
+              args: [liftAddress, approvalAmount],
+            }),
+            value: 0n, // since it's an ERC-20 approval, you don't need to send ETH
+          };
+
+          const data0 = DelegationFramework.encode.redeemDelegations({
+            delegations: [[accountOrgDelegation]],
+            modes: [SINGLE_DEFAULT_MODE],
+            executions: [[approvalExecution]]
+          });
+
+          console.info("***********  orgAccountClient.address ****************", orgAccountClient.address);
+          const call0 = {
+            to: orgAccountClient.address,
+            data: data0,
+          }
+
+          console.info("***********  call0 ****************", call0);
+          calls.push(call0)
+
+
+
+
          
           const includedExecutions = [
             {
@@ -654,6 +825,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         
 
           // Encode the delegation execution
+          console.info("***********  redeemDelegations 2 ****************");
           const data = DelegationFramework.encode.redeemDelegations({
             delegations: [[accountOrgDelegation]],
             modes: [SINGLE_DEFAULT_MODE],
@@ -684,7 +856,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         console.info("***********  waitForUserOperationReceipt ****************");
         const userOperationReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
         console.info('Transfer executed:', userOperationReceipt);
-        */
+        
           
       }
       else {
@@ -704,9 +876,9 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         const accountOrgDelegation = JSON.parse(accountOrgDelegationStr || '{}') 
 
         // Setup bundler and paymaster clients
-        const paymasterClient = createPaymasterClient({
-          transport: http(PAYMASTER_URL || ''),
-        });
+        //const paymasterClient = createPaymasterClient({
+        //  transport: http(PAYMASTER_URL || ''),
+        //});
 
         const pimlicoClient = createPimlicoClient({
           transport: http(BUNDLER_URL || ''),
@@ -714,7 +886,8 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
         const bundlerClient = createBundlerClient({
           transport: http(BUNDLER_URL || ''),
-          paymaster: paymasterClient,
+          //paymaster: paymasterClient,
+          paymaster: true,
           chain: chain,
           paymasterContext: {
             mode: 'SPONSORED',
@@ -724,7 +897,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         const calls = []
 
 
-        console.info("***********  selected credit card ****************", selectedCreditCard);
+        console.info("***********  selected credit card 2 ****************", selectedCreditCard);
         const amount = selectedToken === 'ETH' 
           ? (parseFloat(fundingAmount) * 1e18).toString()
           : (parseFloat(fundingAmount) * 1e6).toString();
@@ -735,6 +908,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
           // ETH
           console.info("******* amount eth: ", amount);
+          console.info("******* creditCardExtracted.address ****************", creditCardExtracted.address);
           const includedExecutions = [
             {
               target: creditCardExtracted.address as `0x${string}`,
@@ -748,6 +922,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
           console.info("***********  redeemDelegations ****************");
           const data = DelegationFramework.encode.redeemDelegations({
             delegations: [[accountIndivDelegation, accountOrgDelegation]],
+            //delegations: [[accountOrgDelegation]],
             modes: [SINGLE_DEFAULT_MODE],
             executions: [includedExecutions]
           });
@@ -755,7 +930,8 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
           console.info("***********  call ****************");
 
           const call = {
-            to: indivAccountClient.address,
+            //to: indivAccountClient.address,
+            to: indivAccountClient?.address,
             data: data,
           }
 
@@ -806,10 +982,12 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         //const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
         const fee = {maxFeePerGas: 412596685n, maxPriorityFeePerGas: 412596676n}
         // Send user operation
+        console.info("*********** local network sendUserOperation to  ****************");
         const userOpHash = await bundlerClient.sendUserOperation({
+          //account: indivAccountClient,
           account: indivAccountClient,
           calls: calls,
-          paymaster: paymasterClient,
+          //paymaster: paymasterClient,
           ...fee
         });
 
