@@ -693,10 +693,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         console.info("approve leader ...")
         setApproveLeaderModalVisible(true)
       }
-      if (lastUserResponse.toLowerCase().includes("approve account access")) {
-        console.info("approve account access ...")
-        setApproveAccountAccessModalVisible(true)
-      }
+      
       if (lastUserResponse.toLowerCase().includes("create web did")) {
         console.info("create web did ...")
         setCreateWebDidModalVisible(true)
@@ -705,20 +702,24 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         console.info("import drivers license ...")
         setImportDriversLicenseModalVisible(true)
       }
-      if (lastUserResponse.toLowerCase().includes("add credit card")) {
-        console.info("add credit card ...")
-        setAddCreditCardModalVisible(true)
-      }
+      //if (lastUserResponse.toLowerCase().includes("add credit card")) {
+      //  console.info("add credit card ...")
+      //  setAddCreditCardModalVisible(true)
+      //}
       if (lastUserResponse.toLowerCase().includes("add savings account")) {
         console.info("add savings account ...")
         setAddSavingsModalVisible(true)
       }
-      if (lastUserResponse.toLowerCase().includes("add account")) {
-        console.info("add account ...")
+      if (lastUserResponse.toLowerCase().includes("approve account access")) {
+        console.info("approve account access ...")
+        setApproveAccountAccessModalVisible(true)
+      }
+      if (lastUserResponse.toLowerCase().includes("add debit card")) {
+        console.info("add debit card ...")
         setAddAccountModalVisible(true)
       }
-      if (lastUserResponse.toLowerCase().includes("fund credit card")) {
-        console.info("fund credit card ...")
+      if (lastUserResponse.toLowerCase().includes("fund card")) {
+        console.info("fund card ...")
         setFundCreditCardModalVisible(true)
       }
     } catch (error)

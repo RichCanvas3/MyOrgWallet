@@ -4,9 +4,29 @@ import { useAccount, useConnect, useSwitchChain } from 'wagmi';
 import { injected } from 'wagmi/connectors';
 import { keccak256, toUtf8Bytes } from 'ethers';
 import { ethers } from 'ethers';
-import { linea, mainnet, optimism, sepolia } from "viem/chains";
+import { getAddress } from "ethers"; 
+import { linea, mainnet, optimism, sepolia, optimismSepolia, lineaSepolia } from "viem/chains";
 import { getTokens, EVM, getToken, getTokenBalance , createConfig, getQuote, getTokenBalances,  } from '@lifi/sdk';
+import {
+  createWalletClient,
+  http,
+  encodeFunctionData,
+  HttpTransport,
+  type Chain,
+  type Account,
+  type WalletClient,
+  type Hex,
+  TransactionExecutionError,
+  parseUnits,
+  createClient,
+  createPublicClient,
+  formatUnits,
+  parseEther,
+} from "viem";
 
+
+
+import { CHAIN_IDS_TO_USDC_ADDRESSES, CHAIN_IDS_TO_TOKEN_MESSENGER, DESTINATION_DOMAINS } from '../libs/chains';
 
 import type { Token } from '@lifi/types';
 import { ChainId } from '@lifi/types';
@@ -36,12 +56,12 @@ import { useWallectConnectContext } from "../context/walletConnectContext";
 import AttestationService from '../service/AttestationService';
 import { IndivAccountAttestation, AccountOrgDelAttestation } from '../models/Attestation';
 
-import { ETHERUM_RPC_URL, OPTIMISM_RPC_URL, SEPOLIA_RPC_URL, LINEA_RPC_URL } from "../config";
+import { ETHERUM_RPC_URL, OPTIMISM_RPC_URL, SEPOLIA_RPC_URL, LINEA_RPC_URL, OPTIMISM_SEPOLIA_RPC_URL, LINEA_SEPOLIA_RPC_URL } from "../config";
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService';
 
 
 import { getWalletClient, switchChain } from '@wagmi/core'
-import { createClient, http } from 'viem'
+
 import {  createConfig as createWagmiConfig } from 'wagmi'
 
 
@@ -57,13 +77,23 @@ const wagmiConfig = createWagmiConfig({
     },
   })
 
+  // chain for optimism sepolia is 11155420
+  // chain for linea sepolia is 59141
+  // chain for eth sepolia is 11155111
+
+
+
+
 createConfig({
     integrator: 'MyOrgWallet',
     rpcUrls: {
       [ChainId.ETH]: [ETHERUM_RPC_URL],
       [ChainId.OPT]: [OPTIMISM_RPC_URL],
       [ChainId.LNA]: [LINEA_RPC_URL],
-    },
+      [ChainId.SUP]: [SEPOLIA_RPC_URL],
+      [11155420]: [OPTIMISM_SEPOLIA_RPC_URL],
+      [59141]: [LINEA_SEPOLIA_RPC_URL],
+    } as any,
     providers: [
       EVM({
         getWalletClient: () => getWalletClient(wagmiConfig),
@@ -78,16 +108,7 @@ createConfig({
   })
 
 
-/*
-createConfig({
-  integrator: 'ServicePro',
-  rpcUrls: {
-    [ChainId.ETH]: [ETHERUM_RPC_URL],
-    [ChainId.OPT]: [OPTIMISM_RPC_URL],
-    [ChainId.LNA]: [LINEA_RPC_URL],
-  },
-})
-*/
+
 
 interface AddAccountModalProps {
   isVisible: boolean;
@@ -98,10 +119,12 @@ const steps = ['Select Chain & Account', 'Account Details', 'Confirm'];
 
 // Available chains for selection
 const availableChains = [
-  { id: linea.id, name: linea.name, nativeCurrency: linea.nativeCurrency },
-  { id: mainnet.id, name: mainnet.name, nativeCurrency: mainnet.nativeCurrency },
-  { id: optimism.id, name: optimism.name, nativeCurrency: optimism.nativeCurrency },
-  { id: sepolia.id, name: sepolia.name, nativeCurrency: sepolia.nativeCurrency },
+  { id: linea.id, name: linea.name, nativeCurrency: linea.nativeCurrency, chain: linea },
+  { id: mainnet.id, name: mainnet.name, nativeCurrency: mainnet.nativeCurrency, chain: mainnet },
+  { id: optimism.id, name: optimism.name, nativeCurrency: optimism.nativeCurrency, chain: optimism },
+  { id: lineaSepolia.id, name: lineaSepolia.name, nativeCurrency: lineaSepolia.nativeCurrency, chain: lineaSepolia },
+  { id: sepolia.id, name: sepolia.name, nativeCurrency: sepolia.nativeCurrency, chain: sepolia },
+  { id: optimismSepolia.id, name: optimismSepolia.name, nativeCurrency: optimismSepolia.nativeCurrency, chain: optimismSepolia },
 ];
 
 const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose }) => {
@@ -155,64 +178,288 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
     }
   };
 
+  const circleCheckNativeBalance = async (address: string, chainId: number) => {
+
+    const ch = availableChains.find(c => c.id === chainId)?.chain;
+    const publicClient = createPublicClient({
+        chain: ch,
+        transport: http(),
+      });
+    
+    const balance = await publicClient.getBalance({
+      address: address as `0x${string}`,
+    });
+    return balance;
+
+  };
+
+
+  const ERC20_ABI = [
+    "function balanceOf(address owner) view returns (uint256)",
+    "function decimals() view returns (uint8)",
+  ];
+  const USDC_ADDRESSES: Record<number, string> = {
+    // Mainnets
+    1: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",       // Ethereum
+    10: "0x7F5c764cBc14f9669B88837ca1490cCa17c31607",     // Optimism
+    59144: "0x176211869ca2b568f2a7d4ee941e073a821ee1ff",   // Linea
+  
+    // Testnets
+    11155111: "0x65aFADD39029741B3b8f0756952C74678c9cEC93", // Ethereum Sepolia
+    11155420: "0x694cD7F69C99B5e928044974C9dD480b688372B1", // Optimism Sepolia
+    59141: "0x8d48ba6D6ABD283E672B917cDFbD6222dd1B80dB",    // Linea Sepolia
+  };
+
+  const RPC_URLS: Record<number, string> = {
+    1: ETHERUM_RPC_URL,
+    10: OPTIMISM_RPC_URL,
+    59144: LINEA_RPC_URL,
+  
+    11155111: SEPOLIA_RPC_URL,
+    11155420: OPTIMISM_SEPOLIA_RPC_URL,
+    59141: LINEA_SEPOLIA_RPC_URL,
+  };
+  const circleCheckUSDCBalance = async (address: string, chainId: number): Promise<string> => {
+
+
+    let usdcAddress = CHAIN_IDS_TO_USDC_ADDRESSES[chainId] as `0x${string}`;
+    const ch = availableChains.find(c => c.id === chainId)?.chain;
+    const publicClient = createPublicClient({
+      chain: ch,
+      transport: http(),
+    });
+
+    if (usdcAddress && ch) {
+      // used to get testnet USDC balances
+      const balance = await publicClient.readContract({
+        address: usdcAddress,
+        abi: [
+          {
+            constant: true,
+            inputs: [{ name: "_owner", type: "address" }],
+            name: "balanceOf",
+            outputs: [{ name: "balance", type: "uint256" }],
+            payable: false,
+            stateMutability: "view",
+            type: "function",
+          },
+        ],
+        functionName: "balanceOf",
+        args: [address as `0x${string}`],
+      });
+      console.info("balance: ", balance)
+
+      const decimals = 6
+
+      return ethers.formatUnits(balance, decimals); 
+
+
+    }
+  
+
+    // used to get mainnet USDC balances
+    usdcAddress = USDC_ADDRESSES[chainId].toLowerCase() as `0x${string}`;
+    const rpcUrl = RPC_URLS[chainId];
+    const provider = new ethers.JsonRpcProvider(rpcUrl);
+    const usdcContract = new ethers.Contract(usdcAddress, ERC20_ABI, provider);
+    const balance = await usdcContract.balanceOf(address)
+    const decimals = await usdcContract.decimals()
+
+    /*
+    console.info("rpcUrl: ", rpcUrl)
+    console.info("usdcAddress: ", usdcAddress)
+    console.info("address: ", address)
+
+    const provider = new ethers.JsonRpcProvider(rpcUrl);
+    const usdcContract = new ethers.Contract(usdcAddress, ERC20_ABI, provider);
+    const balance = await usdcContract.balanceOf(address)
+    console.info("balance: ", balance)
+    const decimals = await usdcContract.decimals()
+    console.info("decimals: ", decimals)
+    */
+
+    return ethers.formatUnits(balance, decimals); 
+  };
+
+
+  const burnUSDC = async (
+    client: WalletClient<HttpTransport, Chain, Account>,
+    sourceChainId: number,
+    amount: bigint,
+    destinationChainId: number,
+    destinationAddress: string,
+    transferType: "fast" | "standard",
+  ) => {
+
+
+
+      const finalityThreshold = transferType === "fast" ? 1000 : 2000;
+      const maxFee = amount - 1n;
+
+      // Handle Solana destination addresses differently
+      let mintRecipient: string;
+      
+      // For EVM destinations, pad the hex address
+      mintRecipient = `0x${destinationAddress
+        .replace(/^0x/, "")
+        .padStart(64, "0")}`;
+      
+
+      const tx = await client.sendTransaction({
+        to: CHAIN_IDS_TO_TOKEN_MESSENGER[sourceChainId] as `0x${string}`,
+        data: encodeFunctionData({
+          abi: [
+            {
+              type: "function",
+              name: "depositForBurn",
+              stateMutability: "nonpayable",
+              inputs: [
+                { name: "amount", type: "uint256" },
+                { name: "destinationDomain", type: "uint32" },
+                { name: "mintRecipient", type: "bytes32" },
+                { name: "burnToken", type: "address" },
+                { name: "hookData", type: "bytes32" },
+                { name: "maxFee", type: "uint256" },
+                { name: "finalityThreshold", type: "uint32" },
+              ],
+              outputs: [],
+            },
+          ],
+          functionName: "depositForBurn",
+          args: [
+            amount,
+            DESTINATION_DOMAINS[destinationChainId],
+            mintRecipient as Hex,
+            CHAIN_IDS_TO_USDC_ADDRESSES[sourceChainId] as `0x${string}`,
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            maxFee,
+            finalityThreshold,
+          ],
+        }),
+      });
+
+      return tx;
+
+  };
+
+
+  const circleTransferUSDC = async (sourceAddress: string, sourceChainId: number, destinationAddress: string, destinationChainId: number, amount: string) => {
+    const sourceChain = availableChains.find(c => c.id === sourceChainId)?.chain;
+    const sourcePublicClient = createPublicClient({
+      chain: sourceChain,
+      transport: http(),
+    });
+
+    const sourceWalletClient = createWalletClient({
+      chain: sourceChain,
+      transport: http(),
+      account: sourceAddress as `0x${string}`,
+    });
+
+    const destinationChain = availableChains.find(c => c.id === destinationChainId)?.chain;
+    const destinationPublicClient = createPublicClient({
+      chain: destinationChain,
+      transport: http(),
+    });
+
+    const destinationWalletClient = createWalletClient({
+      chain: destinationChain,
+      transport: http(),
+      account: destinationAddress as `0x${string}`,
+    });
+
+    const transferType = "fast";
+    let burnTx = await burnUSDC(
+      sourceWalletClient,
+      sourceChainId,
+      1000n,
+      destinationChainId,
+      destinationAddress,
+      transferType,
+    );
+  }
+
   const fetchBalances = async (accountAddress: string, chainId: number) => {
     if (!accountAddress) return;
     
     setIsLoadingBalances(true);
     try {
 
-        const nativeToken = "0x0000000000000000000000000000000000000000"
-        const usdcToken = "0x176211869cA2b568f2A7D4EE941E073a821EE1ff"
+        //const nativeToken = "0x0000000000000000000000000000000000000000"
+        //const usdcToken = "0x176211869cA2b568f2A7D4EE941E073a821EE1ff"
 
-        // get balances for the tokens
-        const tokensResponse = await getTokens({ chains: [chainId] });
-        const tokens = tokensResponse.tokens[chainId];
-        const filteredTokens = tokens.filter(item => 
-            item.address === nativeToken || 
-            item.address === usdcToken);
+        // get balances for the tokens using LiFi SDK
+        //const tokensResponse = await getTokens({ chains: [chainId] });
+        //const tokens = tokensResponse.tokens[chainId];
+        //console.info("tokens: ", tokens)
+        //const filteredTokens = tokens.filter(item => 
+        //    item.address === nativeToken || 
+        //    item.address === usdcToken);
 
 
 
 
-        // Fetch balances for the tokens
-        const tokenBalances = await getTokenBalances(accountAddress, filteredTokens);
 
+        
         // Set native token balance
-        if (nativeToken) {
-          const nativeBalance = tokenBalances.find(balance => 
-            balance.address === nativeToken
-          );
-          if (nativeBalance && nativeBalance.amount) {
-            const weiBigInt = typeof nativeBalance.amount === 'string' ? BigInt(nativeBalance.amount) : nativeBalance.amount;
-            const eth = Number(weiBigInt) / 1e18;
-            setEthBalance(eth.toFixed(6));
-          } else {
-            setEthBalance('0');
-          }
+
+        const nativeBalance = await circleCheckNativeBalance(accountAddress, chainId)
+        console.info("nativeBalance: ", nativeBalance)
+
+
+        if (nativeBalance) {
+          const weiBigInt = typeof nativeBalance === 'string' ? BigInt(nativeBalance) : nativeBalance;
+          const eth = Number(weiBigInt) / 1e18;
+          setEthBalance(eth.toFixed(6));
         } else {
           setEthBalance('0');
         }
+
+        
+        const usdcBalance = await circleCheckUSDCBalance(accountAddress, chainId)
+        console.info("usdcBalance 0: ", usdcBalance)
+        const dollars = Number(usdcBalance)
+        setUsdcBalance(dollars.toFixed(2));
+        console.info("usdcBalance 1: ", usdcBalance)
+          
+
+        /*
+        setEthBalance(nativeBalance.toString());
+        setUsdcBalance(usdcBalance);
+
+        
+        // Fetch balances for the tokens
+        const tokenBalances = await getTokenBalances(accountAddress, tokens);
+        const nativeBalance = tokenBalances.find(balance => 
+          balance.symbol === "ETH"
+        );
+        if (nativeBalance && nativeBalance.amount) {
+          const weiBigInt = typeof nativeBalance.amount === 'string' ? BigInt(nativeBalance.amount) : nativeBalance.amount;
+          const eth = Number(weiBigInt) / 1e18;
+          setEthBalance(eth.toFixed(6));
+        } else {
+          setEthBalance('0');
+        }
+
         
         // Set USDC balance
-        if (usdcToken) {
-          const usdcBalance = tokenBalances.find(balance => 
-            balance.address === usdcToken
-          );
-          console.info("usdcBalance: ", usdcBalance)
-          if (usdcBalance && usdcBalance.amount) {
-            const amountBigInt = BigInt(usdcBalance.amount.toString());
-            const dollars = Number(amountBigInt) / 1_000_000;
-            setUsdcBalance(dollars.toFixed(2));
-          } else {
-            setUsdcBalance('0');
-          }
+        const usdcBalance = tokenBalances.find(balance => 
+          balance.symbol === "USDC"
+        );
+        console.info("usdcBalance: ", usdcBalance)
+        if (usdcBalance && usdcBalance.amount) {
+          const amountBigInt = BigInt(usdcBalance.amount.toString());
+          const dollars = Number(amountBigInt) / 1_000_000;
+          setUsdcBalance(dollars.toFixed(2));
         } else {
           setUsdcBalance('0');
         }
+          */
+
 
 
     } catch (error) {
-      console.error('Error fetching balances with LiFi:', error);
+      console.error('Error fetching balances:', error);
       setEthBalance('0');
       setUsdcBalance('0');
     } finally {
@@ -367,6 +614,10 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
           const uid = await AttestationService.addAccountOrgDelAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         }
     }
+
+    setAccountName('');
+    setError(null);
+    onClose();
 
   };
 

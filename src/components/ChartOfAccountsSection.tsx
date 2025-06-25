@@ -857,6 +857,22 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
       case 10: return 'Optimism';
       case 59144: return 'Linea';
       case 11155111: return 'Sepolia';
+      case 11155420: return 'Sepolia Optimism';
+      case 59141: return 'Sepolia Linea';
+      case 137: return 'Polygon';
+      case 80001: return 'Mumbai (Polygon Testnet)';
+      case 42161: return 'Arbitrum One';
+      case 421614: return 'Arbitrum Sepolia';
+      case 8453: return 'Base';
+      case 84532: return 'Base Sepolia';
+      case 56: return 'BNB Smart Chain';
+      case 97: return 'BNB Testnet';
+      case 43114: return 'Avalanche C-Chain';
+      case 43113: return 'Avalanche Fuji Testnet';
+      case 250: return 'Fantom Opera';
+      case 4002: return 'Fantom Testnet';
+      case 100: return 'Gnosis Chain';
+      case 10200: return 'Gnosis Chiado Testnet';
       default: return `Chain ${chainId}`;
     }
   };
@@ -875,8 +891,9 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
       
       const { address: accountAddress, chainId: accountChainId } = extracted;
 
-      const tokensResponse = await getTokens({ chains: [accountChainId as ChainId] });
-      const tokens = tokensResponse.tokens[accountChainId as ChainId] || [];
+      // Use numeric chain ID directly instead of LiFi ChainId enum
+      const tokensResponse = await getTokens({ chains: [accountChainId as any] });
+      const tokens = tokensResponse.tokens[accountChainId as any] || [];
       
       const nativeToken = "0x0000000000000000000000000000000000000000";
       // Find USDC token dynamically from the response

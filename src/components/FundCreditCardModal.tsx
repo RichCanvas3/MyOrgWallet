@@ -4,7 +4,7 @@ import { useAccount } from 'wagmi';
 import { keccak256, toUtf8Bytes } from 'ethers';
 import { ethers } from 'ethers';
 import { getTokens, EVM, getTokenBalances, createConfig, getRoutes, getStepTransaction, executeRoute } from '@lifi/sdk';
-import { createWalletClient, custom, toHex, type Address } from "viem";
+import { createWalletClient, WalletClient, HttpTransport, Chain, custom, toHex, type Address } from "viem";
 
 import { encodeFunctionData, parseUnits } from 'viem';
 
@@ -18,7 +18,7 @@ import { ChainId } from '@lifi/types';
 import { getWalletClient, switchChain } from '@wagmi/core'
 import { createClient, http, parseAbi, createPublicClient } from 'viem'
 
-import { linea, mainnet, optimism, sepolia } from "viem/chains";
+import { linea, mainnet, optimism, sepolia, optimismSepolia, lineaSepolia } from "viem/chains";
 
 import {
   XMarkIcon,
@@ -67,6 +67,17 @@ import { createPaymasterClient, createBundlerClient } from 'viem/account-abstrac
 import { createPimlicoClient } from 'permissionless/clients/pimlico';
 import { DelegationFramework, SINGLE_DEFAULT_MODE } from '@metamask/delegation-toolkit';
 import { CallSharp } from '@mui/icons-material';
+
+import { CHAIN_IDS_TO_USDC_ADDRESSES, CHAIN_IDS_TO_TOKEN_MESSENGER, DESTINATION_DOMAINS } from '../libs/chains';
+
+const availableChains = [
+  { id: linea.id, name: linea.name, nativeCurrency: linea.nativeCurrency, chain: linea },
+  { id: mainnet.id, name: mainnet.name, nativeCurrency: mainnet.nativeCurrency, chain: mainnet },
+  { id: optimism.id, name: optimism.name, nativeCurrency: optimism.nativeCurrency, chain: optimism },
+  { id: lineaSepolia.id, name: lineaSepolia.name, nativeCurrency: lineaSepolia.nativeCurrency, chain: lineaSepolia },
+  { id: sepolia.id, name: sepolia.name, nativeCurrency: sepolia.nativeCurrency, chain: sepolia },
+  { id: optimismSepolia.id, name: optimismSepolia.name, nativeCurrency: optimismSepolia.nativeCurrency, chain: optimismSepolia },
+];
 
 const ERC20_ABI = parseAbi([
   // Read-only
@@ -123,6 +134,104 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
   const { signatory, chain, indivDid, orgDid, indivAccountClient, orgAccountClient, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation } = useWallectConnectContext();
   const { isConnected } = useAccount();
+
+
+
+  const burnUSDC = async (
+    client: WalletClient<HttpTransport, Chain, Account>,
+    sourceChainId: number,
+    amount: bigint,
+    destinationChainId: number,
+    destinationAddress: string,
+    transferType: "fast" | "standard",
+  ) => {
+
+
+
+      const finalityThreshold = transferType === "fast" ? 1000 : 2000;
+      const maxFee = amount - 1n;
+
+      // Handle Solana destination addresses differently
+      let mintRecipient: string;
+      
+      // For EVM destinations, pad the hex address
+      mintRecipient = `0x${destinationAddress
+        .replace(/^0x/, "")
+        .padStart(64, "0")}`;
+      
+
+      const tx = await client.sendTransaction({
+        to: CHAIN_IDS_TO_TOKEN_MESSENGER[sourceChainId] as `0x${string}`,
+        data: encodeFunctionData({
+          abi: [
+            {
+              type: "function",
+              name: "depositForBurn",
+              stateMutability: "nonpayable",
+              inputs: [
+                { name: "amount", type: "uint256" },
+                { name: "destinationDomain", type: "uint32" },
+                { name: "mintRecipient", type: "bytes32" },
+                { name: "burnToken", type: "address" },
+                { name: "hookData", type: "bytes32" },
+                { name: "maxFee", type: "uint256" },
+                { name: "finalityThreshold", type: "uint32" },
+              ],
+              outputs: [],
+            },
+          ],
+          functionName: "depositForBurn",
+          args: [
+            amount,
+            DESTINATION_DOMAINS[destinationChainId],
+            mintRecipient as Hex,
+            CHAIN_IDS_TO_USDC_ADDRESSES[sourceChainId] as `0x${string}`,
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            maxFee,
+            finalityThreshold,
+          ],
+        }),
+      });
+
+      return tx;
+
+  };
+
+  const circleTransferUSDC = async (sourceAddress: string, sourceChainId: number, destinationAddress: string, destinationChainId: number, amount: string) => {
+    const sourceChain = availableChains.find(c => c.id === sourceChainId)?.chain;
+    const sourcePublicClient = createPublicClient({
+      chain: sourceChain,
+      transport: http(),
+    });
+
+    const sourceWalletClient = createWalletClient({
+      chain: sourceChain,
+      transport: http(),
+      account: sourceAddress as `0x${string}`,
+    });
+
+    const destinationChain = availableChains.find(c => c.id === destinationChainId)?.chain;
+    const destinationPublicClient = createPublicClient({
+      chain: destinationChain,
+      transport: http(),
+    });
+
+    const destinationWalletClient = createWalletClient({
+      chain: destinationChain,
+      transport: http(),
+      account: destinationAddress as `0x${string}`,
+    });
+
+    const transferType = "fast";
+    let burnTx = await burnUSDC(
+      sourceWalletClient,
+      sourceChainId,
+      1000n,
+      destinationChainId,
+      destinationAddress,
+      transferType,
+    );
+  }
 
   // Utility function to extract chainId and address from accountDid
   const extractFromAccountDid = (accountDid: string): { chainId: number; address: `0x${string}` } | null => {
@@ -590,12 +699,25 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
     try {
 
+      const savingsAccount = savingsAccounts.find(acc => acc.id === selectedSavingsAccounts[0]);
+      const savingsAccountExtracted = extractFromAccountDid(savingsAccount?.did);
+      const creditCardExtracted = extractFromAccountDid(selectedCreditCard.accountDid);
+
+      // check if source and destination are test chains.  If so use circle to transfer
+      const sourceChain = availableChains.find(c => c.id === savingsAccountExtracted?.chainId);
+      const destinationChain = availableChains.find(c => c.id === creditCardExtracted?.chainId);
+
+      let isTestChains = false
+      if (sourceChain?.id === 59144 || destinationChain?.id === 59144) {
+        isTestChains = true;
+      }
+
       if (selectedRoute) {
 
         // execute using cross chain USDC transfer
         console.info("***********  EXECUTE CROSS-CHAIN USDC TRANSFER ****************");
 
-        const savingsAccount = savingsAccounts.find(acc => acc.id === selectedSavingsAccounts[0]);
+        
 
         const accountIndivDelegationStr = savingsAccount?.attestation?.indivDelegation;
         const accountOrgDelegationStr = savingsAccount?.attestation?.orgDelegation;
@@ -705,12 +827,14 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         handleClose();
           
       }
+      else if (isTestChains) {
+        console.info("***********  EXECUTE CIRCLE TRANSFER ****************");
+        await circleTransferUSDC(savingsAccountExtracted?.address as `0x${string}`, savingsAccountExtracted?.chainId as number, creditCardExtracted?.address as `0x${string}`, creditCardExtracted?.chainId as number, fundingAmount);
+      }
       else {
 
         // execute using direct transfer of USDC
         console.info("***********  EXECUTE DIRECT TRANSFER ****************");
-
-        const savingsAccount = savingsAccounts.find(acc => acc.id === selectedSavingsAccounts[0]);
 
         const accountIndivDelegationStr = savingsAccount?.attestation?.indivDelegation;
         const accountOrgDelegationStr = savingsAccount?.attestation?.orgDelegation;
@@ -733,9 +857,6 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         });
 
         const calls = []
-
-
-        const creditCardExtracted = extractFromAccountDid(selectedCreditCard.accountDid);
 
 
         // USDC

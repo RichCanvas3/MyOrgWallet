@@ -127,28 +127,50 @@ Design a solution showcasing these features, such as a decentralized eCommerce p
 
 ## Prompts
 
+* approve leader (first person creating organization is automatically given this capability)
+    - delegation from org to individual (provide individuals with rights to post attestations on org)
+    - create org leader verifiable credential which represents individuals role
+    - post org leadership attestation which represents individuals role
+
+
+
+
 * add savings account (category: 1110 - Main Savings)
     - create smart account and set CoA category
     - delegation from savings account to org (org has permission to move money)
     - create VC and attestation for savings account
     - create VC and attestation for from savings account to org delegation 
 
-* approve leader (first person creating organization is automatically given this capability)
-    - delegation from org to individual (provide individuals with rights to post attestations on org)
-    - create org leader verifiable credential which represents individuals role
-    - post org leadership attestation which represents individuals role
-
 * approve account access
     - chain delegation from org to individual for access to savings account (extend access to savings account)
     - create VC and attestation for individual access to savings account
 
-* add credit card
-    - verify metamask card
-    - create verifiable credential for credit card and store
-    - post credit card attestation
+* add debit card (debit card on any chain)
+    - capture debit card chain id and wallet address
+    - create individual debit card VC, attestation and associated with CoA
 
-* fund credit card
-    - send Eth from selected Savings account to selected Credit Card EOA
+* fund card
+    - send USDC from selected Savings account to selected debit Card EOA
+
+
+
+if (lastUserResponse.toLowerCase().includes("add savings account")) {
+        console.info("add savings account ...")
+        setAddSavingsModalVisible(true)
+      }
+      if (lastUserResponse.toLowerCase().includes("approve account access")) {
+        console.info("approve account access ...")
+        setApproveAccountAccessModalVisible(true)
+      }
+      if (lastUserResponse.toLowerCase().includes("add debit card")) {
+        console.info("add debit card ...")
+        setAddAccountModalVisible(true)
+      }
+      if (lastUserResponse.toLowerCase().includes("fund card")) {
+        console.info("fund card ...")
+        setFundCreditCardModalVisible(true)
+      }
+
 
 
 ## Requirements

@@ -26,4 +26,5 @@ export const ETHERUM_RPC_URL: string = import.meta.env.VITE_ETHEREUM_RPC_URL;
 export const OPTIMISM_RPC_URL: string = import.meta.env.VITE_OPTIMISM_RPC_URL;
 export const SEPOLIA_RPC_URL: string = import.meta.env.VITE_SEPOLIA_RPC_URL;
 export const LINEA_RPC_URL: string = import.meta.env.VITE_LINEA_RPC_URL;
-
+export const OPTIMISM_SEPOLIA_RPC_URL: string = import.meta.env.VITE_OPTIMISM_SEPOLIA_RPC_URL;
+export const LINEA_SEPOLIA_RPC_URL: string = import.meta.env.VITE_LINEA_SEPOLIA_RPC_URL;
