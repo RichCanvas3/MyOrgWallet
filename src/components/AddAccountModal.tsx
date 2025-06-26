@@ -5,7 +5,7 @@ import { injected } from 'wagmi/connectors';
 import { keccak256, toUtf8Bytes } from 'ethers';
 import { ethers } from 'ethers';
 import { getAddress } from "ethers"; 
-import { linea, mainnet, optimism, sepolia, optimismSepolia, lineaSepolia } from "viem/chains";
+import { linea, mainnet, optimism, sepolia, optimismSepolia, lineaSepolia, base, baseSepolia } from "viem/chains";
 import { getTokens, EVM, getToken, getTokenBalance , createConfig, getQuote, getTokenBalances,  } from '@lifi/sdk';
 import {
   createWalletClient,
@@ -62,17 +62,24 @@ import VerifiableCredentialsService from '../service/VerifiableCredentialsServic
 
 import { getWalletClient, switchChain } from '@wagmi/core'
 
-import {  createConfig as createWagmiConfig } from 'wagmi'
-
+import { createConfig as createWagmiConfig2 } from '@wagmi/core'
+import { createConfig as createWagmiConfig } from 'wagmi'
+import { metaMask } from 'wagmi/connectors'
 
 const optimismProvider = new ethers.JsonRpcProvider(OPTIMISM_RPC_URL);
 
 
 
 // Create Wagmi config
-const wagmiConfig = createWagmiConfig({
-    chains: [mainnet],
+console.info("*********** create wagmiConfig ****************")
+
+
+
+const wagmiConfig = createWagmiConfig2({
+  //connectors: [metaMask({  [mainnet, optimism, linea, sepolia, base, baseSepolia, optimismSepolia] })],
+   chains: [mainnet, optimism, linea, sepolia, base, baseSepolia, optimismSepolia],
     client({ chain }) {
+      console.info("*********** create client ****************: ", chain.id);
       return createClient({ chain, transport: http() })
     },
   })
@@ -210,18 +217,10 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
     59141: "0x8d48ba6D6ABD283E672B917cDFbD6222dd1B80dB",    // Linea Sepolia
   };
 
-  const RPC_URLS: Record<number, string> = {
-    1: ETHERUM_RPC_URL,
-    10: OPTIMISM_RPC_URL,
-    59144: LINEA_RPC_URL,
-  
-    11155111: SEPOLIA_RPC_URL,
-    11155420: OPTIMISM_SEPOLIA_RPC_URL,
-    59141: LINEA_SEPOLIA_RPC_URL,
-  };
+
   const circleCheckUSDCBalance = async (address: string, chainId: number): Promise<string> => {
 
-
+    // get testnet USDC balances
     let usdcAddress = CHAIN_IDS_TO_USDC_ADDRESSES[chainId] as `0x${string}`;
     const ch = availableChains.find(c => c.id === chainId)?.chain;
     const publicClient = createPublicClient({
@@ -229,6 +228,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
       transport: http(),
     });
 
+    
     if (usdcAddress && ch) {
       // used to get testnet USDC balances
       const balance = await publicClient.readContract({
@@ -265,119 +265,10 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
     const balance = await usdcContract.balanceOf(address)
     const decimals = await usdcContract.decimals()
 
-    /*
-    console.info("rpcUrl: ", rpcUrl)
-    console.info("usdcAddress: ", usdcAddress)
-    console.info("address: ", address)
-
-    const provider = new ethers.JsonRpcProvider(rpcUrl);
-    const usdcContract = new ethers.Contract(usdcAddress, ERC20_ABI, provider);
-    const balance = await usdcContract.balanceOf(address)
-    console.info("balance: ", balance)
-    const decimals = await usdcContract.decimals()
-    console.info("decimals: ", decimals)
-    */
 
     return ethers.formatUnits(balance, decimals); 
   };
 
-
-  const burnUSDC = async (
-    client: WalletClient<HttpTransport, Chain, Account>,
-    sourceChainId: number,
-    amount: bigint,
-    destinationChainId: number,
-    destinationAddress: string,
-    transferType: "fast" | "standard",
-  ) => {
-
-
-
-      const finalityThreshold = transferType === "fast" ? 1000 : 2000;
-      const maxFee = amount - 1n;
-
-      // Handle Solana destination addresses differently
-      let mintRecipient: string;
-      
-      // For EVM destinations, pad the hex address
-      mintRecipient = `0x${destinationAddress
-        .replace(/^0x/, "")
-        .padStart(64, "0")}`;
-      
-
-      const tx = await client.sendTransaction({
-        to: CHAIN_IDS_TO_TOKEN_MESSENGER[sourceChainId] as `0x${string}`,
-        data: encodeFunctionData({
-          abi: [
-            {
-              type: "function",
-              name: "depositForBurn",
-              stateMutability: "nonpayable",
-              inputs: [
-                { name: "amount", type: "uint256" },
-                { name: "destinationDomain", type: "uint32" },
-                { name: "mintRecipient", type: "bytes32" },
-                { name: "burnToken", type: "address" },
-                { name: "hookData", type: "bytes32" },
-                { name: "maxFee", type: "uint256" },
-                { name: "finalityThreshold", type: "uint32" },
-              ],
-              outputs: [],
-            },
-          ],
-          functionName: "depositForBurn",
-          args: [
-            amount,
-            DESTINATION_DOMAINS[destinationChainId],
-            mintRecipient as Hex,
-            CHAIN_IDS_TO_USDC_ADDRESSES[sourceChainId] as `0x${string}`,
-            "0x0000000000000000000000000000000000000000000000000000000000000000",
-            maxFee,
-            finalityThreshold,
-          ],
-        }),
-      });
-
-      return tx;
-
-  };
-
-
-  const circleTransferUSDC = async (sourceAddress: string, sourceChainId: number, destinationAddress: string, destinationChainId: number, amount: string) => {
-    const sourceChain = availableChains.find(c => c.id === sourceChainId)?.chain;
-    const sourcePublicClient = createPublicClient({
-      chain: sourceChain,
-      transport: http(),
-    });
-
-    const sourceWalletClient = createWalletClient({
-      chain: sourceChain,
-      transport: http(),
-      account: sourceAddress as `0x${string}`,
-    });
-
-    const destinationChain = availableChains.find(c => c.id === destinationChainId)?.chain;
-    const destinationPublicClient = createPublicClient({
-      chain: destinationChain,
-      transport: http(),
-    });
-
-    const destinationWalletClient = createWalletClient({
-      chain: destinationChain,
-      transport: http(),
-      account: destinationAddress as `0x${string}`,
-    });
-
-    const transferType = "fast";
-    let burnTx = await burnUSDC(
-      sourceWalletClient,
-      sourceChainId,
-      1000n,
-      destinationChainId,
-      destinationAddress,
-      transferType,
-    );
-  }
 
   const fetchBalances = async (accountAddress: string, chainId: number) => {
     if (!accountAddress) return;
@@ -468,6 +359,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
   };
 
   const switchToChain = async (chainId: number) => {
+    console.info("*********** switchToChain ****************: ", chainId);
     setIsSwitchingChain(true);
     setError(null);
     

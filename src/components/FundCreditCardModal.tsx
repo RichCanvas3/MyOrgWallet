@@ -3,14 +3,13 @@ import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { keccak256, toUtf8Bytes } from 'ethers';
 import { ethers } from 'ethers';
+import axios from "axios";
 import { getTokens, EVM, getTokenBalances, createConfig, getRoutes, getStepTransaction, executeRoute } from '@lifi/sdk';
-import { createWalletClient, WalletClient, HttpTransport, Chain, custom, toHex, type Address } from "viem";
+import { createWalletClient, WalletClient, HttpTransport, Chain, custom, Hex, toHex, type Address, type Account as ViemAccount } from "viem";
 
-import { encodeFunctionData, parseUnits } from 'viem';
+import { encodeFunctionData, parseUnits, TransactionExecutionError, formatUnits } from 'viem';
 
 import { erc20Abi } from 'viem';
-
-
 
 import type { Token, Route, LiFiStep } from '@lifi/types';
 import { ChainId } from '@lifi/types';
@@ -20,10 +19,18 @@ import { createClient, http, parseAbi, createPublicClient } from 'viem'
 
 import { linea, mainnet, optimism, sepolia, optimismSepolia, lineaSepolia } from "viem/chains";
 
+import { useCrossChainAccount } from "../hooks/useCrossChainTools";
+
+import {
+  initiateDeveloperControlledWalletsClient,
+} from "@circle-fin/developer-controlled-wallets";
+
+
 import {
   XMarkIcon,
   ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
+
 import {
   Box,
   Typography,
@@ -61,23 +68,14 @@ import { Account, IndivAccount } from '../models/Account';
 
 import {  createConfig as createWagmiConfig } from 'wagmi'
 
-import { RPC_URL, ETHERUM_RPC_URL, OPTIMISM_RPC_URL, SEPOLIA_RPC_URL, LINEA_RPC_URL, BUNDLER_URL, PAYMASTER_URL } from "../config";
+import { CIRCLE_API_KEY, RPC_URL, ETHERUM_RPC_URL, OPTIMISM_RPC_URL, OPTIMISM_SEPOLIA_RPC_URL, SEPOLIA_RPC_URL, LINEA_RPC_URL, BUNDLER_URL, PAYMASTER_URL } from "../config";
 
 import { createPaymasterClient, createBundlerClient } from 'viem/account-abstraction';
 import { createPimlicoClient } from 'permissionless/clients/pimlico';
 import { DelegationFramework, SINGLE_DEFAULT_MODE } from '@metamask/delegation-toolkit';
 import { CallSharp } from '@mui/icons-material';
 
-import { CHAIN_IDS_TO_USDC_ADDRESSES, CHAIN_IDS_TO_TOKEN_MESSENGER, DESTINATION_DOMAINS } from '../libs/chains';
-
-const availableChains = [
-  { id: linea.id, name: linea.name, nativeCurrency: linea.nativeCurrency, chain: linea },
-  { id: mainnet.id, name: mainnet.name, nativeCurrency: mainnet.nativeCurrency, chain: mainnet },
-  { id: optimism.id, name: optimism.name, nativeCurrency: optimism.nativeCurrency, chain: optimism },
-  { id: lineaSepolia.id, name: lineaSepolia.name, nativeCurrency: lineaSepolia.nativeCurrency, chain: lineaSepolia },
-  { id: sepolia.id, name: sepolia.name, nativeCurrency: sepolia.nativeCurrency, chain: sepolia },
-  { id: optimismSepolia.id, name: optimismSepolia.name, nativeCurrency: optimismSepolia.nativeCurrency, chain: optimismSepolia },
-];
+import { IRIS_API_URL, CHAIN_IDS_TO_MESSAGE_TRANSMITTER, CIRCLE_SUPPORTED_CHAINS, CHAIN_IDS_TO_USDC_ADDRESSES, CHAIN_TO_CHAIN_NAME, CHAIN_IDS_TO_TOKEN_MESSENGER, CHAIN_IDS_TO_RPC_URLS, DESTINATION_DOMAINS, CHAINS } from '../libs/chains';
 
 const ERC20_ABI = parseAbi([
   // Read-only
@@ -120,7 +118,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
   
   // Balance states
   const [creditCardBalances, setCreditCardBalances] = useState<{ [accountDid: string]: { USDC: string } }>({});
-  const [savingsAccountBalances, setSavingsAccountBalances] = useState<{ [key: string]: { eth: string; usdc: string } }>({});
+  const [savingsAccountBalances, setSavingsAccountBalances] = useState<{ [accountDid: string]: { USDC: string } }>({});
   const [isLoadingBalances, setIsLoadingBalances] = useState(false);
   
   // LiFi route states
@@ -135,10 +133,12 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
   const { signatory, chain, indivDid, orgDid, indivAccountClient, orgAccountClient, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation } = useWallectConnectContext();
   const { isConnected } = useAccount();
 
+  const { getUSDCChainTokenInfo, getUSDCBalance } = useCrossChainAccount();
+
 
 
   const burnUSDC = async (
-    client: WalletClient<HttpTransport, Chain, Account>,
+    client: WalletClient<HttpTransport, Chain, ViemAccount>,
     sourceChainId: number,
     amount: bigint,
     destinationChainId: number,
@@ -146,6 +146,17 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
     transferType: "fast" | "standard",
   ) => {
 
+      const usdcContract = new ethers.Contract(
+        CHAIN_IDS_TO_USDC_ADDRESSES[sourceChainId] as `0x${string}`,
+        ["function approve(address spender, uint256 amount) public returns (bool)"],
+        signatory.walletClient
+      );
+
+      const fundingAmount = 1000000n;
+      await usdcContract.approve(
+        "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA", // the contract that will spend your USDC
+        fundingAmount // e.g. 1000 USDC (6 decimals)
+      );
 
 
       const finalityThreshold = transferType === "fast" ? 1000 : 2000;
@@ -193,44 +204,278 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         }),
       });
 
+      console.info("*********** curn tx ****************", tx);
+
       return tx;
 
   };
 
-  const circleTransferUSDC = async (sourceAddress: string, sourceChainId: number, destinationAddress: string, destinationChainId: number, amount: string) => {
-    const sourceChain = availableChains.find(c => c.id === sourceChainId)?.chain;
+
+  const retrieveAttestation = async (
+    transactionHash: string,
+    sourceChainId: number,
+  ) => {
+
+
+
+
+    //console.info("***********  DESTINATION_DOMAINS[sourceChainId]: ", DESTINATION_DOMAINS[sourceChainId], sourceChainId);
+
+    //const url = `${IRIS_API_URL}/v2/messages/${DESTINATION_DOMAINS[sourceChainId]}?transactionHash=${transactionHash}`;
+    console.info("***********  CIRCLE_API_KEY: ", CIRCLE_API_KEY);
+    //const url = `${IRIS_API_URL}/v2/messages/${DESTINATION_DOMAINS[sourceChainId]}?transactionHash=${transactionHash}`;
+    const url = `https://iris-api-sandbox.circle.com/v2/messages/${DESTINATION_DOMAINS[sourceChainId]}?transactionHash=${transactionHash}`;
+    console.info("***********  url: ", url);
+    
+    /*
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${CIRCLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+    });
+    */
+
+
+    let count = 0;
+    console.info("***********  url ****************", url);
+    while (true) {
+
+      try {
+        const response = await axios.get(url, {
+          headers: {
+            Authorization: `Bearer ${CIRCLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+        },);
+
+
+        console.log("attestation response without", response);
+    
+        if (response.data?.messages?.[0]?.status === "pending") {
+          return response.data.messages[0];
+        }
+        if (response.data?.messages?.[0]?.status === "complete") {
+          return response.data.messages[0];
+        }
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+          continue;
+        }
+        setError("Attestation retrieval failed");
+        console.info(
+          `Attestation error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+        throw error;
+      }
+    }
+      
+  };
+
+  const mintUSDC = async (
+    client: WalletClient<HttpTransport, Chain, ViemAccount>,
+    destinationChainId: number,
+    attestation: any,
+  ) => {
+    const MAX_RETRIES = 3;
+    let retries = 0;
+
+    console.info("Minting USDC...");
+
+    while (retries < MAX_RETRIES) {
+      try {
+        const publicClient = createPublicClient({
+          chain: CHAINS[destinationChainId],
+          transport: http(),
+        });
+        const feeData = await publicClient.estimateFeesPerGas();
+
+        const destinationMessageTransmitter = CHAIN_IDS_TO_MESSAGE_TRANSMITTER[destinationChainId] as `0x${string}`;
+
+        console.info("********** destinationMessageTransmitter *************", destinationMessageTransmitter);
+        console.info("********** destinationChainId *************", destinationChainId);
+
+        const contractConfig = {
+          address: destinationMessageTransmitter,
+          abi: [
+            {
+              type: "function",
+              name: "receiveMessage",
+              stateMutability: "nonpayable",
+              inputs: [
+                { name: "message", type: "bytes" },
+                { name: "attestation", type: "bytes" },
+              ],
+              outputs: [],
+            },
+          ] as const,
+        };
+
+        // Estimate gas with buffer
+        const gasEstimate = await publicClient.estimateContractGas({
+          ...contractConfig,
+          functionName: "receiveMessage",
+          args: [attestation.message, attestation.attestation],
+          account: client.account,
+        });
+
+        // Add 20% buffer to gas estimate
+        const gasWithBuffer = (gasEstimate * 120n) / 100n;
+        console.info(`Gas Used: ${formatUnits(gasWithBuffer, 9)} Gwei`);
+
+        console.info("********** send transaction *************")
+        const tx = await client.sendTransaction({
+          to: contractConfig.address,
+          data: encodeFunctionData({
+            ...contractConfig,
+            functionName: "receiveMessage",
+            args: [attestation.message, attestation.attestation],
+          }),
+          gas: gasWithBuffer,
+          maxFeePerGas: feeData.maxFeePerGas,
+          maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+        });
+
+        console.info(`Mint Tx: ${tx}`);
+
+        break;
+      } catch (err) {
+        if (err instanceof TransactionExecutionError && retries < MAX_RETRIES) {
+          retries++;
+          console.info(`Retry ${retries}/${MAX_RETRIES}...`);
+          await new Promise((resolve) => setTimeout(resolve, 2000 * retries));
+          continue;
+        }
+        throw err;
+      }
+    }
+  };
+
+  // Function to add Optimism Sepolia network to MetaMask
+  const addOptimismSepoliaToMetaMask = async () => {
+    try {
+      // First try to switch to the network (in case it's already added)
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0xaa36a7' }] // 11155420 in hex
+      });
+    } catch (switchError: any) {
+      // If the network doesn't exist (error code 4902), add it
+      if (switchError.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: '0xaa36a7', // 11155420 in hex
+              chainName: 'Optimism Sepolia',
+              nativeCurrency: {
+                name: 'ETH',
+                symbol: 'ETH',
+                decimals: 18
+              },
+              rpcUrls: ['https://sepolia.optimism.io'],
+              blockExplorerUrls: ['https://sepolia-optimism.etherscan.io']
+            }]
+          });
+        } catch (addError) {
+          console.error('Error adding Optimism Sepolia network:', addError);
+          setError('Please add Optimism Sepolia network to MetaMask manually');
+        }
+      } else {
+        console.error('Error switching to Optimism Sepolia:', switchError);
+        setError('Please switch to Optimism Sepolia network in MetaMask');
+      }
+    }
+  };
+
+  const circleTransferUSDC = async (
+    delegationChain: any,
+    indivAccountClient: any,
+    sourceAddress: string, 
+    sourceChainId: number, 
+    destinationAddress: string, 
+    destinationChainId: number, 
+    amount: string) => {
+
+    const sourceChain = CHAINS[sourceChainId];
     const sourcePublicClient = createPublicClient({
       chain: sourceChain,
       transport: http(),
     });
 
-    const sourceWalletClient = createWalletClient({
-      chain: sourceChain,
-      transport: http(),
-      account: sourceAddress as `0x${string}`,
-    });
+    const add = "0x9cfc7E44757529769A28747F86425C682fE64653"
+    //const sourceWalletClient = createWalletClient({
+    //  chain: sourceChain,
+    //  transport: http(),
+      //account: sourceAddress as `0x${string}`,
+    //  account: add as `0x${string}`,
+    //});
+    const sourceWalletClient = signatory.walletClient
+    //const destinationClient = signatory.walletClient
 
-    const destinationChain = availableChains.find(c => c.id === destinationChainId)?.chain;
+    const destinationChain = CHAINS[destinationChainId]
+
+
+    console.info("************ destinationChain *************", destinationChain);
+    
+    // Add Optimism Sepolia to MetaMask if needed
+    await addOptimismSepoliaToMetaMask();
+    
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: toHex(destinationChain.id) }],
+    });
     const destinationPublicClient = createPublicClient({
       chain: destinationChain,
-      transport: http(),
+      transport: http(OPTIMISM_SEPOLIA_RPC_URL),
     });
+
+    //const destinationWalletClient = createWalletClient({
+    //  chain: destinationChain,
+    //  transport: http(OPTIMISM_SEPOLIA_RPC_URL),
+    //  account: destinationAddress as `0x${string}`,
+    //});
+
+
 
     const destinationWalletClient = createWalletClient({
-      chain: destinationChain,
-      transport: http(),
+      chain: optimismSepolia,
+      transport: custom(window.ethereum), // MetaMask injected provider
       account: destinationAddress as `0x${string}`,
-    });
+    } as any);
 
+    console.info("************ sourceAddress: ", sourceAddress);
+    console.info("************ sourceChainId: ", sourceChainId);
+    console.info("************ destinationAddress: ", destinationAddress);
+    console.info("************ destinationChainId: ", destinationChainId);
+    console.info("************ amount: ", amount);
+
+
+
+    const fundAmmount = "100000"
     const transferType = "fast";
     let burnTx = await burnUSDC(
-      sourceWalletClient,
+      //delegationChain: any,
+      //indivAccountClient: any,
+      sourceWalletClient as any,
       sourceChainId,
-      1000n,
+      fundingAmount,
       destinationChainId,
       destinationAddress,
       transferType,
     );
+
+
+   //const burnTx = "0xf14f65fc4ddbb9b05c7814caafded53d60c702c5c156a9f600a2e48f141ea4c2";
+
+    console.info("***********  retrieve attestation ****************");
+    const attestation = await retrieveAttestation(burnTx, sourceChainId);
+
+    console.info("***********  mint USDC attestation ****************", attestation);
+    await mintUSDC(destinationWalletClient, destinationChainId, attestation);
+
   }
 
   // Utility function to extract chainId and address from accountDid
@@ -252,18 +497,12 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
   // Function to get chain name from chain ID
   const getChainName = (chainId: number): string => {
-    switch (chainId) {
-      case 1: return 'Ethereum';
-      case 10: return 'Optimism';
-      case 59144: return 'Linea';
-      case 11155111: return 'Sepolia';
-      default: return `Chain ${chainId}`;
-    }
+    return CHAIN_TO_CHAIN_NAME[chainId]
   };
     
   // Initialize LiFi SDK
   const wagmiConfig = createWagmiConfig({
-    chains: [mainnet, optimism, linea, sepolia],
+    chains: [mainnet, optimism, linea, sepolia, optimismSepolia],
     client({ chain }) {
       console.info("*********** CHAIN ****************", chain);
       return createClient({ chain, transport: http(RPC_URL) })
@@ -286,7 +525,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         },
         switchChain: async (chainId: ChainId) => {
           console.info("*********** SWITCH CHAIN ****************: ", chainId);
-          const chain = await switchChain(wagmiConfig, { chainId: chainId as ChainId })
+          const chain = await switchChain(wagmiConfig, { chainId: chainId as any })
           return getWalletClient(wagmiConfig, { chainId: chain.id })
         },
       }),
@@ -316,7 +555,21 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
   // Load available tokens for the current chain
   const loadAvailableTokens = async () => {
+
+    // only working with USDC
     if (!chain) return;
+
+    const usdcChainTokenInfo = await getUSDCChainTokenInfo(chain.id)
+    const availableTokensList = [
+      usdcChainTokenInfo
+    ];
+    
+    setAvailableTokens(availableTokensList);
+    if (selectedToken === '') {
+      setSelectedToken('USDC');
+    }
+
+    /*
     
     setIsLoadingTokens(true);
     try {
@@ -341,6 +594,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
     } finally {
       setIsLoadingTokens(false);
     }
+    */
   };
 
   useEffect(() => {
@@ -372,7 +626,24 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
       
       const { address: accountAddress, chainId: accountChainId } = extracted;
 
+      const usdcBalance = await getUSDCBalance(accountAddress, accountChainId)
 
+      setSelectedToken('USDC'); // Set default token
+
+      const usdcChainTokenInfo = await getUSDCChainTokenInfo(chain.id)
+      const availableTokensList = [
+        usdcChainTokenInfo
+      ];
+      setAvailableTokens(availableTokensList);
+      setSelectedToken('USDC');
+
+      const balances: { USDC: string } = { USDC: usdcBalance };
+      setCreditCardBalances(prev => ({
+        ...prev,
+        [accountDid]: balances
+      }));
+
+      /*
       const tokensResponse = await getTokens({ chains: [accountChainId as ChainId] });
       const tokens = tokensResponse.tokens[accountChainId as ChainId] || [];
       
@@ -418,6 +689,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
           [accountDid]: balances
         }));
       }
+      */
     } catch (error) {
       console.error('Error fetching credit card balances:', error);
     } finally {
@@ -438,7 +710,28 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
       
       const { address: accountAddress, chainId: accountChainId } = extracted;
 
+      const usdcBalance = await getUSDCBalance(accountAddress, accountChainId)
+      console.info("***********  usdcBalance ****************", usdcBalance);
 
+      setSelectedToken('USDC'); // Set default token
+
+      const usdcChainTokenInfo = await getUSDCChainTokenInfo(chain.id)
+      const availableTokensList = [
+        usdcChainTokenInfo
+      ];
+      setAvailableTokens(availableTokensList);
+      setSelectedToken('USDC');
+
+      const balances: { USDC: string } = { USDC: usdcBalance };
+      setSavingsAccountBalances(prev => ({
+        ...prev,
+        [accountDid]: balances
+      }));
+
+
+
+
+      /*
       const tokensResponse = await getTokens({ chains: [accountChainId as ChainId] });
       const tokens = tokensResponse.tokens[accountChainId as ChainId] || [];
       
@@ -478,6 +771,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
           [accountDid]: balances
         }));
       }
+      */
     } catch (error) {
       console.error('Error fetching savings account balances:', error);
     }
@@ -541,10 +835,9 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
       console.info("***********  toTokenAddress ****************", toTokenAddress);
       
-      const amount = selectedToken === 'ETH' 
-        ? (parseFloat(fundingAmount) * 1e18).toString()
-        : (parseFloat(fundingAmount) * 1e6).toString();
-      
+      const amount = (parseFloat(fundingAmount) * 1e6).toString();
+
+      // use LiFi to move funds from savings account to credit card
       const walletAddress = signatory.walletClient.account.address;
 
       console.log('Getting routes with params:', {
@@ -583,6 +876,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         setSelectedRoute(null);
         console.error('No routes available, so handle it without LiFi');
       }
+
       
       
     } catch (error) {
@@ -648,8 +942,29 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
   const handleNext = async () => {
     if (activeStep === 2) {
-      // Get routes when moving to confirmation step
-      await getTransferRoutes();
+      
+
+      const firstSavingsAccount = savingsAccounts.find(acc => acc.id === selectedSavingsAccounts[0]);
+      if (!firstSavingsAccount) {
+        console.error('First savings account not found');
+        setError('Selected savings account not found');
+        return;
+      }
+      
+      const savingsAccountExtracted = extractFromAccountDid(firstSavingsAccount.did);
+      if (!savingsAccountExtracted) {
+        setError('Error');
+        return;
+      }
+
+      if (CIRCLE_SUPPORTED_CHAINS[savingsAccountExtracted?.chainId]) {
+        // nothing needed here
+      }
+      else {
+        // Get routes when moving to confirmation step
+        await getTransferRoutes();
+      }
+      
     }
     setActiveStep((prevStep) => prevStep + 1);
   };
@@ -700,24 +1015,40 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
     try {
 
       const savingsAccount = savingsAccounts.find(acc => acc.id === selectedSavingsAccounts[0]);
+      if (!savingsAccount) {
+        setError('Error');
+        return;
+      }
+
       const savingsAccountExtracted = extractFromAccountDid(savingsAccount?.did);
       const creditCardExtracted = extractFromAccountDid(selectedCreditCard.accountDid);
 
-      // check if source and destination are test chains.  If so use circle to transfer
-      const sourceChain = availableChains.find(c => c.id === savingsAccountExtracted?.chainId);
-      const destinationChain = availableChains.find(c => c.id === creditCardExtracted?.chainId);
-
-      let isTestChains = false
-      if (sourceChain?.id === 59144 || destinationChain?.id === 59144) {
-        isTestChains = true;
+      if (!savingsAccountExtracted || !creditCardExtracted) {
+        setError('Error');
+        return;
       }
 
+      // check if source and destination are test chains.  If so use circle to transfer
+      const sourceChain = savingsAccountExtracted?.chainId ? CHAINS[savingsAccountExtracted.chainId] : undefined;
+      const destinationChain = creditCardExtracted?.chainId ? CHAINS[creditCardExtracted.chainId] : undefined;
+
+      
+      const accountIndivDelegationStr = savingsAccount?.attestation?.indivDelegation;
+      const accountOrgDelegationStr = savingsAccount?.attestation?.orgDelegation;
+
+      if (!accountOrgDelegationStr || !accountIndivDelegationStr) {
+        throw new Error('No delegations found');
+      }
+
+      const accountIndivDelegation = JSON.parse(accountIndivDelegationStr) 
+      const accountOrgDelegation = JSON.parse(accountOrgDelegationStr) 
+
+
       if (selectedRoute) {
+        // LiFi Transfer
 
         // execute using cross chain USDC transfer
         console.info("***********  EXECUTE CROSS-CHAIN USDC TRANSFER ****************");
-
-        
 
         const accountIndivDelegationStr = savingsAccount?.attestation?.indivDelegation;
         const accountOrgDelegationStr = savingsAccount?.attestation?.orgDelegation;
@@ -827,24 +1158,28 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         handleClose();
           
       }
-      else if (isTestChains) {
+      else if (CIRCLE_SUPPORTED_CHAINS[creditCardExtracted?.chainId]) {
+        // Circle Transfer
+
         console.info("***********  EXECUTE CIRCLE TRANSFER ****************");
-        await circleTransferUSDC(savingsAccountExtracted?.address as `0x${string}`, savingsAccountExtracted?.chainId as number, creditCardExtracted?.address as `0x${string}`, creditCardExtracted?.chainId as number, fundingAmount);
+        // use circle to move funds from savings account to credit card
+        
+        const fundingAmount = "100000";
+        const delegationChain = [accountIndivDelegation, accountOrgDelegation]
+        await circleTransferUSDC(
+          delegationChain,
+          indivAccountClient,
+          savingsAccountExtracted?.address as `0x${string}`, 
+          savingsAccountExtracted?.chainId as number, 
+          creditCardExtracted?.address as `0x${string}`, 
+          creditCardExtracted?.chainId as number, 
+          fundingAmount);
       }
       else {
 
         // execute using direct transfer of USDC
         console.info("***********  EXECUTE DIRECT TRANSFER ****************");
 
-        const accountIndivDelegationStr = savingsAccount?.attestation?.indivDelegation;
-        const accountOrgDelegationStr = savingsAccount?.attestation?.orgDelegation;
-
-        if (!accountOrgDelegationStr || !accountIndivDelegationStr) {
-          throw new Error('No delegations found');
-        }
-
-        const accountIndivDelegation = JSON.parse(accountIndivDelegationStr) 
-        const accountOrgDelegation = JSON.parse(accountOrgDelegationStr) 
 
         const bundlerClient = createBundlerClient({
           transport: http(BUNDLER_URL || ''),
@@ -1069,7 +1404,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
                         {balances && (
                           <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                             <Chip 
-                              label={`${balances.usdc} USDC`}
+                              label={`${balances.USDC} USDC`}
                               size="small"
                               variant="outlined"
                             />
@@ -1160,9 +1495,8 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
                 {selectedSavingsAccounts.map(accountId => {
                   const account = savingsAccounts.find(acc => acc.id === accountId);
                   const balances = account ? savingsAccountBalances[account.did] : null;
-                  const availableAmount = selectedToken === 'ETH' 
-                    ? balances?.eth || '0'
-                    : balances?.usdc || '0';
+                  const availableAmount = balances?.USDC || '0' 
+
                   
                   return (
                     <Box key={accountId} sx={{ ml: 2, mb: 1 }}>
@@ -1258,7 +1592,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
                       {balances && (
                         <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                           <Chip 
-                            label={`${balances.usdc} USDC`}
+                            label={`${balances.USDC} USDC`}
                             size="small"
                             variant="outlined"
                           />

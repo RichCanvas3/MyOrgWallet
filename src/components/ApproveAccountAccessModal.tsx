@@ -29,6 +29,8 @@ import {
     getDelegationHashOffchain,
   } from "@metamask/delegation-toolkit";
 
+import { useCrossChainAccount } from "../hooks/useCrossChainTools";
+
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService"
 
 const steps = ['Select Account', 'Select Individual', 'Confirm'];

@@ -31,6 +31,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { Account, AccountType, ACCOUNT_TYPES } from '../models/Account';
 import { IndivAccountAttestation, AccountOrgDelAttestation, OrgAccountAttestation } from '../models/Attestation';
 import { useAccount } from 'wagmi';
+import { useCrossChainAccount } from "../hooks/useCrossChainTools";
 
 interface ChartOfAccountsSectionProps {
   onSelectAccount?: (account: Account) => void;
@@ -39,6 +40,8 @@ interface ChartOfAccountsSectionProps {
 const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
   onSelectAccount,
 }) => {
+
+  const { getUSDCBalance } = useCrossChainAccount();
   const { chain, veramoAgent, mascaApi, signatory, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, burnerAccountClient } = useWallectConnectContext();
   
   // Add state for view type
@@ -891,6 +894,18 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
       
       const { address: accountAddress, chainId: accountChainId } = extracted;
 
+      const balance = await getUSDCBalance(accountAddress, accountChainId)
+
+      const balances: { USDC: string } = { USDC: '0' };
+      balances.USDC = balance;
+
+      setAccountBalances(prev => ({
+        ...prev,
+        [accountDid]: balances
+      }));
+
+      /*
+      // if mainnet then use the mainnet USDC address
       // Use numeric chain ID directly instead of LiFi ChainId enum
       const tokensResponse = await getTokens({ chains: [accountChainId as any] });
       const tokens = tokensResponse.tokens[accountChainId as any] || [];
@@ -927,11 +942,13 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
           [accountDid]: balances
         }));
       }
+        */
     } catch (error) {
       console.error('Error fetching account balances:', error);
     } finally {
       setIsLoadingBalances(false);
     }
+      
   };
 
   // Function to calculate total USDC balance for an account and its children
