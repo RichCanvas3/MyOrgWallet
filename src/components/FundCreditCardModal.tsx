@@ -92,8 +92,8 @@ const ERC20_ABI = parseAbi([
   'event Transfer(address indexed from, address indexed to, uint256 value)',
   'event Approval(address indexed owner, address indexed spender, uint256 value)',
 ]);
-const USDC_OPTIMISM = '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85';
-const USDC_LINEA = '0x176211869cA2b568f2A7D4EE941E073a821EE1ff';
+const USDC_OPTIMISM = '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85' as `0x${string}`;
+const USDC_LINEA = '0x176211869cA2b568f2A7D4EE941E073a821EE1ff' as `0x${string}`;
 
 interface FundCreditCardModalProps {
   isVisible: boolean;
@@ -138,76 +138,135 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
 
   const burnUSDC = async (
-    client: WalletClient<HttpTransport, Chain, ViemAccount>,
+    delegationChain: any,
+    indivAccountClient: any,
     sourceChainId: number,
     amount: bigint,
     destinationChainId: number,
     destinationAddress: string,
     transferType: "fast" | "standard",
   ) => {
+    console.info("*********** burnUSDC ****************");
+    console.info("*********** delegationChain ****************", delegationChain);
+    console.info("*********** indivAccountClient ****************", indivAccountClient);
 
-      const usdcContract = new ethers.Contract(
+
+
+    const bundlerClient = createBundlerClient({
+      transport: http(BUNDLER_URL || ''),
+      paymaster: true,
+      chain: chain,
+      paymasterContext: {
+        mode: 'SPONSORED',
+      },
+    });
+
+    let calls: any[] = [];
+
+    // Use the actual amount parameter
+    const fundingAmount = amount;
+
+    const tokenMessenger = CHAIN_IDS_TO_TOKEN_MESSENGER[sourceChainId] as `0x${string}`
+    const usdcAddress = CHAIN_IDS_TO_USDC_ADDRESSES[sourceChainId] as `0x${string}`
+    const approvalExecution = {
+      target: usdcAddress,
+      callData: encodeFunctionData({
+        abi: parseAbi(["function approve(address,uint)"]),
+        functionName: "approve",
+        args: [tokenMessenger, fundingAmount],
+      }),
+      value: 0n, // since it's an ERC-20 approval, you don't need to send ETH
+    };
+
+    const data0 = DelegationFramework.encode.redeemDelegations({
+      delegations: [delegationChain],
+      modes: [SINGLE_DEFAULT_MODE],
+      executions: [[approvalExecution]]
+    });
+
+    const call0 = {
+      to: indivAccountClient.address,
+      data: data0,
+    }
+
+    calls.push(call0)
+
+    const finalityThreshold = transferType === "fast" ? 1000 : 2000;
+    const maxFee = fundingAmount - 1n;
+
+    const mintRecipient = `0x${destinationAddress
+      .replace(/^0x/, "")
+      .padStart(64, "0")}`;
+
+    const callData = encodeFunctionData({
+      abi: [
+        {
+          type: "function",
+          name: "depositForBurn",
+          stateMutability: "nonpayable",
+          inputs: [
+            { name: "amount", type: "uint256" },
+            { name: "destinationDomain", type: "uint32" },
+            { name: "mintRecipient", type: "bytes32" },
+            { name: "burnToken", type: "address" },
+            { name: "hookData", type: "bytes32" },
+            { name: "maxFee", type: "uint256" },
+            { name: "finalityThreshold", type: "uint32" },
+          ],
+          outputs: [],
+        },
+      ],
+      functionName: "depositForBurn",
+      args: [
+        fundingAmount,
+        DESTINATION_DOMAINS[destinationChainId],
+        mintRecipient as Hex,
         CHAIN_IDS_TO_USDC_ADDRESSES[sourceChainId] as `0x${string}`,
-        ["function approve(address spender, uint256 amount) public returns (bool)"],
-        signatory.walletClient
-      );
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+        maxFee,
+        finalityThreshold,
+      ],
+    })
 
-      const fundingAmount = 1000000n;
-      await usdcContract.approve(
-        "0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA", // the contract that will spend your USDC
-        fundingAmount // e.g. 1000 USDC (6 decimals)
-      );
+    const execution = {
+      target: CHAIN_IDS_TO_TOKEN_MESSENGER[sourceChainId] as `0x${string}`,
+      callData: callData,
+      value: 0n, // since it's an ERC-20 approval, you don't need to send ETH
+    };
 
+    console.info("*********** redeemDelegations ****************");
+    const data = DelegationFramework.encode.redeemDelegations({
+      delegations: [delegationChain],
+      modes: [SINGLE_DEFAULT_MODE],
+      executions: [[execution]]
+    });
 
-      const finalityThreshold = transferType === "fast" ? 1000 : 2000;
-      const maxFee = amount - 1n;
+    const call = {
+      to: indivAccountClient.address,
+      data: data,
+    }
+    calls.push(call)
 
-      // Handle Solana destination addresses differently
-      let mintRecipient: string;
-      
-      // For EVM destinations, pad the hex address
-      mintRecipient = `0x${destinationAddress
-        .replace(/^0x/, "")
-        .padStart(64, "0")}`;
-      
+    const fee = {maxFeePerGas: 412596685n, maxPriorityFeePerGas: 412596676n}
+    const paymasterClient = createPaymasterClient({
+      transport: http(PAYMASTER_URL),
+    });
 
-      const tx = await client.sendTransaction({
-        to: CHAIN_IDS_TO_TOKEN_MESSENGER[sourceChainId] as `0x${string}`,
-        data: encodeFunctionData({
-          abi: [
-            {
-              type: "function",
-              name: "depositForBurn",
-              stateMutability: "nonpayable",
-              inputs: [
-                { name: "amount", type: "uint256" },
-                { name: "destinationDomain", type: "uint32" },
-                { name: "mintRecipient", type: "bytes32" },
-                { name: "burnToken", type: "address" },
-                { name: "hookData", type: "bytes32" },
-                { name: "maxFee", type: "uint256" },
-                { name: "finalityThreshold", type: "uint32" },
-              ],
-              outputs: [],
-            },
-          ],
-          functionName: "depositForBurn",
-          args: [
-            amount,
-            DESTINATION_DOMAINS[destinationChainId],
-            mintRecipient as Hex,
-            CHAIN_IDS_TO_USDC_ADDRESSES[sourceChainId] as `0x${string}`,
-            "0x0000000000000000000000000000000000000000000000000000000000000000",
-            maxFee,
-            finalityThreshold,
-          ],
-        }),
-      });
+    // Send user operation
+    console.info("*********** sendUserOperation ****************");
+    const userOpHash = await bundlerClient.sendUserOperation({
+      account: indivAccountClient,
+      calls: calls,
+      paymaster: paymasterClient,
+      ...fee
+    });
 
-      console.info("*********** curn tx ****************", tx);
+    console.info("*********** waitForUserOperationReceipt ****************");
+    const userOperationReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
 
-      return tx;
+    console.info("*********** burn tx ****************", userOperationReceipt);
 
+    return userOperationReceipt;
   };
 
 
@@ -397,7 +456,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
     sourceChainId: number, 
     destinationAddress: string, 
     destinationChainId: number, 
-    amount: string) => {
+    amount: bigint) => {
 
     const sourceChain = CHAINS[sourceChainId];
     const sourcePublicClient = createPublicClient({
@@ -405,7 +464,6 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
       transport: http(),
     });
 
-    const add = "0x9cfc7E44757529769A28747F86425C682fE64653"
     //const sourceWalletClient = createWalletClient({
     //  chain: sourceChain,
     //  transport: http(),
@@ -421,6 +479,47 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
     console.info("************ destinationChain *************", destinationChain);
     
     // Add Optimism Sepolia to MetaMask if needed
+
+
+
+    //const destinationWalletClient = createWalletClient({
+    //  chain: destinationChain,
+    //  transport: http(OPTIMISM_SEPOLIA_RPC_URL),
+    //  account: destinationAddress as `0x${string}`,
+    //});
+
+
+
+
+
+    console.info("************ sourceAddress: ", sourceAddress);
+    console.info("************ sourceChainId: ", sourceChainId);
+    console.info("************ destinationAddress: ", destinationAddress);
+    console.info("************ destinationChainId: ", destinationChainId);
+    console.info("************ amount: ", amount);
+
+
+
+    const transferType = "fast";
+    let burnTx = await burnUSDC(
+      delegationChain,
+      indivAccountClient,
+      sourceChainId,
+      amount,
+      destinationChainId,
+      destinationAddress,
+      transferType,
+    );
+
+    // Extract transaction hash from user operation receipt
+    const transactionHash = burnTx.receipt.transactionHash;
+    console.info("***********  transactionHash ****************", transactionHash);
+
+    console.info("***********  retrieve attestation ****************");
+    const attestation = await retrieveAttestation(transactionHash, sourceChainId);
+
+    console.info("***********  mint USDC attestation ****************", attestation);
+
     await addOptimismSepoliaToMetaMask();
     
     await window.ethereum.request({
@@ -431,49 +530,11 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
       chain: destinationChain,
       transport: http(OPTIMISM_SEPOLIA_RPC_URL),
     });
-
-    //const destinationWalletClient = createWalletClient({
-    //  chain: destinationChain,
-    //  transport: http(OPTIMISM_SEPOLIA_RPC_URL),
-    //  account: destinationAddress as `0x${string}`,
-    //});
-
-
-
     const destinationWalletClient = createWalletClient({
       chain: optimismSepolia,
       transport: custom(window.ethereum), // MetaMask injected provider
       account: destinationAddress as `0x${string}`,
     } as any);
-
-    console.info("************ sourceAddress: ", sourceAddress);
-    console.info("************ sourceChainId: ", sourceChainId);
-    console.info("************ destinationAddress: ", destinationAddress);
-    console.info("************ destinationChainId: ", destinationChainId);
-    console.info("************ amount: ", amount);
-
-
-
-    const fundAmmount = "100000"
-    const transferType = "fast";
-    let burnTx = await burnUSDC(
-      //delegationChain: any,
-      //indivAccountClient: any,
-      sourceWalletClient as any,
-      sourceChainId,
-      fundingAmount,
-      destinationChainId,
-      destinationAddress,
-      transferType,
-    );
-
-
-   //const burnTx = "0xf14f65fc4ddbb9b05c7814caafded53d60c702c5c156a9f600a2e48f141ea4c2";
-
-    console.info("***********  retrieve attestation ****************");
-    const attestation = await retrieveAttestation(burnTx, sourceChainId);
-
-    console.info("***********  mint USDC attestation ****************", attestation);
     await mintUSDC(destinationWalletClient, destinationChainId, attestation);
 
   }
@@ -1082,9 +1143,10 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
           const liftAddress = txRequest?.to as `0x${string}`
           const approvalAmount = BigInt((parseFloat(fundingAmount) * 1e6).toString());
+          const usdcAddress = CHAIN_IDS_TO_USDC_ADDRESSES[savingsAccountExtracted.chainId] as `0x${string}`
 
           const approvalExecution = {
-            target: USDC_OPTIMISM as `0x${string}`,
+            target: usdcAddress,
             callData: encodeFunctionData({
               abi: parseAbi(["function approve(address,uint)"]),
               functionName: "approve",
@@ -1164,7 +1226,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         console.info("***********  EXECUTE CIRCLE TRANSFER ****************");
         // use circle to move funds from savings account to credit card
         
-        const fundingAmount = "100000";
+        const fundingAmountBigInt = BigInt((parseFloat(fundingAmount) * 1e6).toString());
         const delegationChain = [accountIndivDelegation, accountOrgDelegation]
         await circleTransferUSDC(
           delegationChain,
@@ -1173,7 +1235,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
           savingsAccountExtracted?.chainId as number, 
           creditCardExtracted?.address as `0x${string}`, 
           creditCardExtracted?.chainId as number, 
-          fundingAmount);
+          fundingAmountBigInt);
       }
       else {
 
@@ -1198,6 +1260,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         // use direct transfer
         const decimals = 6
         const value = parseUnits(fundingAmount, decimals);
+        const usdcAddress = CHAIN_IDS_TO_USDC_ADDRESSES[savingsAccountExtracted.chainId] as `0x${string}`
 
         //const value = BigInt(amount)
         const to = creditCardExtracted?.address as `0x${string}`
@@ -1210,7 +1273,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
         const includedExecutions = [
           {
-            target: USDC_OPTIMISM,
+            target: usdcAddress,
             value: 0n,
             callData: callData
           },
