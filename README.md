@@ -1,4 +1,3 @@
-
 # MyOrgWallet Web Application
 
 ## Description
@@ -6,6 +5,9 @@
 MyOrgWallet is a cutting-edge Web3 digital wallet designed for organizations, empowering seamless and secure interactions in decentralized ecosystems.
 
 [Watch the MyOrgWallet demo video](https://youtu.be/2WAkvM0JogA)
+
+- [Add MetaMask Card to CoA within myOrgWallet](./public/AddMetaMaskCardFinished.mp4)
+- [Fund MetaMask Card with USDC using CCTP v2](./public/FundMetaMaskCardFinished.mp4)
 
 ### Account Abstraction (AA):
 

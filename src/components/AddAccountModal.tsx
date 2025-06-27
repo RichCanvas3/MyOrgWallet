@@ -548,6 +548,37 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
     const walletClient = signatory.walletClient
     let entityId = "account(indiv)"
 
+    if (walletSigner && walletClient && privateIssuerAccount && indivDid && mascaApi && privateIssuerDid) {
+
+      const vc = await VerifiableCredentialsService.createAccountVC(entityId, privateIssuerDid, accountDid, indivDid, accountName);
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+      const fullVc = result.vc
+      const proof = result.proof
+
+      if (fullVc && chain && indivDid && indivAccountClient && burnerAccountClient && indivIssuerDelegation && indivAccountClient) {
+      
+
+        // now create attestation
+        const hash = keccak256(toUtf8Bytes("hash value"));
+        const attestation: IndivAccountAttestation = {
+            accountName: accountName,
+            accountDid: accountDid,
+            accountBalance: "0",
+            attester: indivDid,
+            class: "individual",
+            category: "account",
+            entityId: entityId,
+            hash: hash,
+            vccomm: (fullVc.credentialSubject as any).commitment.toString(),
+            vcsig: (fullVc.credentialSubject as any).commitmentSignature,
+            vciss: privateIssuerDid,
+            proof: proof
+        };
+
+        const uid = await AttestationService.addIndivAccountAttestation(chain, attestation, walletSigner, [indivIssuerDelegation], indivAccountClient, burnerAccountClient)
+      }
+  }
+
 
 
 

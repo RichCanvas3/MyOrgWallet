@@ -83,7 +83,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
 
         const res = await axios.get(CALLBACK_URI + '?code='+ event.data.code);
 
-        console.info("linkedin response ...........")
+        console.info("linkedin response: ", res.data)
         console.info(res.data.given_name)
         console.info(res.data.family_name)
         console.info(res.data.email)
