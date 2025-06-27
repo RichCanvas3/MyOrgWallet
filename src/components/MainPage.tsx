@@ -58,10 +58,10 @@ import ApproveLeaderModal from './ApproveLeaderModal';
 import ApproveAccountAccessModal from './ApproveAccountAccessModal';
 import CreateWebDidModal from './CreateWebDidModal';
 import ImportDriversLicenseModal from './ImportDriversLicenseModal';
-import AddCreditCardModal from './AddCreditCardModal';
+import AddCreditCardModal from './AddEOACrossChainAccountModal';
 import FundCreditCardModal from './FundCreditCardModal';
-import AddSavingsModal from './AddSavingsModal';
-import AddAccountModal from './AddAccountModal';
+import AddSavingsModal from './AddAccountModal';
+import AddAccountModal from './AddEOACrossChainAccountModal';
 import OrgModal from './OrgModal';  
 
 
@@ -706,8 +706,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       //  console.info("add credit card ...")
       //  setAddCreditCardModalVisible(true)
       //}
-      if (lastUserResponse.toLowerCase().includes("add savings account")) {
-        console.info("add savings account ...")
+      if (lastUserResponse.toLowerCase().includes("add account")) {
+        console.info("add account ...")
         setAddSavingsModalVisible(true)
       }
       if (lastUserResponse.toLowerCase().includes("approve account access")) {
@@ -1751,7 +1751,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         
                 {/* Scroll to bottom button */}
                 {showScrollButton && (
-                  <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 mb-2 z-10">
+                  <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 mb-2 z-10">
                     <ScrollToBottomButton onClick={scrollToBottom} />
                   </div>
                 )}

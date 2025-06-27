@@ -1624,7 +1624,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
             </FormGroup>
             {savingsAccounts.length === 0 && (
               <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 2 }}>
-                No savings accounts found. Please add savings accounts first.
+                No savings accounts found. Please add accounts first.
               </Typography>
             )}
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>

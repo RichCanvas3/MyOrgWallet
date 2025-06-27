@@ -137,7 +137,7 @@ Design a solution showcasing these features, such as a decentralized eCommerce p
 
 
 
-* add savings account (category: 1110 - Main Savings)
+* add account (category: 1110 - Main Savings)
     - create smart account and set CoA category
     - delegation from savings account to org (org has permission to move money)
     - create VC and attestation for savings account
@@ -156,8 +156,8 @@ Design a solution showcasing these features, such as a decentralized eCommerce p
 
 
 
-if (lastUserResponse.toLowerCase().includes("add savings account")) {
-        console.info("add savings account ...")
+if (lastUserResponse.toLowerCase().includes("add account")) {
+        console.info("add account ...")
         setAddSavingsModalVisible(true)
       }
       if (lastUserResponse.toLowerCase().includes("approve account access")) {

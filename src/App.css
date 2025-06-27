@@ -798,6 +798,7 @@ textarea:focus {
   height: 100%;
   overflow: hidden;
   flex: 1;
+  padding-bottom: 80px; /* Add padding to account for sticky message input */
 }
 
 /* Chat container inside main */
@@ -806,6 +807,7 @@ textarea:focus {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  min-height: 0; /* Ensure it can shrink */
 }
 
 /* Message Input */
@@ -813,6 +815,12 @@ textarea:focus {
   background-color: var(--black);
   padding-top: var(--padding-1);
   width: 100%;
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  border-top: 1px solid var(--border-1);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .message-form {
@@ -1069,5 +1077,16 @@ pre[class*="language-"] {
   :not(pre) > code[class*="language-"],
   pre[class*="language-"] {
     background: window;
+  }
+}
+
+/* Media queries for responsive design */
+@media (max-height: 600px) {
+  .main-panel {
+    padding-bottom: 60px; /* Reduce padding for smaller screens */
+  }
+  
+  .message-input-container {
+    padding-top: calc(var(--padding-1) / 2); /* Reduce padding for smaller screens */
   }
 }

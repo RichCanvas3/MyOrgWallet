@@ -34,6 +34,7 @@ import { useAccount } from 'wagmi';
 import { useCrossChainAccount } from "../hooks/useCrossChainTools";
 
 import { IRIS_API_URL, CHAIN_IDS_TO_MESSAGE_TRANSMITTER, CHAIN_IDS_TO_EXPLORER_URL, CIRCLE_SUPPORTED_CHAINS, CHAIN_IDS_TO_USDC_ADDRESSES, CHAIN_TO_CHAIN_NAME, CHAIN_IDS_TO_TOKEN_MESSENGER, CHAIN_IDS_TO_RPC_URLS, DESTINATION_DOMAINS, CHAINS } from '../libs/chains';
+import { CHART_OF_ACCOUNTS } from '../constants/chartOfAccounts';
 
 
 interface ChartOfAccountsSectionProps {
@@ -55,201 +56,7 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
   const [accountBalances, setAccountBalances] = useState<{ [accountDid: string]: { USDC: string } }>({});
   const [isLoadingBalances, setIsLoadingBalances] = useState(false);
 
-  const [accounts, setAccounts] = useState<Account[]>([
-    /* ───────────────────────── ASSETS (1xxx) ───────────────────────── */
-    {
-      id: '1000',
-      code: '1000',
-      name: 'Assets',
-      type: ACCOUNT_TYPES.Asset,
-      balance: 0,
-      level: 0,
-      children: [
-        /* 1100 ‑ Cash & Cash Equivalents -------------------------------- */
-        {
-          id: '1100',
-          code: '1100',
-          name: 'Cash & Cash Equivalents',
-          type: ACCOUNT_TYPES.Asset,
-          balance: 0,
-          level: 1,
-          parentId: '1000',
-          children: [
-            { id: '1110', code: '1110', name: 'Main Savings',  type: ACCOUNT_TYPES.Asset, balance: 250_000, level: 2, parentId: '1100' },
-            { id: '1120', code: '1120', name: 'Petty Cash', type: ACCOUNT_TYPES.Asset, balance:   1_000, level: 2, parentId: '1100' },
-            { id: '1130', code: '1130', name: 'Operations', type: ACCOUNT_TYPES.Asset, balance: 0, level: 2, parentId: '1100' },
-            { id: '1140', code: '1140', name: 'Tax Reserve', type: ACCOUNT_TYPES.Asset, balance: 0, level: 2, parentId: '1100' },
-            { id: '1150', code: '1150', name: 'Credit Cards (pre-paid debit)',  type: ACCOUNT_TYPES.Asset, balance: 0, level: 2, parentId: '1100' },
-          ],
-        },
-  
-        /* 1200 ‑ Accounts Receivable ------------------------------------ */
-        { id: '1200', code: '1200', name: 'Accounts Receivable', type: ACCOUNT_TYPES.Asset, balance: 0, level: 1, parentId: '1000' },
-  
-        /* 1300 ‑ Cleaning Supplies Inventory ---------------------------- */
-        { id: '1300', code: '1300', name: 'Cleaning Supplies Inventory', type: ACCOUNT_TYPES.Asset, balance: 0, level: 1, parentId: '1000' },
-  
-        /* 1400 ‑ Prepaid Expenses --------------------------------------- */
-        { id: '1400', code: '1400', name: 'Prepaid Expenses', type: ACCOUNT_TYPES.Asset, balance: 0, level: 1, parentId: '1000' },
-  
-        /* 1500 ‑ Property, Plant & Equipment ---------------------------- */
-        {
-          id: '1500',
-          code: '1500',
-          name: 'Property, Plant & Equipment',
-          type: ACCOUNT_TYPES.Asset,
-          balance: 0,
-          level: 1,
-          parentId: '1000',
-          children: [
-            { id: '1510', code: '1510', name: 'Equipment',      type: ACCOUNT_TYPES.Asset,        balance: 0, level: 2, parentId: '1500' },
-            { id: '1520', code: '1520', name: 'Accum. Depreciation',     type: ACCOUNT_TYPES.Asset,  balance: 0, level: 2, parentId: '1500' },
-          ],
-        },
-      ],
-    },
-  
-    /* ──────────────────────── LIABILITIES (2xxx) ─────────────────────── */
-    {
-      id: '2000',
-      code: '2000',
-      name: 'Liabilities',
-      type: ACCOUNT_TYPES.Liability,
-      balance: 0,
-      level: 0,
-      children: [
-        { id: '2100', code: '2100', name: 'Accounts Payable', type: ACCOUNT_TYPES.Liability, balance: 15_000, level: 1, parentId: '2000' },
-  
-        /* 2200 ‑ Credit‑card & short‑term borrowings -------------------- */
-        {
-          id: '2200',
-          code: '2200',
-          name: 'Credit Card Payables',
-          type: ACCOUNT_TYPES.Liability,
-          balance: 24_000,
-          level: 1,
-          parentId: '2000',
-          children: [
-            { id: '2210', code: '2210', name: 'MetaMask Mastercard Payable', type: ACCOUNT_TYPES.Liability, balance: 0, level: 2, parentId: '2200' },
-  
-            /* 2220+ Corporate cards broken out by department ------------- */
-            {
-              id: '2220',
-              code: '2220',
-              name: 'Corporate Credit Cards',
-              type: ACCOUNT_TYPES.Liability,
-              balance: 0,
-              level: 2,
-              parentId: '2200',
-              children: [
-                { id: '2221', code: '2221', name: 'Exec Team',   type: ACCOUNT_TYPES.Liability, balance: 0, level: 3, parentId: '2220' },
-  
-                {
-                  id: '2222',
-                  code: '2222',
-                  name: 'Sales Dept',
-                  type: ACCOUNT_TYPES.Liability,
-                  balance: 0,
-                  level: 3,
-                  parentId: '2220',
-                  children: [
-                    { id: '2222-01', code: '2222-01', name: 'VP Sales – Chase Ink',            type: ACCOUNT_TYPES.Liability, balance: 4_000, level: 4, parentId: '2222' },
-                    { id: '2222-02', code: '2222-02', name: 'Regional Mgr East – Amex Biz',     type: ACCOUNT_TYPES.Liability, balance: 2_000, level: 4, parentId: '2222' },
-                    { id: '2222-03', code: '2222-03', name: 'Regional Mgr West – Wells Fargo',  type: ACCOUNT_TYPES.Liability, balance: 2_500, level: 4, parentId: '2222' },
-                  ],
-                },
-  
-                {
-                  id: '2223',
-                  code: '2223',
-                  name: 'Product Dept',
-                  type: ACCOUNT_TYPES.Liability,
-                  balance: 0,
-                  level: 3,
-                  parentId: '2220',
-                  children: [
-                    { id: '2223-01', code: '2223-01', name: 'VP Product – Brex Card',     type: ACCOUNT_TYPES.Liability, balance: 3_500, level: 4, parentId: '2223' },
-                    { id: '2223-02', code: '2223-02', name: 'Head Design – Ramp Card',    type: ACCOUNT_TYPES.Liability, balance: 1_500, level: 4, parentId: '2223' },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-  
-        { id: '2300', code: '2300', name: 'Sales Tax Payable',     type: ACCOUNT_TYPES.Liability, balance: 0, level: 1, parentId: '2000' },
-        { id: '2400', code: '2400', name: 'Payroll Liabilities',   type: ACCOUNT_TYPES.Liability, balance: 0, level: 1, parentId: '2000' },
-        { id: '2500', code: '2500', name: 'Loans Payable – Equipment', type: ACCOUNT_TYPES.Liability, balance: 0, level: 1, parentId: '2000' },
-      ],
-    },
-  
-    /* ────────────────────────── EQUITY (3xxx) ───────────────────────── */
-    {
-      id: '3000',
-      code: '3000',
-      name: 'Equity',
-      type: ACCOUNT_TYPES.Equity,
-      balance: 0,
-      level: 0,
-      children: [
-        { id: '3100', code: '3100', name: 'Owner Capital',            type: ACCOUNT_TYPES.Equity, balance: 0, level: 1, parentId: '3000' },
-        { id: '3200', code: '3200', name: 'Owner Draw / Distributions', type: ACCOUNT_TYPES.Equity, balance: 0, level: 1, parentId: '3000' },
-        { id: '3300', code: '3300', name: 'Retained Earnings',        type: ACCOUNT_TYPES.Equity, balance: 0, level: 1, parentId: '3000' },
-      ],
-    },
-  
-    /* ───────────────────────── REVENUE (4xxx) ───────────────────────── */
-    {
-      id: '4000',
-      code: '4000',
-      name: 'Income',
-      type: ACCOUNT_TYPES.Income,
-      balance: 0,
-      level: 0,
-      children: [
-        { id: '4100', code: '4100', name: 'Residential Cleaning Revenue', type: ACCOUNT_TYPES.Income, balance: 0, level: 1, parentId: '4000' },
-        { id: '4200', code: '4200', name: 'Commercial Cleaning Revenue',  type: ACCOUNT_TYPES.Income, balance: 0, level: 1, parentId: '4000' },
-        { id: '4300', code: '4300', name: 'Other / One‑off Services',     type: ACCOUNT_TYPES.Income, balance: 0, level: 1, parentId: '4000' },
-      ],
-    },
-  
-    /* ───────────────────── DIRECT COSTS / COGS (5xxx) ───────────────── */
-    {
-      id: '5000',
-      code: '5000',
-      name: 'Direct Costs',
-      type: ACCOUNT_TYPES.COGS,      // or ACCOUNT_TYPES.Expense if you don't have a COGS enum
-      balance: 0,
-      level: 0,
-      children: [
-        { id: '5100', code: '5100', name: 'Cleaning Supplies Used', type: ACCOUNT_TYPES.COGS, balance: 0, level: 1, parentId: '5000' },
-        { id: '5200', code: '5200', name: 'Sub‑contractor Labor',   type: ACCOUNT_TYPES.COGS, balance: 0, level: 1, parentId: '5000' },
-      ],
-    },
-  
-    /* ────────────────────── OPERATING EXPENSES (6xxx) ───────────────── */
-    {
-      id: '6000',
-      code: '6000',
-      name: 'Operating Expenses',
-      type: ACCOUNT_TYPES.Expense,
-      balance: 0,
-      level: 0,
-      children: [
-        { id: '6100', code: '6100', name: 'Wages Expense',              type: ACCOUNT_TYPES.Expense, balance: 0, level: 1, parentId: '6000' },
-        { id: '6200', code: '6200', name: 'Payroll Taxes Expense',      type: ACCOUNT_TYPES.Expense, balance: 0, level: 1, parentId: '6000' },
-        { id: '6300', code: '6300', name: 'Insurance',                  type: ACCOUNT_TYPES.Expense, balance: 0, level: 1, parentId: '6000' },
-        { id: '6400', code: '6400', name: 'Rent & Utilities',           type: ACCOUNT_TYPES.Expense, balance: 0, level: 1, parentId: '6000' },
-        { id: '6500', code: '6500', name: 'Vehicle & Fuel',             type: ACCOUNT_TYPES.Expense, balance: 0, level: 1, parentId: '6000' },
-        { id: '6600', code: '6600', name: 'Marketing & Advertising',    type: ACCOUNT_TYPES.Expense, balance: 0, level: 1, parentId: '6000' },
-        { id: '6700', code: '6700', name: 'Software & SaaS',            type: ACCOUNT_TYPES.Expense, balance: 0, level: 1, parentId: '6000' },
-        { id: '6800', code: '6800', name: 'Bank & Processing Fees',     type: ACCOUNT_TYPES.Expense, balance: 0, level: 1, parentId: '6000' },
-        { id: '6810', code: '6810', name: 'Crypto Gas & On‑chain Fees', type: ACCOUNT_TYPES.Expense, balance: 0, level: 1, parentId: '6000' },
-        { id: '6900', code: '6900', name: 'Depreciation Expense',       type: ACCOUNT_TYPES.Expense, balance: 0, level: 1, parentId: '6000' },
-        { id: '6990', code: '6990', name: 'Miscellaneous Expense',      type: ACCOUNT_TYPES.Expense, balance: 0, level: 1, parentId: '6000' },
-      ],
-    },
-  ]);
+  const [accounts, setAccounts] = useState<Account[]>(CHART_OF_ACCOUNTS as Account[]);
 
   
   /*
@@ -277,7 +84,7 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
               code: '1110',
               name: 'Operating Bank Account',
               type: ACCOUNT_TYPES.Asset,
-              balance: 250000,
+              balance: 0,
               level: 2,
               parentId: '1100',
             },
@@ -286,7 +93,7 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
               code: '1120',
               name: 'Petty Cash',
               type: ACCOUNT_TYPES.Asset,
-              balance: 1000,
+              balance: 0,
               level: 2,
               parentId: '1100',
             },
@@ -970,7 +777,7 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
       flexDirection="column"
       justifyContent="flex-start"
       alignItems="flex-start"
-      height="80vh"
+      height="70vh"
       width="100%"
     >
       {/* Header with Search and View Toggle */}
