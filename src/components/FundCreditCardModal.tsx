@@ -68,14 +68,14 @@ import { Account, IndivAccount } from '../models/Account';
 
 import {  createConfig as createWagmiConfig } from 'wagmi'
 
-import { CIRCLE_API_KEY, RPC_URL, ETHERUM_RPC_URL, OPTIMISM_RPC_URL, OPTIMISM_SEPOLIA_RPC_URL, SEPOLIA_RPC_URL, LINEA_RPC_URL, BUNDLER_URL, PAYMASTER_URL } from "../config";
+import { CHAIN_ID, CIRCLE_API_KEY, RPC_URL, ETHERUM_RPC_URL, OPTIMISM_RPC_URL, OPTIMISM_SEPOLIA_RPC_URL, SEPOLIA_RPC_URL, LINEA_RPC_URL, BUNDLER_URL, PAYMASTER_URL } from "../config";
 
 import { createPaymasterClient, createBundlerClient } from 'viem/account-abstraction';
 import { createPimlicoClient } from 'permissionless/clients/pimlico';
 import { DelegationFramework, SINGLE_DEFAULT_MODE } from '@metamask/delegation-toolkit';
 import { CallSharp } from '@mui/icons-material';
 
-import { IRIS_API_URL, CHAIN_IDS_TO_MESSAGE_TRANSMITTER, CIRCLE_SUPPORTED_CHAINS, CHAIN_IDS_TO_USDC_ADDRESSES, CHAIN_TO_CHAIN_NAME, CHAIN_IDS_TO_TOKEN_MESSENGER, CHAIN_IDS_TO_RPC_URLS, DESTINATION_DOMAINS, CHAINS } from '../libs/chains';
+import { IRIS_API_URL, CHAIN_IDS_TO_EXPLORER_URL, CHAIN_IDS_TO_MESSAGE_TRANSMITTER, CIRCLE_SUPPORTED_CHAINS, CHAIN_IDS_TO_USDC_ADDRESSES, CHAIN_TO_CHAIN_NAME, CHAIN_IDS_TO_TOKEN_MESSENGER, CHAIN_IDS_TO_RPC_URLS, DESTINATION_DOMAINS, CHAINS } from '../libs/chains';
 
 const ERC20_ABI = parseAbi([
   // Read-only
@@ -333,7 +333,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
   };
 
   const mintUSDC = async (
-    client: WalletClient<HttpTransport, Chain, ViemAccount>,
+    destinationAddress: string,
     destinationChainId: number,
     attestation: any,
   ) => {
@@ -344,11 +344,8 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
     while (retries < MAX_RETRIES) {
       try {
-        const publicClient = createPublicClient({
-          chain: CHAINS[destinationChainId],
-          transport: http(),
-        });
-        const feeData = await publicClient.estimateFeesPerGas();
+
+
 
         const destinationMessageTransmitter = CHAIN_IDS_TO_MESSAGE_TRANSMITTER[destinationChainId] as `0x${string}`;
 
@@ -370,6 +367,21 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
             },
           ] as const,
         };
+
+        const CHAIN_RPC_URL = CHAIN_IDS_TO_RPC_URLS[destinationChainId]
+        const CHAIN = CHAINS[destinationChainId]
+
+        const publicClient = createPublicClient({
+          chain: CHAINS[destinationChainId],
+          transport: http(CHAIN_IDS_TO_RPC_URLS[destinationChainId]),
+        });
+        const feeData = await publicClient.estimateFeesPerGas();
+
+        const client = createWalletClient({
+          chain: CHAIN,
+          transport: custom(window.ethereum),
+          account: destinationAddress as `0x${string}`,
+        });
 
         // Estimate gas with buffer
         const gasEstimate = await publicClient.estimateContractGas({
@@ -412,12 +424,12 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
   };
 
   // Function to add Optimism Sepolia network to MetaMask
-  const addOptimismSepoliaToMetaMask = async () => {
+  const addChainToMetaMask = async (chainId: number) => {
     try {
-      // First try to switch to the network (in case it's already added)
+      // First try to switch to the netwCork (in case it's already added)
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: '0xaa36a7' }] // 11155420 in hex
+        params: [{ chainId: toHex(chainId) }] // 11155420 in hex
       });
     } catch (switchError: any) {
       // If the network doesn't exist (error code 4902), add it
@@ -426,24 +438,24 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [{
-              chainId: '0xaa36a7', // 11155420 in hex
-              chainName: 'Optimism Sepolia',
+              chainId: toHex(chainId),
+              chainName: CHAIN_TO_CHAIN_NAME[chainId],
               nativeCurrency: {
                 name: 'ETH',
                 symbol: 'ETH',
                 decimals: 18
               },
-              rpcUrls: ['https://sepolia.optimism.io'],
-              blockExplorerUrls: ['https://sepolia-optimism.etherscan.io']
+              rpcUrls: [CHAIN_IDS_TO_RPC_URLS[chainId]],
+              blockExplorerUrls: [CHAIN_IDS_TO_EXPLORER_URL[chainId]]
             }]
           });
         } catch (addError) {
-          console.error('Error adding Optimism Sepolia network:', addError);
-          setError('Please add Optimism Sepolia network to MetaMask manually');
+          console.error('Error adding network:', addError);
+          setError('Please add network to MetaMask manually');
         }
       } else {
-        console.error('Error switching to Optimism Sepolia:', switchError);
-        setError('Please switch to Optimism Sepolia network in MetaMask');
+        console.error('Error switching to network:', switchError);
+        setError('Please switch to network in MetaMask');
       }
     }
   };
@@ -519,12 +531,14 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
     console.info("***********  mint USDC attestation ****************", attestation);
 
-    await addOptimismSepoliaToMetaMask();
+    await addChainToMetaMask(destinationChain.id);
     
     await window.ethereum.request({
       method: 'wallet_switchEthereumChain',
       params: [{ chainId: toHex(destinationChain.id) }],
     });
+
+    /*
     const destinationPublicClient = createPublicClient({
       chain: destinationChain,
       transport: http(OPTIMISM_SEPOLIA_RPC_URL),
@@ -534,8 +548,18 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
       transport: custom(window.ethereum), // MetaMask injected provider
       account: destinationAddress as `0x${string}`,
     } as any);
-    await mintUSDC(destinationWalletClient, destinationChainId, attestation);
+    */
 
+    await mintUSDC(destinationAddress, destinationChainId, attestation);
+
+    // flip back to default chain
+    console.info("***********  flip back to default chain: ", CHAIN_ID);
+    const defaultChainId : number = CHAIN_ID
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: toHex(sourceChain.id) }],
+    });
+    console.info("***********  flip back to default chain done");
   }
 
   // Utility function to extract chainId and address from accountDid
@@ -1235,6 +1259,17 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
           creditCardExtracted?.address as `0x${string}`, 
           creditCardExtracted?.chainId as number, 
           fundingAmountBigInt);
+
+        // Refresh balances after transfer
+        await fetchCreditCardBalances(selectedCreditCard.accountDid);
+        for (const accountId of selectedSavingsAccounts) {
+          const account = savingsAccounts.find(acc => acc.id === accountId);
+          if (account) {
+            await fetchSavingsAccountBalances(account.did);
+          }
+        }
+
+        handleClose();
       }
       else {
 

@@ -24,10 +24,34 @@ import {
   parseEther,
   custom,
   toHex,
+  zeroAddress,
+
 } from "viem";
 
+import {
+  Implementation,
+  toMetaMaskSmartAccount,
+  type MetaMaskSmartAccount,
+  type DelegationStruct,
+  createDelegation,
+  type ToMetaMaskSmartAccountReturnType,
+  DelegationFramework,
+  SINGLE_DEFAULT_MODE,
+  getExplorerTransactionLink,
+  getExplorerAddressLink,
+  createExecution,
+  getDelegationHashOffchain,
+  Delegation
+} from "@metamask/delegation-toolkit";
 
+import {
+  createBundlerClient,
+  createPaymasterClient,
+} from "viem/account-abstraction";
 
+import { createPimlicoClient } from "permissionless/clients/pimlico";
+
+import { BUNDLER_URL, PAYMASTER_URL } from "../config";
 
 import type { Token } from '@lifi/types';
 import { ChainId } from '@lifi/types';
@@ -69,7 +93,7 @@ import { createConfig as createWagmiConfig } from '@wagmi/core'
 
 import { useCrossChainAccount } from "../hooks/useCrossChainTools";
 
-import { IRIS_API_URL, CHAIN_IDS_TO_MESSAGE_TRANSMITTER, CHAIN_IDS_TO_EXPLORER_URL, CIRCLE_SUPPORTED_CHAINS, CHAIN_IDS_TO_USDC_ADDRESSES, CHAIN_TO_CHAIN_NAME, CHAIN_IDS_TO_TOKEN_MESSENGER, CHAIN_IDS_TO_RPC_URLS, DESTINATION_DOMAINS, CHAINS } from '../libs/chains';
+import { IRIS_API_URL, CHAIN_IDS_TO_BUNDLER_URL, CHAIN_IDS_TO_MESSAGE_TRANSMITTER, CHAIN_IDS_TO_EXPLORER_URL, CIRCLE_SUPPORTED_CHAINS, CHAIN_IDS_TO_USDC_ADDRESSES, CHAIN_TO_CHAIN_NAME, CHAIN_IDS_TO_TOKEN_MESSENGER, CHAIN_IDS_TO_RPC_URLS, DESTINATION_DOMAINS, CHAINS } from '../libs/chains';
 import { chainIdNetworkParamsMapping } from '@blockchain-lab-um/masca-connector';
 
 
@@ -90,12 +114,6 @@ const wagmiConfig = createWagmiConfig({
       return createClient({ chain, transport: http() })
     },
   })
-
-  // chain for optimism sepolia is 11155420
-  // chain for linea sepolia is 59141
-  // chain for eth sepolia is 11155111
-
-
 
 
 createConfig({
@@ -402,6 +420,23 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
           setSelectedAccount(accounts[0]);
           // Fetch balances for the first account
           await fetchBalances(accounts[0], selectedChain);
+
+          // add AA for EOA account
+          console.info("*********** add AA for EOA account: ", selectedChain)
+          const RPC_URL = CHAIN_IDS_TO_RPC_URLS[selectedChain]
+          const publicClient = createPublicClient({
+            chain: chain,
+            transport: http(RPC_URL),
+          });
+          const accountClient = await toMetaMaskSmartAccount({
+            client: publicClient,
+            implementation: Implementation.Hybrid,
+            deployParams: [selectedAccount as `0x${string}`, [], [], []],
+            signatory: signatory,
+            deploySalt: toHex(0),
+          });
+          console.info("*********** EOA default accountClient: ", accountClient.address)
+
         }
       } catch (error) {
         console.error('Error getting accounts:', error);
@@ -552,6 +587,104 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
     entityId = "account-org(org)"
 
     if (walletSigner && walletClient && privateIssuerAccount && orgDid && mascaApi && privateIssuerDid) {
+
+        
+
+        // add AA for EOA account
+        console.info("*********** add AA for EOA account: ", selectedChain)
+        const CHAIN_RPC_URL = CHAIN_IDS_TO_RPC_URLS[selectedChain]
+        const CHAIN_BUNDLER_URL = CHAIN_IDS_TO_BUNDLER_URL[selectedChain]
+        const CHAIN = CHAINS[selectedChain]
+        const publicClient = createPublicClient({
+          chain: CHAIN,
+          transport: http(CHAIN_RPC_URL),
+        });
+
+        const walletClient = createWalletClient({
+          chain: CHAIN,
+          transport: http(CHAIN_RPC_URL),
+          account: selectedAccount as `0x${string}`,
+        });
+
+        /*
+        console.info("*********** create accountClient: ", selectedAccount)
+        const accountClient = await toMetaMaskSmartAccount({
+          client: publicClient,
+          implementation: Implementation.Hybrid,
+          deployParams: [selectedAccount as `0x${string}`, [], [], []],
+          signatory: { walletClient },
+          deploySalt: toHex(0),
+        });
+
+        console.info("*********** accountClient: ", accountClient)
+        const isDeployed = await accountClient.isDeployed()
+        if (isDeployed == false) {
+          // deploy account AA
+    
+          const pimlicoClient = createPimlicoClient({
+            transport: http(CHAIN_BUNDLER_URL),
+          });
+    
+          console.info("create bundler client ", CHAIN_BUNDLER_URL)
+          const bundlerClient = createBundlerClient({
+                          transport: http(CHAIN_BUNDLER_URL),
+                          paymaster: true,
+                          chain: CHAIN,
+                          paymasterContext: {
+                            mode:             'SPONSORED',
+                          },
+                        });
+    
+          console.info("get gas price") 
+          const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+    
+          try {
+            console.info("send user operation with bundlerClient 2: ", bundlerClient)
+    
+            console.info("fee: ", fee)
+            const fee2 = {maxFeePerGas: 412596685n, maxPriorityFeePerGas: 412596676n}
+            console.info("fee2: ", fee2)  
+    
+            const userOperationHash = await bundlerClient!.sendUserOperation({
+              account: accountClient,
+              calls: [
+                {
+                  to: zeroAddress,
+                },
+              ],
+              ...fee2,
+            });
+    
+            console.info(" account is deployed - done")
+            const { receipt } = await bundlerClient!.waitForUserOperationReceipt({
+              hash: userOperationHash,
+            });
+          }
+          catch (error) { 
+            console.info("error deploying accountClient: ", error)
+          }
+        }
+
+        console.info("*********** EOA default accountClient: ", accountClient.address)
+        console.info("*********** EOA default signatory: ", signatory)
+
+        let eoaAccountDel = createDelegation({
+          to: accountClient.address,
+          from: selectedAccount as `0x${string}`,
+          caveats: [] }
+        );
+  
+        const signature = await accountClient.signDelegation({
+          delegation: eoaAccountDel,
+        });
+  
+        eoaAccountDel = {
+          ...eoaAccountDel,
+          signature,
+        }
+
+        const delegationJsonStr = JSON.stringify(eoaAccountDel)
+        */
 
         const delegationJsonStr = ""
 

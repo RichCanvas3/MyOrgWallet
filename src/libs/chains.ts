@@ -34,7 +34,20 @@ import {
   worldchain,
 } from "viem/chains";
 
-import { ETHERUM_RPC_URL, OPTIMISM_RPC_URL, SEPOLIA_RPC_URL, LINEA_RPC_URL, OPTIMISM_SEPOLIA_RPC_URL, LINEA_SEPOLIA_RPC_URL } from "../config";
+import { 
+  ETHERUM_RPC_URL, 
+  OPTIMISM_RPC_URL, 
+  SEPOLIA_RPC_URL, 
+  LINEA_RPC_URL, 
+  OPTIMISM_SEPOLIA_RPC_URL, 
+  LINEA_SEPOLIA_RPC_URL,
+  ETHERUM_BUNDLER_URL,
+  OPTIMISM_BUNDLER_URL,
+  LINEA_BUNDLER_URL,
+  SEPOLIA_BUNDLER_URL,
+  OPTIMISM_SEPOLIA_BUNDLER_URL,
+  LINEA_SEPOLIA_BUNDLER_URL,
+} from "../config";
 
 
 export enum SupportedChainId {
@@ -100,6 +113,25 @@ export const CHAIN_IDS_TO_RPC_URLS: Record<number, string> = {
   [SupportedChainId.OPTIMISM_SEPOLIA]: OPTIMISM_SEPOLIA_RPC_URL,
   [SupportedChainId.UNICHAIN_SEPOLIA]: "https://rpc-testnet.unichain.world",
   [SupportedChainId.POLYGON_AMOY]: "https://rpc-amoy.polygon.technology",
+};
+
+export const CHAIN_IDS_TO_BUNDLER_URL: Record<number, string> = {
+  [SupportedChainId.ETH_MAINNET]: ETHERUM_BUNDLER_URL,
+  [SupportedChainId.OPTIMISM_MAINNET]: OPTIMISM_BUNDLER_URL,
+  [SupportedChainId.BASE_MAINNET]: "",
+  [SupportedChainId.LINEA_MAINNET]: LINEA_BUNDLER_URL,
+  [SupportedChainId.ARBITRUM_MAINNET]: "",
+  [SupportedChainId.WORLDCHAIN_MAINNET]: "",
+  [SupportedChainId.ETH_SEPOLIA]: SEPOLIA_BUNDLER_URL,
+  [SupportedChainId.AVAX_FUJI]: "",
+  [SupportedChainId.BASE_SEPOLIA]: "",
+  [SupportedChainId.SONIC_BLAZE]: "",
+  [SupportedChainId.LINEA_SEPOLIA]: LINEA_SEPOLIA_BUNDLER_URL,
+  [SupportedChainId.ARBITRUM_SEPOLIA]: "",
+  [SupportedChainId.WORLDCHAIN_SEPOLIA]: "",
+  [SupportedChainId.OPTIMISM_SEPOLIA]: OPTIMISM_SEPOLIA_BUNDLER_URL,
+  [SupportedChainId.UNICHAIN_SEPOLIA]: "",
+  [SupportedChainId.POLYGON_AMOY]: "",
 };
 
 export const CHAIN_TO_CHAIN_NAME: Record<number, string> = {

@@ -31,6 +31,14 @@ export const LINEA_RPC_URL: string = import.meta.env.VITE_LINEA_RPC_URL;
 export const OPTIMISM_SEPOLIA_RPC_URL: string = import.meta.env.VITE_OPTIMISM_SEPOLIA_RPC_URL;
 export const LINEA_SEPOLIA_RPC_URL: string = import.meta.env.VITE_LINEA_SEPOLIA_RPC_URL;
 
+export const ETHERUM_BUNDLER_URL: string = import.meta.env.VITE_ETHERUM_BUNDLER_URL;
+export const OPTIMISM_BUNDLER_URL: string = import.meta.env.VITE_OPTIMISM_BUNDLER_URL;
+export const LINEA_BUNDLER_URL: string = import.meta.env.VITE_LINEA_BUNDLER_URL;
+export const SEPOLIA_BUNDLER_URL: string = import.meta.env.VITE_SEPOLIA_BUNDLER_URL;
+export const OPTIMISM_SEPOLIA_BUNDLER_URL: string = import.meta.env.VITE_OPTIMISM_SEPOLIA_BUNDLER_URL;
+export const LINEA_SEPOLIA_BUNDLER_URL: string = import.meta.env.VITE_LINEA_SEPOLIA_BUNDLER_URL;
+
+
 export const CIRCLE_API_KEY: string = import.meta.env.VITE_CIRCLE_API_KEY;
 export const CIRCLE_WALLET_API_KEY: string = import.meta.env.VITE_CIRCLE_WALLET_API_KEY;
 export const CIRCLE_WALLET_ENTITY_SECRET: string = import.meta.env.VITE_CIRCLE_WALLET_ENTITY_SECRET;

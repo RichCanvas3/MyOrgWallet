@@ -1792,6 +1792,7 @@ export const useWalletConnect = () => {
     }
 
     const connect = async (owner: any, signatory: any, organizationName: string, fullName: string, email: string) => {
+      console.info("*********** set signatory: ", signatory)
       setSignatory(signatory)
       setOwner(owner)
     }
