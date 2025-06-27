@@ -1251,7 +1251,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
         const bundlerClient = createBundlerClient({
           transport: http(BUNDLER_URL),
-          paymaster: paymasterClient,
+          paymaster: true,
           chain: chain,
           paymasterContext: {
             mode: 'SPONSORED',
@@ -1329,7 +1329,6 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         const userOpHash = await bundlerClient.sendUserOperation({
           account: indivAccountClient,
           calls: calls,
-          paymaster: paymasterClient,
           ...fee
         });
 
