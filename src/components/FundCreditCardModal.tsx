@@ -25,6 +25,29 @@ import {
   initiateDeveloperControlledWalletsClient,
 } from "@circle-fin/developer-controlled-wallets";
 
+import {
+  Implementation,
+  toMetaMaskSmartAccount,
+  type MetaMaskSmartAccount,
+  type DelegationStruct,
+  createDelegation,
+  type ToMetaMaskSmartAccountReturnType,
+  DelegationFramework,
+  SINGLE_DEFAULT_MODE,
+  getExplorerTransactionLink,
+  getExplorerAddressLink,
+  createExecution,
+  getDelegationHashOffchain,
+  Delegation,
+} from "@metamask/delegation-toolkit";
+
+import {
+  createBundlerClient,
+  createPaymasterClient,
+} from "viem/account-abstraction";
+
+import { createPimlicoClient } from "permissionless/clients/pimlico";
+
 
 import {
   XMarkIcon,
@@ -70,9 +93,7 @@ import {  createConfig as createWagmiConfig } from 'wagmi'
 
 import { CHAIN_ID, CIRCLE_API_KEY, RPC_URL, ETHERUM_RPC_URL, OPTIMISM_RPC_URL, OPTIMISM_SEPOLIA_RPC_URL, SEPOLIA_RPC_URL, LINEA_RPC_URL, BUNDLER_URL, PAYMASTER_URL } from "../config";
 
-import { createPaymasterClient, createBundlerClient } from 'viem/account-abstraction';
-import { createPimlicoClient } from 'permissionless/clients/pimlico';
-import { DelegationFramework, SINGLE_DEFAULT_MODE } from '@metamask/delegation-toolkit';
+
 import { CallSharp } from '@mui/icons-material';
 
 import { IRIS_API_URL, CHAIN_IDS_TO_EXPLORER_URL, CHAIN_IDS_TO_MESSAGE_TRANSMITTER, CIRCLE_SUPPORTED_CHAINS, CHAIN_IDS_TO_USDC_ADDRESSES, CHAIN_TO_CHAIN_NAME, CHAIN_IDS_TO_TOKEN_MESSENGER, CHAIN_IDS_TO_RPC_URLS, DESTINATION_DOMAINS, CHAINS } from '../libs/chains';
@@ -373,30 +394,109 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
         const publicClient = createPublicClient({
           chain: CHAINS[destinationChainId],
-          transport: http(CHAIN_IDS_TO_RPC_URLS[destinationChainId]),
+          transport: custom(window.ethereum),
+          //transport: http(CHAIN_IDS_TO_RPC_URLS[destinationChainId]),
         });
         const feeData = await publicClient.estimateFeesPerGas();
 
-        const client = createWalletClient({
+        const walletClient = createWalletClient({
           chain: CHAIN,
           transport: custom(window.ethereum),
+          //transport: http(CHAIN_IDS_TO_RPC_URLS[destinationChainId]),
           account: destinationAddress as `0x${string}`,
         });
 
-        // Estimate gas with buffer
         const gasEstimate = await publicClient.estimateContractGas({
           ...contractConfig,
           functionName: "receiveMessage",
           args: [attestation.message, attestation.attestation],
-          account: client.account,
+          account: destinationAddress as `0x${string}`,
         });
 
-        // Add 20% buffer to gas estimate
+        
+
+        /*
+
+        const txRequest = await client.prepareTransactionRequest({
+          to: contractConfig.address,
+          data: encodeFunctionData({
+            ...contractConfig,
+            functionName: "receiveMessage",
+            args: [attestation.message, attestation.attestation],
+          }),
+          gas: gasEstimate,
+          maxFeePerGas: feeData.maxFeePerGas,
+          maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+        });
+        const serialized = await client.signTransaction(txRequest);
+
+        const tx = await publicClient.sendRawTransaction({ serializedTransaction: serialized });
+        */
+
+      
+        /*
+        
+        const destinationClient = await toMetaMaskSmartAccount({
+          address: destinationAddress.toLowerCase() as `0x${string}`,
+          client: publicClient,
+          implementation: Implementation.Hybrid,
+          deployParams: [destinationAddress.toLowerCase() as `0x${string}`, [], [], []] as [`0x${string}`, string[], bigint[], bigint[]],
+          signatory: { walletClient },
+          //deploySalt: toHex(0),
+        });
+
+
+        const calls: any[] = [];
+        const call = 
+          {
+            to: contractConfig.address,
+            data: encodeFunctionData({
+              ...contractConfig,
+              functionName: "receiveMessage",
+              args: [attestation.message, attestation.attestation],
+            }),
+            gas: gasEstimate,
+            maxFeePerGas: feeData.maxFeePerGas,
+            maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+          }
+        
+
+        calls.push(call)
+
+
+        const bundlerClient = createBundlerClient({
+          transport: http(BUNDLER_URL),
+          paymaster: true,
+          chain: chain,
+          paymasterContext: {
+            mode: 'SPONSORED',
+          },
+        });
+
+        //const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+        const fee = {maxFeePerGas: 412596685n, maxPriorityFeePerGas: 412596676n}
+
+        // Send user operation
+        const userOpHash = await bundlerClient.sendUserOperation({
+          account: destinationClient,
+          calls: calls,
+
+          ...fee
+        });
+
+        const userOperationReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
+
+        */
+
+
+
+     
+     
         const gasWithBuffer = (gasEstimate * 120n) / 100n;
         console.info(`Gas Used: ${formatUnits(gasWithBuffer, 9)} Gwei`);
 
         console.info("********** send transaction *************")
-        const tx = await client.sendTransaction({
+        const tx = await walletClient.sendTransaction({
           to: contractConfig.address,
           data: encodeFunctionData({
             ...contractConfig,
@@ -407,6 +507,10 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
           maxFeePerGas: feeData.maxFeePerGas,
           maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
         });
+       
+      
+   
+        
 
         console.info(`Mint Tx: ${tx}`);
 

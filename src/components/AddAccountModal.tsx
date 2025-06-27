@@ -549,36 +549,6 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
     let entityId = "account(indiv)"
 
 
-    if (walletSigner && walletClient && privateIssuerAccount && indivDid && mascaApi && privateIssuerDid) {
-
-        const vc = await VerifiableCredentialsService.createAccountVC(entityId, privateIssuerDid, accountDid, indivDid, accountName);
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
-        const fullVc = result.vc
-        const proof = result.proof
-
-        if (fullVc && chain && indivDid && indivAccountClient && burnerAccountClient && indivIssuerDelegation && indivAccountClient) {
-        
-
-          // now create attestation
-          const hash = keccak256(toUtf8Bytes("hash value"));
-          const attestation: IndivAccountAttestation = {
-              accountName: accountName,
-              accountDid: accountDid,
-              accountBalance: "0",
-              attester: indivDid,
-              class: "individual",
-              category: "account",
-              entityId: entityId,
-              hash: hash,
-              vccomm: (fullVc.credentialSubject as any).commitment.toString(),
-              vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-              vciss: privateIssuerDid,
-              proof: proof
-          };
-
-          const uid = await AttestationService.addIndivAccountAttestation(chain, attestation, walletSigner, [indivIssuerDelegation], indivAccountClient, burnerAccountClient)
-        }
-    }
 
 
 
@@ -590,83 +560,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
 
         
 
-        // add AA for EOA account
-        console.info("*********** add AA for EOA account: ", selectedChain)
-        const CHAIN_RPC_URL = CHAIN_IDS_TO_RPC_URLS[selectedChain]
-        const CHAIN_BUNDLER_URL = CHAIN_IDS_TO_BUNDLER_URL[selectedChain]
-        const CHAIN = CHAINS[selectedChain]
-        const publicClient = createPublicClient({
-          chain: CHAIN,
-          transport: http(CHAIN_RPC_URL),
-        });
-
-        const walletClient = createWalletClient({
-          chain: CHAIN,
-          transport: http(CHAIN_RPC_URL),
-          account: selectedAccount as `0x${string}`,
-        });
-
         /*
-        console.info("*********** create accountClient: ", selectedAccount)
-        const accountClient = await toMetaMaskSmartAccount({
-          client: publicClient,
-          implementation: Implementation.Hybrid,
-          deployParams: [selectedAccount as `0x${string}`, [], [], []],
-          signatory: { walletClient },
-          deploySalt: toHex(0),
-        });
-
-        console.info("*********** accountClient: ", accountClient)
-        const isDeployed = await accountClient.isDeployed()
-        if (isDeployed == false) {
-          // deploy account AA
-    
-          const pimlicoClient = createPimlicoClient({
-            transport: http(CHAIN_BUNDLER_URL),
-          });
-    
-          console.info("create bundler client ", CHAIN_BUNDLER_URL)
-          const bundlerClient = createBundlerClient({
-                          transport: http(CHAIN_BUNDLER_URL),
-                          paymaster: true,
-                          chain: CHAIN,
-                          paymasterContext: {
-                            mode:             'SPONSORED',
-                          },
-                        });
-    
-          console.info("get gas price") 
-          const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
-    
-          try {
-            console.info("send user operation with bundlerClient 2: ", bundlerClient)
-    
-            console.info("fee: ", fee)
-            const fee2 = {maxFeePerGas: 412596685n, maxPriorityFeePerGas: 412596676n}
-            console.info("fee2: ", fee2)  
-    
-            const userOperationHash = await bundlerClient!.sendUserOperation({
-              account: accountClient,
-              calls: [
-                {
-                  to: zeroAddress,
-                },
-              ],
-              ...fee2,
-            });
-    
-            console.info(" account is deployed - done")
-            const { receipt } = await bundlerClient!.waitForUserOperationReceipt({
-              hash: userOperationHash,
-            });
-          }
-          catch (error) { 
-            console.info("error deploying accountClient: ", error)
-          }
-        }
-
-        console.info("*********** EOA default accountClient: ", accountClient.address)
-        console.info("*********** EOA default signatory: ", signatory)
 
         let eoaAccountDel = createDelegation({
           to: accountClient.address,

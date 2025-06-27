@@ -41,12 +41,14 @@ import {
   LINEA_RPC_URL, 
   OPTIMISM_SEPOLIA_RPC_URL, 
   LINEA_SEPOLIA_RPC_URL,
+  BASE_SEPOLIA_RPC_URL,
   ETHERUM_BUNDLER_URL,
   OPTIMISM_BUNDLER_URL,
   LINEA_BUNDLER_URL,
   SEPOLIA_BUNDLER_URL,
   OPTIMISM_SEPOLIA_BUNDLER_URL,
   LINEA_SEPOLIA_BUNDLER_URL,
+  BASE_SEPOLIA_BUNDLER_URL,
 } from "../config";
 
 
@@ -105,9 +107,9 @@ export const CHAIN_IDS_TO_RPC_URLS: Record<number, string> = {
   [SupportedChainId.WORLDCHAIN_MAINNET]: "https://rpc.worldchain.com",
   [SupportedChainId.ETH_SEPOLIA]: SEPOLIA_RPC_URL,
   [SupportedChainId.AVAX_FUJI]: "https://api.avax-test.network/ext/bc/C/rpc",
-  [SupportedChainId.BASE_SEPOLIA]: "https://sepolia.base.org",
   [SupportedChainId.SONIC_BLAZE]: "https://rpc.sonic.game",
   [SupportedChainId.LINEA_SEPOLIA]: LINEA_SEPOLIA_RPC_URL,
+  [SupportedChainId.BASE_SEPOLIA]: BASE_SEPOLIA_RPC_URL,
   [SupportedChainId.ARBITRUM_SEPOLIA]: "https://sepolia-rollup.arbitrum.io/rpc",
   [SupportedChainId.WORLDCHAIN_SEPOLIA]: "https://rpc.sepolia.worldchain.com",
   [SupportedChainId.OPTIMISM_SEPOLIA]: OPTIMISM_SEPOLIA_RPC_URL,
@@ -118,7 +120,7 @@ export const CHAIN_IDS_TO_RPC_URLS: Record<number, string> = {
 export const CHAIN_IDS_TO_BUNDLER_URL: Record<number, string> = {
   [SupportedChainId.ETH_MAINNET]: ETHERUM_BUNDLER_URL,
   [SupportedChainId.OPTIMISM_MAINNET]: OPTIMISM_BUNDLER_URL,
-  [SupportedChainId.BASE_MAINNET]: "",
+  [SupportedChainId.BASE_MAINNET]: BASE_SEPOLIA_BUNDLER_URL,
   [SupportedChainId.LINEA_MAINNET]: LINEA_BUNDLER_URL,
   [SupportedChainId.ARBITRUM_MAINNET]: "",
   [SupportedChainId.WORLDCHAIN_MAINNET]: "",

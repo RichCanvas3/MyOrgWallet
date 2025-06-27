@@ -57,6 +57,7 @@ import {
   zksync,
   linea,
   lineaSepolia,
+  baseSepolia,
   avalanche,
   scroll,
   shape,
@@ -66,7 +67,7 @@ import { CommandLineIcon } from '@heroicons/react/24/outline';
 
 
 const projectId = '15d710bf679b74ce2d7919bb305a9ceb';
-export const networks: [AppKitNetwork, ...AppKitNetwork[]] = [linea, mainnet, optimism, sepolia, base, optimismSepolia, lineaSepolia,  ];
+export const networks: [AppKitNetwork, ...AppKitNetwork[]] = [linea, mainnet, optimism, sepolia, base, baseSepolia, optimismSepolia, lineaSepolia,  ];
 
 export const wagmiAdapter = new WagmiAdapter({
   storage: createStorage({ storage: cookieStorage }), // Persist connection state
