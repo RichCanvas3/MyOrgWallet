@@ -317,7 +317,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
           if (did && chain) {
             AttestationService.getAttestationByDidAndSchemaId(chain, did, schemaUid, entityId).then(async (att) => {
 
-              console.info("att: ", att)
+              //console.info("att: ", att)
               if (att) {
 
                 if (att.entityId == "account(indiv)") {

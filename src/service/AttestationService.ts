@@ -2463,7 +2463,7 @@ class AttestationService {
               }
             }
             else {
-              console.info("att: ", att.displayName, item.id)
+              //console.info("att: ", att.displayName, item.id)
               att.uid = item.id,
               att.attester = "did:pkh:eip155:" + chain?.id + ":" + item.attester,
               att.schemaId = item.schemaId,

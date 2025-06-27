@@ -33,6 +33,9 @@ import { IndivAccountAttestation, AccountOrgDelAttestation, OrgAccountAttestatio
 import { useAccount } from 'wagmi';
 import { useCrossChainAccount } from "../hooks/useCrossChainTools";
 
+import { IRIS_API_URL, CHAIN_IDS_TO_MESSAGE_TRANSMITTER, CHAIN_IDS_TO_EXPLORER_URL, CIRCLE_SUPPORTED_CHAINS, CHAIN_IDS_TO_USDC_ADDRESSES, CHAIN_TO_CHAIN_NAME, CHAIN_IDS_TO_TOKEN_MESSENGER, CHAIN_IDS_TO_RPC_URLS, DESTINATION_DOMAINS, CHAINS } from '../libs/chains';
+
+
 interface ChartOfAccountsSectionProps {
   onSelectAccount?: (account: Account) => void;
 }
@@ -643,7 +646,7 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
                 {extracted && (
                   <Typography variant="caption" sx={{ fontFamily: 'monospace', display: 'block', mt: 0.5 }} component="div">
                     <Chip 
-                      label={getChainName(extracted.chainId)}
+                      label={CHAIN_TO_CHAIN_NAME[extracted.chainId]}
                       size="small"
                       color="primary"
                       variant="filled"
@@ -783,7 +786,7 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
             {extracted && (
               <Typography variant="caption" sx={{ fontFamily: 'monospace', display: 'block', mt: 0.5 }} component="div">
                 <Chip 
-                  label={getChainName(extracted.chainId)}
+                  label={CHAIN_TO_CHAIN_NAME[extracted.chainId]}
                   size="small"
                   color="primary"
                   variant="filled"
@@ -853,32 +856,6 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
     }
   };
 
-  // Function to get chain name from chain ID
-  const getChainName = (chainId: number): string => {
-    switch (chainId) {
-      case 1: return 'Ethereum';
-      case 10: return 'Optimism';
-      case 59144: return 'Linea';
-      case 11155111: return 'Sepolia';
-      case 11155420: return 'Sepolia Optimism';
-      case 59141: return 'Sepolia Linea';
-      case 137: return 'Polygon';
-      case 80001: return 'Mumbai (Polygon Testnet)';
-      case 42161: return 'Arbitrum One';
-      case 421614: return 'Arbitrum Sepolia';
-      case 8453: return 'Base';
-      case 84532: return 'Base Sepolia';
-      case 56: return 'BNB Smart Chain';
-      case 97: return 'BNB Testnet';
-      case 43114: return 'Avalanche C-Chain';
-      case 43113: return 'Avalanche Fuji Testnet';
-      case 250: return 'Fantom Opera';
-      case 4002: return 'Fantom Testnet';
-      case 100: return 'Gnosis Chain';
-      case 10200: return 'Gnosis Chiado Testnet';
-      default: return `Chain ${chainId}`;
-    }
-  };
 
   // Fetch balances for accounts
   const fetchAccountBalances = async (accountDid: string) => {

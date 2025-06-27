@@ -1,4 +1,3 @@
-
 import {
   createWalletClient,
   http,
@@ -42,7 +41,7 @@ export enum SupportedChainId {
   ETH_MAINNET = 1,
   OPTIMISM_MAINNET = 10,
   BASE_MAINNET = 8453,
-  LINEA_MAINNET = 59140,
+  LINEA_MAINNET = 59144,
   ARBITRUM_MAINNET = 42161,
   WORLDCHAIN_MAINNET = 4800,
   SOLANA_MAINNET = 1,
@@ -87,11 +86,20 @@ export const DEFAULT_FINALITY_THRESHOLD = 2000;
 export const CHAIN_IDS_TO_RPC_URLS: Record<number, string> = {
   [SupportedChainId.ETH_MAINNET]: ETHERUM_RPC_URL,
   [SupportedChainId.OPTIMISM_MAINNET]: OPTIMISM_RPC_URL,
+  [SupportedChainId.BASE_MAINNET]: "https://mainnet.base.org",
   [SupportedChainId.LINEA_MAINNET]: LINEA_RPC_URL,
-
+  [SupportedChainId.ARBITRUM_MAINNET]: "https://arb1.arbitrum.io/rpc",
+  [SupportedChainId.WORLDCHAIN_MAINNET]: "https://rpc.worldchain.com",
   [SupportedChainId.ETH_SEPOLIA]: SEPOLIA_RPC_URL,
-  [SupportedChainId.OPTIMISM_SEPOLIA]: OPTIMISM_SEPOLIA_RPC_URL,
+  [SupportedChainId.AVAX_FUJI]: "https://api.avax-test.network/ext/bc/C/rpc",
+  [SupportedChainId.BASE_SEPOLIA]: "https://sepolia.base.org",
+  [SupportedChainId.SONIC_BLAZE]: "https://rpc.sonic.game",
   [SupportedChainId.LINEA_SEPOLIA]: LINEA_SEPOLIA_RPC_URL,
+  [SupportedChainId.ARBITRUM_SEPOLIA]: "https://sepolia-rollup.arbitrum.io/rpc",
+  [SupportedChainId.WORLDCHAIN_SEPOLIA]: "https://rpc.sepolia.worldchain.com",
+  [SupportedChainId.OPTIMISM_SEPOLIA]: OPTIMISM_SEPOLIA_RPC_URL,
+  [SupportedChainId.UNICHAIN_SEPOLIA]: "https://rpc-testnet.unichain.world",
+  [SupportedChainId.POLYGON_AMOY]: "https://rpc-amoy.polygon.technology",
 };
 
 export const CHAIN_TO_CHAIN_NAME: Record<number, string> = {
@@ -225,6 +233,29 @@ export const DESTINATION_DOMAINS: Record<number, number> = {
   [SupportedChainId.POLYGON_AMOY]: 7,
 };
 
+
+export const CHAIN_IDS_TO_EXPLORER_URL: Record<number, string> = {
+  [SupportedChainId.ETH_MAINNET]: "https://etherscan.io",
+  [SupportedChainId.OPTIMISM_MAINNET]: "https://optimistic.etherscan.io",
+  [SupportedChainId.BASE_MAINNET]: "https://basescan.org",
+  [SupportedChainId.LINEA_MAINNET]: "https://lineascan.build",
+  [SupportedChainId.ARBITRUM_MAINNET]: "https://arbiscan.io",
+  [SupportedChainId.WORLDCHAIN_MAINNET]: "https://explorer.worldchain.com",
+  [SupportedChainId.ETH_SEPOLIA]: "https://sepolia.etherscan.io",
+  [SupportedChainId.AVAX_FUJI]: "https://testnet.snowtrace.io",
+  [SupportedChainId.BASE_SEPOLIA]: "https://sepolia.basescan.org",
+  [SupportedChainId.SONIC_BLAZE]: "https://explorer.sonic.game",
+  [SupportedChainId.LINEA_SEPOLIA]: "https://sepolia.lineascan.build",
+  [SupportedChainId.ARBITRUM_SEPOLIA]: "https://sepolia.arbiscan.io",
+  [SupportedChainId.WORLDCHAIN_SEPOLIA]: "https://explorer.sepolia.worldchain.com",
+  [SupportedChainId.OPTIMISM_SEPOLIA]: "https://sepolia-optimism.etherscan.io",
+  [SupportedChainId.SOLANA_DEVNET]: "https://explorer.solana.com/?cluster=devnet",
+  [SupportedChainId.CODEX_TESTNET]: "https://explorer.codexchain.io",
+  [SupportedChainId.UNICHAIN_SEPOLIA]: "https://explorer-testnet.unichain.world",
+  [SupportedChainId.POLYGON_AMOY]: "https://www.oklink.com/amoy",
+};
+
+
 export const ERC20_ABI = parseAbi([
   // Read-only
   'function balanceOf(address) view returns (uint256)',
@@ -240,6 +271,7 @@ export const ERC20_ABI = parseAbi([
   'event Transfer(address indexed from, address indexed to, uint256 value)',
   'event Approval(address indexed owner, address indexed spender, uint256 value)',
 ]);
+
 
 
 

@@ -92,8 +92,7 @@ const ERC20_ABI = parseAbi([
   'event Transfer(address indexed from, address indexed to, uint256 value)',
   'event Approval(address indexed owner, address indexed spender, uint256 value)',
 ]);
-const USDC_OPTIMISM = '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85' as `0x${string}`;
-const USDC_LINEA = '0x176211869cA2b568f2A7D4EE941E073a821EE1ff' as `0x${string}`;
+
 
 interface FundCreditCardModalProps {
   isVisible: boolean;

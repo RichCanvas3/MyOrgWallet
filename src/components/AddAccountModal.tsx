@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import { useAccount, useConnect, useSwitchChain } from 'wagmi';
+import { useAccount, useConnect } from 'wagmi';
 import { injected } from 'wagmi/connectors';
 import { keccak256, toUtf8Bytes } from 'ethers';
 import { ethers } from 'ethers';
@@ -22,11 +22,12 @@ import {
   createPublicClient,
   formatUnits,
   parseEther,
+  custom,
+  toHex,
 } from "viem";
 
 
 
-import { CHAIN_IDS_TO_USDC_ADDRESSES, CHAIN_IDS_TO_TOKEN_MESSENGER, DESTINATION_DOMAINS } from '../libs/chains';
 
 import type { Token } from '@lifi/types';
 import { ChainId } from '@lifi/types';
@@ -56,15 +57,21 @@ import { useWallectConnectContext } from "../context/walletConnectContext";
 import AttestationService from '../service/AttestationService';
 import { IndivAccountAttestation, AccountOrgDelAttestation } from '../models/Attestation';
 
-import { ETHERUM_RPC_URL, OPTIMISM_RPC_URL, SEPOLIA_RPC_URL, LINEA_RPC_URL, OPTIMISM_SEPOLIA_RPC_URL, LINEA_SEPOLIA_RPC_URL } from "../config";
+import { CHAIN_ID, ETHERUM_RPC_URL, OPTIMISM_RPC_URL, SEPOLIA_RPC_URL, LINEA_RPC_URL, OPTIMISM_SEPOLIA_RPC_URL, LINEA_SEPOLIA_RPC_URL } from "../config";
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService';
 
 
 import { getWalletClient, switchChain } from '@wagmi/core'
 
-import { createConfig as createWagmiConfig2 } from '@wagmi/core'
-import { createConfig as createWagmiConfig } from 'wagmi'
-import { metaMask } from 'wagmi/connectors'
+import { createConfig as createWagmiConfig } from '@wagmi/core'
+//import { createConfig as createWagmiConfig } from 'wagmi'
+//import { metaMask } from 'wagmi/connectors'
+
+import { useCrossChainAccount } from "../hooks/useCrossChainTools";
+
+import { IRIS_API_URL, CHAIN_IDS_TO_MESSAGE_TRANSMITTER, CHAIN_IDS_TO_EXPLORER_URL, CIRCLE_SUPPORTED_CHAINS, CHAIN_IDS_TO_USDC_ADDRESSES, CHAIN_TO_CHAIN_NAME, CHAIN_IDS_TO_TOKEN_MESSENGER, CHAIN_IDS_TO_RPC_URLS, DESTINATION_DOMAINS, CHAINS } from '../libs/chains';
+import { chainIdNetworkParamsMapping } from '@blockchain-lab-um/masca-connector';
+
 
 const optimismProvider = new ethers.JsonRpcProvider(OPTIMISM_RPC_URL);
 
@@ -75,7 +82,7 @@ console.info("*********** create wagmiConfig ****************")
 
 
 
-const wagmiConfig = createWagmiConfig2({
+const wagmiConfig = createWagmiConfig({
   //connectors: [metaMask({  [mainnet, optimism, linea, sepolia, base, baseSepolia, optimismSepolia] })],
    chains: [mainnet, optimism, linea, sepolia, base, baseSepolia, optimismSepolia],
     client({ chain }) {
@@ -98,13 +105,11 @@ createConfig({
       [ChainId.OPT]: [OPTIMISM_RPC_URL],
       [ChainId.LNA]: [LINEA_RPC_URL],
       [ChainId.SUP]: [SEPOLIA_RPC_URL],
-      [11155420]: [OPTIMISM_SEPOLIA_RPC_URL],
-      [59141]: [LINEA_SEPOLIA_RPC_URL],
     } as any,
     providers: [
       EVM({
         getWalletClient: () => getWalletClient(wagmiConfig),
-        switchChain: async (chainId) => {
+        switchChain: async (chainId: any) => {
             console.info("*********** SWITCH CHAIN ****************")
           const chain = await switchChain(wagmiConfig, { chainId })
           return getWalletClient(wagmiConfig, { chainId: chain.id })
@@ -124,17 +129,16 @@ interface AddAccountModalProps {
 
 const steps = ['Select Chain & Account', 'Account Details', 'Confirm'];
 
-// Available chains for selection
-const availableChains = [
-  { id: linea.id, name: linea.name, nativeCurrency: linea.nativeCurrency, chain: linea },
-  { id: mainnet.id, name: mainnet.name, nativeCurrency: mainnet.nativeCurrency, chain: mainnet },
-  { id: optimism.id, name: optimism.name, nativeCurrency: optimism.nativeCurrency, chain: optimism },
-  { id: lineaSepolia.id, name: lineaSepolia.name, nativeCurrency: lineaSepolia.nativeCurrency, chain: lineaSepolia },
-  { id: sepolia.id, name: sepolia.name, nativeCurrency: sepolia.nativeCurrency, chain: sepolia },
-  { id: optimismSepolia.id, name: optimismSepolia.name, nativeCurrency: optimismSepolia.nativeCurrency, chain: optimismSepolia },
-];
+// Available chains for selection - include all supported chains
+const availableChains = Object.entries(CHAINS).map(([chainId, chain]) => ({
+  id: parseInt(chainId),
+  name: chain.name,
+  nativeCurrency: chain.nativeCurrency,
+  chain: chain
+}));
 
 const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose }) => {
+
   const [activeStep, setActiveStep] = useState(0);
   const [accountName, setAccountName] = useState('');
   const [coaCode, setCoaCode] = useState('');
@@ -151,9 +155,10 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
 
   const { chain, orgDid, orgIndivDelegation, orgIssuerDelegation, orgAccountClient, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, indivAccountClient, indivDid, privateIssuerDid, signatory } = useWallectConnectContext();
 
+  const { getUSDCChainTokenInfo, getUSDCBalance, getEthBalance } = useCrossChainAccount();
+
   const { isConnected, address } = useAccount();
   const { connect } = useConnect();
-  const { switchChain } = useSwitchChain();
 
   const handleNext = () => {
     setActiveStep((prevStep) => prevStep + 1);
@@ -169,7 +174,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
     setCoaCode('');
     setCoaCategory('');
     setSelectedAccount('');
-    setSelectedChain(linea.id);
+    setSelectedChain(CHAIN_ID);
     setEthBalance('0');
     setUsdcBalance('0');
     setError(null);
@@ -179,122 +184,29 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
   const connectWallet = async () => {
     try {
       await connect({ connector: injected() });
+      // After connecting, get accounts with enhanced connection
+      await connectToMetaMaskWithNetwork();
     } catch (error) {
       console.error('Error connecting wallet:', error);
       setError('Failed to connect wallet');
     }
   };
 
-  const circleCheckNativeBalance = async (address: string, chainId: number) => {
 
-    const ch = availableChains.find(c => c.id === chainId)?.chain;
-    const publicClient = createPublicClient({
-        chain: ch,
-        transport: http(),
-      });
-    
-    const balance = await publicClient.getBalance({
-      address: address as `0x${string}`,
-    });
-    return balance;
-
-  };
-
-
-  const ERC20_ABI = [
-    "function balanceOf(address owner) view returns (uint256)",
-    "function decimals() view returns (uint8)",
-  ];
-  const USDC_ADDRESSES: Record<number, string> = {
-    // Mainnets
-    1: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",       // Ethereum
-    10: "0x7F5c764cBc14f9669B88837ca1490cCa17c31607",     // Optimism
-    59144: "0x176211869ca2b568f2a7d4ee941e073a821ee1ff",   // Linea
-  
-    // Testnets
-    11155111: "0x65aFADD39029741B3b8f0756952C74678c9cEC93", // Ethereum Sepolia
-    11155420: "0x694cD7F69C99B5e928044974C9dD480b688372B1", // Optimism Sepolia
-    59141: "0x8d48ba6D6ABD283E672B917cDFbD6222dd1B80dB",    // Linea Sepolia
-  };
-
-
-  const circleCheckUSDCBalance = async (address: string, chainId: number): Promise<string> => {
-
-    // get testnet USDC balances
-    let usdcAddress = CHAIN_IDS_TO_USDC_ADDRESSES[chainId] as `0x${string}`;
-    const ch = availableChains.find(c => c.id === chainId)?.chain;
-    const publicClient = createPublicClient({
-      chain: ch,
-      transport: http(),
-    });
-
-    
-    if (usdcAddress && ch) {
-      // used to get testnet USDC balances
-      const balance = await publicClient.readContract({
-        address: usdcAddress,
-        abi: [
-          {
-            constant: true,
-            inputs: [{ name: "_owner", type: "address" }],
-            name: "balanceOf",
-            outputs: [{ name: "balance", type: "uint256" }],
-            payable: false,
-            stateMutability: "view",
-            type: "function",
-          },
-        ],
-        functionName: "balanceOf",
-        args: [address as `0x${string}`],
-      });
-      console.info("balance: ", balance)
-
-      const decimals = 6
-
-      return ethers.formatUnits(balance, decimals); 
-
-
-    }
-  
-
-    // used to get mainnet USDC balances
-    usdcAddress = USDC_ADDRESSES[chainId].toLowerCase() as `0x${string}`;
-    const rpcUrl = RPC_URLS[chainId];
-    const provider = new ethers.JsonRpcProvider(rpcUrl);
-    const usdcContract = new ethers.Contract(usdcAddress, ERC20_ABI, provider);
-    const balance = await usdcContract.balanceOf(address)
-    const decimals = await usdcContract.decimals()
-
-
-    return ethers.formatUnits(balance, decimals); 
-  };
 
 
   const fetchBalances = async (accountAddress: string, chainId: number) => {
+
+    
     if (!accountAddress) return;
+
+    console.info("*********** fetchBalances ****************: ", accountAddress, chainId)
     
     setIsLoadingBalances(true);
     try {
 
-        //const nativeToken = "0x0000000000000000000000000000000000000000"
-        //const usdcToken = "0x176211869cA2b568f2A7D4EE941E073a821EE1ff"
-
-        // get balances for the tokens using LiFi SDK
-        //const tokensResponse = await getTokens({ chains: [chainId] });
-        //const tokens = tokensResponse.tokens[chainId];
-        //console.info("tokens: ", tokens)
-        //const filteredTokens = tokens.filter(item => 
-        //    item.address === nativeToken || 
-        //    item.address === usdcToken);
-
-
-
-
-
-        
         // Set native token balance
-
-        const nativeBalance = await circleCheckNativeBalance(accountAddress, chainId)
+        const nativeBalance = await getEthBalance(accountAddress, chainId)
         console.info("nativeBalance: ", nativeBalance)
 
 
@@ -306,46 +218,14 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
           setEthBalance('0');
         }
 
-        
-        const usdcBalance = await circleCheckUSDCBalance(accountAddress, chainId)
+        // connect to metamask account
+        const usdcBalance = await getUSDCBalance(accountAddress, chainId)
+
         console.info("usdcBalance 0: ", usdcBalance)
         const dollars = Number(usdcBalance)
         setUsdcBalance(dollars.toFixed(2));
         console.info("usdcBalance 1: ", usdcBalance)
           
-
-        /*
-        setEthBalance(nativeBalance.toString());
-        setUsdcBalance(usdcBalance);
-
-        
-        // Fetch balances for the tokens
-        const tokenBalances = await getTokenBalances(accountAddress, tokens);
-        const nativeBalance = tokenBalances.find(balance => 
-          balance.symbol === "ETH"
-        );
-        if (nativeBalance && nativeBalance.amount) {
-          const weiBigInt = typeof nativeBalance.amount === 'string' ? BigInt(nativeBalance.amount) : nativeBalance.amount;
-          const eth = Number(weiBigInt) / 1e18;
-          setEthBalance(eth.toFixed(6));
-        } else {
-          setEthBalance('0');
-        }
-
-        
-        // Set USDC balance
-        const usdcBalance = tokenBalances.find(balance => 
-          balance.symbol === "USDC"
-        );
-        console.info("usdcBalance: ", usdcBalance)
-        if (usdcBalance && usdcBalance.amount) {
-          const amountBigInt = BigInt(usdcBalance.amount.toString());
-          const dollars = Number(amountBigInt) / 1_000_000;
-          setUsdcBalance(dollars.toFixed(2));
-        } else {
-          setUsdcBalance('0');
-        }
-          */
 
 
 
@@ -358,27 +238,162 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
     }
   };
 
-  const switchToChain = async (chainId: number) => {
-    console.info("*********** switchToChain ****************: ", chainId);
+  // Generic function to add/switch to any chain in MetaMask
+  const addChainToMetaMask = async (chainId: number) => {
+    try {
+      console.info(`Attempting to switch to chain ${chainId} (${toHex(chainId)})`);
+      
+      // First try to switch to the network (in case it's already added)
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: toHex(chainId) }]
+      });
+      
+      console.info(`Successfully switched to chain ${chainId}`);
+    } catch (switchError: any) {
+      console.info(`Switch error for chain ${chainId}:`, switchError);
+      
+      // If the network doesn't exist (error code 4902), add it
+      if (switchError.code === 4902) {
+        try {
+          const chain = CHAINS[chainId];
+          if (!chain) {
+            throw new Error(`Chain with ID ${chainId} not supported`);
+          }
+
+          // Get RPC URL and block explorer URL
+          const rpcUrl = CHAIN_IDS_TO_RPC_URLS[chainId];
+          const explorerUrl = CHAIN_IDS_TO_EXPLORER_URL[chainId];
+          
+          console.info(`Adding chain ${chainId}:`, {
+            chainId: toHex(chainId),
+            chainName: chain.name,
+            nativeCurrency: chain.nativeCurrency,
+            rpcUrl,
+            explorerUrl
+          });
+          
+          // Ensure RPC URL is an array and not empty
+          const rpcUrls = rpcUrl ? [rpcUrl] : ['https://ethereum.publicnode.com'];
+          
+          // Ensure block explorer URL is an array and not empty
+          const blockExplorerUrls = explorerUrl ? [explorerUrl] : [];
+
+          const addParams = {
+            chainId: toHex(chainId),
+            chainName: chain.name,
+            nativeCurrency: chain.nativeCurrency,
+            rpcUrls: rpcUrls,
+            blockExplorerUrls: blockExplorerUrls
+          };
+          
+          console.info(`Adding chain with params:`, addParams);
+
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [addParams]
+          });
+          
+          console.info(`Successfully added chain ${chainId}`);
+        } catch (addError) {
+          console.error(`Error adding chain ${chainId} to MetaMask:`, addError);
+          throw new Error(`Please add ${CHAINS[chainId]?.name || 'the network'} to MetaMask manually`);
+        }
+      } else {
+        console.error(`Error switching to chain ${chainId}:`, switchError);
+        throw new Error(`Please switch to ${CHAINS[chainId]?.name || 'the network'} in MetaMask`);
+      }
+    }
+  };
+
+  // Function to check if current network is supported and switch if needed
+  const checkAndSwitchToSupportedNetwork = async () => {
+    try {
+      // Get current chain ID from MetaMask
+      const chainId = await window.ethereum.request({
+        method: 'eth_chainId'
+      });
+      
+      const currentChainId = parseInt(chainId, 16);
+      console.info("Current chain ID:", currentChainId);
+      
+      // Check if current chain is supported
+      const isSupported = availableChains.some(chain => chain.id === currentChainId);
+      
+      if (!isSupported) {
+        console.info("Current network not supported, switching to default (Linea)");
+        // Switch to a default supported network (Linea)
+        await addChainToMetaMask(linea.id);
+        setSelectedChain(linea.id);
+        return linea.id;
+      }
+      
+      setSelectedChain(currentChainId);
+      return currentChainId;
+    } catch (error) {
+      console.error('Error checking current network:', error);
+      // Default to Linea if there's an error
+      setSelectedChain(linea.id);
+      return linea.id;
+    }
+  };
+
+  // Enhanced MetaMask connection with network switching
+  const connectToMetaMaskWithNetwork = async (targetChainId?: number) => {
+    try {
+      // Request account access from MetaMask
+      const accounts = await window.ethereum.request({
+        method: 'eth_requestAccounts',
+      });
+      
+      if (!accounts || accounts.length === 0) {
+        throw new Error('No MetaMask accounts found. Please connect your wallet.');
+      }
+      
+      const connectedAccount = accounts[0] as `0x${string}`;
+      console.info("Connected to MetaMask account:", connectedAccount);
+      
+      // Check and switch to supported network if needed
+      const supportedChainId = await checkAndSwitchToSupportedNetwork();
+      
+      // If a specific chain is requested, switch to it
+      if (targetChainId) {
+        await addChainToMetaMask(targetChainId);
+      }
+      
+      return connectedAccount;
+    } catch (error) {
+      console.error('Error connecting to MetaMask:', error);
+      throw new Error(`Failed to connect to MetaMask: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  // Enhanced chain switching with network addition
+  const switchToChainWithNetwork = async (chainId: number) => {
+    console.info("*********** switchToChainWithNetwork ****************: ", chainId);
     setIsSwitchingChain(true);
     setError(null);
     
     try {
-      await switchChain({ chainId });
+      await addChainToMetaMask(chainId);
       setSelectedChain(chainId);
+      
       // Refresh accounts after chain switch
       await getMetaMaskAccounts();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error switching chain:', error);
-      setError('Failed to switch chain. Please try switching manually in MetaMask.');
+      setError(error.message || 'Failed to switch chain. Please try switching manually in MetaMask.');
     } finally {
       setIsSwitchingChain(false);
     }
   };
 
+
+
   const getMetaMaskAccounts = async () => {
     if (typeof window.ethereum !== 'undefined') {
       try {
+        const connectedAccount = await connectToMetaMaskWithNetwork();
         const accounts = await window.ethereum.request({
           method: 'eth_requestAccounts'
         });
@@ -399,13 +414,78 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
 
   const handleAccountSelect = async (account: string) => {
     setSelectedAccount(account);
-    // Fetch balances for the selected account
-    await fetchBalances(account, selectedChain);
+    
+    try {
+      // Switch to the selected account in MetaMask
+      await switchToMetaMaskAccount(account);
+      
+      // Fetch balances for the selected account
+      await fetchBalances(account, selectedChain);
+    } catch (error) {
+      console.error('Error switching to account:', error);
+      setError('Failed to switch to selected account in MetaMask');
+    }
+  };
+
+  // Function to switch to a specific account in MetaMask
+  const switchToMetaMaskAccount = async (accountAddress: string) => {
+    if (typeof window.ethereum === 'undefined') {
+      throw new Error('MetaMask is not installed');
+    }
+
+    try {
+      // Get current accounts
+      const accounts = await window.ethereum.request({
+        method: 'eth_requestAccounts'
+      });
+
+      // Check if the selected account is in the list
+      if (!accounts.includes(accountAddress)) {
+        throw new Error('Selected account not found in MetaMask');
+      }
+
+      // If the selected account is not the current active account, try to switch to it
+      if (accounts[0] !== accountAddress) {
+        try {
+          // Try to request permissions for the specific account
+          await window.ethereum.request({
+            method: 'wallet_requestPermissions',
+            params: [{
+              eth_accounts: {}
+            }]
+          });
+          
+          // Wait a bit for MetaMask to process the request
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Get accounts again to see if the switch worked
+          const newAccounts = await window.ethereum.request({
+            method: 'eth_requestAccounts'
+          });
+          
+          if (newAccounts[0] !== accountAddress) {
+            console.warn('Account switch may not have been successful. User may need to manually switch in MetaMask.');
+            // Show a user-friendly message
+            setError('Please manually switch to the selected account in MetaMask');
+          } else {
+            console.info('Successfully switched to account:', accountAddress);
+          }
+        } catch (permissionError) {
+          console.warn('Could not automatically switch accounts. User may need to manually switch in MetaMask.');
+          setError('Please manually switch to the selected account in MetaMask');
+        }
+      } else {
+        console.info('Account is already active:', accountAddress);
+      }
+    } catch (error) {
+      console.error('Error switching to MetaMask account:', error);
+      throw error;
+    }
   };
 
   const handleChainSelect = async (chainId: number) => {
     if (chainId !== selectedChain) {
-      await switchToChain(chainId);
+      await switchToChainWithNetwork(chainId);
       // Fetch balances for the selected account on the new chain
       if (selectedAccount) {
         await fetchBalances(selectedAccount, chainId);
@@ -771,6 +851,53 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
 
       default:
         return null;
+    }
+  };
+
+  // Create wallet client with connected MetaMask account
+  const createMetaMaskWalletClient = async (chainId: number) => {
+    try {
+      // Ensure we're connected to MetaMask
+      const connectedAccount = await connectToMetaMaskWithNetwork(chainId);
+      
+      // Get the chain configuration
+      const chain = availableChains.find(c => c.id === chainId);
+      if (!chain) {
+        throw new Error(`Chain with ID ${chainId} not found`);
+      }
+      
+      // Create wallet client with MetaMask provider
+      const walletClient = createWalletClient({
+        chain: chain.chain,
+        transport: custom(window.ethereum),
+        account: connectedAccount,
+      });
+      
+      console.info("Created MetaMask wallet client for account:", connectedAccount);
+      return walletClient;
+    } catch (error) {
+      console.error('Error creating MetaMask wallet client:', error);
+      throw new Error(`Failed to create wallet client: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  // Connect to MetaMask, switch network, and get wallet client
+  const connectMetaMaskWithNetwork = async (chainId: number) => {
+    try {
+      // Connect to MetaMask and switch to the specified network
+      const connectedAccount = await connectToMetaMaskWithNetwork(chainId);
+      
+      // Create wallet client
+      const walletClient = await createMetaMaskWalletClient(chainId);
+      
+      return {
+        account: connectedAccount,
+        walletClient,
+        chainId
+      };
+    } catch (error) {
+      console.error('Error connecting to MetaMask with network:', error);
+      throw error;
     }
   };
 
