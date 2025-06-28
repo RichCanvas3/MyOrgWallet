@@ -32,9 +32,10 @@ interface AttestationViewModalProps {
   entityId: string;
   isVisible: boolean;
   onClose: () => void;
+  onDelete?: () => void;
 }
 
-const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityId, isVisible, onClose}) => {
+const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityId, isVisible, onClose, onDelete}) => {
 
   const {t} = useTranslation();
 
@@ -492,7 +493,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
   }
 
   const handleDeleteAttestation = async () => {
-    if (!attestation || !chain || !orgIssuerDelegation || !orgIndivDelegation || !burnerAccountClient) return;
+    if (!attestation || !chain || !orgIssuerDelegation || !orgIndivDelegation || !indivIssuerDelegation || !burnerAccountClient) return;
     
     setIsDeleting(true);
     try {
@@ -516,6 +517,9 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
       
       // Close modal after successful deletion
       handleClose();
+      if (onDelete) {
+        onDelete();
+      }
     } catch (error) {
       console.error('Error deleting attestation:', error);
     } finally {

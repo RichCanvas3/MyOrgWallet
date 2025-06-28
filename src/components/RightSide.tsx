@@ -16,9 +16,11 @@ import { useWallectConnectContext } from "../context/walletConnectContext";
 interface RightSideProps {
   className: string;
   appCommand: (cmd: Command) => void;
+  onRefreshAttestations?: () => void;
+  onRefreshAccounts?: () => void;
 }
 
-const RightSide: React.FC<RightSideProps> = ({className, appCommand}) => {
+const RightSide: React.FC<RightSideProps> = ({className, appCommand, onRefreshAttestations, onRefreshAccounts}) => {
   const {t} = useTranslation();
   const navigate = useNavigate();
 
@@ -61,6 +63,8 @@ const RightSide: React.FC<RightSideProps> = ({className, appCommand}) => {
             indivDid={indivDid} 
             onSelectAttestation={handleSelectAttestation}
             onSelectAccount={handleSelectAccount}
+            onRefreshAttestations={onRefreshAttestations}
+            onRefreshAccounts={onRefreshAccounts}
           />
         </nav>
       </div>

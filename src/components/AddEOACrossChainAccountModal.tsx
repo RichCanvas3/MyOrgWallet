@@ -150,6 +150,7 @@ createConfig({
 interface AddAccountModalProps {
   isVisible: boolean;
   onClose: () => void;
+  onRefresh?: () => void;
 }
 
 const steps = ['Select Chain & Account', 'Account Details', 'Confirm'];
@@ -162,13 +163,14 @@ const availableChains = Object.entries(CHAINS).map(([chainId, chain]) => ({
   chain: chain
 }));
 
-const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose }) => {
+const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, onRefresh }) => {
 
   const [activeStep, setActiveStep] = useState(0);
   const [accountName, setAccountName] = useState('');
   const [coaCode, setCoaCode] = useState('');
   const [coaCategory, setCoaCategory] = useState('');
   const [selectedCoaCategory, setSelectedCoaCategory] = useState<string>('');
+  const [inputValue, setInputValue] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<string>('');
@@ -200,6 +202,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
     setCoaCode('');
     setCoaCategory('');
     setSelectedCoaCategory('');
+    setInputValue(undefined);
     setSelectedAccount('');
     setSelectedChain(CHAIN_ID);
     setEthBalance('0');
@@ -528,21 +531,8 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
   };
 
   const handleChainSelect = async (chainId: number) => {
-    if (chainId !== selectedChain) {
-      await switchToChainWithNetwork(chainId);
-      // Fetch balances for the selected account on the new chain
-      if (selectedAccount) {
-        await fetchBalances(selectedAccount, chainId);
-      }
-    }
-  };
-
-  const handleCoaCategorySelect = (categoryId: string) => {
-    setSelectedCoaCategory(categoryId);
-    const selectedCategory = COA_OPTIONS.find(option => option.id === categoryId);
-    if (selectedCategory) {
-      setCoaCategory(selectedCategory.code);
-    }
+    setSelectedChain(chainId);
+    await switchToChainWithNetwork(chainId);
   };
 
   const handleSave = async () => {
@@ -551,6 +541,9 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
       setError('Missing required information');
       return;
     }
+
+    console.info("coaCode: ", coaCode)
+    console.info("selectedCoaCategory: ", selectedCoaCategory)
 
     setIsLoading(true);
     setError(null);
@@ -630,7 +623,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
 
         const delegationJsonStr = ""
 
-        const vc = await VerifiableCredentialsService.createAccountOrgDelVC(entityId, privateIssuerDid, accountDid, orgDid, accountName, coaCode, coaCategory, delegationJsonStr);
+        const vc = await VerifiableCredentialsService.createAccountOrgDelVC(entityId, privateIssuerDid, accountDid, orgDid, accountName, coaCode, selectedCoaCategory, delegationJsonStr);
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
@@ -645,7 +638,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
               accountName: accountName,
               accountDid: accountDid,
               coaCode: coaCode,
-              coaCategory: coaCategory,
+              coaCategory: selectedCoaCategory,
               delegation: delegationJsonStr,
               attester: orgDid,
               class: "organization",
@@ -665,6 +658,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
     setAccountName('');
     setError(null);
     onClose();
+    onRefresh?.();
 
   };
 
@@ -848,8 +842,13 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
                   options={COA_OPTIONS}
                   getOptionLabel={(option) => option.displayName}
                   value={COA_OPTIONS.find(option => option.id === selectedCoaCategory) || null}
+                  inputValue={inputValue}
+                  onInputChange={(event, newInputValue) => {
+                    setInputValue(newInputValue);
+                  }}
                   onChange={(event, newValue) => {
                     setSelectedCoaCategory(newValue ? newValue.id : '');
+                    setInputValue(newValue ? newValue.id : undefined);
                   }}
                   onKeyDown={(event) => {
                     if (event.key === 'Tab') {
@@ -860,6 +859,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
                       );
                       if (highlightedOption) {
                         setSelectedCoaCategory(highlightedOption.id);
+                        setInputValue(highlightedOption.id);
                       }
                     }
                   }}
@@ -940,7 +940,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
                   <strong>CoA Code:</strong> {coaCode}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>CoA Category:</strong> {COA_OPTIONS.find(option => option.id === selectedCoaCategory)?.displayName || selectedCoaCategory}
+                  <strong>CoA Category:</strong> {selectedCoaCategory}
                 </Typography>
                 <Typography variant="body2" sx={{ mt: 1 }}>
                   <strong>Balances:</strong>

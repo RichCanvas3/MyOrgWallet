@@ -85,9 +85,23 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
       }
       setSelectedId(att.entityId);
       if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
+    } else if (event.action === 'delete') {
+      // Remove the specific attestation that was deleted
+      setAttestations(prev => prev.filter(a => a.entityId !== event.entityId));
+      if (selectedId === event.entityId) {
+        setSelectedId(null);
+      }
     } else if (event.action === 'delete-all') {
-      setAttestations([]);
-      setSelectedId(null);
+      // Refresh the attestations list from the server
+      if (orgDid && indivDid && chain) {
+        AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, indivDid).then((atts) => {
+          setAttestations(atts);
+          setSelectedId(null);
+        });
+      } else {
+        setAttestations([]);
+        setSelectedId(null);
+      }
     }
   };
 
@@ -117,7 +131,28 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
     };
   }, [orgDid]);
 
+  // Expose refresh function globally
+  useEffect(() => {
+    (window as any).refreshAttestations = () => {
+      if (orgDid && indivDid && chain && tabValue) {
+        AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, indivDid).then((atts) => {
+          setAttestations(atts)
+        })
 
+        AttestationService.loadAttestationCategories().then((cats) => {
+          setCategories(cats)
+
+          let currentCategories = []
+          for (const cat of cats) {
+              if (cat.class == tabValue) {
+                  currentCategories.push(cat)
+              }
+          }
+          setCurrentCategories(currentCategories)
+        })
+      }
+    };
+  }, [orgDid, indivDid, chain, tabValue]);
 
   // Filter and group
   const filtered = attestations.filter(a =>

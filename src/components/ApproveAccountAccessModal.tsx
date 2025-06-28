@@ -10,7 +10,7 @@ import { Transition } from '@headlessui/react';
 import AttestationService from '../service/AttestationService';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import { useWalletClient } from 'wagmi';
-import { IndivAttestation, AccountIndivDelAttestation } from "../models/Attestation";
+import { IndivAttestation, AccountIndivDelAttestation, AccountOrgDelAttestation } from "../models/Attestation";
 import { Account } from "../models/Account";
 import { AttestationCard } from "./AttestationCard";
 import {
@@ -20,8 +20,7 @@ import {
   Paper,
   Stepper,
   Step,
-  StepLabel,
-  Grid
+  StepLabel
 } from "@mui/material";
 
 import {
@@ -54,7 +53,21 @@ const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ i
 
   useEffect(() => {
     if (isVisible && orgDid && chain) {
-      AttestationService.loadOrgAccounts(chain, orgDid, "1110").then(setAccounts);
+      console.info("Loading org accounts for orgDid:", orgDid, "chain:", chain);
+      // Try to load accounts from different categories
+      Promise.all([
+        AttestationService.loadOrgAccounts(chain, orgDid, "1110"), // Cash & Bank
+        AttestationService.loadOrgAccounts(chain, orgDid, "1200"), // Credit Cards
+        AttestationService.loadOrgAccounts(chain, orgDid, "1300"), // Other assets
+      ]).then(([cashAccounts, creditAccounts, otherAccounts]) => {
+        const allAccounts = [...cashAccounts, ...creditAccounts, ...otherAccounts];
+        console.info("Loaded all org accounts:", allAccounts);
+        setAccounts(allAccounts);
+      }).catch((error) => {
+        console.error("Error loading accounts:", error);
+        setAccounts([]);
+      });
+      
       AttestationService.getIndivsNotApprovedAttestations(chain, orgDid).then((atts) => {
         if (atts) setIndividuals(atts);
       });
@@ -213,36 +226,45 @@ const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ i
         return (
           <>
             <Typography variant="h6" gutterBottom>Select Organization Account</Typography>
-            <Grid container spacing={2}>
-              {accounts.map(account => (
-                <Grid item key={account.id} xs={12} sm={6}>
-                  <AttestationCard
-                    attestation={account.attestation}
-                    selected={selectedAccount?.id === account.id}
-                    onSelect={() => handleAccountSelect(account)}
-                    hoverable
-                  />
-                </Grid>
-              ))}
-            </Grid>
+            {accounts.length === 0 ? (
+              <Box sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="body1" color="text.secondary">
+                  No organization accounts found in category "1110". 
+                  Please ensure you have created accounts in the Cash & Bank category.
+                </Typography>
+              </Box>
+            ) : (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                {accounts.map(account => (
+                  <Box key={account.id} sx={{ minWidth: 200 }}>
+                    <AttestationCard
+                      attestation={account.attestation!}
+                      selected={selectedAccount?.id === account.id}
+                      onSelect={() => handleAccountSelect(account)}
+                      hoverable
+                    />
+                  </Box>
+                ))}
+              </Box>
+            )}
           </>
         );
       case 1:
         return (
           <>
             <Typography variant="h6" gutterBottom>Select Individual</Typography>
-            <Grid container spacing={2}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
               {individuals.map(indiv => (
-                <Grid item key={indiv.attester} xs={12} sm={6}>
+                <Box key={indiv.attester} sx={{ minWidth: 200 }}>
                   <AttestationCard
                     attestation={indiv}
                     selected={selectedIndividual?.attester === indiv.attester}
                     onSelect={() => handleIndividualSelect(indiv)}
                     hoverable
                   />
-                </Grid>
+                </Box>
               ))}
-            </Grid>
+            </Box>
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
               <Button onClick={handleBack}>Back</Button>
             </Box>

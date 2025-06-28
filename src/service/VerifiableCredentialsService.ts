@@ -432,13 +432,10 @@ class VerifiableCredentialsService {
 
     static async getCredential(mascaApi: any, entityId: string): Promise<VerifiableCredential | undefined> {
 
-      console.info(">>>>>>>>> get credential: ", entityId)
-      console.info(">>>>>>>>> mascaApi: ", mascaApi)
 
       const did = await mascaApi.getDID() 
       const key = entityId + "-" + did.data
 
-      console.info("************** key 1: ", key)
       const existingCredentialJSON = localStorage.getItem(key)
       if (existingCredentialJSON) {
         const existingCredential = JSON.parse(existingCredentialJSON)
@@ -450,17 +447,9 @@ class VerifiableCredentialsService {
       const vcs = await mascaApi.queryCredentials();
       console.info("got vcs: ", vcs)
       for (const vc of vcs.data) {
-        console.info("****************** vc: ", vc)
-        console.info("****************** entityId: ", entityId)
         if (vc.data.credentialSubject?.provider?.toLowerCase() == entityId.toLowerCase()) {
-
           const credentialJSON = JSON.stringify(vc.data);
           localStorage.setItem(key, credentialJSON)
-
-
-          console.info("************** key 2: ", key)
-          console.info("************** found credential: ", vc)
-
           return vc.data
         } 
       }

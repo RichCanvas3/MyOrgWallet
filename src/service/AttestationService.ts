@@ -2355,7 +2355,7 @@ class AttestationService {
 
 
       const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
-      console.info("data: ", data)
+      //console.info("data: ", data)
 
       const attestations : Attestation[] = []
       for (const item of data.attestations) {

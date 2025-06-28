@@ -61,18 +61,16 @@ import InfoIcon from '@mui/icons-material/Info';
 interface AddSavingsModalProps {
   isVisible: boolean;
   onClose: () => void;
+  onRefresh?: () => void;
 }
 
-const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose }) => {
+const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose, onRefresh }) => {
   const [accountName, setAccountName] = useState('');
   const [coaCode, setCoaCode] = useState('');
   const [coaCategory, setCoaCategory] = useState('');
+  const [inputValue, setInputValue] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Debug logging for COA_OPTIONS
-  console.log('COA_OPTIONS loaded:', COA_OPTIONS.length, 'options');
-  console.log('First few COA_OPTIONS:', COA_OPTIONS.slice(0, 3));
 
   const BASE_URL_PROVER = import.meta.env.VITE_PROVER_API_URL  || 'http://localhost:3051';
 
@@ -271,14 +269,17 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose })
     setAccountName('');
     setCoaCode('');
     setCoaCategory('');
+    setInputValue(undefined);
     setError(null);
     onClose();
+    onRefresh?.();
   }
 
   const handleClose = () => {
     setAccountName('');
     setCoaCode('');
     setCoaCategory('');
+    setInputValue(undefined);
     setError(null);
     onClose();
   };
@@ -369,9 +370,14 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose })
                       fullWidth
                       options={COA_OPTIONS}
                       getOptionLabel={(option) => option.displayName}
-                      value={COA_OPTIONS.find(option => option.displayName === coaCategory) || null}
+                      value={COA_OPTIONS.find(option => option.id === coaCategory) || null}
+                      inputValue={inputValue}
+                      onInputChange={(event, newInputValue) => {
+                        setInputValue(newInputValue);
+                      }}
                       onChange={(event, newValue) => {
-                        setCoaCategory(newValue ? newValue.displayName : '');
+                        setCoaCategory(newValue ? newValue.id : '');
+                        setInputValue(newValue ? newValue.id : undefined);
                       }}
                       renderInput={(params) => (
                         <TextField 
@@ -385,7 +391,7 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose })
                           }}
                         />
                       )}
-                      isOptionEqualToValue={(option, value) => option.displayName === value.displayName}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
                       clearOnBlur
                       selectOnFocus
                       handleHomeEndKeys

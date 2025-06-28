@@ -296,6 +296,13 @@ const App = () => {
     setAttestationViewModalVisible(false);
   }
 
+  const handleAttestationDelete = () => {
+    // This will trigger a refresh of the AttestationSection
+    // The AttestationSection listens to attestationChangeEvent, so we can emit a refresh event
+    // or simply close the modal and let the parent components refresh naturally
+    setAttestationViewModalVisible(false);
+  }
+
 
 
 
@@ -410,6 +417,7 @@ const App = () => {
                 entityId={selectedEntityId}
                 isVisible={isAttestationViewModalVisible}
                 onClose={handleOnAttestationViewModalClose}
+                onDelete={handleAttestationDelete}
               />
               <XModal isVisible={isXModalVisible} onClose={handleOnXModalClose} />
 

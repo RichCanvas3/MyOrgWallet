@@ -14,6 +14,8 @@ interface MainSectionProps {
   indivDid?: string;
   onSelectAttestation: (attestation: Attestation) => void;
   onSelectAccount?: (account: Account) => void;
+  onRefreshAttestations?: () => void;
+  onRefreshAccounts?: () => void;
 }
 
 const MainSection: React.FC<MainSectionProps> = ({
@@ -21,6 +23,8 @@ const MainSection: React.FC<MainSectionProps> = ({
   indivDid,
   onSelectAttestation,
   onSelectAccount,
+  onRefreshAttestations,
+  onRefreshAccounts,
 }) => {
   const [currentView, setCurrentView] = useState<'attestations' | 'accounts'>('attestations');
 
@@ -62,6 +66,7 @@ const MainSection: React.FC<MainSectionProps> = ({
             orgDid={orgDid}
             indivDid={indivDid}
             onSelectAttestation={onSelectAttestation}
+            onRefreshAttestations={onRefreshAttestations}
           />
         )}
       </Box>
@@ -75,6 +80,7 @@ const MainSection: React.FC<MainSectionProps> = ({
         {currentView === 'accounts' && (
           <ChartOfAccountsSection
             onSelectAccount={onSelectAccount}
+            onRefreshAccounts={onRefreshAccounts}
           />
         )}
       </Box>

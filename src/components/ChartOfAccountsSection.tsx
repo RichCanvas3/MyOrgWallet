@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   TextField,
@@ -39,10 +39,12 @@ import { CHART_OF_ACCOUNTS } from '../constants/chartOfAccounts';
 
 interface ChartOfAccountsSectionProps {
   onSelectAccount?: (account: Account) => void;
+  onRefreshAccounts?: () => void;
 }
 
 const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
   onSelectAccount,
+  onRefreshAccounts,
 }) => {
 
   const { getUSDCBalance } = useCrossChainAccount();
@@ -57,6 +59,9 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
   const [isLoadingBalances, setIsLoadingBalances] = useState(false);
 
   const [accounts, setAccounts] = useState<Account[]>(CHART_OF_ACCOUNTS as Account[]);
+
+  // Ref for scrollable container
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   
   /*
@@ -237,7 +242,7 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
       console.info("Loading attestations for orgDid:", orgDid);
       AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, "").then((atts) => {
         console.info("Loaded attestations:", atts);
-        const newAccounts = [...accounts];
+        const newAccounts = [...CHART_OF_ACCOUNTS as Account[]];
         const newListAccounts: Account[] = [];
         let accountsChanged = false;
 
@@ -354,9 +359,157 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
     }
   }, [orgDid]);
   
+  // Scroll to top when view type changes
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [viewType]);
+
+  const refreshAccounts = () => {
+    if (orgDid && chain) {
+      console.info("Refreshing attestations for orgDid:", orgDid);
+      AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, "").then((atts) => {
+        console.info("Refreshed attestations:", atts);
+        const newAccounts = [...CHART_OF_ACCOUNTS as Account[]];
+        const newListAccounts: Account[] = [];
+        let accountsChanged = false;
+
+        // Helper function to find account and its parent recursively
+        const findAccountAndParent = (accounts: Account[], parentId: string): Account | undefined => {
+          for (const account of accounts) {
+            if (account.id === parentId) {
+              return account;
+            }
+            if (account.children) {
+              const found = findAccountAndParent(account.children, parentId);
+              if (found) return found;
+            }
+          }
+          return undefined;
+        };
+
+        for (const att of atts) {
+          if (att.entityId === "account-org(org)") {
+            const accountAtt = att as AccountOrgDelAttestation;
+            const acct: Account = {
+              id: accountAtt.coaCategory + '-' + accountAtt.coaCode,
+              code: accountAtt.coaCategory + '-' + accountAtt.coaCode,
+              name: accountAtt.accountName,
+              did: accountAtt.accountDid,
+              type: ACCOUNT_TYPES.Asset,
+              balance: 0,
+              level: 4,
+              parentId: accountAtt.coaCategory,
+              attestation: accountAtt,
+              children: [],
+            };
+            
+            console.info("Created account object:", acct);
+            
+            // Add to list view
+            newListAccounts.push(acct);
+            
+            // Add to chart view
+            const existingAccount = findAccountAndParent(newAccounts, acct.id);
+            if (!existingAccount) {
+              if (acct.parentId) {
+                const parentAccount = findAccountAndParent(newAccounts, acct.parentId);
+                
+                if (parentAccount) {
+                  if (!parentAccount.children) {
+                    parentAccount.children = [];
+                  }
+                  parentAccount.children.push(acct);
+                } else {
+                  newAccounts.push(acct);
+                }
+              } else {
+                newAccounts.push(acct);
+              }
+              accountsChanged = true;
+            }
+            
+            // Fetch balances for accounts with DIDs
+            if (acct.did) {
+              fetchAccountBalances(acct.did);
+            }
+          }
+          if (att.entityId === "account(org)") {
+            const accountAtt = att as OrgAccountAttestation;
+            const acct: Account = {
+              id: accountAtt.coaCategory + '-' + accountAtt.coaCode,
+              code: accountAtt.coaCategory + '-' + accountAtt.coaCode,
+              name: accountAtt.accountName,
+              did: accountAtt.accountDid,
+              type: ACCOUNT_TYPES.Asset,
+              balance: 0,
+              level: 4,
+              parentId: accountAtt.coaCategory,
+              children: [],
+            };
+            
+            
+            // Add to list view
+            newListAccounts.push(acct);
+            
+            // Add to chart view
+            const existingAccount = findAccountAndParent(newAccounts, acct.id);
+            if (!existingAccount) {
+              if (acct.parentId) {
+                const parentAccount = findAccountAndParent(newAccounts, acct.parentId);
+                
+                if (parentAccount) {
+                  if (!parentAccount.children) {
+                    parentAccount.children = [];
+                  }
+                  parentAccount.children.push(acct);
+                } else {
+                  newAccounts.push(acct);
+                }
+              } else {
+                newAccounts.push(acct);
+              }
+              accountsChanged = true;
+            }
+            
+            // Fetch balances for accounts with DIDs
+            if (acct.did) {
+              fetchAccountBalances(acct.did);
+            }
+          }
+        }
+
+        setListAccounts(newListAccounts);
+        if (accountsChanged) {
+          setAccounts(newAccounts);
+        }
+      });
+    }
+  };
+
+  // Expose refresh function via useCallback
+  const exposedRefreshFunction = useCallback(() => {
+    refreshAccounts();
+  }, []);
+
+  // Call the exposed refresh function when onRefreshAccounts is provided
+  useEffect(() => {
+    if (onRefreshAccounts) {
+      onRefreshAccounts = exposedRefreshFunction;
+    }
+  }, [onRefreshAccounts, exposedRefreshFunction]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedAccounts, setExpandedAccounts] = useState<Record<string, boolean>>({});
+
+  // Simple refresh mechanism - call refreshAccounts when onRefreshAccounts is provided
+  useEffect(() => {
+    if (onRefreshAccounts) {
+      // Store the refresh function in a way that can be called from parent
+      (window as any).refreshChartOfAccounts = refreshAccounts;
+    }
+  }, [onRefreshAccounts]);
 
   // Initialize expanded state
   React.useEffect(() => {
@@ -533,7 +686,7 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
   // Handle attestation revocation
   const handleRevoke = async (attestationUid: string) => {
     try {
-      if (!orgAccountClient || !orgDelegateClient || !orgIssuerDelegation) {
+      if (!orgAccountClient || !orgAccountClient || !orgIssuerDelegation) {
         console.error("Missing required clients for revocation");
         return;
       }
@@ -541,7 +694,7 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
       await AttestationService.revokeAttestation(
         attestationUid,
         orgAccountClient,
-        orgDelegateClient,
+        orgAccountClient,
         [orgIssuerDelegation]
       );
 
@@ -824,6 +977,7 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
 
       {/* Account Views */}
       <Box
+        ref={scrollContainerRef}
         sx={{
           flex: 1,
           overflowY: 'auto',

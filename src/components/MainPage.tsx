@@ -156,34 +156,51 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const handleOnDeleteAttestationsModalClose = () => {
     setDeleteAttestationsModalVisible(false);
-  }
+  };
   const handleOnApproveLeaderModalClose = () => {
     setApproveLeaderModalVisible(false);
-  }
+  };
   const handleOnApproveAccountAccessModalClose = () => {
     setApproveAccountAccessModalVisible(false);
-  }
+  };
   const handleOnCreateWebDidModalClose = () => {
     setCreateWebDidModalVisible(false);
-  }
+  };
   const handleOnImportDriversLicenseModalClose = () => {
     setImportDriversLicenseModalVisible(false);
-  }
+  };
   const handleOnAddCreditCardModalClose = () => {
     setAddCreditCardModalVisible(false);
-  }
+  };
   const handleOnFundCreditCardModalClose = () => {
     setFundCreditCardModalVisible(false);
-  }
+  };
   const handleOnAddSavingsModalClose = () => {
     setAddSavingsModalVisible(false);
-  }
+  };
   const handleOnAddAccountModalClose = () => {
     setAddAccountModalVisible(false);
-  }
+  };
   const handleOnOrgModalClose = () => {
     setOrgModalVisible(false);
-  }
+  };
+
+  // Refresh callbacks for sections
+  const handleRefreshAttestations = () => {
+    // This will be passed to MainSection and then to AttestationSection
+    // The AttestationSection already has its own refresh mechanism via events
+    if ((window as any).refreshAttestations) {
+      (window as any).refreshAttestations();
+    }
+  };
+
+  const handleRefreshAccounts = () => {
+    // This will be passed to MainSection and then to ChartOfAccountsSection
+    // The ChartOfAccountsSection will refresh its data
+    if ((window as any).refreshChartOfAccounts) {
+      (window as any).refreshChartOfAccounts();
+    }
+  };
 
 
 
@@ -682,25 +699,29 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   
 
-  async function checkAllDirectActions(lastAssistantResponse: string, lastUserResponse: string) {
-
+  function checkAllDirectActions(lastAssistantResponse: string, lastUserResponse: string) {
+    let actionMessage = ""
     try {
       if (lastUserResponse.toLowerCase().includes("delete all") ||
           lastUserResponse.toLowerCase().includes("delete attestations")) {
         setDeleteAttestationsModalVisible(true)
+        actionMessage="delete attestations"
       }
       if (lastUserResponse.toLowerCase().includes("approve leader")) {
         console.info("approve leader ...")
         setApproveLeaderModalVisible(true)
+        actionMessage="approve leader"
       }
       
       if (lastUserResponse.toLowerCase().includes("create web did")) {
         console.info("create web did ...")
         setCreateWebDidModalVisible(true)
+        actionMessage="create web did"
       }
       if (lastUserResponse.toLowerCase().includes("import drivers license")) {
         console.info("import drivers license ...")
         setImportDriversLicenseModalVisible(true)
+        actionMessage="import drivers license"
       }
       //if (lastUserResponse.toLowerCase().includes("add credit card")) {
       //  console.info("add credit card ...")
@@ -709,18 +730,22 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       if (lastUserResponse.toLowerCase().includes("add account")) {
         console.info("add account ...")
         setAddSavingsModalVisible(true)
+        actionMessage="add account"
       }
       if (lastUserResponse.toLowerCase().includes("approve account access")) {
         console.info("approve account access ...")
         setApproveAccountAccessModalVisible(true)
+        actionMessage="approve account access"
       }
       if (lastUserResponse.toLowerCase().includes("add debit card")) {
         console.info("add debit card ...")
         setAddAccountModalVisible(true)
+        actionMessage="add debit card"
       }
       if (lastUserResponse.toLowerCase().includes("fund card")) {
         console.info("fund card ...")
         setFundCreditCardModalVisible(true)
+        actionMessage="fund card"
       }
     } catch (error)
     {
@@ -728,7 +753,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     }
     
 
-    return ""
+    return actionMessage
     
   }
 
@@ -1124,9 +1149,11 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     //console.info(" >>>>>>>>>>>  introduction: ", introduction)
     // check if the user put in direct action like "delete all"
-    checkAllDirectActions(introduction, lastUserResponse).then((data) => {
-      
-    })
+    const actionMessage = checkAllDirectActions(introduction, lastUserResponse)
+    if (actionMessage != "") {
+      args = actionMessage
+      return args
+    }
  
     
     // let inject args if the user said "yes" to actions
@@ -1525,6 +1552,11 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       // if args are passed in and isNew (no assistant message) then go ahead and add Assistant message
       // user sent a direct message to execute a tool without assistant getting involved
       if (isNew == true && args != "") {
+
+        if (args != "" && content == "") {
+          content = "how can I help you? "
+        }
+
         const message: ChatMessage = {
           id: prevMessages.length + 1,
           role: Role.Assistant,
@@ -1552,9 +1584,15 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         const msgs = [...prevMessages, message]
         return msgs;
       } else {
+
+        let updatedContent = prevMessages[prevMessages.length - 1].content
+        if (updatedContent != content) {
+          updatedContent = updatedContent + content
+        }
+        
         const updatedMessage = {
           ...prevMessages[prevMessages.length - 1],
-          content: prevMessages[prevMessages.length - 1].content + content,
+          content: updatedContent,
           args: prevMessages[prevMessages.length - 1].args + args
         };
         // Replace the old last message with the updated one
@@ -1705,10 +1743,18 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         <AddSavingsModal
           isVisible={isAddSavingsModalVisible}
           onClose={handleOnAddSavingsModalClose}
+          onRefresh={() => {
+            handleRefreshAttestations();
+            handleRefreshAccounts();
+          }}
         />
         <AddAccountModal
           isVisible={isAddAccountModalVisible}
           onClose={handleOnAddAccountModalClose}
+          onRefresh={() => {
+            handleRefreshAttestations();
+            handleRefreshAccounts();
+          }}
         />
         <OrgModal
           orgName={newOrgName?newOrgName:""}
@@ -1788,6 +1834,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           <RightSide
             className="rightside-container w-full"
             appCommand={appCommand}
+            onRefreshAttestations={handleRefreshAttestations}
+            onRefreshAccounts={handleRefreshAccounts}
           />
         </div>
       </div>
