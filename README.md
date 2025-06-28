@@ -9,7 +9,7 @@ MyOrgWallet is a cutting-edge Web3 digital wallet designed for organizations, em
 - [Add Savings Account to myOrgWallet](https://youtu.be/n4jc32Hee4A)
 - [Manage Savings Account Access Control within myOrgWallet](https://youtu.be/qnEPM7phJHU)
 - [Add MetaMask Card to CoA within myOrgWallet](https://youtu.be/Slr2FNpOeo8)
-- [Fund MetaMask Card with USDC using CCTP v2](https://odysee.com/FundMetaMaskCardFinished:4)
+- [Fund MetaMask Card with USDC using CCTP v2](https://youtu.be/7sSvjFEwiNw)
 
 ### Account Abstraction (AA):
 
