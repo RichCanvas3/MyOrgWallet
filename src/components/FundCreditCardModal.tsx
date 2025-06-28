@@ -1730,31 +1730,31 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
       case 3:
         return (
-          <>
+          <Box display="flex" flexDirection="column" height="100%">
             <Typography variant="h6" gutterBottom>
               Confirm Transfer
             </Typography>
             
-            <Box sx={{ mt: 2 }}>
-              {/* Transfer Amount - Made more prominent */}
+            <Box sx={{ flex: 1, overflow: 'auto' }}>
+              {/* Transfer Amount - Made smaller */}
               <Paper 
                 variant="outlined" 
                 sx={{ 
-                  p: 3, 
-                  mb: 3, 
+                  p: 2, 
+                  mb: 2, 
                   textAlign: 'center',
                   border: '2px solid',
                   borderColor: 'primary.main',
                   backgroundColor: 'primary.50'
                 }}
               >
-                <Typography variant="h5" component="div" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                <Typography variant="h6" component="div" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                   Transfer Amount
                 </Typography>
-                <Typography variant="h4" component="div" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+                <Typography variant="h5" component="div" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
                   {fundingAmount} {selectedToken}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                <Typography variant="body2" color="text.secondary">
                   From savings accounts to credit card
                 </Typography>
               </Paper>
@@ -1865,12 +1865,12 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
               )}
             </Box>
             
-            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
+            {/* Action buttons - moved up and always visible */}
+            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
               <Button onClick={handleBack}>Back</Button>
               <Button 
                 variant="contained" 
                 onClick={handleConfirmTransfer}
-                
                 color="primary"
               >
                 {isLoading ? <CircularProgress size={24} /> : 'Confirm Transfer'}
@@ -1891,7 +1891,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
                 {error}
               </Alert>
             )}
-          </>
+          </Box>
         );
 
       default:

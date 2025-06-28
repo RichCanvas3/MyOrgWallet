@@ -39,6 +39,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
   useEffect(() => {
     // if wallet is defined and we have not defined smart wallet
     if (isConnected && isIndividualConnected && orgDid && indivDid && !location.pathname.startsWith('/readme')) {
+      setIsLoading(false); // Clear loading state when navigation happens
       navigate('/chat/')
     } else  {
       //console.info("...... error")
@@ -64,6 +65,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
       if (error.message === "Signatory not configured") {
         // Handle this specific error with a user-friendly message
         alert("Please configure your wallet signatory before connecting.");
+        setIsLoading(false); // Clear loading state on error
       } else if (error.message.startsWith("Unrecognized chain ID")) {
 
         const params = {
@@ -98,9 +100,8 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
       } else {
         // Generic error fallback
         alert("An error occurred " + error.message);
+        setIsLoading(false); // Clear loading state on error
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 

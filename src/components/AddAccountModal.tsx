@@ -329,17 +329,7 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose })
                     </Tooltip>
                   </Box>
                   
-                  <Box>
-                    <Box display="flex" alignItems="center" gap={1} sx={{ mb: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Account Name
-                      </Typography>
-                      <Tooltip title="Enter a descriptive name for this account to help identify it in your organization's records.">
-                        <IconButton size="small" sx={{ p: 0 }} tabIndex={-1}>
-                          <InfoIcon fontSize="small" color="action" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
+                  <Box sx={{ mt: 2 }}>
                     <TextField
                       fullWidth
                       label="Account Name"
@@ -349,6 +339,7 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose })
                       placeholder="Enter a name for this account"
                       error={!!error}
                       helperText={error}
+                      autoFocus
                       onKeyPress={(e) => {
                         if (e.key === 'Enter' && accountName && coaCode && coaCategory && !isLoading) {
                           handleSave();
@@ -357,17 +348,7 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose })
                     />
                   </Box>
 
-                  <Box>
-                    <Box display="flex" alignItems="center" gap={1} sx={{ mb: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        CoA Code
-                      </Typography>
-                      <Tooltip title="Enter the Chart of Accounts code that corresponds to this account type (e.g., 1000 for Assets, 2000 for Liabilities).">
-                        <IconButton size="small" sx={{ p: 0 }} tabIndex={-1}>
-                          <InfoIcon fontSize="small" color="action" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
+                  <Box sx={{ mt: 3 }}>
                     <TextField
                       fullWidth
                       label="CoA Code"
@@ -383,17 +364,7 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose })
                     />
                   </Box>
 
-                  <Box>
-                    <Box display="flex" alignItems="center" gap={1} sx={{ mb: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        CoA Category
-                      </Typography>
-                      <Tooltip title="Select the appropriate category from the Chart of Accounts hierarchy. This helps organize your account within the financial structure.">
-                        <IconButton size="small" sx={{ p: 0 }} tabIndex={-1}>
-                          <InfoIcon fontSize="small" color="action" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
+                  <Box sx={{ mt: 3 }}>
                     <Autocomplete
                       fullWidth
                       options={COA_OPTIONS}
@@ -401,18 +372,6 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose })
                       value={COA_OPTIONS.find(option => option.displayName === coaCategory) || null}
                       onChange={(event, newValue) => {
                         setCoaCategory(newValue ? newValue.displayName : '');
-                      }}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Tab') {
-                          // Get the currently highlighted option and select it
-                          const input = event.target as HTMLInputElement;
-                          const highlightedOption = COA_OPTIONS.find(option => 
-                            option.displayName.toLowerCase().includes(input.value.toLowerCase())
-                          );
-                          if (highlightedOption) {
-                            setCoaCategory(highlightedOption.displayName);
-                          }
-                        }
                       }}
                       renderInput={(params) => (
                         <TextField 
@@ -430,7 +389,6 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose })
                       clearOnBlur
                       selectOnFocus
                       handleHomeEndKeys
-                      autoSelect
                       sx={{ minHeight: '56px' }}
                     />
                   </Box>

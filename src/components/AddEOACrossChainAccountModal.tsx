@@ -76,6 +76,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
 import { Transition } from '@headlessui/react';
 import { useWallectConnectContext } from "../context/walletConnectContext";
@@ -97,6 +99,7 @@ import { useCrossChainAccount } from "../hooks/useCrossChainTools";
 import { IRIS_API_URL, CHAIN_IDS_TO_BUNDLER_URL, CHAIN_IDS_TO_MESSAGE_TRANSMITTER, CHAIN_IDS_TO_EXPLORER_URL, CIRCLE_SUPPORTED_CHAINS, CHAIN_IDS_TO_USDC_ADDRESSES, CHAIN_TO_CHAIN_NAME, CHAIN_IDS_TO_TOKEN_MESSENGER, CHAIN_IDS_TO_RPC_URLS, DESTINATION_DOMAINS, CHAINS } from '../libs/chains';
 import { chainIdNetworkParamsMapping } from '@blockchain-lab-um/masca-connector';
 import { COA_OPTIONS } from '../constants/chartOfAccounts';
+import InfoIcon from '@mui/icons-material/Info';
 
 // Debug: Check if COA_OPTIONS is imported correctly
 console.log('COA_OPTIONS imported:', COA_OPTIONS?.length, 'items');
@@ -665,16 +668,6 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
 
   };
 
-  useEffect(() => {
-    if (isVisible && activeStep === 0) {
-      if (!isConnected) {
-        connectWallet();
-      } else {
-        getMetaMaskAccounts();
-      }
-    }
-  }, [isVisible, activeStep, isConnected]);
-
   const renderStepContent = () => {
     switch (activeStep) {
       case 0:
@@ -701,6 +694,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
                       onChange={(e) => handleChainSelect(e.target.value as number)}
                       label="Select Chain"
                       disabled={isSwitchingChain}
+                      autoFocus
                     >
                       {availableChains.map((chain) => (
                         <MenuItem key={chain.id} value={chain.id}>
@@ -752,11 +746,14 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
             </Box>
 
             {isConnected && (
-              <Box display="flex" justifyContent="flex-end" gap={2} mt={4}>
+              <Box display="flex" justifyContent="space-between" gap={2} mt={4}>
+                <Button onClick={handleBack} tabIndex={-1}>
+                  Back
+                </Button>
                 <Button
                   variant="contained"
                   onClick={handleNext}
-                  disabled={!selectedAccount || isSwitchingChain}
+                  disabled={!selectedChain || !selectedAccount}
                 >
                   Next
                 </Button>
@@ -767,18 +764,11 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
 
       case 1:
         return (
-          <Box display="flex" flexDirection="column" gap={3} p={2} sx={{ flex: 1, justifyContent: "space-between" }}>
+          <Box display="flex" flexDirection="column" gap={2} p={2} sx={{ flex: 1, justifyContent: "space-between" }}>
             <Box>
               <Typography variant="h6" gutterBottom>
                 Account Details
               </Typography>
-              
-              <Alert severity="info" sx={{ mb: 3 }}>
-                <Typography variant="body2">
-                  <strong>Account Information Required:</strong> Please provide the following details to create your account attestation. 
-                  This information helps categorize and organize your account within the organization's chart of accounts.
-                </Typography>
-              </Alert>
 
               <Typography variant="body2" color="text.secondary">
                 Selected Account: {selectedAccount.slice(0, 6)}...{selectedAccount.slice(-4)}
@@ -806,51 +796,97 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
                 </Box>
               </Box>
 
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 3, mb: 2 }}>
-                Enter the following details for your account:
-              </Typography>
+              <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ mt: 4, mb: 2 }}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Enter the following details for your account:
+                </Typography>
+                <Tooltip title="This information helps categorize and organize your account within the organization's chart of accounts.">
+                  <IconButton size="small" sx={{ p: 0 }} tabIndex={-1}>
+                    <InfoIcon fontSize="small" color="action" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
 
-              <TextField
-                fullWidth
-                label="Account Name"
-                variant="outlined"
-                value={accountName}
-                onChange={(e) => setAccountName(e.target.value)}
-                placeholder="Enter a name for this account"
-                error={!!error}
-                helperText={error}
-              />
+              <Box sx={{ mt: 2 }}>
+                <TextField
+                  fullWidth
+                  label="Account Name"
+                  variant="outlined"
+                  value={accountName}
+                  onChange={(e) => setAccountName(e.target.value)}
+                  placeholder="Enter a name for this account"
+                  error={!!error}
+                  helperText={error}
+                  autoFocus
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && accountName && coaCode && selectedCoaCategory && !isLoading) {
+                      handleNext();
+                    }
+                  }}
+                />
+              </Box>
 
-              <TextField
-                fullWidth
-                label="CoA Code"
-                variant="outlined"
-                value={coaCode}
-                onChange={(e) => setCoaCode(e.target.value)}
-                placeholder="Enter the Chart of Accounts code"
-              />
+              <Box sx={{ mt: 3 }}>
+                <TextField
+                  fullWidth
+                  label="CoA Code"
+                  variant="outlined"
+                  value={coaCode}
+                  onChange={(e) => setCoaCode(e.target.value)}
+                  placeholder="Enter the Chart of Accounts code"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && accountName && coaCode && selectedCoaCategory && !isLoading) {
+                      handleNext();
+                    }
+                  }}
+                />
+              </Box>
 
-              <Autocomplete
-                fullWidth
-                options={COA_OPTIONS}
-                getOptionLabel={(option) => option.displayName}
-                value={COA_OPTIONS.find(option => option.id === selectedCoaCategory) || null}
-                onChange={(event, newValue) => {
-                  setSelectedCoaCategory(newValue ? newValue.id : '');
-                }}
-                renderInput={(params) => (
-                  <TextField {...params} label="CoA Category" placeholder="Search or select a category..." />
-                )}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-                clearOnBlur
-                selectOnFocus
-                handleHomeEndKeys
-                sx={{ minHeight: '56px' }}
-              />
+              <Box sx={{ mt: 3 }}>
+                <Autocomplete
+                  fullWidth
+                  options={COA_OPTIONS}
+                  getOptionLabel={(option) => option.displayName}
+                  value={COA_OPTIONS.find(option => option.id === selectedCoaCategory) || null}
+                  onChange={(event, newValue) => {
+                    setSelectedCoaCategory(newValue ? newValue.id : '');
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Tab') {
+                      // Get the currently highlighted option and select it
+                      const input = event.target as HTMLInputElement;
+                      const highlightedOption = COA_OPTIONS.find(option => 
+                        option.displayName.toLowerCase().includes(input.value.toLowerCase())
+                      );
+                      if (highlightedOption) {
+                        setSelectedCoaCategory(highlightedOption.id);
+                      }
+                    }
+                  }}
+                  renderInput={(params) => (
+                    <TextField 
+                      {...params} 
+                      label="CoA Category" 
+                      placeholder="Search or select a category..."
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && accountName && coaCode && selectedCoaCategory && !isLoading) {
+                          handleNext();
+                        }
+                      }}
+                    />
+                  )}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                  clearOnBlur
+                  selectOnFocus
+                  handleHomeEndKeys
+                  autoSelect
+                  sx={{ minHeight: '56px' }}
+                />
+              </Box>
             </Box>
 
             <Box display="flex" justifyContent="space-between" gap={2} mt={4}>
-              <Button onClick={handleBack}>
+              <Button onClick={handleBack} tabIndex={-1}>
                 Back
               </Button>
               <Button
@@ -874,7 +910,19 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
               
               <Alert severity="info">
                 <Typography variant="body2">
-                  You are about to create an account attestation with the following details:
+                  You are about to create an account attestation with the following details. This will:
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  • Create a verifiable credential for your account
+                </Typography>
+                <Typography variant="body2">
+                  • Generate an individual account attestation
+                </Typography>
+                <Typography variant="body2">
+                  • Generate an organizational account delegation attestation
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  Please review the details below and click "Create Account" to proceed.
                 </Typography>
               </Alert>
 
@@ -913,15 +961,16 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
             </Box>
 
             <Box display="flex" justifyContent="space-between" gap={2} mt={4}>
-              <Button onClick={handleBack}>
+              <Button onClick={handleBack} tabIndex={-1}>
                 Back
               </Button>
               <Button
                 variant="contained"
                 onClick={handleSave}
                 disabled={isLoading}
+                startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : undefined}
               >
-                {isLoading ? <CircularProgress size={24} /> : 'Create Account'}
+                {isLoading ? 'Creating Account...' : 'Create Account'}
               </Button>
             </Box>
           </Box>
@@ -978,6 +1027,16 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
       throw error;
     }
   };
+
+  useEffect(() => {
+    if (isVisible && activeStep === 0) {
+      if (!isConnected) {
+        connectWallet();
+      } else {
+        getMetaMaskAccounts();
+      }
+    }
+  }, [isVisible, activeStep, isConnected]);
 
   return (
     <Transition show={isVisible} as={React.Fragment}>
