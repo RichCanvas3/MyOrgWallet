@@ -17,6 +17,9 @@ import {
   Button,
   CircularProgress,
   Autocomplete,
+  Alert,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
 import { Transition } from '@headlessui/react';
 import { useWallectConnectContext } from "../context/walletConnectContext";
@@ -52,6 +55,8 @@ import {
 import { createPimlicoClient } from "permissionless/clients/pimlico";
 
 import { BUNDLER_URL, PAYMASTER_URL } from "../config";
+
+import InfoIcon from '@mui/icons-material/Info';
 
 interface AddSavingsModalProps {
   isVisible: boolean;
@@ -313,48 +318,122 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose })
                 </Box>
               ) : (
                 <Box display="flex" flexDirection="column" gap={3} p={2}>
-                  <Typography variant="subtitle1" color="text.secondary">
-                    Connected Account: {address?.slice(0, 6)}...{address?.slice(-4)}
-                  </Typography>
+                  <Box display="flex" alignItems="center" gap={1} sx={{ mb: 2 }}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Enter the following details for your account:
+                    </Typography>
+                    <Tooltip title="This information helps categorize and organize your account within the organization's chart of accounts.">
+                      <IconButton size="small" sx={{ p: 0 }} tabIndex={-1}>
+                        <InfoIcon fontSize="small" color="action" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                   
-                  <TextField
-                    fullWidth
-                    label="Savings Account Name"
-                    variant="outlined"
-                    value={accountName}
-                    onChange={(e) => setAccountName(e.target.value)}
-                    placeholder="Enter a name for this savings account"
-                    error={!!error}
-                    helperText={error}
-                  />
+                  <Box>
+                    <Box display="flex" alignItems="center" gap={1} sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Account Name
+                      </Typography>
+                      <Tooltip title="Enter a descriptive name for this account to help identify it in your organization's records.">
+                        <IconButton size="small" sx={{ p: 0 }} tabIndex={-1}>
+                          <InfoIcon fontSize="small" color="action" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                    <TextField
+                      fullWidth
+                      label="Account Name"
+                      variant="outlined"
+                      value={accountName}
+                      onChange={(e) => setAccountName(e.target.value)}
+                      placeholder="Enter a name for this account"
+                      error={!!error}
+                      helperText={error}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && accountName && coaCode && coaCategory && !isLoading) {
+                          handleSave();
+                        }
+                      }}
+                    />
+                  </Box>
 
-                  <TextField
-                    fullWidth
-                    label="CoA Code"
-                    variant="outlined"
-                    value={coaCode}
-                    onChange={(e) => setCoaCode(e.target.value)}
-                    placeholder="Enter the Chart of Accounts code"
-                  />
+                  <Box>
+                    <Box display="flex" alignItems="center" gap={1} sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        CoA Code
+                      </Typography>
+                      <Tooltip title="Enter the Chart of Accounts code that corresponds to this account type (e.g., 1000 for Assets, 2000 for Liabilities).">
+                        <IconButton size="small" sx={{ p: 0 }} tabIndex={-1}>
+                          <InfoIcon fontSize="small" color="action" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                    <TextField
+                      fullWidth
+                      label="CoA Code"
+                      variant="outlined"
+                      value={coaCode}
+                      onChange={(e) => setCoaCode(e.target.value)}
+                      placeholder="Enter the Chart of Accounts code"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && accountName && coaCode && coaCategory && !isLoading) {
+                          handleSave();
+                        }
+                      }}
+                    />
+                  </Box>
 
-                  <Autocomplete
-                    fullWidth
-                    options={COA_OPTIONS}
-                    getOptionLabel={(option) => option.displayName}
-                    value={COA_OPTIONS.find(option => option.displayName === coaCategory) || null}
-                    onChange={(event, newValue) => {
-                      setCoaCategory(newValue ? newValue.displayName : '');
-                    }}
-                    renderInput={(params) => (
-                      <TextField {...params} label="CoA Category" placeholder="Search or select a category..." />
-                    )}
-                    isOptionEqualToValue={(option, value) => option.displayName === value.displayName}
-                    freeSolo
-                    clearOnBlur
-                    selectOnFocus
-                    handleHomeEndKeys
-                    sx={{ minHeight: '56px' }}
-                  />
+                  <Box>
+                    <Box display="flex" alignItems="center" gap={1} sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        CoA Category
+                      </Typography>
+                      <Tooltip title="Select the appropriate category from the Chart of Accounts hierarchy. This helps organize your account within the financial structure.">
+                        <IconButton size="small" sx={{ p: 0 }} tabIndex={-1}>
+                          <InfoIcon fontSize="small" color="action" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                    <Autocomplete
+                      fullWidth
+                      options={COA_OPTIONS}
+                      getOptionLabel={(option) => option.displayName}
+                      value={COA_OPTIONS.find(option => option.displayName === coaCategory) || null}
+                      onChange={(event, newValue) => {
+                        setCoaCategory(newValue ? newValue.displayName : '');
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Tab') {
+                          // Get the currently highlighted option and select it
+                          const input = event.target as HTMLInputElement;
+                          const highlightedOption = COA_OPTIONS.find(option => 
+                            option.displayName.toLowerCase().includes(input.value.toLowerCase())
+                          );
+                          if (highlightedOption) {
+                            setCoaCategory(highlightedOption.displayName);
+                          }
+                        }
+                      }}
+                      renderInput={(params) => (
+                        <TextField 
+                          {...params} 
+                          label="CoA Category" 
+                          placeholder="Search or select a category..."
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter' && accountName && coaCode && coaCategory && !isLoading) {
+                              handleSave();
+                            }
+                          }}
+                        />
+                      )}
+                      isOptionEqualToValue={(option, value) => option.displayName === value.displayName}
+                      clearOnBlur
+                      selectOnFocus
+                      handleHomeEndKeys
+                      autoSelect
+                      sx={{ minHeight: '56px' }}
+                    />
+                  </Box>
 
                   <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
                     <Button

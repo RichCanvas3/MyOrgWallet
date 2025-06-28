@@ -137,7 +137,7 @@ Design a solution showcasing these features, such as a decentralized eCommerce p
 
 
 
-* add account (category: 1110 - Main Savings)
+* add account (category: 1110 - Savings)
     - create smart account and set CoA category
     - delegation from savings account to org (org has permission to move money)
     - create VC and attestation for savings account

@@ -773,6 +773,13 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
                 Account Details
               </Typography>
               
+              <Alert severity="info" sx={{ mb: 3 }}>
+                <Typography variant="body2">
+                  <strong>Account Information Required:</strong> Please provide the following details to create your account attestation. 
+                  This information helps categorize and organize your account within the organization's chart of accounts.
+                </Typography>
+              </Alert>
+
               <Typography variant="body2" color="text.secondary">
                 Selected Account: {selectedAccount.slice(0, 6)}...{selectedAccount.slice(-4)}
               </Typography>
@@ -798,6 +805,10 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose })
                   />
                 </Box>
               </Box>
+
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 3, mb: 2 }}>
+                Enter the following details for your account:
+              </Typography>
 
               <TextField
                 fullWidth
