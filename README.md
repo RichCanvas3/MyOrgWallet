@@ -6,10 +6,41 @@ MyOrgWallet is a cutting-edge Web3 digital wallet designed for organizations, em
 
 [Watch the MyOrgWallet demo video](https://youtu.be/2WAkvM0JogA)
 
+### Organization Chart-of-Accounts (CoA):
+
 - [Add Savings Account to myOrgWallet](https://youtu.be/n4jc32Hee4A)
 - [Manage Savings Account Access Control within myOrgWallet](https://youtu.be/qnEPM7phJHU)
 - [Add MetaMask Card to CoA within myOrgWallet](https://youtu.be/Slr2FNpOeo8)
 - [Fund MetaMask Card with USDC using CCTP v2](https://youtu.be/7sSvjFEwiNw)
+- [Fund MetaMask Card with USDC using LiFi]
+
+
+### Pillars of Know-Your-Business (KYB):
+
+#### Verified Leadership
+- [Individual leader KYC: via MetaMask Card USDC transfer check]
+- [Proof of control /authority: Public Attestation of MetaMask delegation of authority, VC's]
+
+#### Verified Organization Identity
+- [Verified Legal Registration: Organization registration records (Secratery-of-State). Attestations & VC's]
+- [Verified Web Presence: Verified DNS + ENS (did:web, did:ens)]
+- [Social Proofs: Verified LinkedIn, X, Shopify via sign-in with OAuth.  Attestations & VC's]
+
+#### Verified Finance
+- [Verified CoA organization finances, with Proof of funds.  Attestations & VC's]
+- [Delegated Spending / Budgeting. Smart Accounts with delegation controls.  Attestations & VC's]
+
+#### Verified Compliance
+- [Certificate of Insurance: Issued by insurers, verifiable via attestations.  Attestations & VC's]
+- [Regulatory Licenses.  Attestations & VC's]
+
+#### Reputation & Ecosystem Trust
+- [Third-party endorsements: .  Attestations & VC's]
+- [Customer Reviews / Outcomes based.  Attestations & VC's]
+
+
+
+## Technical Capabilities
 
 ### Account Abstraction (AA):
 
