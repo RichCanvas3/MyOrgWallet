@@ -6,14 +6,20 @@ MyOrgWallet is a cutting-edge Web3 digital wallet designed for organizations, em
 
 [Watch the MyOrgWallet demo video](https://youtu.be/2WAkvM0JogA)
 
+### Smart Agentic AI Driven Org Wallet Management
+
+- Assitant driven wallet management (OpenAI, LangChain,...)
+
 ### Organization Chart-of-Accounts (CoA):
 
 - [Add Savings Account to myOrgWallet](https://odysee.com/AddSavingsAccountToMyOrgWallet:0) - mainnet and testnet
 - [Manage Savings Account Access Control within myOrgWallet](https://odysee.com/AddAccountAccessFull:6) - mainnet and testnet
 - [Add MetaMask Card to CoA within myOrgWallet](https://odysee.com/AddSavingsAccount:6) - mainnet and testnet
-    >> [Verify MetaMask Card EOA Account is valid](https://odysee.com/MetaMaskCardVerifier:5) - linea mainnet
+    [Verify MetaMask Card EOA Account is valid](https://odysee.com/MetaMaskCardVerifier:5) - linea mainnet
 - [Fund MetaMask Card with USDC using CCTP v2](https://odysee.com/FundMetaMaskCardFinished:4) - sepolia testnet, linea sepolia testnet
 - [Fund MetaMask Card with USDC using LiFi] - optimism mainnet, linea mainnet
+
+### MCP Client Agent to Org Agent Contracts and Funding (USDC via CCTP v2 and LiFi)
 
 
 ### Pillars of Know-Your-Business (KYB):
