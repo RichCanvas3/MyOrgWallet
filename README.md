@@ -8,17 +8,18 @@ MyOrgWallet is a cutting-edge Web3 digital wallet designed for organizations, em
 
 ### Organization Chart-of-Accounts (CoA):
 
-- [Add Savings Account to myOrgWallet](https://youtu.be/n4jc32Hee4A)
-- [Manage Savings Account Access Control within myOrgWallet](https://youtu.be/qnEPM7phJHU)
-- [Add MetaMask Card to CoA within myOrgWallet](https://youtu.be/Slr2FNpOeo8)
-- [Fund MetaMask Card with USDC using CCTP v2](https://youtu.be/7sSvjFEwiNw)
-- [Fund MetaMask Card with USDC using LiFi]
+- [Add Savings Account to myOrgWallet](https://odysee.com/AddSavingsAccountToMyOrgWallet:0) - mainnet and testnet
+- [Manage Savings Account Access Control within myOrgWallet](https://odysee.com/AddAccountAccessFull:6) - mainnet and testnet
+- [Add MetaMask Card to CoA within myOrgWallet](https://odysee.com/AddSavingsAccount:6) - mainnet and testnet
+    >> [Verify MetaMask Card EOA Account is valid](https://odysee.com/MetaMaskCardVerifier:5) - linea mainnet
+- [Fund MetaMask Card with USDC using CCTP v2](https://odysee.com/FundMetaMaskCardFinished:4) - sepolia testnet, linea sepolia testnet
+- [Fund MetaMask Card with USDC using LiFi] - optimism mainnet, linea mainnet
 
 
 ### Pillars of Know-Your-Business (KYB):
 
 #### Verified Leadership
-- [Individual leader KYC: via MetaMask Card USDC transfer check]
+- [Individual leader KYC: via MetaMask Card USDC transfer check](https://odysee.com/MetaMaskCardVerifier:5)
 - [Proof of control /authority: Public Attestation of MetaMask delegation of authority, VC's]
 
 #### Verified Organization Identity
