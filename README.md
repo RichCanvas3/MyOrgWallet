@@ -42,9 +42,9 @@
 
 | Feature | Description | Networks |
 |---------|-------------|----------|
-| [Verify MetaMask Card EOA](https://odysee.com/MetaMaskCardVerifier2) | Verified transactions via 0xA90b...dD2 | Linea Mainnet |
-| [Fund Cards with USDC (CCTP v2)](https://odysee.com/FundMetaMaskCardFinished:4) | USDC transfer from Client AA (session) to Server AA | Sepolia & Linea Testnet |
-| [Fund Cards with USDC (LiFi)](https://odysee.com/FundMetaMaskCardFinished:4) |  | Optimism & Linea 
+| [Verify MetaMask Card EOA](https://odysee.com/MetaMaskCardVerifier2) | Verification and analysis of Card withdrawals via contract 0xA90b...dD2 | Linea Mainnet |
+| [Fund MetaMask Card with USDC (CCTP v2)](https://odysee.com/MCPAgentTransfer:6) | USDC transfer from Savings Account | Sepolia & Linea Testnet |
+| [Fund MetaMask Card with USDC (LiFi)](https://odysee.com/FundMetaMaskCardFinished:4) | USDC transfer from Savings Account | Optimism & Linea Mainnet
 | [Add Savings Account](https://odysee.com/AddSavingsAccountToMyOrgWallet:0) |  | Mainnet & Testnet |
 | [Manage Account Access Control](https://odysee.com/AddAccountAccessFull:6) |  | Mainnet & Testnet |
 | [Add MetaMask Card to CoA](https://odysee.com/AddSavingsAccount:6) |  | Mainnet & Testnet |
