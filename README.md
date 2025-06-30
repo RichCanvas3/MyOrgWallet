@@ -7,12 +7,15 @@
 ![Web3](https://img.shields.io/badge/Web3-F16822?style=for-the-badge&logo=web3.js&logoColor=white)
 ![Ethereum](https://img.shields.io/badge/Ethereum-3C3C3D?style=for-the-badge&logo=Ethereum&logoColor=white)
 ![MetaMask](https://img.shields.io/badge/MetaMask-FF6B35?style=for-the-badge&logo=MetaMask&logoColor=white)
+![USDC](https://img.shields.io/badge/USDC-2775CA?style=for-the-badge&logo=circle&logoColor=white)
+![CCTP](https://img.shields.io/badge/CCTP%20v2-000000?style=for-the-badge&logo=circle&logoColor=white)
+![LiFi](https://img.shields.io/badge/LiFi-000000?style=for-the-badge&logo=circle&logoColor=white)
 
 **🚀 The Future of Organizational Digital Wallets**  
 *Empowering seamless and secure Web3 interactions for organizations*
 
 [![Demo Video](https://img.shields.io/badge/Watch-Demo%20Video-red?style=for-the-badge&logo=youtube)](https://youtu.be/2WAkvM0JogA)
-[![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
+
 
 </div>
 
@@ -29,7 +32,7 @@
 - 🔐 **Advanced Security** - Account Abstraction (ERC-4337) with delegation controls
 - 📜 **Verifiable Credentials** - W3C compliant digital identity management
 - 🌐 **Cross-Chain Support** - Multi-chain operations with CCTP v2 and LiFi
-- 🎯 **KYB Compliance** - Know-Your-Business verification framework
+- 🎯 **KYB Compliance** - Know-Your-Business verification framework leveraging MetaMask Card verification
 
 ---
 
@@ -37,18 +40,23 @@
 
 ### 🏦 Organization Chart-of-Accounts (CoA)
 
-| Feature | Status | Networks |
-|---------|--------|----------|
-| [Add Savings Account](https://odysee.com/AddSavingsAccountToMyOrgWallet:0) | ✅ Live | Mainnet & Testnet |
-| [Manage Account Access Control](https://odysee.com/AddAccountAccessFull:6) | ✅ Live | Mainnet & Testnet |
-| [Add MetaMask Card to CoA](https://odysee.com/AddSavingsAccount:6) | ✅ Live | Mainnet & Testnet |
-| [Verify MetaMask Card EOA](https://odysee.com/MetaMaskCardVerifier:5) | ✅ Live | Linea Mainnet |
-| [Fund Cards with USDC (CCTP v2)](https://odysee.com/FundMetaMaskCardFinished:4) | ✅ Live | Sepolia & Linea Testnet |
-| [Fund Cards with USDC (LiFi)](https://odysee.com/FundMetaMaskCardFinished:4) | ✅ Live | Optimism & Linea Mainnet |
+| Feature | Description | Networks |
+|---------|-------------|----------|
+| [Verify MetaMask Card EOA](https://odysee.com/MetaMaskCardVerifier:5) | Verified transactions via 0xA90b...dD2 | Linea Mainnet |
+| [Fund Cards with USDC (CCTP v2)](https://odysee.com/FundMetaMaskCardFinished:4) | USDC transfer from Client AA (session) to Server AA | Sepolia & Linea Testnet |
+| [Fund Cards with USDC (LiFi)](https://odysee.com/FundMetaMaskCardFinished:4) |  | Optimism & Linea 
+| [Add Savings Account](https://odysee.com/AddSavingsAccountToMyOrgWallet:0) |  | Mainnet & Testnet |
+| [Manage Account Access Control](https://odysee.com/AddAccountAccessFull:6) |  | Mainnet & Testnet |
+| [Add MetaMask Card to CoA](https://odysee.com/AddSavingsAccount:6) |  | Mainnet & Testnet |
+
 
 ### 🤝 MCP Client Agent Integration
-- **Agent-to-Agent Agreements** - Automated organizational interactions
-- **Cross-Chain Funding** - USDC transfers via CCTP v2 and LiFi protocols
+
+| Feature | Description | Networks |
+|---------|-------------|----------|
+| [Agent-to-Agent Agreement and Payment via ETH native coin](https://odysee.com/MCPAgentTransferEth:0) |  | Mainnet & Testnet |
+| [Cross-Chain Agreement and Payment via USDC CCTP v2](https://odysee.com/MCPAgentTransfer:6) |  | Sepolia & Linea Testnet |
+
 
 ---
 
