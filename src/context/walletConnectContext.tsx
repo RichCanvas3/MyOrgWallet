@@ -345,7 +345,7 @@ export const useWalletConnect = () => {
           {
             name: 'mainnet',
             chainId: '0x1',
-            rpcUrl: `${import.meta.env.MAINNET_RPC_URL}`,
+            rpcUrl: `${import.meta.env.ETHERUM_RPC_URL}`,
             registry: '0xdCa7EF03e98e0DC2B855bE647C39ABe984fcF21B',
           },
           {

@@ -1,51 +1,81 @@
-# MyOrgWallet Web Application
+# 🏢 MyOrgWallet Web Application
 
-## Description
+<div align="center">
 
-MyOrgWallet is a cutting-edge Web3 digital wallet designed for organizations, empowering seamless and secure interactions in decentralized ecosystems.
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Web3](https://img.shields.io/badge/Web3-F16822?style=for-the-badge&logo=web3.js&logoColor=white)
+![Ethereum](https://img.shields.io/badge/Ethereum-3C3C3D?style=for-the-badge&logo=Ethereum&logoColor=white)
+![MetaMask](https://img.shields.io/badge/MetaMask-FF6B35?style=for-the-badge&logo=MetaMask&logoColor=white)
 
-[Watch the MyOrgWallet demo video](https://youtu.be/2WAkvM0JogA)
+**🚀 The Future of Organizational Digital Wallets**  
+*Empowering seamless and secure Web3 interactions for organizations*
 
-### Smart Agentic AI Driven Org Wallet Management
+[![Demo Video](https://img.shields.io/badge/Watch-Demo%20Video-red?style=for-the-badge&logo=youtube)](https://youtu.be/2WAkvM0JogA)
+[![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 
-- Assitant driven wallet management (OpenAI, LangChain,...)
+</div>
 
-### Organization Chart-of-Accounts (CoA):
+---
 
-- [Add Savings Account to myOrgWallet](https://odysee.com/AddSavingsAccountToMyOrgWallet:0) - mainnet and testnet
-- [Manage Savings Account Access Control within myOrgWallet](https://odysee.com/AddAccountAccessFull:6) - mainnet and testnet
-- [Add MetaMask Card to CoA within myOrgWallet](https://odysee.com/AddSavingsAccount:6) - mainnet and testnet
-    [Verify MetaMask Card EOA Account is valid](https://odysee.com/MetaMaskCardVerifier:5) - linea mainnet
-- [Fund MetaMask Card with USDC using CCTP v2](https://odysee.com/FundMetaMaskCardFinished:4) - sepolia testnet, linea sepolia testnet
-- [Fund MetaMask Card with USDC using LiFi] - optimism mainnet, linea mainnet
+## 📋 Overview
 
-### MCP Client Agent to Org Agent Contracts and Funding (USDC via CCTP v2 and LiFi)
+**MyOrgWallet** is a cutting-edge Web3 digital wallet designed for organizations, empowering seamless and secure interactions in decentralized ecosystems. Built with modern blockchain technology and AI-driven management, it provides comprehensive organizational wallet solutions with advanced security and compliance features.
 
+### ✨ Key Features
 
-### Pillars of Know-Your-Business (KYB):
+- 🤖 **Smart Agentic AI Driven Management** - OpenAI and LangChain powered assistant
+- 🏦 **Organization Chart-of-Accounts (CoA)** - Complete financial management
+- 🔐 **Advanced Security** - Account Abstraction (ERC-4337) with delegation controls
+- 📜 **Verifiable Credentials** - W3C compliant digital identity management
+- 🌐 **Cross-Chain Support** - Multi-chain operations with CCTP v2 and LiFi
+- 🎯 **KYB Compliance** - Know-Your-Business verification framework
 
-#### Verified Leadership
-- [Individual leader KYC: via MetaMask Card USDC transfer check](https://odysee.com/MetaMaskCardVerifier:5)
-- [Proof of control /authority: Public Attestation of MetaMask delegation of authority, VC's]
+---
 
-#### Verified Organization Identity
-- [Verified Legal Registration: Organization registration records (Secratery-of-State). Attestations & VC's]
-- [Verified Web Presence: Verified DNS + ENS (did:web, did:ens)]
-- [Social Proofs: Verified LinkedIn, X, Shopify via sign-in with OAuth.  Attestations & VC's]
+## 🎯 Core Capabilities
 
-#### Verified Finance
-- [Verified CoA organization finances, with Proof of funds.  Attestations & VC's]
-- [Delegated Spending / Budgeting. Smart Accounts with delegation controls.  Attestations & VC's]
+### 🏦 Organization Chart-of-Accounts (CoA)
 
-#### Verified Compliance
-- [Certificate of Insurance: Issued by insurers, verifiable via attestations.  Attestations & VC's]
-- [Regulatory Licenses.  Attestations & VC's]
+| Feature | Status | Networks |
+|---------|--------|----------|
+| [Add Savings Account](https://odysee.com/AddSavingsAccountToMyOrgWallet:0) | ✅ Live | Mainnet & Testnet |
+| [Manage Account Access Control](https://odysee.com/AddAccountAccessFull:6) | ✅ Live | Mainnet & Testnet |
+| [Add MetaMask Card to CoA](https://odysee.com/AddSavingsAccount:6) | ✅ Live | Mainnet & Testnet |
+| [Verify MetaMask Card EOA](https://odysee.com/MetaMaskCardVerifier:5) | ✅ Live | Linea Mainnet |
+| [Fund Cards with USDC (CCTP v2)](https://odysee.com/FundMetaMaskCardFinished:4) | ✅ Live | Sepolia & Linea Testnet |
+| [Fund Cards with USDC (LiFi)](https://odysee.com/FundMetaMaskCardFinished:4) | ✅ Live | Optimism & Linea Mainnet |
 
-#### Reputation & Ecosystem Trust
-- [Third-party endorsements: .  Attestations & VC's]
-- [Customer Reviews / Outcomes based.  Attestations & VC's]
+### 🤝 MCP Client Agent Integration
+- **Agent-to-Agent Agreements** - Automated organizational interactions
+- **Cross-Chain Funding** - USDC transfers via CCTP v2 and LiFi protocols
 
+---
 
+## 🏛️ Pillars of Know-Your-Business (KYB)
+
+### 👑 Verified Leadership
+- **Individual Leader KYC** - MetaMask Card USDC transfer verification
+- **Proof of Authority** - Public attestations with delegation credentials
+
+### 🏢 Verified Organization Identity
+- **Legal Registration** - Secretary-of-State records with attestations
+- **Web Presence** - Verified DNS + ENS (did:web, did:ens)
+- **Social Proofs** - LinkedIn, X, Shopify OAuth verification
+
+### 💰 Verified Finance
+- **CoA Organization Finances** - Proof of funds with attestations
+- **Delegated Spending** - Smart accounts with delegation controls
+
+### 📋 Verified Compliance
+- **Certificate of Insurance** - Insurer-issued verifiable attestations
+- **Regulatory Licenses** - On-chain compliance verification
+
+### 🌟 Reputation & Ecosystem Trust
+- **Third-party Endorsements** - Community-driven trust signals
+- **Customer Reviews** - Outcome-based reputation system
+
+---
 
 ## Technical Capabilities
 
