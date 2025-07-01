@@ -57,20 +57,35 @@ All access control of accounts is managed via MetaMask Delegations between indiv
 |---------|-------------|----------|
 | [Verify MetaMask Card EOA](https://odysee.com/MetaMaskCardVerifier2) | Verification and analysis of Card withdrawals via contract 0xA90b...dD2 | Linea Mainnet |
 | [Fund MetaMask Card with USDC (LiFi)](https://odysee.com/fundtransferusingLiFiMainnet:1) | USDC transfer from Savings Account -- LiFi | Optimism & Linea Mainnet
-| [Fund MetaMask Card with USDC (CCTP v2)](https://odysee.com/FundCardUsingCCTP:c) | USDC transfer from Savings Account - CCTP v2 | Sepolia & Linea Testnet |
+| [Fund MetaMask Card with USDC (CCTP v2)](https://odysee.com/fundtransferusingLiFiMainnetv2:2) | USDC transfer from Savings Account - CCTP v2 | Sepolia & Linea Testnet |
 | [Fund MetaMask Card with ERC-20 transfer](https://odysee.com/FundCardIntraChain:5) | USDC transfer from Savings Account - ERC-20 transfer | Optimism Mainnet |
 | [Add Savings Account](https://odysee.com/AddSavingsAccountMainnet2:0) | Add a new USDC Savings Account to org wallet  | Mainnet & Testnet |
 | [Manage Account Access Control](https://odysee.com/AddAccessControlMainnet:0) | Add user permission to manage USDC Savings Account | Mainnet & Testnet |
 | [Add MetaMask Card to CoA](https://odysee.com/addMetaMaskCardMainnet:f) | Add user MetaMask Card to the org Wallet. Verify Card and add it to org wallet CoA | Mainnet & Testnet |
 
 
-### 🤝 MCP Client Agent Integration
+### 🤝 MCP Client Agent Integration (external agent post USDC to myOrgWallet Operating Accounts)
 
 | Feature | Description | Networks |
 |---------|-------------|----------|
 | [MCP Agent-to-Agent (Intra-chain, Eth)](https://odysee.com/MCPAgentTransferEth:0) | Identity/Trust exchange, Agreement and Payment via ETH native coin | Mainnet & Testnet |
 | [MCP Agent-to-Agent (Cross-chain, USDC CCTP v2)](https://odysee.com/MCPAgentTransfer:6) | Cross-Chain Identity/Trust exechange, Agreement and Payment via USDC CCTP v2 | Sepolia & Base Testnet |
 | [ERC-7715 Permission Delegation Transfer](https://odysee.com/DelegatedPermissions:0) | Inner-chain transfer | Sepolia Testnet |
+
+
+### MetaMask Snap Verifiable Credential Management (view your myOrgWallet VC's using masca.io)
+
+| Feature | Description | Networks |
+|---------|-------------|----------|
+| [myOrgWallet VC's viewable via masca.io](https://odysee.com/MascaVC:6) | All myOrgWallet VC's are stored in MetaMask wallet snap using veramo | Optimism Mainnet |
+
+
+### Attestatation Management (view your myOrgWallet Attestations using https://optimism.easscan.org/)
+Once linea mainnet support DKT myOrgWallet will run under linea mainnet and Verax will be used for attestation management.  myOrgWallet uses Ethereum Attestations services to store all wallet stateful "structure" information except for Verifiable Credentials.   
+
+| Feature | Description | Networks |
+|---------|-------------|----------|
+| [myOrgWallet attestation schemas](https://odysee.com/MascaVC:6) | All myOrgWallet VC's are stored in MetaMask wallet snap using veramo | Optimism Mainnet |
 
 
 ---
