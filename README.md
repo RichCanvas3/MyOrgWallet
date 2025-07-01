@@ -21,7 +21,7 @@
 ---
 
 <div align="center">
-<img src="./public/trustpillars.png" width="800px" alt="Trust Pillars">
+<img src="./public/TrustPillars.png" width="800px" alt="Trust Pillars">
 
 **You know your business best and speak best to things like value and trust.**  
 *Let MyOrgWallet help organize that content and present a standardized trust score to third parties.*
