@@ -30,7 +30,7 @@
   <div>
     <img src="./public/OrgTrustScore.png" height="200px" alt="Trust Score">
     <br>
-    MyOrgWallet helps turn that into trusted, standardized credentials others can trust.
+    MyOrgWallet helps organizations prove they’re trustworthy.
     <br><br>
   </div>
 </div>
