@@ -55,9 +55,10 @@
 | [Verify MetaMask Card EOA](https://odysee.com/MetaMaskCardVerifier2) | Verification and analysis of Card withdrawals via contract 0xA90b...dD2 | Linea Mainnet |
 | [Fund MetaMask Card with USDC (LiFi)](https://odysee.com/FundMetaMaskCardFinished:4) | USDC transfer from Savings Account -- LiFi | Optimism & Linea Mainnet
 | [Fund MetaMask Card with USDC (CCTP v2)](https://odysee.com/FundCardUsingCCTP:c) | USDC transfer from Savings Account - CCTP v2 | Sepolia & Linea Testnet |
-| [Add Savings Account](https://odysee.com/AddSavingsAccountToMyOrgWallet:0) | Add a new USDC Savings Account to org wallet  | Mainnet & Testnet |
-| [Manage Account Access Control](https://odysee.com/AddAccountAccessFull:6) | Add user permission to manage USDC Savings Account | Mainnet & Testnet |
-| [Add MetaMask Card to CoA](https://odysee.com/AddSavingsAccount:6) | Add user MetaMask Card to the org Wallet. Verify Card and add it to org wallet CoA | Mainnet & Testnet |
+| [Fund MetaMask Card with ERC-20 transfer](https://odysee.com/FundCardIntraChain:5) | USDC transfer from Savings Account - ERC-20 transfer | Optimism Mainnet |
+| [Add Savings Account](https://odysee.com/AddSavingsAccountMainnet2:0) | Add a new USDC Savings Account to org wallet  | Mainnet & Testnet |
+| [Manage Account Access Control](https://odysee.com/AddAccessControlMainnet:0) | Add user permission to manage USDC Savings Account | Mainnet & Testnet |
+| [Add MetaMask Card to CoA](https://odysee.com/addMetaMaskCardMainnet:f) | Add user MetaMask Card to the org Wallet. Verify Card and add it to org wallet CoA | Mainnet & Testnet |
 
 
 ### 🤝 MCP Client Agent Integration

@@ -23,8 +23,10 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
   const { data: walletClient } = useWalletClient();
   const [hasProvider, setHasProvider] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [connectionFailed, setConnectionFailed] = useState(false);
+  const [hasAttemptedConnection, setHasAttemptedConnection] = useState(false);
 
-  const { selectedSignatory, signatory, connect, isIndividualConnected, orgDid, indivDid } = useWallectConnectContext();
+  const { selectedSignatory, signatory, connect, isIndividualConnected, orgDid, indivDid, isConnectionComplete } = useWallectConnectContext();
   const { isConnected } = useAccount();
 
   useEffect(() => {
@@ -40,14 +42,20 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
     // if wallet is defined and we have not defined smart wallet
     if (isConnected && isIndividualConnected && orgDid && indivDid && !location.pathname.startsWith('/readme')) {
       setIsLoading(false); // Clear loading state when navigation happens
+      setConnectionFailed(false); // Reset connection failed state
+      setHasAttemptedConnection(false); // Reset connection attempt state
       navigate('/chat/')
-    } else  {
-      //console.info("...... error")
+    } else if (isConnectionComplete && !isIndividualConnected && hasAttemptedConnection) {
+      // Connection process is complete but no accounts found, and user attempted connection
+      setIsLoading(false);
+      setConnectionFailed(true); // Set connection failed state
     }
-  }, [isConnected, isIndividualConnected, orgDid, indivDid]);
+  }, [isConnected, isIndividualConnected, orgDid, indivDid, isConnectionComplete, hasAttemptedConnection]);
 
   const handleConnect = async () => {
     setIsLoading(true);
+    setHasAttemptedConnection(true); // Mark that user has attempted connection
+    setConnectionFailed(false); // Reset connection failed state
     try {
       if (selectedSignatory) {
         const loginResp = await selectedSignatory.login()
@@ -309,6 +317,22 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
           <Button className="connect" variant="contained" size="large" onClick={handleConnect} sx={{backgroundColor: '#48ba2f'}} disabled={isLoading}>
             {isLoading ? <CircularProgress size={20} /> : 'Connect Wallet'}
           </Button>
+
+          {connectionFailed && (
+            <Box sx={{ mt: 2, p: 2, bgcolor: '#fff3cd', border: '1px solid #ffeaa7', borderRadius: 1 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Connection failed. No existing organization found for this wallet.
+              </Typography>
+              <Button 
+                variant="outlined" 
+                size="small" 
+                onClick={() => navigate('/setup/')}
+                sx={{ borderColor: '#48ba2f', color: '#48ba2f', '&:hover': { borderColor: '#3a9a25', color: '#3a9a25' } }}
+              >
+                Get Started
+              </Button>
+            </Box>
+          )}
         </Box>
 
         {/* Organizations and Leaders */}

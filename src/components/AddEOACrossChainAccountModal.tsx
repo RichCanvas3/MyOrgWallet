@@ -533,6 +533,52 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
   const handleChainSelect = async (chainId: number) => {
     setSelectedChain(chainId);
     await switchToChainWithNetwork(chainId);
+    
+    // If Linea mainnet is selected, request additional accounts
+    if (chainId === linea.id) {
+      await requestAdditionalAccounts();
+    }
+  };
+
+  // Function to request additional accounts from MetaMask
+  const requestAdditionalAccounts = async () => {
+    if (typeof window.ethereum === 'undefined') {
+      setError('MetaMask is not installed');
+      return;
+    }
+
+    try {
+      console.info('Requesting additional accounts for Linea mainnet...');
+      
+      // Request permissions for additional accounts
+      await window.ethereum.request({
+        method: 'wallet_requestPermissions',
+        params: [{
+          eth_accounts: {}
+        }]
+      });
+      
+      // Wait a moment for MetaMask to process
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Get all available accounts
+      const accounts = await window.ethereum.request({
+        method: 'eth_requestAccounts'
+      });
+      
+      console.info('Available accounts after permission request:', accounts);
+      setAvailableAccounts(accounts);
+      
+      if (accounts.length > 0) {
+        setSelectedAccount(accounts[0]);
+        // Fetch balances for the first account
+        await fetchBalances(accounts[0], selectedChain);
+      }
+      
+    } catch (error) {
+      console.error('Error requesting additional accounts:', error);
+      setError('Failed to request additional accounts from MetaMask');
+    }
   };
 
   const handleSave = async () => {
@@ -720,6 +766,17 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
                       ))}
                     </Select>
                   </FormControl>
+
+                  {/* Button to request additional accounts */}
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={requestAdditionalAccounts}
+                    disabled={isSwitchingChain}
+                    sx={{ alignSelf: 'flex-start' }}
+                  >
+                    Request Additional Accounts
+                  </Button>
 
                   {selectedAccount && (
                     <Box display="flex" gap={1} flexWrap="wrap">

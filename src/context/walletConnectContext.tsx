@@ -174,6 +174,8 @@ export type WalletConnectContextState = {
     veramoAgent?: any
     mascaApi?: any
 
+    isConnectionComplete: boolean
+
 }
 
 
@@ -207,6 +209,8 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
 
   veramoAgent: undefined,
   mascaApi: undefined,
+
+  isConnectionComplete: false,
 
 
 
@@ -271,6 +275,8 @@ export const useWalletConnect = () => {
     const [orgIndivDelegation, setOrgIndivDelegation] = useState<Delegation | undefined>();
     const [orgIssuerDelegation, setOrgIssuerDelegation] = useState<Delegation | undefined>();
     const [indivIssuerDelegation, setIndivIssuerDelegation] = useState<Delegation | undefined>();
+
+    const [isConnectionComplete, setIsConnectionComplete] = useState<boolean>(false);
 
     const blacklisted =  [
       {'did': 'did:pkh:eip155:10:0x478df0535850b01cBE24AA2DAd295B2968d24B67'},
@@ -797,6 +803,12 @@ export const useWalletConnect = () => {
                 }
                 
               }
+              setIsIndividualConnected(true)
+            }
+            else {
+              console.info("************* no accounts found")
+              setIsIndividualConnected(false)
+              setIsConnectionComplete(true);
             }
 
           }
@@ -806,6 +818,13 @@ export const useWalletConnect = () => {
       }
 
     }, [signatory, owner]);
+
+    // Set connection complete when individual is successfully connected
+    useEffect(() => {
+      if (isIndividualConnected) {
+        setIsConnectionComplete(true);
+      }
+    }, [isIndividualConnected]);
 
     const privateKey = ISSUER_PRIVATE_KEY as `0x${string}`;
     useEffect(() => { 
@@ -1788,7 +1807,8 @@ export const useWalletConnect = () => {
             setupSmartWallet,
             setOrgNameValue,
             setOrgDidValue,
-            checkIfDIDBlacklisted
+            checkIfDIDBlacklisted,
+            isConnectionComplete
 
             
 
@@ -1798,7 +1818,6 @@ export const useWalletConnect = () => {
 
 export const WalletConnectContextProvider = ({ children }: { children: any }) => {
     const {
-
       chain,
 
       orgDid, 
@@ -1834,7 +1853,8 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
       
       setOrgNameValue,
       setOrgDidValue,
-      checkIfDIDBlacklisted
+      checkIfDIDBlacklisted,
+      isConnectionComplete
     } =
       useWalletConnect();
   
@@ -1875,7 +1895,8 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         setupSmartWallet,
         setOrgNameValue,
         setOrgDidValue,
-        checkIfDIDBlacklisted
+        checkIfDIDBlacklisted,
+        isConnectionComplete
       }),
       [
         
@@ -1910,7 +1931,8 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         setupSmartWallet,
         setOrgNameValue,
         setOrgDidValue,
-        checkIfDIDBlacklisted]
+        checkIfDIDBlacklisted,
+        isConnectionComplete]
     );
   
     return <WalletConnectContext.Provider value={providerProps}>{children}</WalletConnectContext.Provider>;

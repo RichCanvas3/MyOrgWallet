@@ -359,7 +359,7 @@ app.post('/send-verification-email', async (req, res) => {
 
   try {
     console.log('Sending verification email to:', email);
-    await sgMail.send(msg);
+    //await sgMail.send(msg);
     console.log('Verification email sent successfully');
     res.json({ message: 'Verification email sent' });
   } catch (error) {

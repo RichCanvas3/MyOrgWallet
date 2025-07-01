@@ -247,6 +247,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     if (orgAccountClient && chain && orgDid && indivDid) {
 
+      console.info("************* orgDid: ", orgDid)
+
       AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
 
         if (ents != undefined) {
