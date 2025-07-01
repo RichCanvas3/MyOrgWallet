@@ -23,8 +23,9 @@
 <div align="center">
 <img src="./public/TrustPillars.png" height="300px" alt="Trust Pillars">
 
-**You know your organization best and speak best to things like value.**  
-*Let MyOrgWallet help organize that content and present a standardized trust score to third parties.*
+**You know what makes your organization valuable.** 
+*MyOrgWallet helps turn that into trusted, standardized credentials others can trust.*
+
 </div>
 
 ---
