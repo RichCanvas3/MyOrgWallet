@@ -50,10 +50,13 @@
 
 ### 🏦 Organization Chart-of-Accounts (CoA)
 
+All accounts managed with CoA have associated Account Abstraction (AA), VC's, Attestations and zkp's
+All access control of accounts is managed via MetaMask Delegations between individuals AA and CoA Account AA
+
 | Feature | Description | Networks |
 |---------|-------------|----------|
 | [Verify MetaMask Card EOA](https://odysee.com/MetaMaskCardVerifier2) | Verification and analysis of Card withdrawals via contract 0xA90b...dD2 | Linea Mainnet |
-| [Fund MetaMask Card with USDC (LiFi)](https://odysee.com/FundMetaMaskCardFinished:4) | USDC transfer from Savings Account -- LiFi | Optimism & Linea Mainnet
+| [Fund MetaMask Card with USDC (LiFi)](https://odysee.com/fundtransferusingLiFiMainnet:1) | USDC transfer from Savings Account -- LiFi | Optimism & Linea Mainnet
 | [Fund MetaMask Card with USDC (CCTP v2)](https://odysee.com/FundCardUsingCCTP:c) | USDC transfer from Savings Account - CCTP v2 | Sepolia & Linea Testnet |
 | [Fund MetaMask Card with ERC-20 transfer](https://odysee.com/FundCardIntraChain:5) | USDC transfer from Savings Account - ERC-20 transfer | Optimism Mainnet |
 | [Add Savings Account](https://odysee.com/AddSavingsAccountMainnet2:0) | Add a new USDC Savings Account to org wallet  | Mainnet & Testnet |

@@ -1921,7 +1921,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         >
           <div
             className="flex flex-col bg-white rounded-lg w-full max-w-md mx-auto overflow-hidden"
-            style={{ maxHeight: "80vh", minWidth: "43em" }}
+            style={{ maxHeight: "90vh", minWidth: "43em" }}
           >
             <div className="flex justify-between items-center border-b border-gray-200 p-4">
               <div className="flex items-center gap-2">
@@ -1937,7 +1937,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
               </button>
             </div>
 
-            <div className="flex flex-col p-4" style={{ height: "calc(80vh - 70px)" }}>
+            <div className="flex flex-col p-4" style={{ height: "calc(90vh - 70px)" }}>
               {!isConnected ? (
                 <Box display="flex" flexDirection="column" alignItems="center" gap={2} p={4}>
                   <Typography variant="h6">Connect your MetaMask wallet</Typography>
