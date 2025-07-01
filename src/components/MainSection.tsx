@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import AttestationSection from './AttestationSection';
 import ChartOfAccountsSection from './ChartOfAccountsSection';
+import TrustScoreSection from './TrustScoreSection';
 import { Attestation } from '../models/Attestation';
 import { Account } from '../models/Account';
 
@@ -26,9 +27,9 @@ const MainSection: React.FC<MainSectionProps> = ({
   onRefreshAttestations,
   onRefreshAccounts,
 }) => {
-  const [currentView, setCurrentView] = useState<'attestations' | 'accounts'>('attestations');
+  const [currentView, setCurrentView] = useState<'attestations' | 'accounts' | 'trustscore'>('attestations');
 
-  const handleChange = (_: React.SyntheticEvent, newValue: 'attestations' | 'accounts') => {
+  const handleChange = (_: React.SyntheticEvent, newValue: 'attestations' | 'accounts' | 'trustscore') => {
     setCurrentView(newValue);
   };
 
@@ -52,6 +53,12 @@ const MainSection: React.FC<MainSectionProps> = ({
             id="accounts-tab"
             aria-controls="accounts-panel"
           />
+          <Tab 
+            label="Trust Score" 
+            value="trustscore"
+            id="trustscore-tab"
+            aria-controls="trustscore-panel"
+          />
         </Tabs>
       </Box>
 
@@ -66,7 +73,6 @@ const MainSection: React.FC<MainSectionProps> = ({
             orgDid={orgDid}
             indivDid={indivDid}
             onSelectAttestation={onSelectAttestation}
-            onRefreshAttestations={onRefreshAttestations}
           />
         )}
       </Box>
@@ -81,6 +87,20 @@ const MainSection: React.FC<MainSectionProps> = ({
           <ChartOfAccountsSection
             onSelectAccount={onSelectAccount}
             onRefreshAccounts={onRefreshAccounts}
+          />
+        )}
+      </Box>
+
+      <Box
+        role="tabpanel"
+        hidden={currentView !== 'trustscore'}
+        id="trustscore-panel"
+        aria-labelledby="trustscore-tab"
+      >
+        {currentView === 'trustscore' && (
+          <TrustScoreSection
+            orgDid={orgDid}
+            indivDid={indivDid}
           />
         )}
       </Box>

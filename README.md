@@ -24,13 +24,13 @@
   <div style="text-align: center;">
     <img src="./public/TrustPillars.png" height="200px" alt="Trust Pillars">
     <br><br>
-    **You know what makes your organization valuable.**
+    You know what makes your organization valuable.
     <br><br>
   </div>
   <div>
     <img src="./public/OrgTrustScore.png" height="200px" alt="Trust Score">
     <br>
-    *MyOrgWallet helps turn that into trusted, standardized credentials others can trust.*
+    MyOrgWallet helps turn that into trusted, standardized credentials others can trust.
     <br><br>
   </div>
 </div>
@@ -58,7 +58,7 @@
 
 | Feature | Description | Networks |
 |---------|-------------|----------|
-| [Public Organization Explorer](https://odysee.com/MetaMaskCardVerifier2) | View details of an Organization Trust Score | Linea Mainnet |
+| [Public Organization Explorer](https://odysee.com/OrganizationsView:2) | Organization Trust Score | Optimism Mainnet |
 
 ### 🏦 Organization Chart-of-Accounts (CoA)
 
