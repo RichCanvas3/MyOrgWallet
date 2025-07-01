@@ -11,12 +11,20 @@
 ![CCTP](https://img.shields.io/badge/CCTP%20v2-000000?style=for-the-badge&logo=circle&logoColor=white)
 ![LiFi](https://img.shields.io/badge/LiFi-000000?style=for-the-badge&logo=circle&logoColor=white)
 
-**🚀 The Future of Organizational Digital Wallets**  
+**🚀 The Future of Organizational Agent Trust and Digital Wallets**  
 *Empowering seamless and secure Web3 interactions for organizations*
 
 [![Demo Video](https://img.shields.io/badge/Watch-Demo%20Video-red?style=for-the-badge&logo=youtube)](https://youtu.be/2WAkvM0JogA)
 
+</div>
 
+---
+
+<div align="center">
+<img src="./public/trustpillars.png" width="800px" alt="Trust Pillars">
+
+**You know your business best and speak best to things like value and trust.**  
+*Let MyOrgWallet help organize that content and present a standardized trust score to third parties.*
 </div>
 
 ---
@@ -60,7 +68,7 @@
 
 ---
 
-## 🏛️ Pillars of Know-Your-Business (KYB)
+## 🏛️ Pillars of Organizational Trust (Know-Your-Business, KYB)
 
 ### 👑 Verified Leadership
 - **Individual Leader KYC** - MetaMask Card USDC transfer verification
