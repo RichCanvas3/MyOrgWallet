@@ -22,15 +22,16 @@
 
 <div align="center" style="display: flex; justify-content: center; gap: 20px; align-items: flex-start;">
   <div style="text-align: center;">
-    <img src="./public/TrustPillars.png" height="300px" alt="Trust Pillars">
+    <img src="./public/TrustPillars.png" height="200px" alt="Trust Pillars">
     <br><br>
     **You know what makes your organization valuable.**
-
+    <br><br>
   </div>
   <div>
-    <img src="./public/OrgTrustScore.png" height="300px" alt="Trust Score">
+    <img src="./public/OrgTrustScore.png" height="200px" alt="Trust Score">
     <br>
     *MyOrgWallet helps turn that into trusted, standardized credentials others can trust.*
+    <br><br>
   </div>
 </div>
 
