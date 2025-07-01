@@ -97,6 +97,7 @@ import { CHAIN_ID, CIRCLE_API_KEY, RPC_URL, ETHERUM_RPC_URL, OPTIMISM_RPC_URL, O
 import { CallSharp } from '@mui/icons-material';
 
 import { IRIS_API_URL, CHAIN_IDS_TO_EXPLORER_URL, CHAIN_IDS_TO_MESSAGE_TRANSMITTER, CIRCLE_SUPPORTED_CHAINS, CHAIN_IDS_TO_USDC_ADDRESSES, CHAIN_TO_CHAIN_NAME, CHAIN_IDS_TO_TOKEN_MESSENGER, CHAIN_IDS_TO_RPC_URLS, DESTINATION_DOMAINS, CHAINS } from '../libs/chains';
+import DelegationService from '../service/DelegationService';
 
 const ERC20_ABI = parseAbi([
   // Read-only
@@ -267,7 +268,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
     }
     calls.push(call)
 
-    const fee = {maxFeePerGas: 412596685n, maxPriorityFeePerGas: 412596676n}
+    const fee = {maxFeePerGas: 14342570635n, maxPriorityFeePerGas: 14342570635n}
     const paymasterClient = createPaymasterClient({
       transport: http(PAYMASTER_URL),
     });
@@ -1245,10 +1246,6 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         const accountOrgDelegation = JSON.parse(accountOrgDelegationStr || '{}') 
 
         // Setup bundler and paymaster clients
-        const paymasterClient = createPaymasterClient({
-          transport: http(PAYMASTER_URL),
-        });
-
         const bundlerClient = createBundlerClient({
           transport: http(BUNDLER_URL),
           paymaster: true,
@@ -1322,7 +1319,6 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
         }
 
 
-        //const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
         const fee = {maxFeePerGas: 412596685n, maxPriorityFeePerGas: 412596676n}
 
         // Send user operation
@@ -1332,7 +1328,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
           ...fee
         });
 
-        const userOperationReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
+        await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
 
         // Refresh balances after transfer
         await fetchCreditCardBalances(selectedCreditCard.accountDid);
@@ -1351,28 +1347,41 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
         console.info("***********  EXECUTE CIRCLE TRANSFER ****************");
         // use circle to move funds from savings account to credit card
-        
-        const fundingAmountBigInt = BigInt((parseFloat(fundingAmount) * 1e6).toString());
-        const delegationChain = [accountIndivDelegation, accountOrgDelegation]
-        await circleTransferUSDC(
-          delegationChain,
-          indivAccountClient,
-          savingsAccountExtracted?.address as `0x${string}`, 
-          savingsAccountExtracted?.chainId as number, 
-          creditCardExtracted?.address as `0x${string}`, 
-          creditCardExtracted?.chainId as number, 
-          fundingAmountBigInt);
 
-        // Refresh balances after transfer
-        await fetchCreditCardBalances(selectedCreditCard.accountDid);
-        for (const accountId of selectedSavingsAccounts) {
-          const account = savingsAccounts.find(acc => acc.id === accountId);
-          if (account) {
-            await fetchSavingsAccountBalances(account.did);
+        if (indivAccountClient && burnerAccountClient) {
+
+          const owner = signatory.walletClient.account.address
+          const addressType = "account-" + savingsAccount.did
+          const accountBurnerDel = await DelegationService.getDelegationFromStorage(addressType, owner, indivAccountClient.address, burnerAccountClient.address)
+          if (accountBurnerDel && indivDid) {
+
+            const fundingAmountBigInt = BigInt((parseFloat(fundingAmount) * 1e6).toString());
+            //const delegationChain = [accountBurnerDel, accountIndivDelegation, accountOrgDelegation]
+            const delegationChain = [accountIndivDelegation, accountOrgDelegation]
+            console.info("************* delegationChain: ", delegationChain)
+            console.info("************* accountAccountClient address: ", burnerAccountClient.address)
+            await circleTransferUSDC(
+              delegationChain,
+              indivAccountClient,
+              //burnerAccountClient,
+              savingsAccountExtracted?.address as `0x${string}`, 
+              savingsAccountExtracted?.chainId as number, 
+              creditCardExtracted?.address as `0x${string}`, 
+              creditCardExtracted?.chainId as number, 
+              fundingAmountBigInt);
+
+            // Refresh balances after transfer
+            await fetchCreditCardBalances(selectedCreditCard.accountDid);
+            for (const accountId of selectedSavingsAccounts) {
+              const account = savingsAccounts.find(acc => acc.id === accountId);
+              if (account) {
+                await fetchSavingsAccountBalances(account.did);
+              }
+            }
+
+            handleClose();
           }
         }
-
-        handleClose();
       }
       else {
 
@@ -1382,7 +1391,6 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
 
         const bundlerClient = createBundlerClient({
           transport: http(BUNDLER_URL || ''),
-          //paymaster: paymasterClient,
           paymaster: true,
           chain: chain,
           paymasterContext: {
