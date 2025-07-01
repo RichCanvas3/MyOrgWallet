@@ -23,7 +23,8 @@
 <div align="center">
 <img src="./public/TrustPillars.png" height="300px" alt="Trust Pillars">
 
-**You know what makes your organization valuable.** 
+**You know what makes your organization valuable.**
+
 *MyOrgWallet helps turn that into trusted, standardized credentials others can trust.*
 
 </div>
