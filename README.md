@@ -20,13 +20,18 @@
 
 ---
 
-<div align="center">
-<img src="./public/TrustPillars.png" height="300px" alt="Trust Pillars">
+<div align="center" style="display: flex; justify-content: center; gap: 20px; align-items: flex-start;">
+  <div style="text-align: center;">
+    <img src="./public/TrustPillars.png" height="300px" alt="Trust Pillars">
+    <br><br>
+    **You know what makes your organization valuable.**
 
-**You know what makes your organization valuable.**
-
-*MyOrgWallet helps turn that into trusted, standardized credentials others can trust.*
-
+  </div>
+  <div>
+    <img src="./public/OrgTrustScore.png" height="300px" alt="Trust Score">
+    <br>
+    *MyOrgWallet helps turn that into trusted, standardized credentials others can trust.*
+  </div>
 </div>
 
 ---
@@ -47,6 +52,12 @@
 ---
 
 ## 🎯 Core Capabilities
+
+### Organization Trust Score
+
+| Feature | Description | Networks |
+|---------|-------------|----------|
+| [Public Organization Explorer](https://odysee.com/MetaMaskCardVerifier2) | View details of an Organization Trust Score | Linea Mainnet |
 
 ### 🏦 Organization Chart-of-Accounts (CoA)
 
@@ -85,7 +96,7 @@ Once linea mainnet support DKT myOrgWallet will run under linea mainnet and Vera
 
 | Feature | Description | Networks |
 |---------|-------------|----------|
-| [myOrgWallet attestation schemas](https://odysee.com/MascaVC:6) | All myOrgWallet VC's are stored in MetaMask wallet snap using veramo | Optimism Mainnet |
+| [myOrgWallet attestation schemas](https://odysee.com/EASSchema:e) | Each category of attestation has its own schema defintion within AES | Optimism Mainnet |
 
 
 ---
