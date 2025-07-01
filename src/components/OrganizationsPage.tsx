@@ -79,7 +79,9 @@ interface OrganizationsPageProps {
     const loadOrganizations = async (chain: Chain) => {
       AttestationService.loadOrganizations(chain)
         .then(organizations => {
-          setOrganizations(organizations);
+          const filteredOrganizations = organizations.filter(org => org.issuedate !== "2025-03-10")
+          console.info("1 --- loadOrganizations: ", filteredOrganizations)
+          setOrganizations(filteredOrganizations);
         })
         .catch(error => {
           console.error("Error loading organizations:", error);
@@ -94,6 +96,7 @@ interface OrganizationsPageProps {
       if (chain && orgDid) {
         console.info("1 --- loadRecentAttestationsTitleOnly: ", orgDid)
         AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, "").then((atts) => {
+          console.info("2 --- loadRecentAttestationsTitleOnly: ", atts)
           setAttestations(atts)
         })
 

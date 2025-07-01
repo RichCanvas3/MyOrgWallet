@@ -246,7 +246,7 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
 
     //console.info("attestation: ", attestation)
 
@@ -443,8 +443,8 @@ class AttestationService {
     console.info("....... add indiv attestation signer: ", signer)
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
 
     console.info("create attestation: ", attestation)
@@ -555,8 +555,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
 
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.name && attestation.delegation) {
@@ -673,8 +673,8 @@ class AttestationService {
     console.info("....... add org attestation signer: ", signer)
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
 
     //console.info("attestation: ", attestation)
@@ -781,8 +781,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
 
     //console.info("attestation: ", attestation)
@@ -892,8 +892,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
 
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.accountName) {
@@ -1019,8 +1019,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
 
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.accountName) {
@@ -1162,8 +1162,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
 
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.accountName) {
@@ -1285,8 +1285,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
     
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.name != undefined && attestation.url != undefined && attestation.proof != undefined) {
@@ -1415,8 +1415,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
     if (attestation.vccomm && attestation.vcsig && attestation.vcsig && attestation.vciss && attestation.proof && attestation.domain && attestation.domaincreationdate) {
 
@@ -1516,8 +1516,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.name) {
 
@@ -1644,8 +1644,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof) {
 
@@ -1780,8 +1780,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.type && attestation.url) {
       const schemaEncoder = new SchemaEncoder(this.WebsiteSchema);
@@ -1891,8 +1891,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof) {
 
@@ -2000,8 +2000,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof) {
 

@@ -65,7 +65,8 @@
 | Feature | Description | Networks |
 |---------|-------------|----------|
 | [MCP Agent-to-Agent (Intra-chain, Eth)](https://odysee.com/MCPAgentTransferEth:0) | Identity/Trust exchange, Agreement and Payment via ETH native coin | Mainnet & Testnet |
-| [MCP Agent-to-Agent (Cross-chain, USDC CCTP v2)](https://odysee.com/MCPAgentTransfer:6) | Cross-Chain Identity/Trust exechange, Agreement and Payment via USDC CCTP v2 | Sepolia & Linea Testnet |
+| [MCP Agent-to-Agent (Cross-chain, USDC CCTP v2)](https://odysee.com/MCPAgentTransfer:6) | Cross-Chain Identity/Trust exechange, Agreement and Payment via USDC CCTP v2 | Sepolia & Base Testnet |
+| [ERC-7715 Permission Delegation Transfer](https://odysee.com/DelegatedPermissions:0) | Inner-chain transfer | Sepolia Testnet |
 
 
 ---
