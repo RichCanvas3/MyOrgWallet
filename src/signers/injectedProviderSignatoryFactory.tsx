@@ -1,5 +1,6 @@
 import { createWalletClient, custom, toHex, type Address } from "viem";
 import { createConfig } from 'wagmi'
+import { optimism, linea, sepolia } from "viem/chains";
 
 import {
   UnconfiguredSignatory,
@@ -13,8 +14,6 @@ export const createInjectedProviderSignatoryFactory: SignatoryFactoryConfigurato
     const { chain } = config;
     const provider = (window as any).ethereum;
 
-
-
     if (!provider) {
       return UnconfiguredSignatory;
     }
@@ -24,14 +23,57 @@ export const createInjectedProviderSignatoryFactory: SignatoryFactoryConfigurato
       const selectedNetwork = await provider.request({ method: "eth_chainId" });
       if (chain && parseInt(selectedNetwork) !== chain.id) {
         console.info("wrong chain selected, switching to: ", chain.id);
-        await provider.request({
-          method: "wallet_switchEthereumChain",
-          params: [
-            {
-              chainId: toHex(chain.id),
-            },
-          ],
-        });
+        try {
+          await provider.request({
+            method: "wallet_switchEthereumChain",
+            params: [
+              {
+                chainId: toHex(chain.id),
+              },
+            ],
+          });
+        } catch (switchError: any) {
+          // If the network doesn't exist (error code 4902), add it
+          if (switchError.code === 4902) {
+            console.info("Chain not found, adding to MetaMask");
+            
+            let chainConfig;
+            if (chain.id === optimism.id) {
+              chainConfig = {
+                chainId: toHex(optimism.id),
+                chainName: optimism.name,
+                nativeCurrency: optimism.nativeCurrency,
+                rpcUrls: [optimism.rpcUrls.default.http[0]],
+                blockExplorerUrls: [optimism.blockExplorers?.default.url],
+              };
+            } else if (chain.id === linea.id) {
+              chainConfig = {
+                chainId: toHex(linea.id),
+                chainName: linea.name,
+                nativeCurrency: linea.nativeCurrency,
+                rpcUrls: [linea.rpcUrls.default.http[0]],
+                blockExplorerUrls: [linea.blockExplorers?.default.url],
+              };
+            } else if (chain.id === sepolia.id) {
+              chainConfig = {
+                chainId: toHex(sepolia.id),
+                chainName: sepolia.name,
+                nativeCurrency: sepolia.nativeCurrency,
+                rpcUrls: [sepolia.rpcUrls.default.http[0]],
+                blockExplorerUrls: [sepolia.blockExplorers?.default.url],
+              };
+            } else {
+              throw new Error(`Unsupported chain: ${chain.id}`);
+            }
+
+            await provider.request({
+              method: "wallet_addEthereumChain",
+              params: [chainConfig],
+            });
+          } else {
+            throw switchError;
+          }
+        }
       }
 
       const [owner] = (await provider.request({
@@ -43,8 +85,6 @@ export const createInjectedProviderSignatoryFactory: SignatoryFactoryConfigurato
         transport: custom(provider),
         account: owner,
       });
-
-
 
       return {
         owner,
