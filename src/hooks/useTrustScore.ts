@@ -16,7 +16,6 @@ export interface TrustScore {
   };
   details: {
     totalAttestations: number;
-    verifiedAttestations: number;
     categories: Record<string, number>;
     totalUSDCBalance: number;
     savingsAccounts: number;
@@ -98,16 +97,11 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
 
     const categories: Record<string, number> = {};
     let totalAttestations = attestations.length;
-    let verifiedAttestations = 0;
     let totalUSDCBalance = 0;
     let savingsAccounts = 0;
 
     // Calculate scores based on attestation types and categories
     attestations.forEach(att => {
-      if (att.isValidated) {
-        verifiedAttestations++;
-      }
-
       // Count attestations by category
       if (att.category) {
         categories[att.category] = (categories[att.category] || 0) + 1;
@@ -133,7 +127,7 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
       // Add points to the appropriate pillar
       if (contributingPillar) {
         const config = pillarMapping[contributingPillar];
-        const points = att.isValidated ? config.verifiedPoints : config.unverifiedPoints;
+        const points = config.verifiedPoints; // Use same points for all attestations
         breakdown[contributingPillar] += points;
         
         // Count savings accounts for finance pillar
@@ -212,7 +206,6 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
       breakdown,
       details: {
         totalAttestations,
-        verifiedAttestations,
         categories,
         totalUSDCBalance,
         savingsAccounts

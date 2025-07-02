@@ -190,6 +190,38 @@ interface OrganizationsPageProps {
 
     const OrganizationListItemMemo = React.memo(OrganizationListItem);
 
+    // Category color mapping function
+    const getCategoryColor = (category: string): string => {
+      const colorMap: Record<string, string> = {
+        leadership: '#1976d2',      // Blue
+        identity: '#388e3c',        // Green
+        finance: '#f57c00',         // Orange
+        compliance: '#d32f2f',      // Red
+        reputation: '#7b1fa2',      // Purple
+        domain: '#0288d1',          // Light Blue
+        website: '#009688',         // Teal
+        social: '#ff9800',          // Orange
+        email: '#795548',           // Brown
+        phone: '#607d8b',           // Blue Grey
+        address: '#9e9e9e',         // Grey
+        account: '#4caf50',         // Green
+        credit: '#ff5722',          // Deep Orange
+        insurance: '#3f51b5',       // Indigo
+        license: '#673ab7',         // Deep Purple
+        registration: '#e91e63',    // Pink
+        audit: '#00bcd4',           // Cyan
+        certification: '#8bc34a',   // Light Green
+        security: '#ffc107',        // Amber
+        endorsement: '#9c27b0',     // Purple
+        review: '#ff6f00',          // Amber
+        rating: '#4db6ac',          // Teal
+        testimonial: '#81c784',     // Light Green
+        accreditation: '#64b5f6',   // Light Blue
+        default: '#757575',         // Grey
+      };
+      return colorMap[category.toLowerCase()] || colorMap.default;
+    };
+
     const filtered = attestations.filter(a =>
         a.entityId?.toLowerCase().includes(searchTerm.toLowerCase()),
     );
@@ -375,7 +407,7 @@ interface OrganizationsPageProps {
                 {/* Attestation Summary */}
                 <Box mt={2} display="flex" gap={2} flexWrap="wrap">
                   <Chip 
-                    label={`${trustScore.details.verifiedAttestations}/${trustScore.details.totalAttestations} Verified`}
+                    label={`${trustScore.details.totalAttestations} Total Attestations`}
                     size="small"
                     sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}
                   />
@@ -403,67 +435,121 @@ interface OrganizationsPageProps {
           )}
 
           <Box
-                  ref={scrollContainerRef}
-                  sx={{
-                    flex: 1,
-                    overflowY: 'auto',
-                    width: '100%',
-                    minHeight: 0,
-                    px: 1,
-                    py: 0,
-                  }}
-                >
-                  {currentCategories.map((cat, index) => (
-                    <Accordion
-                      key={`cat-${cat.id}-${index}`}
-                      expanded={!!expandedCategories[cat.name]}
-                      onChange={() =>
-                        setExpandedCategories(prev => ({
-                          ...prev,
-                          [cat.name]: !prev[cat.name],
-                        }))
-                      }
-                      disableGutters
-                      sx={{ width: '100%' }}
+            ref={scrollContainerRef}
+            sx={{
+              flex: 1,
+              overflowY: 'auto',
+              width: '100%',
+              minHeight: 0,
+              px: 2,
+              py: 1,
+            }}
+          >
+            {/* Category Headers */}
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="h6" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
+                Attestation Details
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {attestations.length} total attestations across {currentCategories.length} categories
+              </Typography>
+            </Box>
+
+            {/* Continuous Flow Attestation Cards */}
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 2,
+                justifyContent: 'flex-start',
+              }}
+            >
+              {attestations
+                .sort((a, b) => {
+                  const categoryA = a.category || 'default';
+                  const categoryB = b.category || 'default';
+                  
+                  // Find category objects to get their IDs
+                  const catA = currentCategories.find(cat => cat.name === categoryA);
+                  const catB = currentCategories.find(cat => cat.name === categoryB);
+                  
+                  // Get IDs, defaulting to a high number for unknown categories
+                  const idA = catA?.id || 9999;
+                  const idB = catB?.id || 9999;
+                  
+                  return idA - idB;
+                })
+                .map((att, index) => {
+                  const category = att.category || 'default';
+                  return (
+                    <Box
+                      key={`${category}-${att.uid}-${att.entityId}-${att.displayName}-${index}`}
+                      sx={{
+                        position: 'relative',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          transition: 'transform 0.2s ease-in-out',
+                        },
+                      }}
                     >
-                      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography
-                          variant="subtitle2"
-                          color="textSecondary"
-                          textTransform="capitalize"
-                        >
-                          {cat.name}
-                        </Typography>
-                      </AccordionSummary>
-                      <AccordionDetails>
-                        {grouped[cat.name]?.length ? (
-                          <Grid container spacing={2}>
-                            {grouped[cat.name].map((att, index) => (
-                              <Grid
-                                key={`${cat.name}-${att.uid}-${att.entityId}-${att.displayName}-${index}`}
-                                item
-                              >
-                                <AttestationCard
-                                  attestation={att}
-                                  selected={selectedId === (att.entityId || '') + (att.displayName || '')}
-                                  onSelect={() => {
-                                    const newSelectedId = (att.entityId || '') + (att.displayName || '');
-                                    setSelectedId(newSelectedId);
-                                    onSelectAttestation(att);
-                                  }}
-                                  hoverable
-                                />
-                              </Grid>
-                            ))}
-                          </Grid>
-                        ) : (
-                          <Typography variant="caption" color="textSecondary">
-                          </Typography>
-                        )}
-                      </AccordionDetails>
-                    </Accordion>
-                  ))}
-                </Box>
+                      <AttestationCard
+                        attestation={att}
+                        selected={selectedId === (att.entityId || '') + (att.displayName || '')}
+                        onSelect={() => {
+                          const newSelectedId = (att.entityId || '') + (att.displayName || '');
+                          setSelectedId(newSelectedId || undefined);
+                          onSelectAttestation(att);
+                        }}
+                        hoverable
+                      />
+                      {/* Category Badge */}
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: -8,
+                          left: 8,
+                          px: 1,
+                          py: 0.5,
+                          borderRadius: 1,
+                          fontSize: '0.7rem',
+                          fontWeight: 600,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          color: 'white',
+                          backgroundColor: getCategoryColor(category),
+                          boxShadow: 2,
+                          zIndex: 1,
+                        }}
+                      >
+                        {category}
+                      </Box>
+                    </Box>
+                  );
+                })}
+            </Box>
+
+            {/* Empty State */}
+            {attestations.length === 0 && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  py: 8,
+                  color: 'text.secondary',
+                }}
+              >
+                <VerifiedIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
+                <Typography variant="h6" sx={{ mb: 1 }}>
+                  No Attestations Found
+                </Typography>
+                <Typography variant="body2">
+                  Attestations will appear here once they are created for this organization.
+                </Typography>
+              </Box>
+            )}
+          </Box>
         </div>
       </div>
 

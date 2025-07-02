@@ -2261,17 +2261,22 @@ class AttestationService {
       {
         class: "organization",
         name: "leadership", 
-        id: "10"
-      },
-      {
-        class: "organization",
-        name: "financial", 
         id: "20"
       },
       {
         class: "organization",
+        name: "financial", 
+        id: "30"
+      },
+      {
+        class: "organization",
+        name: "compliance", 
+        id: "40"
+      },
+      {
+        class: "organization",
         name: "account access",
-        id: "21"
+        id: "50"
       },
 
       {
@@ -2282,12 +2287,12 @@ class AttestationService {
       {
         class: "individual",
         name: "identity",
-        id: "80"
+        id: "90"
       },
       {
         class: "individual",
         name: "financial",
-        id: "80"
+        id: "100"
       }
     ]
 
