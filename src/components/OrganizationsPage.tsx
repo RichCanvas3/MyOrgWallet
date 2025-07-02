@@ -50,6 +50,7 @@ import {
 } from './AttestationCard';
 
 import { useCrossChainAccount } from "../hooks/useCrossChainTools";
+import { useTrustScore } from "../hooks/useTrustScore";
 import { addressModulo } from 'viem/_types/zksync/constants/address';
 import { getCipherInfo } from 'crypto';
 import { chainIdNetworkParamsMapping } from '@blockchain-lab-um/masca-connector';
@@ -75,39 +76,14 @@ interface OrganizationsPageProps {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const [showSearchOptions, setShowSearchOptions] = useState(false);
-    const [trustScore, setTrustScore] = useState<{
-      overall: number;
-      breakdown: {
-        leadership: number;
-        identity: number;
-        finance: number;
-        compliance: number;
-        reputation: number;
-      };
-      details: {
-        totalAttestations: number;
-        verifiedAttestations: number;
-        categories: Record<string, number>;
-        totalUSDCBalance: number;
-        savingsAccounts: number;
-      };
-    } | null>(null);
+    
+    // Use centralized trust score hook
+    const { trustScore, isLoading: trustScoreLoading, error: trustScoreError } = useTrustScore({ 
+      orgDid, 
+      indivDid: undefined 
+    });
 
-    const extractFromAccountDid = (accountDid: string): { chainId: number; address: `0x${string}` } | null => {
-      try {
-        // Parse did:pkh:eip155:chainId:address format
-        const parts = accountDid.split(':');
-        if (parts.length === 5 && parts[0] === 'did' && parts[1] === 'pkh' && parts[2] === 'eip155') {
-          const chainId = parseInt(parts[3], 10);
-          const address = parts[4] as `0x${string}`;
-          return { chainId, address };
-        }
-        return null;
-      } catch (error) {
-        console.error('Error parsing accountDid:', error);
-        return null;
-      }
-    };
+
 
     const handleAttestationChange = (event: AttestationChangeEvent) => {
       if (event.action === 'add' && event.attestation) {
@@ -142,11 +118,6 @@ interface OrganizationsPageProps {
         AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, "").then((atts) => {
           console.info("2 --- loadRecentAttestationsTitleOnly: ", atts)
           setAttestations(atts)
-          
-          // Calculate trust score when attestations are loaded
-          calculateTrustScore(atts).then((score) => {
-            setTrustScore(score);
-          });
         })
 
         AttestationService.loadAttestationCategories().then((cats) => {
@@ -227,152 +198,7 @@ interface OrganizationsPageProps {
     }, {} as Record<string, Attestation[]>);
 
     // Trust score calculation function
-    const calculateTrustScore = async (attestations: Attestation[]): Promise<{
-      overall: number;
-      breakdown: {
-        leadership: number;
-        identity: number;
-        finance: number;
-        compliance: number;
-        reputation: number;
-      };
-      details: {
-        totalAttestations: number;
-        verifiedAttestations: number;
-        categories: Record<string, number>;
-        totalUSDCBalance: number;
-        savingsAccounts: number;
-      };
-    }> => {
-      const breakdown = {
-        leadership: 0,
-        identity: 0,
-        finance: 0,
-        compliance: 0,
-        reputation: 0
-      };
 
-      const categories: Record<string, number> = {};
-      let totalAttestations = attestations.length;
-      let verifiedAttestations = 0;
-      let totalUSDCBalance = 0;
-      let savingsAccounts = 0;
-
-      // Calculate scores based on attestation types and categories
-      attestations.forEach(att => {
-        if (att.isValidated) {
-          verifiedAttestations++;
-        }
-
-        // Count attestations by category
-        if (att.category) {
-          categories[att.category] = (categories[att.category] || 0) + 1;
-        }
-
-        // Leadership score (org-indiv attestations, leadership roles)
-        if (att.category === 'leaders' || att.entityId === 'org-indiv(org)') {
-          breakdown.leadership += att.isValidated ? 20 : 10;
-        }
-
-        // Identity score (domain, website, social presence)
-        if (att.category === 'domain' || att.entityId === 'domain(org)' || 
-            att.category === 'website' || att.category === 'social') {
-          breakdown.identity += att.isValidated ? 25 : 15;
-        }
-
-        // Finance score (accounts, financial attestations)
-        if (att.category === 'account' || att.entityId?.includes('account')) {
-          breakdown.finance += att.isValidated ? 20 : 10;
-          savingsAccounts++;
-        }
-
-        // Compliance score (insurance, licenses, registrations)
-        if (att.category === 'insurance' || att.category === 'license' || 
-            att.category === 'registration' || att.entityId?.includes('state')) {
-          breakdown.compliance += att.isValidated ? 30 : 15;
-        }
-
-        // Reputation score (reviews, endorsements, general attestations)
-        if (att.category === 'reputation' || att.category === 'endorsement' || 
-            att.category === 'review') {
-          breakdown.reputation += att.isValidated ? 15 : 8;
-        }
-
-        // Bonus for having multiple attestations in the same category
-        if (categories[att.category || ''] > 1) {
-          const bonus = Math.min(5, categories[att.category || ''] - 1);
-          if (att.category === 'leaders') breakdown.leadership += bonus;
-          else if (att.category === 'domain') breakdown.identity += bonus;
-          else if (att.category === 'account') breakdown.finance += bonus;
-          else if (att.category === 'insurance') breakdown.compliance += bonus;
-          else if (att.category === 'reputation') breakdown.reputation += bonus;
-        }
-      });
-
-      // Calculate USDC balances for savings accounts
-      if (chain && orgDid) {
-        try {
-          console.info("attestations: ", attestations)
-          const savingsAccountAttestations = attestations.filter(att => 
-            att.coaCategory === '1110' || att.entityId?.includes('account(org)')
-          );
-
-          for (const att of savingsAccountAttestations) {
-            if (att.entityId?.includes('account(org)') && att.attester) {
-              try {
-                const extracted = extractFromAccountDid(att.accountDid);
-                if (extracted) {
-                  const { chainId, address } = extracted;
-                  const balance = await getUSDCBalance(address, chainId);
-                  if (balance) {
-                    totalUSDCBalance += parseFloat(balance);
-                  }
-                }
-              } catch (error) {
-                console.warn('Failed to get USDC balance for account:', att.attester);
-              }
-            }
-          }
-        } catch (error) {
-          console.warn('Failed to calculate USDC balances:', error);
-        }
-      }
-
-      // Add USDC balance bonus to finance score
-      if (totalUSDCBalance > 0) {
-        // Bonus points based on USDC balance tiers
-        if (totalUSDCBalance >= 10000) breakdown.finance += 30; // $10k+ gets 30 bonus points
-        else if (totalUSDCBalance >= 1000) breakdown.finance += 20; // $1k+ gets 20 bonus points
-        else if (totalUSDCBalance >= 100) breakdown.finance += 10; // $100+ gets 10 bonus points
-        else breakdown.finance += 5; // Any balance gets 5 bonus points
-      }
-
-      // Cap each category at 100
-      Object.keys(breakdown).forEach(key => {
-        breakdown[key as keyof typeof breakdown] = Math.min(100, breakdown[key as keyof typeof breakdown]);
-      });
-
-      // Calculate overall score (weighted average)
-      const overall = Math.round(
-        (breakdown.leadership * 0.25 + 
-         breakdown.identity * 0.25 + 
-         breakdown.finance * 0.20 + 
-         breakdown.compliance * 0.20 + 
-         breakdown.reputation * 0.10)
-      );
-
-      return {
-        overall: Math.min(100, overall),
-        breakdown,
-        details: {
-          totalAttestations,
-          verifiedAttestations,
-          categories,
-          totalUSDCBalance,
-          savingsAccounts
-        }
-      };
-    };
 
     return (
       <div className="organization-page flex h-screen">
@@ -468,8 +294,8 @@ interface OrganizationsPageProps {
                 </Box>
 
                 {/* Trust Pillars Breakdown */}
-                <Box display="flex" gap={2} flexWrap="wrap">
-                  <Box flex={1} minWidth="180px">
+                <Box display="flex" gap={1} flexWrap="nowrap" sx={{ overflowX: 'auto' }}>
+                  <Box flex={1} minWidth="140px">
                     <Tooltip title="Leadership Score: Based on org-indiv attestations and leadership roles. Verified attestations get 20 points, unverified get 10 points. Multiple leadership attestations receive bonus points.">
                       <Box display="flex" alignItems="center" gap={1} mb={1}>
                         <VerifiedIcon fontSize="small" />
@@ -484,7 +310,7 @@ interface OrganizationsPageProps {
                     <Typography variant="caption">{trustScore.breakdown.leadership}%</Typography>
                   </Box>
                   
-                  <Box flex={1} minWidth="180px">
+                  <Box flex={1} minWidth="140px">
                     <Tooltip title="Identity Score: Based on domain, website, and social presence attestations. Verified attestations get 25 points, unverified get 15 points. Multiple identity attestations receive bonus points.">
                       <Box display="flex" alignItems="center" gap={1} mb={1}>
                         <BusinessIcon fontSize="small" />
@@ -499,7 +325,7 @@ interface OrganizationsPageProps {
                     <Typography variant="caption">{trustScore.breakdown.identity}%</Typography>
                   </Box>
                   
-                  <Box flex={1} minWidth="180px">
+                  <Box flex={1} minWidth="140px">
                     <Tooltip title="Finance Score: Based on account attestations and USDC balances. Verified accounts get 20 points, unverified get 10 points. USDC balance bonuses: $10k+ (30pts), $1k+ (20pts), $100+ (10pts), any balance (5pts).">
                       <Box display="flex" alignItems="center" gap={1} mb={1}>
                         <AccountBalanceIcon fontSize="small" />
@@ -514,7 +340,7 @@ interface OrganizationsPageProps {
                     <Typography variant="caption">{trustScore.breakdown.finance}%</Typography>
                   </Box>
                   
-                  <Box flex={1} minWidth="180px">
+                  <Box flex={1} minWidth="140px">
                     <Tooltip title="Compliance Score: Based on insurance, licenses, and state registration attestations. Verified attestations get 30 points, unverified get 15 points. Multiple compliance attestations receive bonus points.">
                       <Box display="flex" alignItems="center" gap={1} mb={1}>
                         <SecurityIcon fontSize="small" />
@@ -529,7 +355,7 @@ interface OrganizationsPageProps {
                     <Typography variant="caption">{trustScore.breakdown.compliance}%</Typography>
                   </Box>
                   
-                  <Box flex={1} minWidth="180px">
+                  <Box flex={1} minWidth="140px">
                     <Tooltip title="Reputation Score: Based on reviews, endorsements, and general attestations. Verified attestations get 15 points, unverified get 8 points. Multiple reputation attestations receive bonus points.">
                       <Box display="flex" alignItems="center" gap={1} mb={1}>
                         <VerifiedIcon fontSize="small" />
