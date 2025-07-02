@@ -166,6 +166,11 @@ This document provides a comprehensive mapping between attestation categories an
 
 ```typescript
 const attestationCategories: AttestationCategory[] = [
+    {
+    class: "organization",
+    name: "wallet",
+    id: "1"
+  },
   {
     class: "organization",
     name: "identity",
@@ -190,6 +195,11 @@ const attestationCategories: AttestationCategory[] = [
     class: "organization",
     name: "delegations",
     id: "80"
+  },
+  {
+    class: "individual",
+    name: "wallet",
+    id: "1"
   },
   {
     class: "individual",

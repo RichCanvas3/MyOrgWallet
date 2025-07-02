@@ -67,7 +67,7 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
       unverifiedPoints: 15
     },
     finance: {
-      categories: ['financial', 'account', 'credit', 'revenue', 'funding', 'delegations', 'account access'],
+      categories: ['finance', 'account', 'credit', 'revenue', 'funding', 'delegations', 'account access'],
       entityPatterns: ['account(org)', 'account-indiv(org)'],
       verifiedPoints: 20,
       unverifiedPoints: 10

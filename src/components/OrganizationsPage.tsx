@@ -193,6 +193,7 @@ interface OrganizationsPageProps {
     // Category color mapping function
     const getCategoryColor = (category: string): string => {
       const colorMap: Record<string, string> = {
+        wallet: '#ff5722',      // Deep Orange
         leadership: '#1976d2',      // Blue
         identity: '#388e3c',        // Green
         finance: '#f57c00',         // Orange

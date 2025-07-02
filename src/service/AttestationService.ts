@@ -527,7 +527,7 @@ class AttestationService {
       const att : IndivAttestation = {
         displayName: name,
         class: "individual",
-        category: "identity",
+        category: "wallet",
         entityId: entityId,
         attester: attesterDid,
         schemaId: schemaId,
@@ -750,7 +750,7 @@ class AttestationService {
         const att : OrgAttestation = {
           displayName: name,
           class: "organization",
-          category: "identity",
+          category: "wallet",
           entityId: entityId,
           attester: attesterDid,
           schemaId: schemaId,
@@ -863,7 +863,7 @@ class AttestationService {
         const att : IndivAccountAttestation = {
           displayName: accountname,
           class: "individual",
-          category: "financial",
+          category: "finance",
           entityId: entityId,
           attester: attesterDid,
           schemaId: schemaId,
@@ -1254,7 +1254,7 @@ class AttestationService {
         const att : OrgAccountAttestation = {
           displayName: accountname,
           class: "organization",
-          category: "financial",
+          category: "finance",
           entityId: entityId,
           attester: attesterDid,
           schemaId: schemaId,
@@ -2255,6 +2255,11 @@ class AttestationService {
     let attestationCategories : AttestationCategory[] = [
       {
         class: "organization",
+        name: "wallet",
+        id: "1"
+      },
+      {
+        class: "organization",
         name: "identity",
         id: "10"
       },
@@ -2265,7 +2270,7 @@ class AttestationService {
       },
       {
         class: "organization",
-        name: "financial", 
+        name: "finance", 
         id: "30"
       },
       {
@@ -2286,12 +2291,17 @@ class AttestationService {
       },
       {
         class: "individual",
+        name: "wallet",
+        id: "10"
+      },
+      {
+        class: "individual",
         name: "identity",
         id: "90"
       },
       {
         class: "individual",
-        name: "financial",
+        name: "finance",
         id: "100"
       }
     ]

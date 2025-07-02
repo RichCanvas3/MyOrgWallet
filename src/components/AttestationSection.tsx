@@ -3,21 +3,14 @@ import {
   Box,
   TextField,
   InputAdornment,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Grid,
   Typography,
-  Paper,
   Tab,
-
   Tabs as MuiTabs
 } from '@mui/material';
 
 import { TabContext, TabList, TabPanel } from '@mui/lab';
 
 import SearchIcon from '@mui/icons-material/Search';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import {
   Attestation,
@@ -50,7 +43,6 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
     const [currentCategories, setCurrentCategories] = useState<AttestationCategory[]>([]);
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const { chain } = useWallectConnectContext();
@@ -69,12 +61,7 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
 
     };
 
-  // Initialize expanded state when categories change
-  useEffect(() => {
-    setExpandedCategories(
-        currentCategories.reduce((acc, category) => ({ ...acc, [category.name]: true }), {}),
-    );
-  }, [currentCategories]);
+
 
   // Handle real-time changes
   const handleAttestationChange = (event: AttestationChangeEvent) => {
@@ -154,9 +141,10 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
     };
   }, [orgDid, indivDid, chain, tabValue]);
 
-  // Filter and group
+  // Filter attestations by search term and class (individual/organization)
   const filtered = attestations.filter(a =>
-      a.entityId?.toLowerCase().includes(searchTerm.toLowerCase()),
+      a.entityId?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      a.class === tabValue
   );
   
   // Remove duplicates based on uid, entityId, and attester combination
@@ -168,12 +156,14 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
     )
   );
   
-  const grouped = currentCategories.reduce((acc, cat) => {
-      acc[cat.name] = uniqueAttestations.filter(a => {
-          return a.category === cat.name && a.class === cat.class;
-      });
-      return acc;
-  }, {} as Record<string, Attestation[]>);
+  // Sort attestations by category ID
+  const sortedAttestations = uniqueAttestations.sort((a, b) => {
+    const idA = currentCategories.find(cat => cat.name === a.category)?.id || '';
+    const idB = currentCategories.find(cat => cat.name === b.category)?.id || '';
+    
+    // Sort by category ID numerically
+    return idA.localeCompare(idB);
+  });
 
 
 return (
@@ -250,58 +240,60 @@ return (
           overflowY: 'auto',
           width: '100%',
           minHeight: 0,
-          px: 1,
-          py: 0,
+          px: 2,
+          py: 1,
         }}
       >
-        {currentCategories.map(cat => (
-          <Accordion
-            key={`${cat.id}-${cat.name}-${cat.class}`}
-            expanded={!!expandedCategories[cat.name]}
-            onChange={() =>
-              setExpandedCategories(prev => ({
-                ...prev,
-                [cat.name]: !prev[cat.name],
-              }))
-            }
-            disableGutters
-            sx={{ width: '100%' }}
-          >
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography
-                variant="subtitle2"
-                color="textSecondary"
-                textTransform="capitalize"
-              >
-                {cat.name}
+        {/* Category Headers */}
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="h6" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
+            Attestation Details
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            {sortedAttestations.length} total attestations across {currentCategories.length} categories
+          </Typography>
+        </Box>
+
+        {/* Continuous Flow Attestation Cards */}
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 2,
+            justifyContent: 'flex-start',
+          }}
+        >
+          {sortedAttestations.length > 0 ? (
+            sortedAttestations.map((att, index) => (
+              <AttestationCard
+                key={`${att.uid}-${att.entityId}-${att.attester}-${index}`}
+                attestation={att}
+                selected={selectedId === att.id}
+                onSelect={() => {
+                  setSelectedId(att.entityId);
+                  onSelectAttestation(att);
+                }}
+                hoverable
+              />
+            ))
+          ) : (
+            <Box
+              sx={{
+                width: '100%',
+                textAlign: 'center',
+                py: 4,
+                color: 'text.secondary',
+              }}
+            >
+              <Typography variant="body1">
+                No attestations found
               </Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              {grouped[cat.name]?.length ? (
-                <Grid container spacing={2}>
-                  {grouped[cat.name].map((att, index) => (
-                    <Grid
-                      key={`${att.uid}-${att.entityId}-${att.attester}-${index}`}
-                    >
-                      <AttestationCard
-                        attestation={att}
-                        selected={selectedId === att.id}
-                        onSelect={() => {
-                          setSelectedId(att.entityId);
-                          onSelectAttestation(att);
-                        }}
-                        hoverable
-                      />
-                    </Grid>
-                  ))}
-                </Grid>
-              ) : (
-                <Typography variant="caption" color="textSecondary">
-                </Typography>
-              )}
-            </AccordionDetails>
-          </Accordion>
-        ))}
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                {searchTerm ? 'Try adjusting your search terms' : 'Add some attestations to get started'}
+              </Typography>
+            </Box>
+          )}
+        </Box>
       </Box>
     </TabPanel>
   </TabContext>
