@@ -113,7 +113,8 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
               vciss: privateIssuerDid,
               proof: proof,
               name: "",
-              url: ""
+              url: "",
+              displayName: "linkedin"
             };
 
             const provider = new ethers.BrowserProvider(window.ethereum);

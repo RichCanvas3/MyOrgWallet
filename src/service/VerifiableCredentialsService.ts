@@ -453,6 +453,11 @@ class VerifiableCredentialsService {
             localStorage.setItem(key, credentialJSON)
             return vc.data
           }
+          else if (vc.data.credentialSubject?.displayName === undefined) {
+            const credentialJSON = JSON.stringify(vc.data);
+            localStorage.setItem(key, credentialJSON)
+            return vc.data 
+          }
         } 
       }
 

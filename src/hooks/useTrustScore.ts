@@ -19,6 +19,7 @@ export interface TrustScore {
     categories: Record<string, number>;
     totalUSDCBalance: number;
     savingsAccounts: number;
+    hasKYC: boolean;
   };
 }
 
@@ -67,7 +68,7 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
       unverifiedPoints: 15
     },
     finance: {
-      categories: ['finance', 'account', 'credit', 'revenue', 'funding', 'delegations', 'account access'],
+      categories: ['finance', 'account', 'credit', 'revenue', 'funding'],
       entityPatterns: ['account(org)', 'account-indiv(org)'],
       verifiedPoints: 20,
       unverifiedPoints: 10
@@ -99,6 +100,15 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
     let totalAttestations = attestations.length;
     let totalUSDCBalance = 0;
     let savingsAccounts = 0;
+    let hasKYC = false;
+
+    // Check for MetaMask Card attestation and apply KYC logic
+    const hasMetaMaskCard = attestations.some(att => att.displayName === "MetaMask Card");
+    if (hasMetaMaskCard) {
+      hasKYC = true;
+      // Boost leadership score by 30% (add 30% of current leadership score)
+      // We'll apply this after calculating the base leadership score
+    }
 
     // Calculate scores based on attestation types and categories
     attestations.forEach(att => {
@@ -149,6 +159,12 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
         }
       }
     });
+
+    // Apply KYC boost to leadership score if MetaMask Card is present
+    if (hasKYC) {
+      const leadershipBoost = Math.round(breakdown.leadership * 2); // 30% boost
+      breakdown.leadership += leadershipBoost;
+    }
 
     // Calculate USDC balances for savings accounts
     if (chain && orgDid) {
@@ -208,7 +224,8 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
         totalAttestations,
         categories,
         totalUSDCBalance,
-        savingsAccounts
+        savingsAccounts,
+        hasKYC
       }
     };
   };

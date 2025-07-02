@@ -1387,7 +1387,7 @@ class AttestationService {
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && name != undefined) {
       //console.info("set to social attestation with name: ", name)
       const att : SocialAttestation = {
-        displayName: name,
+        displayName: "linkedin",
         entityId: entityId,
         class: "individual",
         category: "identity",
@@ -2302,7 +2302,7 @@ class AttestationService {
       {
         class: "individual",
         name: "finance",
-        id: "100"
+        id: "92"
       }
     ]
 
@@ -2768,7 +2768,7 @@ class AttestationService {
         const decodedData = schemaEncoder.decodeData(item.data);
         if (this.checkEntity(entityId, decodedData)) {
           console.info("construct account org del attestation")
-          rtnAttestation = this.constructAccountOrgDelAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+          rtnAttestation = this.constructAccountOrgDelAttestation(chain, item.id, item.schemaId, entityId, address, displayName, decodedData)
         }
       }
       if (schemaId == this.AccountIndivDelSchemaUID) {
@@ -2776,7 +2776,7 @@ class AttestationService {
         const decodedData = schemaEncoder.decodeData(item.data);
         if (this.checkEntity(entityId, decodedData)) {
           console.info("construct account indiv del attestation")
-          rtnAttestation = this.constructAccountIndivDelAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+          rtnAttestation = this.constructAccountIndivDelAttestation(chain, item.id, item.schemaId, entityId, address, displayName, decodedData)
         }
       }
       if (schemaId == this.OrgAccountSchemaUID) {
@@ -2784,7 +2784,7 @@ class AttestationService {
         const decodedData = schemaEncoder.decodeData(item.data);
         if (this.checkEntity(entityId, decodedData)) {
           console.info("construct org account attestation")
-          rtnAttestation = this.constructOrgAccountAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+          rtnAttestation = this.constructOrgAccountAttestation(chain, item.id, item.schemaId, entityId, address, displayName, decodedData)
         }
       }
       if (schemaId == this.StateRegistrationSchemaUID) {

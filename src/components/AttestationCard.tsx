@@ -152,6 +152,9 @@ export function AttestationCard({
   // Icon component based on entityId
   const Icon = getEntityIcon(entityId || '', category);
 
+  // Check if this is a MetaMask Card attestation
+  const isMetaMaskCard = displayName === "MetaMask Card";
+
   // Category color mapping
   const getCategoryColor = (category: string): string => {
     const colorMap: Record<string, string> = {
@@ -212,9 +215,24 @@ export function AttestationCard({
         borderRadius: 2,
         position: 'relative',
         overflow: 'visible',
+        ...(isMetaMaskCard && {
+          background: `url('/metamaskfox.png') no-repeat bottom right`,
+          backgroundSize: '78px 78px',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(255, 255, 255, 0.4)',
+            borderRadius: 2,
+            zIndex: 0,
+          },
+        }),
         ...(hoverable && {
           "&:hover": {
-            bgcolor: `${categoryColor}0a`,
+            bgcolor: isMetaMaskCard ? 'rgba(255, 255, 255, 0.95)' : `${categoryColor}0a`,
             borderColor: categoryColor,
             boxShadow: `0 8px 25px ${categoryColor}40`,
             transform: "translateY(-4px)",
@@ -223,7 +241,14 @@ export function AttestationCard({
       }}
     >
       <CardActionArea onClick={onSelect} sx={{ p: 0, height: '100%' }}>
-        <CardContent sx={{ display: "flex", flexDirection: "column", p: 0, height: '100%' }}>
+        <CardContent sx={{ 
+          display: "flex", 
+          flexDirection: "column", 
+          p: 0, 
+          height: '100%',
+          position: 'relative',
+          zIndex: 1,
+        }}>
           {/* Category accent line */}
           <Box
             sx={{
@@ -247,8 +272,8 @@ export function AttestationCard({
               <Box sx={{ display: "flex", alignItems: "center", minWidth: 0, flex: 1 }}>
                 <Avatar 
                   sx={{ 
-                    bgcolor: `${categoryColor}20`, 
-                    color: categoryColor,
+                    bgcolor: isMetaMaskCard ? 'rgba(0, 0, 0, 0.1)' : `${categoryColor}20`, 
+                    color: isMetaMaskCard ? '#333' : categoryColor,
                     width: 32,
                     height: 32,
                     fontSize: '0.875rem',
@@ -263,7 +288,7 @@ export function AttestationCard({
                     ml: 1, 
                     fontWeight: 600,
                     fontSize: '0.75rem',
-                    color: 'text.primary',
+                    color: isMetaMaskCard ? '#333' : 'text.primary',
                   }}
                 >
                   {cleanEntityId}
@@ -278,7 +303,7 @@ export function AttestationCard({
             <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
               <Typography
                 variant="body2"
-                color="text.secondary"
+                color={isMetaMaskCard ? '#333' : 'text.secondary'}
                 sx={{ 
                   lineHeight: 1.3,
                   fontSize: '0.75rem',

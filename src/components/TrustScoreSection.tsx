@@ -97,7 +97,7 @@ const TrustScoreSection: React.FC<TrustScoreSectionProps> = ({
           {/* Trust Pillars Breakdown */}
           <Box display="flex" gap={2} flexWrap="wrap">
             <Box flex={1} minWidth="180px">
-              <Tooltip title="Leadership Score: Based on org-indiv attestations and leadership roles. Verified attestations get 20 points, unverified get 10 points. Multiple leadership attestations receive bonus points.">
+              <Tooltip title="Leadership Score: Based on org-indiv attestations and leadership roles. Verified attestations get 20 points, unverified get 10 points. Multiple leadership attestations receive bonus points. MetaMask Card attestations provide KYC verification and +30% leadership score boost.">
                 <Box display="flex" alignItems="center" gap={1} mb={1}>
                   <VerifiedIcon fontSize="small" />
                   <Typography variant="body2">Leadership</Typography>
@@ -175,7 +175,7 @@ const TrustScoreSection: React.FC<TrustScoreSectionProps> = ({
           {/* Attestation Summary */}
           <Box mt={2} display="flex" gap={2} flexWrap="wrap">
             <Chip 
-              label={`${trustScore.details.verifiedAttestations}/${trustScore.details.totalAttestations} Verified`}
+              label={`${trustScore.details.totalAttestations} Total Attestations`}
               size="small"
               sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}
             />
@@ -189,6 +189,17 @@ const TrustScoreSection: React.FC<TrustScoreSectionProps> = ({
               size="small"
               sx={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}
             />
+            {trustScore.details.hasKYC && (
+              <Chip 
+                label="KYC Verified"
+                size="small"
+                sx={{ 
+                  backgroundColor: '#4caf50', 
+                  color: 'white',
+                  fontWeight: 'bold'
+                }}
+              />
+            )}
             {Object.entries(trustScore.details.categories).map(([category, count]) => (
               <Chip 
                 key={category}
