@@ -58,7 +58,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
       //setOrgName(orgName)
 
       const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, privateIssuerDid, orgName);
-      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, "", orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
       if (fullVc && signatory && chain && orgAccountClient && walletClient) {

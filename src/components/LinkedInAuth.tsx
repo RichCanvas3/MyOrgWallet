@@ -94,7 +94,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
         if (indivDid && privateIssuerDid && mascaApi && privateIssuerAccount && indivAccountClient && burnerAccountClient && indivIssuerDelegation) {
   
           const vc = await VerifiableCredentialsService.createSocialVC(entityId, indivDid, privateIssuerDid, res.data.sub, "");
-          const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+          const result = await VerifiableCredentialsService.createCredential(vc, entityId, "", indivDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
           const fullVc = result.vc
           const proof = result.proof
 

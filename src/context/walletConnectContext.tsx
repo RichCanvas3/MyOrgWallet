@@ -581,7 +581,7 @@ export const useWalletConnect = () => {
             let localIndivDid : string | undefined = 'did:pkh:eip155:' + chain?.id + ':' + indivAccountClient.address
             
             const orgIndivAttestation = await AttestationService.getOrgIndivAttestation(chain, localIndivDid, AttestationService.OrgIndivSchemaUID, "org-indiv(org)");
-            const indivAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, localIndivDid, AttestationService.IndivSchemaUID, "indiv(indiv)")
+            const indivAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, localIndivDid, AttestationService.IndivSchemaUID, "indiv(indiv)", "")
 
             if (indivAttestation) {
               setIndivName((indivAttestation as IndivAttestation).name)
@@ -730,7 +730,7 @@ export const useWalletConnect = () => {
 
 
             if (localOrgDid) {
-              const attestation = await AttestationService.getAttestationByDidAndSchemaId(chain, localOrgDid, AttestationService.RegisteredDomainSchemaUID, "domain(org)")
+              const attestation = await AttestationService.getAttestationByDidAndSchemaId(chain, localOrgDid, AttestationService.RegisteredDomainSchemaUID, "domain(org)", "")
               if (attestation) {
                 const domainAttestation = attestation as RegisteredDomainAttestation
                 const domain = domainAttestation.domain
@@ -1434,7 +1434,7 @@ export const useWalletConnect = () => {
         
               console.info("create credential for org attestation")
               const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, privateIssuerDid, orgName);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, "", entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
               if (fullVc) {
@@ -1500,7 +1500,7 @@ export const useWalletConnect = () => {
 
           
                 const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, privateIssuerDid, domainName, "");
-                const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+                const result = await VerifiableCredentialsService.createCredential(vc, "", entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
                 const fullVc = result.vc
                 const proof = result.proof
                 if (fullVc) {
@@ -1531,7 +1531,7 @@ export const useWalletConnect = () => {
           console.info("===========> : ", indivDid, orgDid)
           if (indivDid && orgDid && chain) {
             console.info(" get att")
-            const orgAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, orgDid, AttestationService.OrgIndivSchemaUID, "org(org)")
+            const orgAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, orgDid, AttestationService.OrgIndivSchemaUID, "org(org)", "")
             if (!orgAttestation) {
               console.info("=============> no org attestation so add one")
               await addOrgAttestation(mascaApi)
@@ -1563,7 +1563,7 @@ export const useWalletConnect = () => {
               const delegationJsonStr = JSON.stringify(orgIndivDelegation)
         
               const vc = await VerifiableCredentialsService.createOrgIndivVC(entityId, orgDid, indivDid, indName, delegationJsonStr, privateIssuerDid);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, "", orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
 
@@ -1666,7 +1666,7 @@ export const useWalletConnect = () => {
               }
         
               const vc = await VerifiableCredentialsService.createIndivVC(entityId, indivDid, privateIssuerDid, orgDid, indName);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, "", indivDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
 
@@ -1712,7 +1712,7 @@ export const useWalletConnect = () => {
               }
         
               const vc = await VerifiableCredentialsService.createIndivEmailVC(entityId, indivDid, privateIssuerDid, "business", indEmail);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, "", indivDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
 
@@ -1747,12 +1747,12 @@ export const useWalletConnect = () => {
           }
 
           if (indivDid && orgDid && indivIssuerDel) {
-            const indivAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, indivDid, AttestationService.IndivSchemaUID, "indiv(indiv)")
+            const indivAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, indivDid, AttestationService.IndivSchemaUID, "indiv(indiv)", "")
             if (!indivAttestation) {
               addIndivAttestation(mascaApi)
             }
 
-            const indivEmailAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, indivDid, AttestationService.IndivEmailSchemaUID, "email(indiv)")
+            const indivEmailAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, indivDid, AttestationService.IndivEmailSchemaUID, "email(indiv)", "", "")
             if (!indivEmailAttestation) {
               addIndivEmailAttestation(mascaApi)
             }

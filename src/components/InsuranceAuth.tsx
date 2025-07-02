@@ -39,7 +39,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
         const vc = await VerifiableCredentialsService.createInsuranceVC(entityId, orgDid, privateIssuerDid, insuranceNumber);
 
         console.info("vc: ", JSON.stringify(vc))
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+        const result = await VerifiableCredentialsService.createCredential(vc, entityId, insuranceNumber, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
         if (proof && fullVc && chain && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {

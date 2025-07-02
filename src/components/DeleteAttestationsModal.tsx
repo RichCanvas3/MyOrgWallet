@@ -170,7 +170,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
         const samIndivName = ""
 
         const vc = await VerifiableCredentialsService.createOrgIndivVC("org-indiv", orgDid, samIndivDid, samIndivName, delegationJsonStr, privateIssuerDid);
-        const result = await VerifiableCredentialsService.createCredential(vc, "org-indiv", orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+        const result = await VerifiableCredentialsService.createCredential(vc, "org-indiv", samIndivName, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
 
         console.info("result of create credential: ", result)
         const fullVc = result.vc

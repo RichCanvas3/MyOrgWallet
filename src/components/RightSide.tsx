@@ -35,10 +35,12 @@ const RightSide: React.FC<RightSideProps> = ({className, appCommand, onRefreshAt
   });
 
   const handleSelectAttestation = (att: Attestation) => {
+    console.log("************ att: ", att)
     const cmd : Command = {
       action: "edit",
       did: att.attester,
       entityId: att.entityId,
+      displayName: att.displayName,
     }
     appCommand(cmd)
   };

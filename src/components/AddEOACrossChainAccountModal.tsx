@@ -607,7 +607,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
     if (walletSigner && walletClient && privateIssuerAccount && indivDid && mascaApi && privateIssuerDid) {
 
       const vc = await VerifiableCredentialsService.createAccountVC(entityId, privateIssuerDid, accountDid, indivDid, accountName);
-      const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountName, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
 
@@ -670,7 +670,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
         const delegationJsonStr = ""
 
         const vc = await VerifiableCredentialsService.createAccountOrgDelVC(entityId, privateIssuerDid, accountDid, orgDid, accountName, coaCode, selectedCoaCategory, delegationJsonStr);
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+        const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountName, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
 

@@ -407,7 +407,7 @@ class VerifiableCredentialsService {
       return vc;
     }
 
-    static async saveCredential(mascaApi: any, credential: VerifiableCredential, entityId: string) {
+    static async saveCredential(mascaApi: any, credential: VerifiableCredential, entityId: string, displayName: string) {
         
          const cred : W3CVerifiableCredential = {
           ...credential,
@@ -422,7 +422,7 @@ class VerifiableCredentialsService {
         const result = await mascaApi?.saveCredential(cred)
 
         const did = await mascaApi.getDID() 
-        const key = entityId + "-" + did.data
+        const key = entityId + "-" + displayName + "-" + did.data
 
         const credentialJSON = JSON.stringify(cred);
         localStorage.setItem(key, credentialJSON)
@@ -430,11 +430,11 @@ class VerifiableCredentialsService {
 
     }
 
-    static async getCredential(mascaApi: any, entityId: string): Promise<VerifiableCredential | undefined> {
+    static async getCredential(mascaApi: any, entityId: string, displayName: string): Promise<VerifiableCredential | undefined> {
 
 
       const did = await mascaApi.getDID() 
-      const key = entityId + "-" + did.data
+      const key = entityId + "-" + displayName + "-" + did.data
 
       const existingCredentialJSON = localStorage.getItem(key)
       if (existingCredentialJSON) {
@@ -448,9 +448,11 @@ class VerifiableCredentialsService {
       console.info("got vcs: ", vcs)
       for (const vc of vcs.data) {
         if (vc.data.credentialSubject?.provider?.toLowerCase() == entityId.toLowerCase()) {
-          const credentialJSON = JSON.stringify(vc.data);
-          localStorage.setItem(key, credentialJSON)
-          return vc.data
+          if (vc.data.credentialSubject?.displayName?.toLowerCase() == displayName.toLowerCase()) {
+            const credentialJSON = JSON.stringify(vc.data);
+            localStorage.setItem(key, credentialJSON)
+            return vc.data
+          }
         } 
       }
 
@@ -462,6 +464,7 @@ class VerifiableCredentialsService {
     static async createCredential(
       vc: VerifiableCredential,
       entityId: string,
+      displayName: string,
       did: string, 
       mascaApi: any,
       privateIssuerAccount: PrivateKeyAccount, 
@@ -495,7 +498,13 @@ class VerifiableCredentialsService {
         // this section is going to be replaced with veramo create verifiable credential and then stored in masca metamask snap
         // the code is working in proof of concept
 
-        const credentialSubjectJSON = JSON.stringify(vc.credentialSubject);
+        const credentialSubject = vc.credentialSubject
+        if (credentialSubject) {
+          credentialSubject.entityId = entityId
+          credentialSubject.displayName = displayName
+        }
+
+        const credentialSubjectJSON = JSON.stringify(credentialSubject);
         const credentialSubjectHash = hashMessage(credentialSubjectJSON)
 
         console.info(">>>>>>>>>>>>> did: ", did)
@@ -560,7 +569,7 @@ class VerifiableCredentialsService {
           // save vc to metamask snap storage
           if (mascaApi) {
             console.info("save credential: ", veramoVC)
-            await VerifiableCredentialsService.saveCredential(mascaApi, veramoVC, entityId)
+            await VerifiableCredentialsService.saveCredential(mascaApi, veramoVC, entityId, displayName)
           }
           
         }

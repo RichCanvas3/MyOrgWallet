@@ -30,12 +30,13 @@ import {
 interface AttestationViewModalProps {
   did: string;
   entityId: string;
+  displayName: string;
   isVisible: boolean;
   onClose: () => void;
   onDelete?: () => void;
 }
 
-const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityId, isVisible, onClose, onDelete}) => {
+const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityId, displayName, isVisible, onClose, onDelete}) => {
 
   const {t} = useTranslation();
 
@@ -145,6 +146,8 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
         }
         */
 
+        /*
+
         if (name) {
           setOrgEthName(name)
         }
@@ -190,6 +193,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
           }
         }
         putCachedValue(cacheKey, true)
+        */
       }
 
     }
@@ -200,7 +204,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
 
   useEffect(() => {
     handleInitOperations();
-  }, [did, entityId]);
+  }, [did, entityId, displayName]);
 
 
   const address = did.replace("did:pkh:eip155:" + chain?.id + ":", "") as `0x${string}`
@@ -316,9 +320,9 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
           }
           //console.info("go get shopify attestation: ", did)
           if (did && chain) {
-            AttestationService.getAttestationByDidAndSchemaId(chain, did, schemaUid, entityId).then(async (att) => {
+            AttestationService.getAttestationByDidAndSchemaId(chain, did, schemaUid, entityId, displayName).then(async (att) => {
 
-              //console.info("att: ", att)
+              console.info("att: ", att)
               if (att) {
 
                 if (att.entityId == "account(indiv)") {
@@ -377,7 +381,9 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
 
                   setHasCredential(false)
                   setCredential(undefined)
-                  VerifiableCredentialsService.getCredential(mascaApi, att.entityId).then((cred) => {
+
+                  console.info("------> get credential: ", att.entityId, att.displayName)
+                  VerifiableCredentialsService.getCredential(mascaApi, att.entityId, att.displayName || "").then((cred) => {
                     if (cred) {
                       setHasCredential(true)
                       console.info(",,,,,,,,,, credential: ", cred)

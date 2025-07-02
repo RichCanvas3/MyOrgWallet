@@ -2686,7 +2686,7 @@ class AttestationService {
     return false
   }
   
-  static async getAttestationByDidAndSchemaId(chain: Chain, did: string, schemaId: string, entityId: string): Promise<Attestation | undefined> {
+  static async getAttestationByDidAndSchemaId(chain: Chain, did: string, schemaId: string, entityId: string, displayName: string): Promise<Attestation | undefined> {
 
     //console.info("get attestation by address and schemaId and entityId: ", address, schemaId, entityId)
     let rtnAttestation : Attestation | undefined
@@ -2710,124 +2710,133 @@ class AttestationService {
         }
       }`;
 
-      const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
-      //console.info(">>>>>>>>>>>>>>>>>>> data: ", data)
+    const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
+    //console.info(">>>>>>>>>>>>>>>>>>> data: ", data)
 
-      // cycle through aes attestations and update entity with attestation info
-      for (const item of data.attestations) {
+    // cycle through aes attestations and update entity with attestation info
+    for (const item of data.attestations) {
 
-        //console.info("reading attestations: ", item.id, data.attestations.length)
-        if (schemaId == this.IndivSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.IndivSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            rtnAttestation = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.OrgIndivSchemaUID) {
-
-          const schemaEncoder = new SchemaEncoder(this.OrgIndivSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info("construct org indiv attestation")
-            rtnAttestation = this.constructOrgIndivAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.OrgSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.OrgSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            rtnAttestation = this.constructOrgAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.IndivAccountSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.IndivAccountSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info("construct account attestation")
-            rtnAttestation = this.constructIndivAccountAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.AccountOrgDelSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.AccountOrgDelSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info("construct account org del attestation")
-            rtnAttestation = this.constructAccountOrgDelAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.AccountIndivDelSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.AccountIndivDelSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info("construct account indiv del attestation")
-            rtnAttestation = this.constructAccountIndivDelAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.OrgAccountSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.OrgAccountSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info("construct org account attestation")
-            rtnAttestation = this.constructOrgAccountAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.StateRegistrationSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.StateRegistrationSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info("construct state reg attestation")
-            rtnAttestation = this.constructStateRegistrationAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.RegisteredDomainSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.RegisteredDomainSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            rtnAttestation = this.constructRegisteredDomainAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.SocialSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.SocialSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info(">>>>>>>>>>>>>>> construct social attestation: ", entityId)
-            rtnAttestation = this.constructSocialAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.WebsiteSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.WebsiteSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info(">>>>>>>>>>>>>>> construct website attestation: ", entityId)
-            rtnAttestation = this.constructWebsiteAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.InsuranceSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.WebsiteSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info(">>>>>>>>>>>>>>> construct insurance attestation: ", entityId)
-            rtnAttestation = this.constructInsuranceAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.EmailSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.EmailSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info(">>>>>>>>>>>>>>> construct email attestation: ", entityId)
-            rtnAttestation = this.constructEmailAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.IndivEmailSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.IndivEmailSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info(">>>>>>>>>>>>>>> construct indiv email attestation: ", entityId)
-            rtnAttestation = this.constructIndivEmailAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
+      //console.info("reading attestations: ", item.id, data.attestations.length)
+      if (schemaId == this.IndivSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.IndivSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          rtnAttestation = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
         }
       }
+      if (schemaId == this.OrgIndivSchemaUID) {
+
+        const schemaEncoder = new SchemaEncoder(this.OrgIndivSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info("construct org indiv attestation")
+          rtnAttestation = this.constructOrgIndivAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.OrgSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.OrgSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          rtnAttestation = this.constructOrgAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.IndivAccountSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.IndivAccountSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info("construct account attestation")
+          rtnAttestation = this.constructIndivAccountAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.AccountOrgDelSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.AccountOrgDelSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info("construct account org del attestation")
+          rtnAttestation = this.constructAccountOrgDelAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.AccountIndivDelSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.AccountIndivDelSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info("construct account indiv del attestation")
+          rtnAttestation = this.constructAccountIndivDelAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.OrgAccountSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.OrgAccountSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info("construct org account attestation")
+          rtnAttestation = this.constructOrgAccountAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.StateRegistrationSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.StateRegistrationSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info("construct state reg attestation")
+          rtnAttestation = this.constructStateRegistrationAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.RegisteredDomainSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.RegisteredDomainSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          rtnAttestation = this.constructRegisteredDomainAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.SocialSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.SocialSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info(">>>>>>>>>>>>>>> construct social attestation: ", entityId)
+          rtnAttestation = this.constructSocialAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.WebsiteSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.WebsiteSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info(">>>>>>>>>>>>>>> construct website attestation: ", entityId)
+          rtnAttestation = this.constructWebsiteAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.InsuranceSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.WebsiteSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info(">>>>>>>>>>>>>>> construct insurance attestation: ", entityId)
+          rtnAttestation = this.constructInsuranceAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.EmailSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.EmailSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info(">>>>>>>>>>>>>>> construct email attestation: ", entityId)
+          rtnAttestation = this.constructEmailAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.IndivEmailSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.IndivEmailSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info(">>>>>>>>>>>>>>> construct indiv email attestation: ", entityId)
+          rtnAttestation = this.constructIndivEmailAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+
+      if (rtnAttestation && rtnAttestation.displayName == displayName) {
+        console.info("@@@@@@@@@@@@@ rtnAttestation found: ", rtnAttestation.displayName)
+        break
+      }
+      else if (rtnAttestation && displayName && displayName != "") {
+        console.info("@@@@@@@@@@@@@ rtnAttestation not found: ", rtnAttestation?.displayName, displayName)
+        rtnAttestation = undefined
+      }
+    }
 
 
       

@@ -73,7 +73,7 @@ interface OrganizationsPageProps {
     const [currentCategories, setCurrentCategories] = useState<AttestationCategory[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
-    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const [showSearchOptions, setShowSearchOptions] = useState(false);
     
@@ -88,15 +88,15 @@ interface OrganizationsPageProps {
     const handleAttestationChange = (event: AttestationChangeEvent) => {
       if (event.action === 'add' && event.attestation) {
         const att = event.attestation;
-        if (!attestations.find(a => a.entityId === att.entityId)) {
+        if (!attestations.find(a => a.entityId === att.entityId && a.displayName === att.displayName)) {
           setAttestations(prev => [att, ...prev]);
         }
-        setSelectedId(att.entityId);
+        setSelectedId(att.entityId + att.displayName);
         if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
-      } else if (event.action === 'delete-all') {
-        setAttestations([]);
-        setSelectedId(null);
-      }
+              } else if (event.action === 'delete-all') {
+          setAttestations([]);
+          setSelectedId(undefined);
+        }
     };
 
     const loadOrganizations = async (chain: Chain) => {
@@ -173,6 +173,7 @@ interface OrganizationsPageProps {
                     action: "show",
                     did: att.attester,
                     entityId: att.entityId,
+                    displayName: att.displayName
                   }
       appCommand(cmd)
     }
@@ -241,7 +242,7 @@ interface OrganizationsPageProps {
                 <ol>
                   {organizations.map((organization, index) => (
                     <OrganizationListItemMemo
-                      key={organization.id}
+                      key={`org-${organization.id}-${index}`}
                       organization={organization}
                       isSelected={selectedId === organization.id}
                       onSelectOrganization={onSelectOrganization}
@@ -294,12 +295,12 @@ interface OrganizationsPageProps {
                 </Box>
 
                 {/* Trust Pillars Breakdown */}
-                <Box display="flex" gap={1} flexWrap="nowrap" sx={{ overflowX: 'auto' }}>
-                  <Box flex={1} minWidth="140px">
+                <Box display="flex" gap={1} sx={{ width: '100%' }}>
+                  <Box sx={{ width: '20%', minWidth: '120px' }}>
                     <Tooltip title="Leadership Score: Based on org-indiv attestations and leadership roles. Verified attestations get 20 points, unverified get 10 points. Multiple leadership attestations receive bonus points.">
                       <Box display="flex" alignItems="center" gap={1} mb={1}>
                         <VerifiedIcon fontSize="small" />
-                        <Typography variant="body2">Leadership</Typography>
+                        <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>Leadership</Typography>
                       </Box>
                     </Tooltip>
                     <LinearProgress 
@@ -310,11 +311,11 @@ interface OrganizationsPageProps {
                     <Typography variant="caption">{trustScore.breakdown.leadership}%</Typography>
                   </Box>
                   
-                  <Box flex={1} minWidth="140px">
+                  <Box sx={{ width: '20%', minWidth: '120px' }}>
                     <Tooltip title="Identity Score: Based on domain, website, and social presence attestations. Verified attestations get 25 points, unverified get 15 points. Multiple identity attestations receive bonus points.">
                       <Box display="flex" alignItems="center" gap={1} mb={1}>
                         <BusinessIcon fontSize="small" />
-                        <Typography variant="body2">Identity</Typography>
+                        <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>Identity</Typography>
                       </Box>
                     </Tooltip>
                     <LinearProgress 
@@ -325,11 +326,11 @@ interface OrganizationsPageProps {
                     <Typography variant="caption">{trustScore.breakdown.identity}%</Typography>
                   </Box>
                   
-                  <Box flex={1} minWidth="140px">
+                  <Box sx={{ width: '20%', minWidth: '120px' }}>
                     <Tooltip title="Finance Score: Based on account attestations and USDC balances. Verified accounts get 20 points, unverified get 10 points. USDC balance bonuses: $10k+ (30pts), $1k+ (20pts), $100+ (10pts), any balance (5pts).">
                       <Box display="flex" alignItems="center" gap={1} mb={1}>
                         <AccountBalanceIcon fontSize="small" />
-                        <Typography variant="body2">Finance</Typography>
+                        <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>Finance</Typography>
                       </Box>
                     </Tooltip>
                     <LinearProgress 
@@ -340,11 +341,11 @@ interface OrganizationsPageProps {
                     <Typography variant="caption">{trustScore.breakdown.finance}%</Typography>
                   </Box>
                   
-                  <Box flex={1} minWidth="140px">
+                  <Box sx={{ width: '20%', minWidth: '120px' }}>
                     <Tooltip title="Compliance Score: Based on insurance, licenses, and state registration attestations. Verified attestations get 30 points, unverified get 15 points. Multiple compliance attestations receive bonus points.">
                       <Box display="flex" alignItems="center" gap={1} mb={1}>
                         <SecurityIcon fontSize="small" />
-                        <Typography variant="body2">Compliance</Typography>
+                        <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>Compliance</Typography>
                       </Box>
                     </Tooltip>
                     <LinearProgress 
@@ -355,11 +356,11 @@ interface OrganizationsPageProps {
                     <Typography variant="caption">{trustScore.breakdown.compliance}%</Typography>
                   </Box>
                   
-                  <Box flex={1} minWidth="140px">
+                  <Box sx={{ width: '20%', minWidth: '120px' }}>
                     <Tooltip title="Reputation Score: Based on reviews, endorsements, and general attestations. Verified attestations get 15 points, unverified get 8 points. Multiple reputation attestations receive bonus points.">
                       <Box display="flex" alignItems="center" gap={1} mb={1}>
                         <VerifiedIcon fontSize="small" />
-                        <Typography variant="body2">Reputation</Typography>
+                        <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>Reputation</Typography>
                       </Box>
                     </Tooltip>
                     <LinearProgress 
@@ -412,9 +413,9 @@ interface OrganizationsPageProps {
                     py: 0,
                   }}
                 >
-                  {currentCategories.map(cat => (
+                  {currentCategories.map((cat, index) => (
                     <Accordion
-                      key={cat.id}
+                      key={`cat-${cat.id}-${index}`}
                       expanded={!!expandedCategories[cat.name]}
                       onChange={() =>
                         setExpandedCategories(prev => ({
@@ -437,15 +438,17 @@ interface OrganizationsPageProps {
                       <AccordionDetails>
                         {grouped[cat.name]?.length ? (
                           <Grid container spacing={2}>
-                            {grouped[cat.name].map(att => (
+                            {grouped[cat.name].map((att, index) => (
                               <Grid
-                                key={att.uid}
+                                key={`${cat.name}-${att.uid}-${att.entityId}-${att.displayName}-${index}`}
+                                item
                               >
                                 <AttestationCard
                                   attestation={att}
-                                  selected={selectedId === att.id}
+                                  selected={selectedId === (att.entityId || '') + (att.displayName || '')}
                                   onSelect={() => {
-                                    setSelectedId(att.entityId);
+                                    const newSelectedId = (att.entityId || '') + (att.displayName || '');
+                                    setSelectedId(newSelectedId);
                                     onSelectAttestation(att);
                                   }}
                                   hoverable

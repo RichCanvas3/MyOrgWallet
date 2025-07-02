@@ -77,7 +77,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
         const walletSigner = await provider.getSigner()
 
         const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC(entityId, orgDid, privateIssuerDid, websiteType, shopifyUrl);
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+        const result = await VerifiableCredentialsService.createCredential(vc, entityId, "", orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
         if (fullVc && walletSigner && orgAccountClient && walletClient) {
