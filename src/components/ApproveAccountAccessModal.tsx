@@ -193,7 +193,7 @@ const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ i
               indivDelegation: indivDelegationJsonStr,
               attester: leaderIndivDid,
               class: "individual",
-              category: "account",
+              category: "financial",
               entityId: entityId,
               hash: hash,
               vccomm: (fullVc.credentialSubject as any).commitment.toString(),

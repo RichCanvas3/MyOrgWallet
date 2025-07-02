@@ -468,8 +468,8 @@ interface OrganizationsPageProps {
                 </Box>
 
                 {/* Trust Pillars Breakdown */}
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
+                <Box display="flex" gap={2} flexWrap="wrap">
+                  <Box flex={1} minWidth="180px">
                     <Tooltip title="Leadership Score: Based on org-indiv attestations and leadership roles. Verified attestations get 20 points, unverified get 10 points. Multiple leadership attestations receive bonus points.">
                       <Box display="flex" alignItems="center" gap={1} mb={1}>
                         <VerifiedIcon fontSize="small" />
@@ -482,9 +482,9 @@ interface OrganizationsPageProps {
                       sx={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.3)' }} 
                     />
                     <Typography variant="caption">{trustScore.breakdown.leadership}%</Typography>
-                  </Grid>
+                  </Box>
                   
-                  <Grid item xs={6}>
+                  <Box flex={1} minWidth="180px">
                     <Tooltip title="Identity Score: Based on domain, website, and social presence attestations. Verified attestations get 25 points, unverified get 15 points. Multiple identity attestations receive bonus points.">
                       <Box display="flex" alignItems="center" gap={1} mb={1}>
                         <BusinessIcon fontSize="small" />
@@ -497,9 +497,9 @@ interface OrganizationsPageProps {
                       sx={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.3)' }} 
                     />
                     <Typography variant="caption">{trustScore.breakdown.identity}%</Typography>
-                  </Grid>
+                  </Box>
                   
-                  <Grid item xs={6}>
+                  <Box flex={1} minWidth="180px">
                     <Tooltip title="Finance Score: Based on account attestations and USDC balances. Verified accounts get 20 points, unverified get 10 points. USDC balance bonuses: $10k+ (30pts), $1k+ (20pts), $100+ (10pts), any balance (5pts).">
                       <Box display="flex" alignItems="center" gap={1} mb={1}>
                         <AccountBalanceIcon fontSize="small" />
@@ -512,9 +512,9 @@ interface OrganizationsPageProps {
                       sx={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.3)' }} 
                     />
                     <Typography variant="caption">{trustScore.breakdown.finance}%</Typography>
-                  </Grid>
+                  </Box>
                   
-                  <Grid item xs={6}>
+                  <Box flex={1} minWidth="180px">
                     <Tooltip title="Compliance Score: Based on insurance, licenses, and state registration attestations. Verified attestations get 30 points, unverified get 15 points. Multiple compliance attestations receive bonus points.">
                       <Box display="flex" alignItems="center" gap={1} mb={1}>
                         <SecurityIcon fontSize="small" />
@@ -527,8 +527,23 @@ interface OrganizationsPageProps {
                       sx={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.3)' }} 
                     />
                     <Typography variant="caption">{trustScore.breakdown.compliance}%</Typography>
-                  </Grid>
-                </Grid>
+                  </Box>
+                  
+                  <Box flex={1} minWidth="180px">
+                    <Tooltip title="Reputation Score: Based on reviews, endorsements, and general attestations. Verified attestations get 15 points, unverified get 8 points. Multiple reputation attestations receive bonus points.">
+                      <Box display="flex" alignItems="center" gap={1} mb={1}>
+                        <VerifiedIcon fontSize="small" />
+                        <Typography variant="body2">Reputation</Typography>
+                      </Box>
+                    </Tooltip>
+                    <LinearProgress 
+                      variant="determinate" 
+                      value={trustScore.breakdown.reputation} 
+                      sx={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.3)' }} 
+                    />
+                    <Typography variant="caption">{trustScore.breakdown.reputation}%</Typography>
+                  </Box>
+                </Box>
 
                 {/* Attestation Summary */}
                 <Box mt={2} display="flex" gap={2} flexWrap="wrap">

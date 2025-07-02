@@ -118,7 +118,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
             attester: orgDid,
             entityId: entityId,
             class: "individual", 
-            category: "social",
+            category: "identity",
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,

@@ -141,7 +141,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
           delegation: delegationJsonStr,
           attester: orgDid,
           class: "organization",
-          category: "leaders",
+          category: "leadership",
           entityId: "org-indiv(org)",
           hash: hash,
           vccomm: (fullVc.credentialSubject as any).commitment.toString(),

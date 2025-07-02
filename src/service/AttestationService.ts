@@ -527,7 +527,7 @@ class AttestationService {
       const att : IndivAttestation = {
         displayName: name,
         class: "individual",
-        category: "wallet",
+        category: "identity",
         entityId: entityId,
         attester: attesterDid,
         schemaId: schemaId,
@@ -640,7 +640,7 @@ class AttestationService {
       const att : OrgIndivAttestation = {
         displayName: name,
         class: "organization",
-        category: "leaders",
+        category: "leadership",
         entityId: entityId,
         attester: attesterDid,
         schemaId: schemaId,
@@ -750,7 +750,7 @@ class AttestationService {
         const att : OrgAttestation = {
           displayName: name,
           class: "organization",
-          category: "wallet",
+          category: "identity",
           entityId: entityId,
           attester: attesterDid,
           schemaId: schemaId,
@@ -863,7 +863,7 @@ class AttestationService {
         const att : IndivAccountAttestation = {
           displayName: accountname,
           class: "individual",
-          category: "account",
+          category: "financial",
           entityId: entityId,
           attester: attesterDid,
           schemaId: schemaId,
@@ -874,7 +874,8 @@ class AttestationService {
           vciss: vciss,
           proof: proof,
           accountName: accountname,
-          accountDid: accountDid
+          accountDid: accountDid,
+          accountBalance: "0"
         }
   
         return att
@@ -1253,7 +1254,7 @@ class AttestationService {
         const att : OrgAccountAttestation = {
           displayName: accountname,
           class: "organization",
-          category: "account",
+          category: "financial",
           entityId: entityId,
           attester: attesterDid,
           schemaId: schemaId,
@@ -1389,7 +1390,7 @@ class AttestationService {
         displayName: name,
         entityId: entityId,
         class: "individual",
-        category: "social",
+        category: "identity",
         attester: attester,
         schemaId: schemaId,
         uid: uid,
@@ -1490,7 +1491,7 @@ class AttestationService {
           displayName: domain,
           entityId: entityId,
           class: "organization",
-          category: "domain",
+          category: "identity",
           attester: attesterDid,
           schemaId: schemaId,
           uid: uid,
@@ -1613,7 +1614,7 @@ class AttestationService {
         displayName: name,
         entityId: entityId,
         class: "organization",
-        category: "registration",
+        category: "identity",
         attester: attesterDid,
         schemaId: schemaId,
         uid: uid,
@@ -1726,7 +1727,7 @@ class AttestationService {
         displayName: email,
         entityId: entityId,
         class: "organization",
-        category: "profile",
+        category: "identity",
         attester: attesterDid,
         schemaId: schemaId,
         uid: uid,
@@ -1866,7 +1867,7 @@ class AttestationService {
         schemaId: schemaId,
         entityId: entityId,
         class: "organization",
-        category: "profile",
+        category: "identity",
         attester: attesterDid,
         hash: hash,
         vccomm: vccomm,
@@ -1975,7 +1976,7 @@ class AttestationService {
         schemaId: schemaId,
         entityId: entityId,
         class: "organization",
-        category: "certificate",
+        category: "compliance",
         attester: attesterDid,
         hash: hash,
         vccomm: vccomm,
@@ -2082,7 +2083,7 @@ class AttestationService {
         displayName: email,
         entityId: entityId,
         class: "individual",
-        category: "profile",
+        category: "identity",
         attester: attesterDid,
         schemaId: schemaId,
         uid: uid,
@@ -2254,17 +2255,17 @@ class AttestationService {
     let attestationCategories : AttestationCategory[] = [
       {
         class: "organization",
-        name: "wallet",
+        name: "identity",
         id: "10"
       },
       {
         class: "organization",
-        name: "leaders",
+        name: "leadership", 
         id: "10"
       },
       {
         class: "organization",
-        name: "account",
+        name: "financial", 
         id: "20"
       },
       {
@@ -2272,31 +2273,7 @@ class AttestationService {
         name: "account access",
         id: "21"
       },
-      {
-        class: "organization",
-        name: "profile",
-        id: "30"
-      },
-      {
-        class: "organization",
-        name: "social",
-        id: "40"
-      },
-      {
-        class: "organization",
-        name: "domain",
-        id: "50"
-      },
-      {
-        class: "organization",
-        name: "registration",
-        id: "60"
-      },
-      {
-        class: "organization",
-        name: "certificate",
-        id: "70"
-      },
+
       {
         class: "organization",
         name: "delegations",
@@ -2304,24 +2281,14 @@ class AttestationService {
       },
       {
         class: "individual",
-        name: "wallet",
+        name: "identity",
         id: "80"
       },
       {
         class: "individual",
-        name: "account",
+        name: "financial",
         id: "80"
-      },
-      {
-        class: "individual",
-        name: "profile",
-        id: "90"
-      },
-      {
-        class: "individual",
-        name: "social",
-        id: "100"
-      },
+      }
     ]
 
     return attestationCategories

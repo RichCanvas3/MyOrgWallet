@@ -58,7 +58,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
             attester: orgDid,
             entityId: entityId,
             class: "organization",
-            category: "certificate",
+            category: "compliance",
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,
