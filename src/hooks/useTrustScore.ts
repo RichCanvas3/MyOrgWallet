@@ -137,7 +137,27 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
       // Add points to the appropriate pillar
       if (contributingPillar) {
         const config = pillarMapping[contributingPillar];
-        const points = config.verifiedPoints; // Use same points for all attestations
+        let points = config.verifiedPoints; // Use same points for all attestations
+        
+        // Special handling for leadership pillar - first attestation gets 50% of points
+        if (contributingPillar === 'leadership') {
+          const existingLeadershipAttestations = attestations.filter(a => {
+            for (const [pillar, pillarConfig] of Object.entries(pillarMapping)) {
+              if (pillar === 'leadership' && 
+                  (pillarConfig.categories.includes(a.category || '') || 
+                   (a.entityId && pillarConfig.entityPatterns.some(pattern => a.entityId?.includes(pattern))))) {
+                return true;
+              }
+            }
+            return false;
+          }).length;
+          
+          // If this is the first leadership attestation, give 50% of points
+          if (existingLeadershipAttestations === 0) {
+            points = Math.round(config.verifiedPoints * 0.5);
+          }
+        }
+        
         breakdown[contributingPillar] += points;
         
         // Count savings accounts for finance pillar
@@ -162,7 +182,7 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
 
     // Apply KYC boost to leadership score if MetaMask Card is present
     if (hasKYC) {
-      const leadershipBoost = Math.round(breakdown.leadership * 2); // 30% boost
+      const leadershipBoost = Math.round(breakdown.leadership * 0.3); // 30% boost
       breakdown.leadership += leadershipBoost;
     }
 

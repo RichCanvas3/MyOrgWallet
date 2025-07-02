@@ -1385,9 +1385,14 @@ class AttestationService {
 
     const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && name != undefined) {
-      //console.info("set to social attestation with name: ", name)
+      console.info("set to social attestation with name: ", name)
+      let displayName = name
+      if (displayName == "" || displayName == undefined || displayName == null) {
+        displayName = entityId.replace("(org)", "").replace("(indiv)", "")  
+      }
+
       const att : SocialAttestation = {
-        displayName: "linkedin",
+        displayName: displayName,
         entityId: entityId,
         class: "individual",
         category: "identity",
