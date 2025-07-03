@@ -69,7 +69,7 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
     },
     finance: {
       categories: ['finance', 'account', 'credit', 'revenue', 'funding'],
-      entityPatterns: ['account(org)', 'account-indiv(org)'],
+      entityPatterns: ['account(org)'],
       verifiedPoints: 20,
       unverifiedPoints: 10
     },
@@ -101,16 +101,27 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
     let totalUSDCBalance = 0;
     let savingsAccounts = 0;
     let hasKYC = false;
+    let leadershipAttestations: Attestation[] = [];
 
     // Check for MetaMask Card attestation and apply KYC logic
     const hasMetaMaskCard = attestations.some(att => att.displayName === "MetaMask Card");
+    console.log('MetaMask Card detection:', {
+      hasMetaMaskCard,
+      allAttestations: attestations.map(att => ({
+        displayName: att.displayName,
+        category: att.category,
+        entityId: att.entityId
+      }))
+    });
+    
     if (hasMetaMaskCard) {
       hasKYC = true;
+      console.log('KYC flag set to true due to MetaMask Card');
       // Boost leadership score by 30% (add 30% of current leadership score)
       // We'll apply this after calculating the base leadership score
     }
 
-    // Calculate scores based on attestation types and categories
+    // First pass: collect all leadership attestations
     attestations.forEach(att => {
       // Count attestations by category
       if (att.category) {
@@ -134,30 +145,21 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
         }
       }
 
-      // Add points to the appropriate pillar
-      if (contributingPillar) {
+      // Collect leadership attestations for special processing
+      if (contributingPillar === 'leadership') {
+        leadershipAttestations.push(att);
+        console.log('Leadership attestation found:', {
+          displayName: att.displayName,
+          category: att.category,
+          entityId: att.entityId,
+          contributingPillar
+        });
+      }
+
+      // Add points to the appropriate pillar (except leadership which we'll handle separately)
+      if (contributingPillar && contributingPillar !== 'leadership') {
         const config = pillarMapping[contributingPillar];
-        let points = config.verifiedPoints; // Use same points for all attestations
-        
-        // Special handling for leadership pillar - first attestation gets 50% of points
-        if (contributingPillar === 'leadership') {
-          const existingLeadershipAttestations = attestations.filter(a => {
-            for (const [pillar, pillarConfig] of Object.entries(pillarMapping)) {
-              if (pillar === 'leadership' && 
-                  (pillarConfig.categories.includes(a.category || '') || 
-                   (a.entityId && pillarConfig.entityPatterns.some(pattern => a.entityId?.includes(pattern))))) {
-                return true;
-              }
-            }
-            return false;
-          }).length;
-          
-          // If this is the first leadership attestation, give 50% of points
-          if (existingLeadershipAttestations === 0) {
-            points = Math.round(config.verifiedPoints * 0.5);
-          }
-        }
-        
+        const points = config.verifiedPoints; // Use same points for all attestations
         breakdown[contributingPillar] += points;
         
         // Count savings accounts for finance pillar
@@ -180,10 +182,55 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
       }
     });
 
+    // Special handling for leadership attestations
+    if (leadershipAttestations.length > 0) {
+      const config = pillarMapping.leadership;
+      const totalLeadershipPoints = leadershipAttestations.length * config.verifiedPoints;
+      
+      console.log('Leadership scoring debug:', {
+        totalAttestations: leadershipAttestations.length,
+        totalLeadershipPoints,
+        attestations: leadershipAttestations.map(att => ({
+          displayName: att.displayName,
+          category: att.category,
+          entityId: att.entityId
+        }))
+      });
+      
+      // First leadership attestation gets at least 50% of total leadership score
+      const firstAttestationPoints = Math.max(
+        Math.round(totalLeadershipPoints * 0.8), // At least 80% of total
+        config.verifiedPoints // But not less than normal points
+      );
+      
+      // Remaining points distributed among other leadership attestations
+      const remainingPoints = totalLeadershipPoints - firstAttestationPoints;
+      const remainingAttestations = leadershipAttestations.length - 1;
+      
+      if (remainingAttestations > 0) {
+        const pointsPerRemainingAttestation = Math.round(remainingPoints / remainingAttestations);
+        breakdown.leadership = firstAttestationPoints + (remainingAttestations * pointsPerRemainingAttestation);
+      } else {
+        breakdown.leadership = firstAttestationPoints;
+      }
+      
+      console.log('Leadership score calculation:', {
+        firstAttestationPoints,
+        remainingPoints,
+        remainingAttestations,
+        finalLeadershipScore: breakdown.leadership
+      });
+    }
+
     // Apply KYC boost to leadership score if MetaMask Card is present
     if (hasKYC) {
-      const leadershipBoost = Math.round(breakdown.leadership * 0.3); // 30% boost
+      const leadershipBoost = Math.round(breakdown.leadership * 3.0); // 30% boost
       breakdown.leadership += leadershipBoost;
+      console.log('KYC boost applied:', {
+        originalScore: breakdown.leadership - leadershipBoost,
+        boost: leadershipBoost,
+        finalScore: breakdown.leadership
+      });
     }
 
     // Calculate USDC balances for savings accounts
@@ -228,6 +275,8 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
       breakdown[key as keyof typeof breakdown] = Math.min(100, breakdown[key as keyof typeof breakdown]);
     });
 
+    console.log('Final breakdown before overall calculation:', breakdown);
+
     // Calculate overall score (weighted average)
     const overall = Math.round(
       (breakdown.leadership * 0.25 + 
@@ -236,6 +285,15 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
        breakdown.compliance * 0.20 + 
        breakdown.reputation * 0.10)
     );
+
+    console.log('Overall score calculation:', {
+      leadership: breakdown.leadership * 0.25,
+      identity: breakdown.identity * 0.25,
+      finance: breakdown.finance * 0.20,
+      compliance: breakdown.compliance * 0.20,
+      reputation: breakdown.reputation * 0.10,
+      total: overall
+    });
 
     return {
       overall: Math.min(100, overall),
