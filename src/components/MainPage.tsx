@@ -783,7 +783,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         if (orgDid && privateIssuerDid && walletClient && mascaApi && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
 
           const vc = await VerifiableCredentialsService.createStateRegistrationVC(entityId, orgDid, privateIssuerDid, idNumber, orgName, status, formationDate, state, locationAddress);
-          const result = await VerifiableCredentialsService.createCredential(vc, entityId, "", orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+          const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgName, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
           console.info("state reg createCredential result: ", result)
           const fullVc = result.vc
           const proof = result.proof
@@ -804,7 +804,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
               attester: orgDid,
               entityId: entityId,
               class: "organization",
-              category: "identity",
+              category: "compliance",
               hash: hash,
               vccomm: (fullVc.credentialSubject as any).commitment.toString(),
               vcsig: (fullVc.credentialSubject as any).commitmentSignature,
@@ -852,7 +852,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     if (orgDid && privateIssuerDid && mascaApi && walletClient && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
 
       const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, privateIssuerDid, domain, domaincreationdate.toDateString());
-      const result = await VerifiableCredentialsService.createCredential(vc, entityId, "", orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, "state-registration", orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
       if (proof && fullVc && chain && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
@@ -901,7 +901,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     if (orgDid && mascaApi && walletClient && privateIssuerAccount && orgAccountClient && burnerAccountClient && privateIssuerDid) {
 
       const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC(entityId, orgDid, privateIssuerDid, websiteType, website);
-      const result = await VerifiableCredentialsService.createCredential(vc, entityId, "", orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, website, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
       if (proof && chain && fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
@@ -951,7 +951,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     if (orgDid && privateIssuerDid && mascaApi && walletClient && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
 
       const vc = await VerifiableCredentialsService.createEmailVC(entityId, orgDid, privateIssuerDid, emailType, email);
-      const result = await VerifiableCredentialsService.createCredential(vc, entityId, "", orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, email, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
       if (proof && chain &&fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {

@@ -214,10 +214,12 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose, o
 
     if (walletSigner && walletClient && accountClient &&  orgAccountClient && privateIssuerAccount && orgDid && mascaApi && privateIssuerDid) {
 
-      console.info("*********** ADD ORG ACCOUNT DELEGATION ATTESTATION ****************")
+      console.info("*********** ADD ORG ACCOUNT DELEGATION ATTESTATION 1  ****************")
       entityId = "account-org(org)"
 
       // setup delegation between them
+      let delegationJsonStr = ""
+
       let accountOrgDel = createDelegation({
         to: orgAccountClient.address,
         from: accountClient.address,
@@ -233,13 +235,22 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose, o
         signature,
       }
 
-      const delegationJsonStr = JSON.stringify(accountOrgDel)
+      delegationJsonStr = JSON.stringify(accountOrgDel)
 
+
+      console.info("create account org del vc: ", entityId, privateIssuerDid, accountDid, orgDid, accountName, coaCode, coaCategory, delegationJsonStr)
       const vc = await VerifiableCredentialsService.createAccountOrgDelVC(entityId, privateIssuerDid, accountDid, orgDid, accountName, coaCode, coaCategory, delegationJsonStr);
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountName, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
 
+      console.info("fullVc: ", fullVc)
+      console.info("chain: ", chain)
+      console.info("indivAccountClient: ", indivAccountClient)
+      console.info("burnerAccountClient: ", burnerAccountClient)
+      console.info("orgIssuerDelegation: ", orgIssuerDelegation)
+      console.info("orgIndivDelegation: ", orgIndivDelegation)
+      console.info("orgAccountClient: ", orgAccountClient)
       if (fullVc && chain && indivAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient) {
 
         // now create attestation

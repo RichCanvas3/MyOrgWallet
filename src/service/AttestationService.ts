@@ -1619,7 +1619,7 @@ class AttestationService {
         displayName: name,
         entityId: entityId,
         class: "organization",
-        category: "identity",
+        category: "compliance",
         attester: attesterDid,
         schemaId: schemaId,
         uid: uid,

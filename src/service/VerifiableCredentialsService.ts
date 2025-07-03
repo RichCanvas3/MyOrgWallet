@@ -448,6 +448,7 @@ class VerifiableCredentialsService {
       console.info("got vcs: ", vcs)
       for (const vc of vcs.data) {
         if (vc.data.credentialSubject?.provider?.toLowerCase() == entityId.toLowerCase()) {
+          console.info("found vc: ", vc.data.credentialSubject, displayName)
           if (vc.data.credentialSubject?.displayName?.toLowerCase() == displayName.toLowerCase()) {
             const credentialJSON = JSON.stringify(vc.data);
             localStorage.setItem(key, credentialJSON)

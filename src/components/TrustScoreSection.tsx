@@ -19,14 +19,25 @@ import { useTrustScore } from '../hooks/useTrustScore';
 interface TrustScoreSectionProps {
   orgDid?: string;
   indivDid?: string;
+  trustScore?: any;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
 const TrustScoreSection: React.FC<TrustScoreSectionProps> = ({
   orgDid,
   indivDid,
+  trustScore: propTrustScore,
+  isLoading: propIsLoading,
+  error: propError,
 }) => {
-  // Use centralized trust score hook
-  const { trustScore, isLoading, error } = useTrustScore({ orgDid, indivDid });
+  // Use centralized trust score hook if props not provided
+  const { trustScore: hookTrustScore, isLoading: hookIsLoading, error: hookError } = useTrustScore({ orgDid, indivDid });
+  
+  // Use props if provided, otherwise use hook values
+  const trustScore = propTrustScore || hookTrustScore;
+  const isLoading = propIsLoading !== undefined ? propIsLoading : hookIsLoading;
+  const error = propError !== undefined ? propError : hookError;
 
   if (isLoading) {
     return (
@@ -61,7 +72,7 @@ const TrustScoreSection: React.FC<TrustScoreSectionProps> = ({
         <CardContent>
           <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
             <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
-              Organization Trust Score
+              {trustScore.organizationName ? `${trustScore.organizationName} Trust Score` : 'Organization Trust Score'}
             </Typography>
             <Tooltip title="Overall Trust Score: Weighted average of all trust pillars. Leadership (25%), Identity (25%), Finance (20%), Compliance (20%), Reputation (10%). Color indicates trust level: Green (80-100), Orange (60-79), Red (0-59).">
               <Box display="flex" alignItems="center" gap={1}>

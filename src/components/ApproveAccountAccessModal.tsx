@@ -172,7 +172,7 @@ const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ i
           indivDelegationJsonStr
         )           
 
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountName, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+        const result = await VerifiableCredentialsService.createCredential(vc, entityId, name, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
 

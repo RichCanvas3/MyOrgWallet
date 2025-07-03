@@ -287,7 +287,7 @@ export const useWalletConnect = () => {
       {'did': 'did:pkh:eip155:10:0xb201929847147A25B5701F6f2c4058f3d3836c57'},
       {'did': 'did:pkh:eip155:10:0xd07ad34308111AC10EC883326A7DB9e77b4Da5A9'},
       {'did': 'did:pkh:eip155:10:0x547329A545144379D1DA8aB6D61003b63AB2dcb2'},
-      {'did': 'did:pkh:eip155:10:0x2F0BcB192212AD4e3977650feeE4f455053F7772'},
+      //{'did': 'did:pkh:eip155:10:0x2F0BcB192212AD4e3977650feeE4f455053F7772'},
 
     ]
 
@@ -1434,7 +1434,7 @@ export const useWalletConnect = () => {
         
               console.info("create credential for org attestation")
               const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, privateIssuerDid, orgName);
-              const result = await VerifiableCredentialsService.createCredential(vc, "", entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgName, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
               if (fullVc) {
@@ -1500,7 +1500,7 @@ export const useWalletConnect = () => {
 
           
                 const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, privateIssuerDid, domainName, "");
-                const result = await VerifiableCredentialsService.createCredential(vc, "", entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+                const result = await VerifiableCredentialsService.createCredential(vc, entityId, domainName, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
                 const fullVc = result.vc
                 const proof = result.proof
                 if (fullVc) {
@@ -1563,7 +1563,7 @@ export const useWalletConnect = () => {
               const delegationJsonStr = JSON.stringify(orgIndivDelegation)
         
               const vc = await VerifiableCredentialsService.createOrgIndivVC(entityId, orgDid, indivDid, indName, delegationJsonStr, privateIssuerDid);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, "", orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indName, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
 
@@ -1666,7 +1666,7 @@ export const useWalletConnect = () => {
               }
         
               const vc = await VerifiableCredentialsService.createIndivVC(entityId, indivDid, privateIssuerDid, orgDid, indName);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, "", indivDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indName, indivDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
 
@@ -1712,7 +1712,7 @@ export const useWalletConnect = () => {
               }
         
               const vc = await VerifiableCredentialsService.createIndivEmailVC(entityId, indivDid, privateIssuerDid, "business", indEmail);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, "", indivDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivEmail, indivDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
 

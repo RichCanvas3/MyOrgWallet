@@ -7,6 +7,7 @@ import { useCrossChainAccount } from './useCrossChainTools';
 
 export interface TrustScore {
   overall: number;
+  organizationName?: string;
   breakdown: {
     leadership: number;
     identity: number;
@@ -102,6 +103,13 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
     let savingsAccounts = 0;
     let hasKYC = false;
     let leadershipAttestations: Attestation[] = [];
+    
+    // Extract organization name from org attestation
+    let organizationName: string | undefined;
+    const orgAttestation = attestations.find(att => att.entityId === "org(org)");
+    if (orgAttestation && (orgAttestation as any).name) {
+      organizationName = (orgAttestation as any).name;
+    }
 
     // Check for MetaMask Card attestation and apply KYC logic
     const hasMetaMaskCard = attestations.some(att => att.displayName === "MetaMask Card");
@@ -165,6 +173,17 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
         // Count savings accounts for finance pillar
         if (contributingPillar === 'finance' && att.entityId?.includes('account')) {
           savingsAccounts++;
+        }
+        
+        // Debug finance attestations
+        if (contributingPillar === 'finance') {
+          console.log('Finance attestation found:', {
+            displayName: att.displayName,
+            category: att.category,
+            entityId: att.entityId,
+            pointsAdded: points,
+            currentFinanceScore: breakdown.finance
+          });
         }
       }
 
@@ -262,12 +281,28 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
     }
 
     // Add USDC balance bonus to finance score
+    console.log('USDC Balance calculation:', {
+      totalUSDCBalance,
+      financeScoreBeforeUSDC: breakdown.finance,
+      savingsAccounts
+    });
+    
     if (totalUSDCBalance > 0) {
       // Bonus points based on USDC balance tiers
       if (totalUSDCBalance >= 10000) breakdown.finance += 30; // $10k+ gets 30 bonus points
       else if (totalUSDCBalance >= 1000) breakdown.finance += 20; // $1k+ gets 20 bonus points
       else if (totalUSDCBalance >= 100) breakdown.finance += 10; // $100+ gets 10 bonus points
       else breakdown.finance += 5; // Any balance gets 5 bonus points
+      
+      console.log('USDC bonus applied:', {
+        totalUSDCBalance,
+        bonusApplied: totalUSDCBalance >= 10000 ? 30 : 
+                     totalUSDCBalance >= 1000 ? 20 : 
+                     totalUSDCBalance >= 100 ? 10 : 5,
+        financeScoreAfterUSDC: breakdown.finance
+      });
+    } else {
+      console.log('No USDC balance found, no bonus applied');
     }
 
     // Cap each category at 100
@@ -297,6 +332,7 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
 
     return {
       overall: Math.min(100, overall),
+      organizationName,
       breakdown,
       details: {
         totalAttestations,
@@ -315,10 +351,11 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
     setError(null);
 
     try {
-      const atts = await AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, indivDid || "");
+      const atts = await AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, "");
       setAttestations(atts);
       
       // Calculate trust score when attestations are loaded
+      console.info("11111 --- loadAttestations: ", atts)
       const score = await calculateTrustScore(atts);
       setTrustScore(score);
     } catch (err) {
