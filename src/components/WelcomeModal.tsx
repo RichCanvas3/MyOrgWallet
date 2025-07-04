@@ -13,6 +13,11 @@ import {
   Fade,
   Snackbar,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Link,
 } from '@mui/material';
 import { Check, ArrowForward, ArrowBack } from '@mui/icons-material';
 import { useWallectConnectContext } from "../context/walletConnectContext";
@@ -37,8 +42,13 @@ const WelcomeModal: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [organizationName, setOrganizationName] = useState('');
   const [fullName, setFullName] = useState('');
+  const [earlyAccessCode, setEarlyAccessCode] = useState('');
   const [email, setEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
+  const [showEarlyAccessDialog, setShowEarlyAccessDialog] = useState(false);
+  const [earlyAccessName, setEarlyAccessName] = useState('');
+  const [earlyAccessEmail, setEarlyAccessEmail] = useState('');
+  const [isSubmittingEarlyAccess, setIsSubmittingEarlyAccess] = useState(false);
   const [showEmailVerification, setShowEmailVerification] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'info' as 'info' | 'success' | 'error' });
@@ -47,14 +57,45 @@ const WelcomeModal: React.FC = () => {
 
   const steps: Step[] = [
     { id: 1, title: 'Your Name',      isActive: currentStep === 1, isCompleted: currentStep > 1 },
-    { id: 2, title: 'Your Org Email', isActive: currentStep === 2, isCompleted: currentStep > 2 },
-    { id: 3, title: 'Your Org Name',      isActive: currentStep === 3, isCompleted: currentStep > 3 },
+    { id: 2, title: 'Early Access', isActive: currentStep === 2, isCompleted: currentStep > 2 },
+    { id: 3, title: 'Your Org Email', isActive: currentStep === 3, isCompleted: currentStep > 3 },
+    { id: 4, title: 'Your Org Name',      isActive: currentStep === 4, isCompleted: currentStep > 4 },
   ];
 
   const handleToast = (message: string, severity: 'info' | 'success' | 'error' = 'info') => {
     setToast({ open: true, message, severity });
   };
   const handleCloseToast = () => setToast(t => ({ ...t, open: false }));
+
+  const handleEarlyAccessSubmit = async () => {
+    if (!earlyAccessName.trim() || !earlyAccessEmail.trim()) {
+      handleToast('Please enter both name and email.', 'error');
+      return;
+    }
+    
+    if (!earlyAccessEmail.includes('@')) {
+      handleToast('Please enter a valid email address.', 'error');
+      return;
+    }
+
+    setIsSubmittingEarlyAccess(true);
+    
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/request-early-access`, {
+        name: earlyAccessName,
+        email: earlyAccessEmail
+      });
+      
+      handleToast('Early access request sent successfully! We\'ll contact you soon.', 'success');
+      setShowEarlyAccessDialog(false);
+      setEarlyAccessName('');
+      setEarlyAccessEmail('');
+    } catch (err: any) {
+      handleToast(err.response?.data?.error || 'Failed to send early access request. Please try again.', 'error');
+    } finally {
+      setIsSubmittingEarlyAccess(false);
+    }
+  };
 
   const sendVerificationEmail = async () => {
     try {
@@ -99,8 +140,23 @@ const WelcomeModal: React.FC = () => {
       return;
     }
 
-    // Step 2: email/org-verification
+    // Step 2: early access code
     if (currentStep === 2) {
+      if (!earlyAccessCode.trim()) {
+        handleToast('Please enter your early access code.', 'error');
+        return;
+      }
+      // You can add validation for specific access codes here
+      if (earlyAccessCode.toLowerCase() !== 'early2024' && earlyAccessCode.toLowerCase() !== 'beta') {
+        handleToast('Invalid early access code. Please check your code and try again.', 'error');
+        return;
+      }
+      setCurrentStep(3);
+      return;
+    }
+
+    // Step 3: email/org-verification
+    if (currentStep === 3) {
       if (!email.trim() || !email.includes('@')) {
         handleToast('Please enter a valid email to verify organization.', 'error');
         return;
@@ -160,12 +216,12 @@ const WelcomeModal: React.FC = () => {
         }
       }
 
-      setCurrentStep(3);
+      setCurrentStep(4);
       return;
     }
 
-    // Step 3: organization name & final submit
-    if (currentStep === 3) {
+    // Step 4: organization name & final submit
+    if (currentStep === 4) {
 
       if (!organizationName.trim()) {
         handleToast('Please enter your organization name.', 'error');
@@ -248,6 +304,24 @@ const WelcomeModal: React.FC = () => {
             {currentStep === 2 && (
               <Fade in>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Typography>Early Access Code</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Enter your early access code to continue
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    placeholder="Enter your access code"
+                    value={earlyAccessCode}
+                    onChange={e => setEarlyAccessCode(e.target.value)}
+                    type="password"
+                  />
+                </Box>
+              </Fade>
+            )}
+
+            {currentStep === 3 && (
+              <Fade in>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <Typography>Your email at organization</Typography>
                   <TextField
                     fullWidth
@@ -272,7 +346,7 @@ const WelcomeModal: React.FC = () => {
               </Fade>
             )}
 
-            {currentStep === 3 && (
+            {currentStep === 4 && (
               <Fade in>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <Typography>Organization Name</Typography>
@@ -297,17 +371,50 @@ const WelcomeModal: React.FC = () => {
               variant="contained"
               onClick={handleNextStep}
               disabled={isSubmitting}
-              endIcon={currentStep < 3 ? <ArrowForward /> : null}
+              endIcon={currentStep < 4 ? <ArrowForward /> : null}
             >
-              {currentStep === 3
+              {currentStep === 4
                 ? 'Complete Setup'
-                : showEmailVerification && currentStep === 2
+                : showEmailVerification && currentStep === 3
                   ? 'Verify & Continue'
-                  : currentStep === 2
+                  : currentStep === 3
                     ? 'Send Verification'
                     : 'Next'
               }
             </Button>
+          </Box>
+
+          {/* Early Access Disclaimer */}
+          <Box sx={{ 
+            mt: 3, 
+            p: 2, 
+            bgcolor: 'warning.light', 
+            borderRadius: 1, 
+            border: '1px solid',
+            borderColor: 'warning.main'
+          }}>
+            <Typography variant="body2" color="warning.dark" sx={{ fontWeight: 'medium' }}>
+              ⚠️ Early Access Notice
+            </Typography>
+            <Typography variant="caption" color="warning.dark" sx={{ display: 'block', mt: 0.5 }}>
+              This application is currently in early access/beta stage. Features may be limited, and you may encounter bugs or incomplete functionality. 
+              We appreciate your patience as we continue to develop and improve the platform. Your feedback is valuable to us.
+            </Typography>
+            <Box sx={{ mt: 1.5 }}>
+              <Link
+                component="button"
+                variant="body2"
+                color="primary"
+                onClick={() => setShowEarlyAccessDialog(true)}
+                sx={{ 
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  fontWeight: 'medium'
+                }}
+              >
+                Request Early Access Code
+              </Link>
+            </Box>
           </Box>
         </CardContent>
       </Card>
@@ -317,6 +424,59 @@ const WelcomeModal: React.FC = () => {
           {toast.message}
         </Alert>
       </Snackbar>
+
+      {/* Early Access Request Dialog */}
+      <Dialog 
+        open={showEarlyAccessDialog} 
+        onClose={() => setShowEarlyAccessDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Request Early Access Code
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              Enter your details below and we'll send you an early access code to get started with the platform.
+            </Typography>
+            
+            <TextField
+              fullWidth
+              label="Full Name"
+              placeholder="Jane Doe"
+              value={earlyAccessName}
+              onChange={e => setEarlyAccessName(e.target.value)}
+              required
+            />
+            
+            <TextField
+              fullWidth
+              label="Email Address"
+              type="email"
+              placeholder="you@organization.com"
+              value={earlyAccessEmail}
+              onChange={e => setEarlyAccessEmail(e.target.value)}
+              required
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 1 }}>
+          <Button 
+            onClick={() => setShowEarlyAccessDialog(false)}
+            disabled={isSubmittingEarlyAccess}
+          >
+            Cancel
+          </Button>
+          <Button 
+            variant="contained"
+            onClick={handleEarlyAccessSubmit}
+            disabled={isSubmittingEarlyAccess}
+          >
+            {isSubmittingEarlyAccess ? 'Sending...' : 'Request Access'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
