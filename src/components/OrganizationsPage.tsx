@@ -237,7 +237,7 @@ interface OrganizationsPageProps {
 
     return (
       <div className="organization-page flex h-screen">
-        <div className="organization-list-container w-1/2 p-4 overflow-y-auto">
+        <div className="organization-list-container p-4 overflow-y-auto" style={{ width: '30%' }}>
           <div id="organization-search" className="flex items-center mb-2">
               <input
                 id="attestationSearchInput"
@@ -288,7 +288,7 @@ interface OrganizationsPageProps {
           </div>
         </div>
 
-        <div className="attestation-list-container w-1/2 p-6 overflow-y-auto">
+        <div className="attestation-list-container p-6 overflow-y-auto" style={{ width: '70%' }}>
           {/* Trust Score Section above Attestation Details */}
           {orgDid && (
             <Box sx={{ mb: 3 }}>

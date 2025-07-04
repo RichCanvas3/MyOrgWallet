@@ -445,8 +445,10 @@ class VerifiableCredentialsService {
 
 
       const vcs = await mascaApi.queryCredentials();
-      console.info("got vcs: ", vcs)
+
+      console.info("entityId: ", entityId)
       for (const vc of vcs.data) {
+        console.info("vc.data.credentialSubject?.provider: ", vc.data.credentialSubject?.provider, vc.data.credentialSubject)
         if (vc.data.credentialSubject?.provider?.toLowerCase() == entityId.toLowerCase()) {
           console.info("found vc: ", vc.data.credentialSubject, displayName)
           if (vc.data.credentialSubject?.displayName?.toLowerCase() == displayName.toLowerCase()) {
