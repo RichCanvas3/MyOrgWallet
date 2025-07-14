@@ -62,6 +62,7 @@ import AddCreditCardModal from './AddCreditCardModal';
 import FundCreditCardModal from './FundCreditCardModal';
 import AddSavingsModal from './AddSavingsModal';
 import OrgModal from './OrgModal';  
+import { invokeLangGraphAgent, sendMessageToLangGraphAssistant } from '../service/LangChainService';
 
 
 function getFirstValidString(...args: (string | undefined | null)[]): string {
@@ -109,6 +110,11 @@ const xAuthRef = { current: null as XAuthRef | null };
 const insuranceAuthRef = { current: null as InsuranceAuthRef | null };
 
 
+const threadID_text = await invokeLangGraphAgent({});
+  console.log(threadID_text);
+  const threadID_Array = threadID_text.split("'");
+  const threadID = threadID_Array[1];
+  console.log("Thread ID:", threadID);
 
 
 const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
@@ -180,7 +186,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     setOrgModalVisible(false);
   }
 
-
+  
 
 
   useEffect(() => {
@@ -388,14 +394,14 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       setShowScrollButton(false);
       clearInputArea();
   
-      let introduction = userSettings.assistantIntroductions ? userSettings.assistantIntroductions : OPENAI_DEFAULT_ASSISTANT_PROMPT
+      // Set the initial introduction message to the requested string
+      let introduction = "Please input the name of your company";
       let instruction : string | undefined
   
-
       if (entities != undefined) {
         for (const entity of entities) {
           if (entity.attestation == undefined && entity.introduction && entity.introduction != "") {
-            introduction = entity.introduction?.replace("[org]", orgName?orgName:"");
+            // introduction = entity.introduction?.replace("[org]", orgName?orgName:"");
             instruction = entity.instruction?.replace("[org]", orgName?orgName:"");
             break
           }
@@ -489,6 +495,11 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     }
   };
 
+  async function getArgfromUserMessage(message: string): Promise<string> {
+    const args = await processUserMessage(message);
+    return args;
+  }
+
   const callApp = (message: string, fileDataRef: FileDataRef[]) => {
 
     if (conversation == null) {
@@ -497,21 +508,22 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
 
     setAllowAutoScroll(true);
-
+    addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
     //console.info("..... process user message: ", message)
-    let args = processUserMessage(message);
-
+    getArgfromUserMessage(message).then(str => {
+      addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
+      console.log('Data From Stream: ', str);
+    })
     //message = message + ", Please respond with a JSON object. Include keys like 'company_name', 'state_name', 'email' if they exist."
 
     console.info("user message entered: ", message)
-    addMessage(Role.User, MessageType.Normal, message, args, fileDataRef, sendMessage);
   };
 
   const addMessage = (
     role: Role,
     messageType: MessageType,
     message: string,
-    args: string,
+    args: any,
     fileDataRef: FileDataRef[],
     sendMessage?: (sendMessage: ChatMessage[], args: string) => void
   ) => {
@@ -560,15 +572,15 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     return effectiveSettings;
   }
 
-
+  
   function sendMessage(updatedMessages: ChatMessage[], args: string) {
-
+    /*
     // if we know what to do already from processor then go ahead and do it.  No need to call openai
     if (args != "") {
       console.info("*********************** no need to have AI look at user input becasue it told us what to do: ", args)
 
       
-      /*
+      
       let messages: ChatMessage[] = [
         {
           id: 0,
@@ -580,7 +592,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         ...updatedMessages
       ];
       setMessages(messages)
-      */
+      
 
 
 
@@ -588,12 +600,12 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       handleStreamedResponse("", args, [], true)
       return
     }
-
-
+    */
+    
     let defaultIntroduction
     let defaultInstruction
     let defaultTools
-    
+    /*
     //console.info("set ai stuff")
     if (entities != undefined) {
       for (const entity of entities) {
@@ -613,7 +625,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         }
       }
     }
-
+    */
     //console.info("tell AI what we need to do")
     //console.info("default introduction: ", defaultIntroduction)
     //console.info("default instruction: ", defaultInstruction)
@@ -654,7 +666,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     let effectiveSettings = getEffectiveChatSettings();
 
-
+    /*
     console.info("....... defaultTools: ", defaultTools)
     ChatService.sendMessageStreamed(effectiveSettings, messages, defaultTools, handleStreamedResponse)
       .then((response: ChatCompletion) => {
@@ -677,9 +689,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       .finally(() => {
         setLoading(false);
       });
-
+    */  
+    setLoading(false);
   }
-
+  
   
 
   async function checkAllDirectActions(lastAssistantResponse: string, lastUserResponse: string) {
@@ -728,7 +741,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   }
 
 
-  async function addOrgRegistrationAttestation(st: string) {
+  async function addOrgRegistrationAttestation(st: string, id: string, stat: string, address: string, formDate: string) {
 
     const entityId = "state-registration(org)"
 
@@ -737,16 +750,16 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       //console.info(">>>>>>>>>>>>> org name: ", orgName)
       if (orgName != undefined) {
 
-        const org = await OrgService.getOrgWithCompanyName(orgName, st);
+        //const org = await OrgService.getOrgWithCompanyName(orgName, st);
   
-        let orgJson = JSON.parse(org)
+        //let orgJson = JSON.parse(org)
         //console.info("org check: ", JSON.parse(org))
 
-        const idNumber = orgJson["idNumber"]
-        const status = orgJson["status"]
-        const locationAddress = orgJson["address"]
-        const state = orgJson["state"]
-        const formationDate = "1/2/2020"
+        const idNumber = id
+        const status = stat
+        const locationAddress = address
+        const state = st
+        const formationDate = formDate
 
         if (orgDid && privateIssuerDid && walletClient && mascaApi && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
 
@@ -765,8 +778,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             const attestation: StateRegistrationAttestation = {
               idnumber: idNumber,
               status: status,
-              formationdate: 1,
-              //state: state,
+              formationdate: formationDate,
+              state: state,
               locationaddress: locationAddress,
               name: orgName,
               attester: orgDid,
@@ -797,7 +810,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           }
         }
 
-        return orgJson["name"] + "org attestation" + orgJson["name"]
+        return orgName + "org attestation" + orgName
       }
       else {
         console.info("....... org name is not defined yes ........")
@@ -1090,14 +1103,44 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     return ""
     
   }
-
-  function processUserMessage(content: string) {
+  
+  
+  async function processUserMessage(content: string) {
 
     let args = ""
-    
+    const stateList = ['colorado', 'delaware']
+    console.log(content)
     var lastUserResponse = content.toLowerCase()
     var introduction = userSettings.assistantIntroductions ? userSettings.assistantIntroductions : OPENAI_DEFAULT_ASSISTANT_PROMPT
+  
+      
+    if (content.toLowerCase() == 'colorado') {
+      var response = await sendMessageToLangGraphAssistant(lastUserResponse, threadID, 'state_register', {}, linkedInAuthRef, xAuthRef);
+      console.log('adding attestation')
+      addOrgRegistrationAttestation(response['name'], response['id'], content, response["address"], response["formDate"]);
+      console.log('LangChain Response: ', response.message)
+      return response.message;
+    } else if ((content.toLowerCase())[12] == 'l') {//'https://www.linkedin.com/in') {
+      //console.log('hallo')
+      var response = await sendMessageToLangGraphAssistant(lastUserResponse, threadID, 'linkedin_verification', {}, linkedInAuthRef, xAuthRef);
+      console.log('LangChain Response: ', response.message)
+      return response.message;
+    } else if (content.toLowerCase() == 'twitter') {
+      var response = await sendMessageToLangGraphAssistant(lastUserResponse, threadID, 'x_verification', {}, linkedInAuthRef, xAuthRef);
+      return response.message;
+    } else {
+      var response = await sendMessageToLangGraphAssistant(lastUserResponse, threadID, 'none', {}, linkedInAuthRef, xAuthRef);
+      console.log('LangChain Response: ', response.message)
+      return response.message;
+    }
+    
+    
+    
+    
 
+    //return
+    //var introduction = userSettings.assistantIntroductions ? userSettings.assistantIntroductions : OPENAI_DEFAULT_ASSISTANT_PROMPT
+    /*
     if (entities != undefined) {
       for (const entity of entities) {
         if (entity.attestation == undefined && entity.introduction && entity.introduction != "" ) {
@@ -1106,10 +1149,11 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         }
       }
     }
-    
+    */
     //console.info(" >>>>>>>>>>>  default assistant message: ", introduction)
 
     // get last assistant message content
+    
     if (conversation) {
       var messages: ChatMessage[] = JSON.parse(conversation.messages);
       if (messages.length > 0) {
@@ -1117,6 +1161,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       }
     }
 
+    /*
     //console.info(" >>>>>>>>>>>  introduction: ", introduction)
     // check if the user put in direct action like "delete all"
     checkAllDirectActions(introduction, lastUserResponse).then((data) => {
@@ -1146,11 +1191,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       console.info("############## return insurance args")
       return args
     }
-
-
-    return ""
+    */
+   //return "something went wrong"
   }
-
+  
   
   function postToolCmdSendMessages(prevMessages: ChatMessage[], org: string | null, entities: Entity[]) : ChatMessage[] { 
 
@@ -1158,6 +1202,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     defaultIntroduction = "How can we help you?"
 
     let defaultInstruction
+    
     
     if (entities && org) {
       for (const entity of entities) {
@@ -1176,7 +1221,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         }
       }
     }
-
+    
 
     const updatedMessage2 = {
       ...prevMessages[prevMessages.length - 1],
@@ -1195,9 +1240,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     return msgs
 
   }
-
+  
+  
   function processAssistantMessage(isFirstCall: boolean, content: string, args: string, prevMessages: ChatMessage[], updatedMessage: ChatMessage, fileDataRef: FileDataRef[]) {
-
+    
     const result = {
       isToolFunction: false,
       messages: [] as ChatMessage[]
