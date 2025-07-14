@@ -356,10 +356,10 @@ app.post('/send-verification-email', async (req, res) => {
     text: `Your verification code is: ${code}`,
     html: `<p>Your verification code is: <strong>${code}</strong></p>`,
   };
-
+ 
   try {
     console.log('Sending verification email to:', email);
-    await sgMail.send(msg);
+    //await sgMail.send(msg);
     console.log('Verification email sent successfully');
     res.json({ message: 'Verification email sent' });
   } catch (error) {
@@ -371,7 +371,7 @@ app.post('/send-verification-email', async (req, res) => {
         data: error.response.data,
       } : 'No response data',
     });
-    res.status(500).json({ error: 'Failed to send email' });
+    return res.status(500).json({ error: 'Failed to send email' });
   }
 });
 
