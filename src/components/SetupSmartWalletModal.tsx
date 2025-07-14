@@ -76,6 +76,7 @@ const SetupSmartWalletModal: React.FC = () => {
     try {
       const loginResp = await selectedSignatory.login();
       setOwner(loginResp.owner)
+      console.info("*********** set signatory: ", loginResp.signatory)
       setSignatory(loginResp.signatory)
 
       // you can grab loginResp.owner/signatory if needed here

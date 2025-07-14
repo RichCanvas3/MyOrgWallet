@@ -107,7 +107,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
       if (orgDid && privateIssuerDid && walletClient && mascaApi && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
   
         const vc = await VerifiableCredentialsService.createSocialVC(entityId, orgDid, privateIssuerDid, name, url);
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+        const result = await VerifiableCredentialsService.createCredential(vc, "x", entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
         if (proof && fullVc && chain && orgAccountClient && indivIssuerDelegation && walletClient) {
@@ -118,7 +118,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
             attester: orgDid,
             entityId: entityId,
             class: "individual", 
-            category: "social",
+            category: "identity",
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,

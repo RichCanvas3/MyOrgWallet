@@ -63,7 +63,8 @@ const CreateWebDidModal: React.FC<CreateWebDidModalProps> = ({isVisible, onClose
 
       // test with https://resolver.identity.foundation/
       if (chain && orgDid) {
-        const attestation = await AttestationService.getAttestationByDidAndSchemaId(chain, orgDid, AttestationService.RegisteredDomainSchemaUID, "domain(org)")
+        const displayName = ""
+        const attestation = await AttestationService.getAttestationByDidAndSchemaId(chain, orgDid, AttestationService.RegisteredDomainSchemaUID, "domain(org)", displayName)
         if (attestation) {
 
           const domainAttestation = attestation as RegisteredDomainAttestation

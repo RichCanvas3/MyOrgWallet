@@ -246,7 +246,7 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
 
     //console.info("attestation: ", attestation)
 
@@ -443,8 +443,8 @@ class AttestationService {
     console.info("....... add indiv attestation signer: ", signer)
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
 
     console.info("create attestation: ", attestation)
@@ -555,8 +555,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
 
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.name && attestation.delegation) {
@@ -640,7 +640,7 @@ class AttestationService {
       const att : OrgIndivAttestation = {
         displayName: name,
         class: "organization",
-        category: "leaders",
+        category: "leadership",
         entityId: entityId,
         attester: attesterDid,
         schemaId: schemaId,
@@ -673,8 +673,8 @@ class AttestationService {
     console.info("....... add org attestation signer: ", signer)
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
 
     //console.info("attestation: ", attestation)
@@ -781,8 +781,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
 
     //console.info("attestation: ", attestation)
@@ -821,7 +821,7 @@ class AttestationService {
 
   }
   static constructIndivAccountAttestation(chain: Chain, uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
-    console.info("################ constructIndivAccountAttestation ......")
+
     let vccomm : string | undefined
     let vcsig : string | undefined
     let vciss : string | undefined
@@ -863,7 +863,7 @@ class AttestationService {
         const att : IndivAccountAttestation = {
           displayName: accountname,
           class: "individual",
-          category: "account",
+          category: "finance",
           entityId: entityId,
           attester: attesterDid,
           schemaId: schemaId,
@@ -874,7 +874,8 @@ class AttestationService {
           vciss: vciss,
           proof: proof,
           accountName: accountname,
-          accountDid: accountDid
+          accountDid: accountDid,
+          accountBalance: "0"
         }
   
         return att
@@ -892,8 +893,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
 
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.accountName) {
@@ -1019,8 +1020,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
 
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.accountName) {
@@ -1162,8 +1163,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
 
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.accountName) {
@@ -1253,7 +1254,7 @@ class AttestationService {
         const att : OrgAccountAttestation = {
           displayName: accountname,
           class: "organization",
-          category: "account",
+          category: "finance",
           entityId: entityId,
           attester: attesterDid,
           schemaId: schemaId,
@@ -1285,8 +1286,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
     
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.name != undefined && attestation.url != undefined && attestation.proof != undefined) {
@@ -1384,12 +1385,17 @@ class AttestationService {
 
     const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && name != undefined) {
-      //console.info("set to social attestation with name: ", name)
+      console.info("set to social attestation with name: ", name)
+      let displayName = name
+      if (displayName == "" || displayName == undefined || displayName == null) {
+        displayName = entityId.replace("(org)", "").replace("(indiv)", "")  
+      }
+
       const att : SocialAttestation = {
-        displayName: name,
+        displayName: displayName,
         entityId: entityId,
         class: "individual",
-        category: "social",
+        category: "identity",
         attester: attester,
         schemaId: schemaId,
         uid: uid,
@@ -1415,8 +1421,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
     if (attestation.vccomm && attestation.vcsig && attestation.vcsig && attestation.vciss && attestation.proof && attestation.domain && attestation.domaincreationdate) {
 
@@ -1490,7 +1496,7 @@ class AttestationService {
           displayName: domain,
           entityId: entityId,
           class: "organization",
-          category: "domain",
+          category: "identity",
           attester: attesterDid,
           schemaId: schemaId,
           uid: uid,
@@ -1516,8 +1522,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.name) {
 
@@ -1613,7 +1619,7 @@ class AttestationService {
         displayName: name,
         entityId: entityId,
         class: "organization",
-        category: "registration",
+        category: "compliance",
         attester: attesterDid,
         schemaId: schemaId,
         uid: uid,
@@ -1644,8 +1650,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof) {
 
@@ -1726,7 +1732,7 @@ class AttestationService {
         displayName: email,
         entityId: entityId,
         class: "organization",
-        category: "profile",
+        category: "identity",
         attester: attesterDid,
         schemaId: schemaId,
         uid: uid,
@@ -1780,8 +1786,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.type && attestation.url) {
       const schemaEncoder = new SchemaEncoder(this.WebsiteSchema);
@@ -1866,7 +1872,7 @@ class AttestationService {
         schemaId: schemaId,
         entityId: entityId,
         class: "organization",
-        category: "profile",
+        category: "identity",
         attester: attesterDid,
         hash: hash,
         vccomm: vccomm,
@@ -1891,8 +1897,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof) {
 
@@ -1975,7 +1981,7 @@ class AttestationService {
         schemaId: schemaId,
         entityId: entityId,
         class: "organization",
-        category: "certificate",
+        category: "compliance",
         attester: attesterDid,
         hash: hash,
         vccomm: vccomm,
@@ -2000,8 +2006,8 @@ class AttestationService {
 
     eas.connect(signer)
 
-    const issuedate = Math.floor(new Date("2025-03-10").getTime() / 1000); // Convert to seconds
-    const expiredate = Math.floor(new Date("2026-03-10").getTime() / 1000); // Convert to seconds
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof) {
 
@@ -2082,7 +2088,7 @@ class AttestationService {
         displayName: email,
         entityId: entityId,
         class: "individual",
-        category: "profile",
+        category: "identity",
         attester: attesterDid,
         schemaId: schemaId,
         uid: uid,
@@ -2255,68 +2261,54 @@ class AttestationService {
       {
         class: "organization",
         name: "wallet",
+        id: "1"
+      },
+      {
+        class: "organization",
+        name: "identity",
         id: "10"
       },
       {
         class: "organization",
-        name: "leaders",
-        id: "10"
-      },
-      {
-        class: "organization",
-        name: "account",
+        name: "leadership", 
         id: "20"
       },
       {
         class: "organization",
-        name: "account access",
-        id: "21"
-      },
-      {
-        class: "organization",
-        name: "profile",
+        name: "finance", 
         id: "30"
       },
       {
         class: "organization",
-        name: "social",
+        name: "compliance", 
         id: "40"
       },
       {
         class: "organization",
-        name: "domain",
+        name: "account access",
         id: "50"
       },
+
       {
         class: "organization",
-        name: "registration",
-        id: "60"
-      },
-      {
-        class: "organization",
-        name: "certificate",
-        id: "70"
+        name: "delegations",
+        id: "80"
       },
       {
         class: "individual",
         name: "wallet",
-        id: "80"
+        id: "10"
       },
       {
         class: "individual",
-        name: "account",
-        id: "80"
-      },
-      {
-        class: "individual",
-        name: "profile",
+        name: "identity",
         id: "90"
       },
       {
         class: "individual",
-        name: "social",
-        id: "100"
-      },
+        name: "finance",
+        id: "92"
+      }
     ]
 
     return attestationCategories
@@ -2326,10 +2318,7 @@ class AttestationService {
 
     const orgAddress = orgDid.replace("did:pkh:eip155:" + chain?.id + ":", "")
     const indivAddress = indivDid.replace("did:pkh:eip155:"  + chain?.id + ":", "")
-    
 
-    console.info("############## orgAddress: ", orgAddress)
-    console.info("############## indivAddress: ", indivAddress)
 
 
     try {
@@ -2353,6 +2342,7 @@ class AttestationService {
 
 
       const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
+      //console.info("data: ", data)
 
       const attestations : Attestation[] = []
       for (const item of data.attestations) {
@@ -2368,8 +2358,6 @@ class AttestationService {
 
           
           if (schema) {
-
-            //console.info("item: ", item)
 
             let entityId = "entityId"
             let hash = ""
@@ -2404,7 +2392,6 @@ class AttestationService {
               att = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "account(indiv)") {
-              console.info("############# constructIndivAccountAttestation ......")
               att = this.constructIndivAccountAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "account-org(org)") {
@@ -2452,6 +2439,7 @@ class AttestationService {
 
 
             if (att == undefined) {
+              //console.info("att is undefined: ", att, item.id)
               att = {
                 uid: item.id,
                 attester: "did:pkh:eip155:" + chain?.id + ":" + item.attester,
@@ -2462,14 +2450,17 @@ class AttestationService {
               }
             }
             else {
+              //console.info("att: ", att.displayName, item.id)
               att.uid = item.id,
               att.attester = "did:pkh:eip155:" + chain?.id + ":" + item.attester,
               att.schemaId = item.schemaId,
               entityId = entityId
+
+              attestations.push(att)
             }
 
             //console.info("push att on list: ", att)
-            attestations.push(att)
+            
           }
       
       }
@@ -2715,7 +2706,7 @@ class AttestationService {
     return false
   }
   
-  static async getAttestationByDidAndSchemaId(chain: Chain, did: string, schemaId: string, entityId: string): Promise<Attestation | undefined> {
+  static async getAttestationByDidAndSchemaId(chain: Chain, did: string, schemaId: string, entityId: string, displayName: string): Promise<Attestation | undefined> {
 
     //console.info("get attestation by address and schemaId and entityId: ", address, schemaId, entityId)
     let rtnAttestation : Attestation | undefined
@@ -2739,125 +2730,133 @@ class AttestationService {
         }
       }`;
 
-      const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
-      //console.info(">>>>>>>>>>>>>>>>>>> data: ", data)
+    const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
+    //console.info(">>>>>>>>>>>>>>>>>>> data: ", data)
 
-      // cycle through aes attestations and update entity with attestation info
-      for (const item of data.attestations) {
+    // cycle through aes attestations and update entity with attestation info
+    for (const item of data.attestations) {
 
-        //console.info("reading attestations: ", item.id, data.attestations.length)
-        if (schemaId == this.IndivSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.IndivSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            rtnAttestation = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.OrgIndivSchemaUID) {
-
-          const schemaEncoder = new SchemaEncoder(this.OrgIndivSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info("construct org indiv attestation")
-            rtnAttestation = this.constructOrgIndivAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.OrgSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.OrgSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            rtnAttestation = this.constructOrgAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.IndivAccountSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.IndivAccountSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info("construct account attestation")
-            rtnAttestation = this.constructIndivAccountAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.AccountOrgDelSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.AccountOrgDelSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info("construct account org del attestation")
-            rtnAttestation = this.constructAccountOrgDelAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.AccountIndivDelSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.AccountIndivDelSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info("construct account indiv del attestation")
-            rtnAttestation = this.constructAccountIndivDelAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.OrgAccountSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.OrgAccountSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info("construct org account attestation")
-            rtnAttestation = this.constructOrgAccountAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.StateRegistrationSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.StateRegistrationSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info("construct state reg attestation")
-            rtnAttestation = this.constructStateRegistrationAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.RegisteredDomainSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.RegisteredDomainSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info("construct domain attestation")
-            rtnAttestation = this.constructRegisteredDomainAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.SocialSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.SocialSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info(">>>>>>>>>>>>>>> construct social attestation: ", entityId)
-            rtnAttestation = this.constructSocialAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.WebsiteSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.WebsiteSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info(">>>>>>>>>>>>>>> construct website attestation: ", entityId)
-            rtnAttestation = this.constructWebsiteAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.InsuranceSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.WebsiteSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info(">>>>>>>>>>>>>>> construct insurance attestation: ", entityId)
-            rtnAttestation = this.constructInsuranceAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.EmailSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.EmailSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info(">>>>>>>>>>>>>>> construct email attestation: ", entityId)
-            rtnAttestation = this.constructEmailAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
-        }
-        if (schemaId == this.IndivEmailSchemaUID) {
-          const schemaEncoder = new SchemaEncoder(this.IndivEmailSchema);
-          const decodedData = schemaEncoder.decodeData(item.data);
-          if (this.checkEntity(entityId, decodedData)) {
-            console.info(">>>>>>>>>>>>>>> construct indiv email attestation: ", entityId)
-            rtnAttestation = this.constructIndivEmailAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
-          }
+      //console.info("reading attestations: ", item.id, data.attestations.length)
+      if (schemaId == this.IndivSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.IndivSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          rtnAttestation = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
         }
       }
+      if (schemaId == this.OrgIndivSchemaUID) {
+
+        const schemaEncoder = new SchemaEncoder(this.OrgIndivSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info("construct org indiv attestation")
+          rtnAttestation = this.constructOrgIndivAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.OrgSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.OrgSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          rtnAttestation = this.constructOrgAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.IndivAccountSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.IndivAccountSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info("construct account attestation")
+          rtnAttestation = this.constructIndivAccountAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.AccountOrgDelSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.AccountOrgDelSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info("construct account org del attestation")
+          rtnAttestation = this.constructAccountOrgDelAttestation(chain, item.id, item.schemaId, entityId, address, displayName, decodedData)
+        }
+      }
+      if (schemaId == this.AccountIndivDelSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.AccountIndivDelSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info("construct account indiv del attestation")
+          rtnAttestation = this.constructAccountIndivDelAttestation(chain, item.id, item.schemaId, entityId, address, displayName, decodedData)
+        }
+      }
+      if (schemaId == this.OrgAccountSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.OrgAccountSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info("construct org account attestation")
+          rtnAttestation = this.constructOrgAccountAttestation(chain, item.id, item.schemaId, entityId, address, displayName, decodedData)
+        }
+      }
+      if (schemaId == this.StateRegistrationSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.StateRegistrationSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info("construct state reg attestation")
+          rtnAttestation = this.constructStateRegistrationAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.RegisteredDomainSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.RegisteredDomainSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          rtnAttestation = this.constructRegisteredDomainAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.SocialSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.SocialSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info(">>>>>>>>>>>>>>> construct social attestation: ", entityId)
+          rtnAttestation = this.constructSocialAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.WebsiteSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.WebsiteSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info(">>>>>>>>>>>>>>> construct website attestation: ", entityId)
+          rtnAttestation = this.constructWebsiteAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.InsuranceSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.WebsiteSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info(">>>>>>>>>>>>>>> construct insurance attestation: ", entityId)
+          rtnAttestation = this.constructInsuranceAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.EmailSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.EmailSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info(">>>>>>>>>>>>>>> construct email attestation: ", entityId)
+          rtnAttestation = this.constructEmailAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+      if (schemaId == this.IndivEmailSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.IndivEmailSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          console.info(">>>>>>>>>>>>>>> construct indiv email attestation: ", entityId)
+          rtnAttestation = this.constructIndivEmailAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
+
+      if (rtnAttestation && rtnAttestation.displayName == displayName) {
+        console.info("@@@@@@@@@@@@@ rtnAttestation found: ", rtnAttestation.displayName)
+        break
+      }
+      else if (rtnAttestation && displayName && displayName != "") {
+        console.info("@@@@@@@@@@@@@ rtnAttestation not found: ", rtnAttestation?.displayName, displayName)
+        rtnAttestation = undefined
+      }
+    }
 
 
       
@@ -2999,7 +2998,6 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
       
     }
 
-    console.info("********** OrgIndivSchema rtnAttestation: ", rtnAttestation)
     return rtnAttestation;
   }
 

@@ -83,7 +83,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
 
         const res = await axios.get(CALLBACK_URI + '?code='+ event.data.code);
 
-        console.info("linkedin response ...........")
+        console.info("linkedin response: ", res.data)
         console.info(res.data.given_name)
         console.info(res.data.family_name)
         console.info(res.data.email)
@@ -94,7 +94,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
         if (indivDid && privateIssuerDid && mascaApi && privateIssuerAccount && indivAccountClient && burnerAccountClient && indivIssuerDelegation) {
   
           const vc = await VerifiableCredentialsService.createSocialVC(entityId, indivDid, privateIssuerDid, res.data.sub, "");
-          const result = await VerifiableCredentialsService.createCredential(vc, entityId, indivDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+          const result = await VerifiableCredentialsService.createCredential(vc, entityId, "linkedin", indivDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
           const fullVc = result.vc
           const proof = result.proof
 
@@ -106,14 +106,15 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
               attester: indivDid,
               entityId: entityId,
               class: "individual", 
-              category: "social",
+              category: "identity",
               hash: hash,
               vccomm: (fullVc.credentialSubject as any).commitment.toString(),
               vcsig: (fullVc.credentialSubject as any).commitmentSignature,
               vciss: privateIssuerDid,
               proof: proof,
               name: "",
-              url: ""
+              url: "",
+              displayName: "linkedin"
             };
 
             const provider = new ethers.BrowserProvider(window.ethereum);

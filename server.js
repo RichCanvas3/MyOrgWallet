@@ -375,6 +375,41 @@ app.post('/send-verification-email', async (req, res) => {
   }
 });
 
+app.post('/request-early-access', async (req, res) => {
+  console.log('Handling /request-early-access');
+  const { email, name } = req.body;
+  if (!email || !name) {
+    console.error('Email is required in /request-early-access');
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+
+  const msg = {
+    to: 'r.pedersen@richcanvas.io',
+    from: 'r.pedersen@richcanvas.io',
+    subject: 'Requesting early access to myorgwallet.io',
+    text: `name: ${name} email: ${email}`,
+    html: `name: ${name} email: ${email}`,
+  };
+
+  try {
+    console.log('Sending request for early access email:');
+    await sgMail.send(msg);
+    console.log('early access request email sent successfully');
+    res.json({ message: 'early access request email sent' });
+  } catch (error) {
+    console.error('Error sending email:', {
+      message: error.message,
+      stack: error.stack,
+      response: error.response ? {
+        status: error.response.status,
+        data: error.response.data,
+      } : 'No response data',
+    });
+    res.status(500).json({ error: 'Failed to send email' });
+  }
+});
+
 // Verify code
 app.post('/verify-code', (req, res) => {
   console.log('Handling /verify-code');

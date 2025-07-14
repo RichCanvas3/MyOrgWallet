@@ -13,7 +13,7 @@ import { VerifiableCredential } from '../models/VerifiableCredential'
 import { VcZkProof, VcRevokeZkProof } from '../models/ZkProof'
 import {Attestation, IndivAccountAttestation} from '../models/Attestation';
 import AttestationService from '../service/AttestationService';
-import { RPC_URL, ALCHEMY_RPC_URL, ETHERSCAN_API_KEY, ETHERSCAN_URL, EAS_URL } from "../config";
+import { RPC_URL,  ETHERSCAN_API_KEY, ETHERSCAN_URL, EAS_URL } from "../config";
 
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService"
 import ZkProofService from "../service/ZkProofService"
@@ -30,11 +30,13 @@ import {
 interface AttestationViewModalProps {
   did: string;
   entityId: string;
+  displayName: string;
   isVisible: boolean;
   onClose: () => void;
+  onDelete?: () => void;
 }
 
-const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityId, isVisible, onClose}) => {
+const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityId, displayName, isVisible, onClose, onDelete}) => {
 
   const {t} = useTranslation();
 
@@ -81,7 +83,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
       if (!cached && address) {
 
         //   PRIVATE DATA
-        const alchemyRpcUrl = ALCHEMY_RPC_URL
+        const alchemyRpcUrl = RPC_URL
 
 
         //  get org account information
@@ -144,6 +146,8 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
         }
         */
 
+        /*
+
         if (name) {
           setOrgEthName(name)
         }
@@ -189,6 +193,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
           }
         }
         putCachedValue(cacheKey, true)
+        */
       }
 
     }
@@ -199,7 +204,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
 
   useEffect(() => {
     handleInitOperations();
-  }, [did, entityId]);
+  }, [did, entityId, displayName]);
 
 
   const address = did.replace("did:pkh:eip155:" + chain?.id + ":", "") as `0x${string}`
@@ -315,7 +320,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
           }
           //console.info("go get shopify attestation: ", did)
           if (did && chain) {
-            AttestationService.getAttestationByDidAndSchemaId(chain, did, schemaUid, entityId).then(async (att) => {
+            AttestationService.getAttestationByDidAndSchemaId(chain, did, schemaUid, entityId, displayName).then(async (att) => {
 
               console.info("att: ", att)
               if (att) {
@@ -376,7 +381,9 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
 
                   setHasCredential(false)
                   setCredential(undefined)
-                  VerifiableCredentialsService.getCredential(mascaApi, att.entityId).then((cred) => {
+
+                  console.info("------> get credential: ", att.entityId, att.displayName)
+                  VerifiableCredentialsService.getCredential(mascaApi, att.entityId, att.displayName || "").then((cred) => {
                     if (cred) {
                       setHasCredential(true)
                       console.info(",,,,,,,,,, credential: ", cred)
@@ -492,7 +499,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
   }
 
   const handleDeleteAttestation = async () => {
-    if (!attestation || !chain || !orgIssuerDelegation || !orgIndivDelegation || !burnerAccountClient) return;
+    if (!attestation || !chain || !orgIssuerDelegation || !orgIndivDelegation || !indivIssuerDelegation || !burnerAccountClient) return;
     
     setIsDeleting(true);
     try {
@@ -516,6 +523,9 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
       
       // Close modal after successful deletion
       handleClose();
+      if (onDelete) {
+        onDelete();
+      }
     } catch (error) {
       console.error('Error deleting attestation:', error);
     } finally {
