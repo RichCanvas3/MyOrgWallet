@@ -77,7 +77,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
         const walletSigner = await provider.getSigner()
 
         const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC(entityId, orgDid, privateIssuerDid, websiteType, shopifyUrl);
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+        const result = await VerifiableCredentialsService.createCredential(vc, entityId, shopifyUrl, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
         if (fullVc && walletSigner && orgAccountClient && walletClient) {
@@ -90,7 +90,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
             attester: orgDid,
             entityId: entityId,
             class: "organization", 
-            category: "profile",
+            category: "identity",
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,

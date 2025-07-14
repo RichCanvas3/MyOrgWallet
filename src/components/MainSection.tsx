@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import AttestationSection from './AttestationSection';
 import ChartOfAccountsSection from './ChartOfAccountsSection';
+import TrustScoreSection from './TrustScoreSection';
 import { Attestation } from '../models/Attestation';
 import { Account } from '../models/Account';
 
@@ -14,6 +15,8 @@ interface MainSectionProps {
   indivDid?: string;
   onSelectAttestation: (attestation: Attestation) => void;
   onSelectAccount?: (account: Account) => void;
+  onRefreshAttestations?: () => void;
+  onRefreshAccounts?: () => void;
 }
 
 const MainSection: React.FC<MainSectionProps> = ({
@@ -21,10 +24,12 @@ const MainSection: React.FC<MainSectionProps> = ({
   indivDid,
   onSelectAttestation,
   onSelectAccount,
+  onRefreshAttestations,
+  onRefreshAccounts,
 }) => {
-  const [currentView, setCurrentView] = useState<'attestations' | 'accounts'>('attestations');
+  const [currentView, setCurrentView] = useState<'attestations' | 'accounts' | 'trustscore'>('attestations');
 
-  const handleChange = (_: React.SyntheticEvent, newValue: 'attestations' | 'accounts') => {
+  const handleChange = (_: React.SyntheticEvent, newValue: 'attestations' | 'accounts' | 'trustscore') => {
     setCurrentView(newValue);
   };
 
@@ -47,6 +52,12 @@ const MainSection: React.FC<MainSectionProps> = ({
             value="accounts"
             id="accounts-tab"
             aria-controls="accounts-panel"
+          />
+          <Tab 
+            label="Trust Score" 
+            value="trustscore"
+            id="trustscore-tab"
+            aria-controls="trustscore-panel"
           />
         </Tabs>
       </Box>
@@ -75,6 +86,21 @@ const MainSection: React.FC<MainSectionProps> = ({
         {currentView === 'accounts' && (
           <ChartOfAccountsSection
             onSelectAccount={onSelectAccount}
+            onRefreshAccounts={onRefreshAccounts}
+          />
+        )}
+      </Box>
+
+      <Box
+        role="tabpanel"
+        hidden={currentView !== 'trustscore'}
+        id="trustscore-panel"
+        aria-labelledby="trustscore-tab"
+      >
+        {currentView === 'trustscore' && (
+          <TrustScoreSection
+            orgDid={orgDid}
+            indivDid={indivDid}
           />
         )}
       </Box>

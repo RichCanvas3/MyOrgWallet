@@ -3,4 +3,5 @@ export interface Command {
     did?: string;
     entityId?: string;     // entity - shopify, linkedin, ...
     value?: string;
+    displayName?: string;
   }

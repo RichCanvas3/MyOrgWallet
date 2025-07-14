@@ -63,7 +63,7 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose}) => {
     if (isVisible) {
       // get linkedin attestation
       if (indivDid && chain && indivAccountClient) {
-        AttestationService.getAttestationByDidAndSchemaId(chain, indivDid, AttestationService.SocialSchemaUID, "linkedin(indiv)").then((att) => {
+        AttestationService.getAttestationByDidAndSchemaId(chain, indivDid, AttestationService.SocialSchemaUID, "linkedin(indiv)", "").then((att) => {
           if (att) {
             setAttestation(att)
           }

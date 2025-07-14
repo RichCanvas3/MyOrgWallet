@@ -56,6 +56,8 @@ import {
   optimism,
   zksync,
   linea,
+  lineaSepolia,
+  baseSepolia,
   avalanche,
   scroll,
   shape,
@@ -65,7 +67,7 @@ import { CommandLineIcon } from '@heroicons/react/24/outline';
 
 
 const projectId = '15d710bf679b74ce2d7919bb305a9ceb';
-export const networks: [AppKitNetwork, ...AppKitNetwork[]] = [linea, mainnet, optimism, sepolia ];
+export const networks: [AppKitNetwork, ...AppKitNetwork[]] = [linea, mainnet, optimism, sepolia, base, baseSepolia, optimismSepolia, lineaSepolia,  ];
 
 export const wagmiAdapter = new WagmiAdapter({
   storage: createStorage({ storage: cookieStorage }), // Persist connection state
@@ -125,6 +127,7 @@ const App = () => {
 
   const [selectedDid, setSelectedDid] = useState("");
   const [selectedEntityId, setSelectedEntityId] = useState("");
+  const [selectedDisplayName, setSelectedDisplayName] = useState("");
 
   const [isLinkedinModalVisible, setLinkedinModalVisible] = useState(false);
   const [isXModalVisible, setXModalVisible] = useState(false);
@@ -133,146 +136,182 @@ const App = () => {
 
 
   const appCommand = (cmd: Command) => {
+    console.log("appCommand: ", cmd)
 
-    if (cmd.action == "edit" && cmd.entityId == "indiv(indiv)" && cmd.did) {
+    if (cmd.action == "edit" && cmd.entityId == "indiv(indiv)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("indiv(indiv)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "account(indiv)" && cmd.did) {
+    if (cmd.action == "edit" && cmd.entityId == "account(indiv)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("account(indiv)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "account-org(org)" && cmd.did) {
+    if (cmd.action == "edit" && cmd.entityId == "account-org(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("account-org(org)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "account-indiv(org)" && cmd.did) {
+    if (cmd.action == "show" && cmd.entityId == "account-org(org)" && cmd.did && cmd.displayName) {
+      console.log("------------- account-org(org)")
+      setSelectedEntityId("account-org(org)")
+      setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
+      setAttestationViewModalVisible(true)
+    }
+    if (cmd.action == "edit" && cmd.entityId == "account-indiv(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("account-indiv(org)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "account(org)" && cmd.did) {
+    if (cmd.action == "edit" && cmd.entityId == "account(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("account(org)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "indiv(indiv)" && cmd.did) {
+    if (cmd.action == "show" && cmd.entityId == "indiv(indiv)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("indiv(indiv)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "org-indiv(org)" && cmd.did) {
+    if (cmd.action == "edit" && cmd.entityId == "org-indiv(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("org-indiv(org)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "org-indiv(org)" && cmd.did) {
+    if (cmd.action == "show" && cmd.entityId == "org-indiv(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("org-indiv(org)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "org(org)" && cmd.did) {
+    if (cmd.action == "edit" && cmd.entityId == "org(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("org(org)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "org(org)" && cmd.did) {
+    if (cmd.action == "show" && cmd.entityId == "org(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("org(org)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "domain(org)" && cmd.did) {
+    if (cmd.action == "edit" && cmd.entityId == "domain(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("domain(org)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "domain(org)" && cmd.did) {
+    if (cmd.action == "show" && cmd.entityId == "domain(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("domain(org)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "state-registration(org)" && cmd.did) {
+    if (cmd.action == "edit" && cmd.entityId == "state-registration(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("state-registration(org)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "state-registration(org)" && cmd.did) {
+    if (cmd.action == "show" && cmd.entityId == "state-registration(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("state-registration(org)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
 
-    if (cmd.action == "edit" && cmd.entityId == "linkedin(indiv)" && cmd.did) {
+    if (cmd.action == "edit" && cmd.entityId == "linkedin(indiv)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("linkedin(indiv)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "linkedin(indiv)" && cmd.did) {
+    if (cmd.action == "show" && cmd.entityId == "linkedin(indiv)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("linkedin(indiv)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "x(indiv)" && cmd.did) {
+    if (cmd.action == "edit" && cmd.entityId == "x(indiv)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("x(indiv)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "x(indiv)" && cmd.did) {
+    if (cmd.action == "show" && cmd.entityId == "x(indiv)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("x(indiv)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "shopify(org)" && cmd.did) {
+    if (cmd.action == "edit" && cmd.entityId == "shopify(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("shopify(org)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "shopify(org)" && cmd.did) {
+    if (cmd.action == "show" && cmd.entityId == "shopify(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId(cmd.entityId)
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "insurance(org)" && cmd.did) {
+    if (cmd.action == "edit" && cmd.entityId == "insurance(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("insurance(org)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "insurance(org)" && cmd.did) {
+    if (cmd.action == "show" && cmd.entityId == "insurance(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId(cmd.entityId)
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "website(org)" && cmd.did) {
+    if (cmd.action == "edit" && cmd.entityId == "website(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("website(org)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "website(org)" && cmd.did) {
+    if (cmd.action == "show" && cmd.entityId == "website(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("website(org)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "email(org)" && cmd.did) {
+    if (cmd.action == "edit" && cmd.entityId == "email(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("email(org)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "email(org)" && cmd.did) {
+    if (cmd.action == "show" && cmd.entityId == "email(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("email(org)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "email(indiv)" && cmd.did) {
+    if (cmd.action == "edit" && cmd.entityId == "email(indiv)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("email(indiv)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "email(indiv)" && cmd.did) {
+    if (cmd.action == "show" && cmd.entityId == "email(indiv)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("email(indiv)")
       setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
 
@@ -291,6 +330,13 @@ const App = () => {
   }
 
   const handleOnAttestationViewModalClose = () => {
+    setAttestationViewModalVisible(false);
+  }
+
+  const handleAttestationDelete = () => {
+    // This will trigger a refresh of the AttestationSection
+    // The AttestationSection listens to attestationChangeEvent, so we can emit a refresh event
+    // or simply close the modal and let the parent components refresh naturally
     setAttestationViewModalVisible(false);
   }
 
@@ -406,8 +452,10 @@ const App = () => {
               <AttestationViewModal
                 did={selectedDid}
                 entityId={selectedEntityId}
+                displayName={selectedDisplayName}
                 isVisible={isAttestationViewModalVisible}
                 onClose={handleOnAttestationViewModalClose}
+                onDelete={handleAttestationDelete}
               />
               <XModal isVisible={isXModalVisible} onClose={handleOnXModalClose} />
 

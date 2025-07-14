@@ -148,7 +148,6 @@ export class ChatService {
     const mappedMessages = await ChatService.mapChatMessagesToCompletionMessages(requestBody.model,messages);
     requestBody.messages = mappedMessages;
 
-    console.info(">>>>>>> calling openai with messages: ", mappedMessages)
 
     let response: Response;
     try {
@@ -158,7 +157,7 @@ export class ChatService {
         body: JSON.stringify(requestBody),
         signal: this.abortController.signal
       });
-      console.info("open ai response: ", response)
+
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         NotificationService.handleUnexpectedError(error, 'Stream reading was aborted.');
