@@ -110,13 +110,6 @@ const xAuthRef = { current: null as XAuthRef | null };
 const insuranceAuthRef = { current: null as InsuranceAuthRef | null };
 
 
-const threadID_text = await invokeLangGraphAgent({});
-  console.log(threadID_text);
-  const threadID_Array = threadID_text.split("'");
-  const threadID = threadID_Array[1];
-  console.log("Thread ID:", threadID);
-
-
 const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const defaultIntroduction: ChatMessage = { content: "test"} as ChatMessage;
   const [introduction, setIntroduction] = useState<ChatMessage>(defaultIntroduction);
@@ -157,6 +150,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const [newOrgName, setNewOrgName] = useState("");
 
   const { isConnected } = useAccount();
+
+  const [threadID, setThreadID] = useState<string | null>(null);
 
   const handleOnDeleteAttestationsModalClose = () => {
     setDeleteAttestationsModalVisible(false);
@@ -319,6 +314,18 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       fetchModelById(userSettings.model).then(setModel);
     }
   }, [userSettings]);
+
+  useEffect(() => {
+    async function fetchThreadID() {
+      const threadID_text = await invokeLangGraphAgent({});
+      console.log(threadID_text);
+      const threadID_Array = threadID_text.split("'");
+      const threadID = threadID_Array[1];
+      console.log("Thread ID:", threadID);
+      setThreadID(threadID);
+    }
+    fetchThreadID();
+  }, []);
 
   const fetchModelById = async (modelId: string): Promise<OpenAIModel | null> => {
     try {
