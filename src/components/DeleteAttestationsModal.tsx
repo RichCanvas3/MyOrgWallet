@@ -63,10 +63,8 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
         const walletSigner = await provider.getSigner()
 
         const rslt = await AttestationService.deleteAttestations(chain, attestations, walletSigner, [orgIssuerDelegation, orgIndivDelegation], burnerAccountClient)
-        console.info("delete organization attestations is done ")
+        console.info("delete organization attestations is done ", rslt)
       }
-
-
     }
   }
 
