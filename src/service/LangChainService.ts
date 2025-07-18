@@ -21,7 +21,7 @@ export async function invokeLangGraphAgent({
         user_id: "f67be9df-f865-4e95-a8b5-e272ac95bc48",
         session_type: "test",
         custom_note: "Created via API",
-        LANGGRAPH_API_URL: 'https://myorgagent-f0a9b1100ab058b6b86afcf1760421a7.us.langgraph.app'
+        LANGGRAPH_API_URL: 'https://myorgagentrichcanvas-fda39097be375d0f9756d03ee4c93846.us.langgraph.app'
       },
       if_exists: 'do_nothing',
       ttl: {
@@ -88,7 +88,7 @@ export async function sendMessageToLangGraphAssistant(
       metadata: {
         langgraph_auth_user_id: "f67be9df-f865-4e95-a8b5-e272ac95bc48",
         user_id: "f67be9df-f865-4e95-a8b5-e272ac95bc48",
-        LANGGRAPH_API_URL: 'https://myorgagent-f0a9b1100ab058b6b86afcf1760421a7.us.langgraph.app'
+        LANGGRAPH_API_URL: 'https://myorgagentrichcanvas-fda39097be375d0f9756d03ee4c93846.us.langgraph.app'
       },
       config: {
         tags: [''],
