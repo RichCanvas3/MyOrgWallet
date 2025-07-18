@@ -6,6 +6,8 @@ import { Button } from '@mui/material';
 import ETHRegistrarControllerABI from '../abis/ETHRegistrarController.json'
 import PublicResolverABI from '../abis/PublicResolver.json'
 
+import { createPublicClient, http } from 'viem';
+
 import {ChatService} from "../service/ChatService";
 import {OrgService} from "../service/OrgService";
 import Chat from "./Chat";
@@ -1821,6 +1823,125 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     const provider = new ethers.BrowserProvider(window.ethereum)
     const signer = await provider.getSigner()
     const network = await provider.getNetwork()
+
+
+
+
+
+
+
+
+
+/*
+
+
+
+
+      const ENS_REGISTRY_ADDRESS = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e'; // Sepolia ENS Registry
+      const PUBLIC_RESOLVER_ADDRESS = '0x8FADE66B79cC9f707aB26799354482EB93a5B7dD';
+      const ENSRegistryABI = [
+        'function setResolver(bytes32 node, address resolver) external'
+      ];
+
+      const node = namehash("richcanvas.eth");
+      const ensRegistry = new ethers.Contract(ENS_REGISTRY_ADDRESS, ENSRegistryABI, signatory.walletClient);
+
+      const tx = await ensRegistry.setResolver(node, PUBLIC_RESOLVER_ADDRESS);
+      console.log('Setting resolver tx sent:', tx.hash);
+
+      await tx.wait();
+      console.log('✅ Resolver set successfully');
+
+
+
+
+      // Get the name for the address
+      const name = await ensClient.getName({
+        address: address as `0x${string}`,
+      });
+      console.log("Current ENS name:", name);
+
+      // Get the address for the name
+      const ensAddress = await ensClient.getAddressRecord({
+        name: 'richcanvas.eth',
+      });
+      console.log("Current ENS address:", ensAddress);
+
+      // Note: The ENS SDK doesn't provide direct methods for setting records
+      // You would need to use the contract methods directly or use a different SDK
+      console.log("To set the address record, you need to use the contract methods directly");
+    } catch (error) {
+      console.error("Error getting ENS record:", error);
+    }
+
+
+    if (name) {
+      setOrgEthName(name)
+    }
+    else {
+      name = "richcanvas.eth"
+      setOrgEthName(name)
+    }
+
+    if (name) {
+
+      const resolver = await provider.getResolver(name);
+      if (!resolver) {
+        console.log("No resolver found for", name);
+        return null;
+      }
+
+      // Fetch the avatar text record
+      const avatar = await resolver.getText("avatar");
+      console.log("Avatar URI:", avatar);
+
+      if (avatar) {
+        setOrgEthAvatar(avatar)
+      }
+
+
+
+
+      // get lots of data from ensdata.net
+      const url = "https://api.ensdata.net/" + name
+      const res = await fetch(url)
+      const orgInfo = await res.json()
+      if (orgInfo) {
+        if (orgInfo.avatar) {
+          setOrgEthAvatar(orgInfo.avatar)
+        }
+        if (orgInfo.twitter) {
+          //console.info("x account: ", orgInfo.twitter)
+
+        }
+        if (orgInfo.url) {
+          //console.info("website: ", orgInfo.url)
+        }
+
+
+
+    */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
 
     const name = ensName
     const duration = 31536000 // 60 * 60 * 24 * 365
