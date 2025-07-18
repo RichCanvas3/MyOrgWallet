@@ -8,7 +8,7 @@ import { XAuthRef } from "../components/XAuth"
 export async function invokeLangGraphAgent({
   // parameters can be added here if needed
 } = {}) {
-  const response = await fetch('https://myorgagent-f0a9b1100ab058b6b86afcf1760421a7.us.langgraph.app/threads', {
+  const response = await fetch('https://myorgagentrichcanvas-fda39097be375d0f9756d03ee4c93846.us.langgraph.app/threads', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -66,7 +66,7 @@ export async function sendMessageToLangGraphAssistant(
   linkedInAuthRef?: React.RefObject<LinkedInAuthRef>,
   XAuthRef?: React.RefObject<XAuthRef>
 ) {
-  const data = await fetch('https://myorgagent-f0a9b1100ab058b6b86afcf1760421a7.us.langgraph.app/threads/'+ thread_id +'/runs/stream', {
+  const data = await fetch('https://myorgagentrichcanvas-fda39097be375d0f9756d03ee4c93846.us.langgraph.app/threads/'+ thread_id +'/runs/stream', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
