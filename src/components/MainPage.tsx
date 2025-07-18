@@ -1,7 +1,10 @@
 import {useContext, useEffect, useRef, useState} from 'react';
 import * as React from 'react';
-import { ethers } from 'ethers';
+import { hexlify, parseEther, formatEther, ethers, namehash } from 'ethers';
 import { Button } from '@mui/material';
+
+import ETHRegistrarControllerABI from '../abis/ETHRegistrarController.json'
+import PublicResolverABI from '../abis/PublicResolver.json'
 
 import {ChatService} from "../service/ChatService";
 import {OrgService} from "../service/OrgService";
@@ -12,7 +15,7 @@ import {OPENAI_DEFAULT_SYSTEM_PROMPT, OPENAI_DEFAULT_ASSISTANT_PROMPT} from "../
 import {CustomError} from "../service/CustomError";
 import {useLocation, useNavigate, useParams} from "react-router-dom";
 import {useTranslation} from 'react-i18next';
-import { createRoot } from 'react-dom/client'; 
+import { createRoot } from 'react-dom/client';
 import MessageBox, {MessageBoxHandles} from "./MessageBox";
 import {
   CONVERSATION_NOT_FOUND,
@@ -62,7 +65,7 @@ import AddCreditCardModal from './AddEOACrossChainAccountModal';
 import FundCreditCardModal from './FundCreditCardModal';
 import AddSavingsModal from './AddAccountModal';
 import AddAccountModal from './AddEOACrossChainAccountModal';
-import OrgModal from './OrgModal';  
+import OrgModal from './OrgModal';
 import { invokeLangGraphAgent, sendMessageToLangGraphAssistant } from '../service/LangChainService';
 
 
@@ -114,6 +117,8 @@ const insuranceAuthRef = { current: null as InsuranceAuthRef | null };
 const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const defaultIntroduction: ChatMessage = { content: "test"} as ChatMessage;
   const [introduction, setIntroduction] = useState<ChatMessage>(defaultIntroduction);
+
+  const [setRegisterEnsDomainNameMessage, setSetRegisterEnsDomainNameMessage] = useState('');
 
   const {userSettings, setUserSettings} = useContext(UserContext);
   const {t} = useTranslation();
@@ -203,7 +208,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     }
   };
 
-  
+
 
 
   useEffect(() => {
@@ -243,7 +248,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   }, []);
 
 
-  
+
   useEffect(() => {
 
     if (orgAccountClient && chain && orgDid && indivDid) {
@@ -275,14 +280,14 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         }
       })
 
-      
+
     }
     else {
-      
+
       console.info("------------> org is not defined")
       navigate("/")
     }
-    
+
 
   }, [orgAccountClient, orgDid, indivDid]);
 
@@ -318,7 +323,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   }, [introduction]);
 
 
-  
+
   useEffect(() => {
     if (conversation && conversation.id) {
       // Only update if there are messages
@@ -391,11 +396,11 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
 
   const handleConversationChange = (event: ConversationChangeEvent) => {
-  
+
       if (event.action === 'edit') {
         if (event.id === 0) {
           console.error("invalid state, cannot edit id = 0");
-        } 
+        }
         else if (event.conversation) {
           const convoMessages = JSON.parse(event.conversation.messages)
           if (messages.length != convoMessages.length ) {
@@ -403,7 +408,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             scrollToBottom()
           }
         }
-      } 
+      }
     };
 
   const newConversation = (entities: Entity[]) => {
@@ -420,11 +425,11 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
       setShowScrollButton(false);
       clearInputArea();
-  
+
       // Set the initial introduction message to the requested string
       let introduction = "Please input the name of your company";
       let instruction : string | undefined
-  
+
       if (entities != undefined) {
         for (const entity of entities) {
           if (entity.attestation == undefined && entity.introduction && entity.introduction != "") {
@@ -434,9 +439,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           }
         }
       }
-      
-  
-  
+
+
+
       const introductionMessage = {
         id: 0,
         messageType: MessageType.Normal,
@@ -444,10 +449,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         content: introduction
       } as ChatMessage;
       setIntroduction(introductionMessage);
-  
+
 
       setMessages([]);
-  
+
       const id = Date.now();
       const newConversation: Conversation = {
         id: id,
@@ -467,10 +472,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     }
 
-    
 
 
-    
+
+
 
     messageBoxRef.current?.focusTextarea();
   };
@@ -507,7 +512,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             //navigate('/chat/');
           }
         });
-    } 
+    }
     setAllowAutoScroll(true);
     setShowScrollButton(false);
     messageBoxRef.current?.focusTextarea();
@@ -533,6 +538,19 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       return
     }
 
+    const brokenMessage = message.split(' ')
+
+    // Command must be: Register ENS: <domain_name>
+    if (brokenMessage[0] == 'Register' && brokenMessage[1] == 'ENS:') {
+      console.log('Correct input, and name = ', brokenMessage[2] )
+      console.log('ENS Name: ', brokenMessage[2])
+
+      createEnsDomainName(brokenMessage[2])
+    }
+
+    // append signers
+
+    // console.log('Broken Message: ', brokenMessage)
 
     setAllowAutoScroll(true);
     addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
@@ -580,7 +598,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     };
     const updatedMessages = [...messages, newMessage];
 
-    if (sendMessage) { 
+    if (sendMessage) {
       // this is going to sendMessage(...)
       sendMessage(updatedMessages, args);
     }
@@ -599,15 +617,15 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     return effectiveSettings;
   }
 
-  
+
   function sendMessage(updatedMessages: ChatMessage[], args: string) {
     /*
     // if we know what to do already from processor then go ahead and do it.  No need to call openai
     if (args != "") {
       console.info("*********************** no need to have AI look at user input becasue it told us what to do: ", args)
 
-      
-      
+
+
       let messages: ChatMessage[] = [
         {
           id: 0,
@@ -619,7 +637,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         ...updatedMessages
       ];
       setMessages(messages)
-      
+
 
 
 
@@ -628,7 +646,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       return
     }
     */
-    
+
     let defaultIntroduction
     let defaultInstruction
     let defaultTools
@@ -716,11 +734,11 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       .finally(() => {
         setLoading(false);
       });
-    */  
+    */
     setLoading(false);
   }
-  
-  
+
+
 
   function checkAllDirectActions(lastAssistantResponse: string, lastUserResponse: string) {
     let actionMessage = ""
@@ -735,7 +753,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         setApproveLeaderModalVisible(true)
         actionMessage="approve leader"
       }
-      
+
       if (lastUserResponse.toLowerCase().includes("create web did")) {
         console.info("create web did ...")
         setCreateWebDidModalVisible(true)
@@ -770,14 +788,26 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         setFundCreditCardModalVisible(true)
         actionMessage="fund card"
       }
+
+      // Check for ENS domain creation request
+      if (lastUserResponse.toLowerCase().includes("create ens domain")) {
+        const match = lastUserResponse.match(/create ens domain[:\s]+([a-zA-Z0-9-]+)/i);
+        if (match && match[1]) {
+          console.info("Creating ENS domain...");
+          const domainName = match[1];
+          createEnsDomainName(domainName);
+          actionMessage = "create ens domain";
+        }
+      }
+
     } catch (error)
     {
 
     }
-    
+
 
     return actionMessage
-    
+
   }
 
 
@@ -791,7 +821,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       if (orgName != undefined) {
 
         //const org = await OrgService.getOrgWithCompanyName(orgName, st);
-  
+
         //let orgJson = JSON.parse(org)
         //console.info("org check: ", JSON.parse(org))
 
@@ -812,7 +842,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           console.info("fields: ", proof, fullVc, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, walletClient)
           console.info("orgIndivDelegation: ", orgIndivDelegation)
           if (chain && proof && fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
-          
+
             // now create attestation
             const hash = keccak256(toUtf8Bytes("hash value"));
             const attestation: StateRegistrationAttestation = {
@@ -840,13 +870,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             console.info("add state registration attestation")
             const uid = await AttestationService.addStateRegistrationAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
             console.info("add registration attestation complete")
-    
+
             entities?.forEach((ent) => {
               if (ent.name == entityId) {
                 ent.attestation = attestation
               }
             })
-    
+
           }
         }
 
@@ -863,7 +893,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     const entityId = "domain(org)"
     const org = await OrgService.checkDomain(domain);
-    
+
     let orgJson = JSON.parse(org)
     console.info("domain check: ", orgJson)
 
@@ -877,7 +907,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       const fullVc = result.vc
       const proof = result.proof
       if (proof && fullVc && chain && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
-      
+
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
         const attestation: RegisteredDomainAttestation = {
@@ -909,13 +939,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
       }
     }
-    
+
   }
-  
+
   async function addOrgWebsiteAttestation(website: string) {
 
     const org = await OrgService.checkWebsite(website);
-    
+
     const websiteType = "public"
 
     const entityId = "website(org)"
@@ -926,7 +956,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       const fullVc = result.vc
       const proof = result.proof
       if (proof && chain && fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
-      
+
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
         const attestation: WebsiteAttestation = {
@@ -959,15 +989,15 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       }
     }
 
-    
+
   }
 
   async function addOrgEmailAttestation(email: string) {
 
     //const org = await OrgService.checkEmail(email);
-    
+
     const emailType = "info"
-    
+
     const entityId = "email(org)"
     if (orgDid && privateIssuerDid && mascaApi && walletClient && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
 
@@ -976,7 +1006,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       const fullVc = result.vc
       const proof = result.proof
       if (proof && chain &&fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
-      
+
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
         const attestation: EmailAttestation = {
@@ -1042,7 +1072,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     }
 
     return ""
-    
+
   }
 
   function checkXAttestation(lastAssistantResponse: string, lastUserResponse: string) {
@@ -1075,7 +1105,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     }
 
     return ""
-    
+
   }
 
   function checkShopifyAttestation(lastAssistantResponse: string, lastUserResponse: string) {
@@ -1108,7 +1138,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     }
 
     return ""
-    
+
   }
 
   function checkInsuranceAttestation(lastAssistantResponse: string, lastUserResponse: string) {
@@ -1141,10 +1171,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     }
 
     return ""
-    
+
   }
-  
-  
+
+
   async function processUserMessage(content: string) {
 
     let args = ""
@@ -1152,8 +1182,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     console.log(content)
     var lastUserResponse = content.toLowerCase()
     var introduction = userSettings.assistantIntroductions ? userSettings.assistantIntroductions : OPENAI_DEFAULT_ASSISTANT_PROMPT
-  
-      
+
+
     if (content.toLowerCase() == 'colorado') {
       var response = await sendMessageToLangGraphAssistant(lastUserResponse, threadID, 'state_register', {}, linkedInAuthRef, xAuthRef);
       console.log('adding attestation')
@@ -1173,10 +1203,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       console.log('LangChain Response: ', response.message)
       return response.message;
     }
-    
-    
-    
-    
+
+
+
+
 
     //return
     //var introduction = userSettings.assistantIntroductions ? userSettings.assistantIntroductions : OPENAI_DEFAULT_ASSISTANT_PROMPT
@@ -1193,7 +1223,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     //console.info(" >>>>>>>>>>>  default assistant message: ", introduction)
 
     // get last assistant message content
-    
+
     if (conversation) {
       var messages: ChatMessage[] = JSON.parse(conversation.messages);
       if (messages.length > 0) {
@@ -1209,8 +1239,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       args = actionMessage
       return args
     }
- 
-    
+
+
     // let inject args if the user said "yes" to actions
     args = checkLinkedinAttestation(introduction, lastUserResponse);
     if (args != "") {
@@ -1236,16 +1266,16 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     */
    //return "something went wrong"
   }
-  
-  
-  function postToolCmdSendMessages(prevMessages: ChatMessage[], org: string | null, entities: Entity[]) : ChatMessage[] { 
+
+
+  function postToolCmdSendMessages(prevMessages: ChatMessage[], org: string | null, entities: Entity[]) : ChatMessage[] {
 
     let defaultIntroduction = userSettings.assistantIntroductions ? userSettings.assistantIntroductions : OPENAI_DEFAULT_ASSISTANT_PROMPT
     defaultIntroduction = "How can we help you?"
 
     let defaultInstruction
-    
-    
+
+
     if (entities && org) {
       for (const entity of entities) {
         //console.info("entity: ", entity, entity.attestation)
@@ -1263,7 +1293,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         }
       }
     }
-    
+
 
     const updatedMessage2 = {
       ...prevMessages[prevMessages.length - 1],
@@ -1282,10 +1312,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     return msgs
 
   }
-  
-  
+
+
   function processAssistantMessage(isFirstCall: boolean, content: string, args: string, prevMessages: ChatMessage[], updatedMessage: ChatMessage, fileDataRef: FileDataRef[]) {
-    
+
     const result = {
       isToolFunction: false,
       messages: [] as ChatMessage[]
@@ -1359,7 +1389,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             if (orgName && entities) {
               result.messages = postToolCmdSendMessages(prevMessages, orgName, entities)
             }
-            
+
             clearInputArea();
             //messageBoxRef.current?.reset();
           }
@@ -1379,7 +1409,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             if (orgName && entities) {
               result.messages = postToolCmdSendMessages(prevMessages, orgName, entities)
             }
-            
+
             clearInputArea();
             //messageBoxRef.current?.reset();
           }
@@ -1403,11 +1433,11 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             if (orgName && entities) {
               result.messages = postToolCmdSendMessages(prevMessages, orgName, entities)
             }
-            
+
             clearInputArea();
             //messageBoxRef.current?.reset();
 
-            
+
           }
 
         }
@@ -1432,7 +1462,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
                 result.messages = postToolCmdSendMessages(prevMessages, newOrgName, entities)
               }
 
-              
+
             }
           }
         }
@@ -1443,7 +1473,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           if (state) {
             if (isFirstCall) {
               addOrgRegistrationAttestation(state).then(() => {
-                
+
               })
 
               entities?.forEach((ent) => {
@@ -1459,7 +1489,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
                 result.messages = postToolCmdSendMessages(prevMessages, orgName, entities)
                 console.info("state returned messages: ", result.messages)
               }
-              
+
             }
           }
         }
@@ -1475,9 +1505,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
                   let id = parseInt(conversationId)
                   ConversationService.getConversationById(id).then((conversation) => {
                     if (conversation) {
-      
+
                       var currentMsgs: ChatMessage[] = JSON.parse(conversation.messages);
-        
+
                       const newMsg: ChatMessage = {
                         id: currentMsgs.length + 1,
                         args: "",
@@ -1485,17 +1515,17 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
                         messageType: MessageType.Normal,
                         content: "I've updated your wallet with a verifiable credential and published your domain attestation.",
                       };
-        
+
                       const msgs: ChatMessage[] = [...currentMsgs.slice(0, -1), newMsg]
                       const msgs2: ChatMessage[] = [...msgs, currentMsgs[currentMsgs.length - 1]]
-        
+
                       console.info("update conversation message ")
                       ConversationService.updateConversation(conversation, msgs2)
                     }
                   })
-                  
+
                 }
-                
+
               })
 
               entities?.forEach((ent) => {
@@ -1508,9 +1538,28 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
               if (orgName && entities) {
                 result.messages = postToolCmdSendMessages(prevMessages, orgName, entities)
               }
-              
+
             }
-            
+
+          }
+        }
+
+        // Handle ENS domain creation
+        if ("createEns" in command) {
+          let ensName = command["createEns"]
+          if (ensName) {
+            if (isFirstCall) {
+              createEnsDomainName(ensName).then(() => {
+                console.log("ENS domain creation complete");
+                // Update UI or show success message
+                if (orgName && entities) {
+                  result.messages = postToolCmdSendMessages(prevMessages, orgName, entities)
+                }
+              }).catch((error) => {
+                console.error("Error creating ENS domain:", error);
+              });
+              clearInputArea();
+            }
           }
         }
 
@@ -1520,7 +1569,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           if (email) {
             if (isFirstCall) {
               addOrgEmailAttestation(email).then(() => {
-                
+
               })
 
               entities?.forEach((ent) => {
@@ -1533,9 +1582,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
               if (orgName && entities) {
                 result.messages = postToolCmdSendMessages(prevMessages, orgName, entities)
               }
-              
+
             }
-            
+
           }
         }
 
@@ -1557,12 +1606,12 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
               if (orgName && entities) {
                 result.messages = postToolCmdSendMessages(prevMessages, orgName, entities)
               }
-              
+
             }
-            
+
           }
         }
-          
+
 
       }
     }
@@ -1570,7 +1619,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     return result
   }
-  
+
   function handleStreamedResponse(content: string, args: string, fileDataRef: FileDataRef[], done: boolean) {
 
     //console.info("...... handleStreamedResponse content: ", content)
@@ -1583,11 +1632,11 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
 
       // get the latest list of messages,  remember this can be called twice
-      
+
       isFirstCall = isFirstCall + 1
 
 
-      
+
       let isNew: boolean = false;
       try {
         if (prevMessages.length === 0) {
@@ -1645,7 +1694,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         if (updatedContent != content) {
           updatedContent = updatedContent + content
         }
-        
+
         const updatedMessage = {
           ...prevMessages[prevMessages.length - 1],
           content: updatedContent,
@@ -1667,7 +1716,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
         return [...prevMessages];
       }
-      
+
     });
   }
 
@@ -1766,6 +1815,79 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   };
   // ---------------------------------
 
+  // MetaMask
+  async function createEnsDomainName(ensName: string) {
+    const provider = new ethers.BrowserProvider(window.ethereum)
+    const signer = await provider.getSigner()
+    const network = await provider.getNetwork()
+
+    const name = ensName
+    const duration = 31536000 // 60 * 60 * 24 * 365
+    const secret = hexlify(ethers.randomBytes(32))
+
+    const ETHRegistrarControllerAddress = '0xfb3cE5D01e0f33f41DbB39035dB9745962F1f968'
+    const PublicResolverAddress = '0xE99638b40E4Fff0129D56f03b55b6bbC4BBE49b5'
+
+    const ethRegistrarController = new ethers.Contract(
+      ETHRegistrarControllerAddress,
+      ETHRegistrarControllerABI.abi,
+      signer
+    )
+
+    const publicResolver = new ethers.Contract(
+      PublicResolverAddress,
+      PublicResolverABI.abi,
+      signer
+    )
+
+    console.log('Name: ', name)
+    console.log('Duration: ', duration)
+    console.log('Secret: ', secret)
+
+    createName()
+
+    async function createName() {
+      const registrationObject = {
+        label: name,
+        owner: signer.address,
+        duration: duration,
+        secret: secret,
+        resolver: publicResolver.target, // '0x0000000000000000000000000000000000000000' = null, meaning no resolver is set
+        data: [],
+        reverseRecord: 1, // 0 reverse record flag set to 0
+        referrer: '0x0000000000000000000000000000000000000000000000000000000000000000'
+      }
+
+      const commitment = await ethRegistrarController.makeCommitment(registrationObject)
+
+      console.log('Sending commit...')
+
+      const tx1 = await ethRegistrarController.commit(commitment)
+      await tx1.wait()
+
+      console.log('Commit sent. Waiting 60 seconds...')
+
+      await new Promise ((r) => setTimeout(r, 60000))
+
+      console.log('Waited 60 seconds!')
+      console.log('Registering...')
+
+      const rentPrice = await ethRegistrarController.rentPrice(`${name}.eth`, 365 * 24 * 60 * 60) // 1 year in seconds
+
+      console.log('Rent Price: ', rentPrice)
+
+      const tx2 = await ethRegistrarController.register(registrationObject, {
+        value: BigInt('3125000000003490') // 0.003125 ETH
+      })
+
+      await tx2.wait()
+
+      // ENS Domain Name Created Successfully
+      console.log(`ENS name "${name}.eth" registered!`)
+      console.log(`See ENS profile here: https://sepolia.app.ens.domains/${name}.eth`)
+    }
+  }
+
   return (
       <div className="flex  w-full">
         <DeleteAttestationsModal
@@ -1850,14 +1972,14 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
                     loading={loading}
                   />
                 </div>
-        
+
                 {/* Scroll to bottom button */}
                 {showScrollButton && (
                   <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 mb-2 z-10">
                     <ScrollToBottomButton onClick={scrollToBottom} />
                   </div>
                 )}
-        
+
                 {/* MessageBox pinned to bottom */}
                 <div className="message-input-container">
                   <div className="message-form">
