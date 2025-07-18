@@ -427,7 +427,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       clearInputArea();
 
       // Set the initial introduction message to the requested string
-      let introduction = "Hello! How can I assist you today?";
+      let introduction = "Hello!";
       let instruction : string | undefined
 
       if (entities != undefined) {
