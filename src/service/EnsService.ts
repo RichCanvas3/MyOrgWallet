@@ -31,21 +31,13 @@ class EnsService {
     static async createEnsDomainName(smartAccountClient: MetaMaskSmartAccount, ensName: string, chain: Chain) : Promise<void> {
 
         const provider = new ethers.BrowserProvider(window.ethereum)
-        const signer = await provider.getSigner()
-        const network = await provider.getNetwork()
         const name = ensName
     
         // Clean the ENS name by removing invalid characters, spaces, and prefixes
         const cleanEnsName = ensName.replace(/^ENS:\s*/, '').replace(/[^a-zA-Z0-9-]/g, '').toLowerCase()
         const ensFullName = cleanEnsName + ".eth"
     
-        const duration = 31536000 // 60 * 60 * 24 * 365
-        const secret = hexlify(ethers.randomBytes(32))
-    
-        const ETHRegistrarControllerAddress = '0xfb3cE5D01e0f33f41DbB39035dB9745962F1f968'
-        const PublicResolverAddress = '0xE99638b40E4Fff0129D56f03b55b6bbC4BBE49b5'
-    
-    
+
         // set resolver for the ENS domain name,   so that folks can resolve the address to the ENS name
         // this only works for EOA addresses and not AA addresses.
         // we are going to use EAS entries to resolve from AA to ENS name
@@ -114,42 +106,9 @@ class EnsService {
         const owner = await registry2.owner(node);
         console.log(".................. Owner:", owner);
 
-
-        if (resolverAddress != "0x0000000000000000000000000000000000000000") {
-    
-            const resolverABI = ['function addr(bytes32 node) view returns (address)'];
-            const resolver = new ethers.Contract(resolverAddress, resolverABI, provider);
-            const address = await resolver.addr(node);
-            console.log(".................. Address:", address);
-
-            try {
-                const nameResolver = await provider.getResolver(ensFullName);
-                console.log(".................. Name resolver:", nameResolver);
-                let ethAddress = null;
-                if (nameResolver) {
-                    ethAddress = await nameResolver.getAddress();
-                    console.log(".................. Eth address:", ethAddress);
-                }
-        
-            }
-            catch (error) {
-                console.log(".................. Error resolving name:", error);
-            }
-            
-            console.log("ENS address found:", ensAddress);
-
-            const ensNameResolver = await provider.getResolver(ensFullName);
-            if (!ensNameResolver) {
-                console.log("No resolver found for", name);
-                return;
-            }
-        
-            // Fetch the avatar text record
-            const avatar = await ensNameResolver.getText("avatar");
-            console.log("Avatar URI:", avatar);
-            
-            // Check and set ENS records only if they don't already exist
-            console.log("Checking and setting ENS records...");
+        // Unified ENS record management function
+        const manageEnsRecords = async () => {
+            console.log("Managing ENS records for:", ensFullName);
             
             try {
                 // Create public client for reading current ENS records
@@ -291,8 +250,46 @@ class EnsService {
                 console.log(`🔄 Reverse resolution: ${smartAccountAddress} → ${ensFullName}`);
                 
             } catch (error) {
-                console.error("Error checking/setting ENS records:", error);
+                console.error("Error managing ENS records:", error);
             }
+        };
+
+        if (resolverAddress != "0x0000000000000000000000000000000000000000") {
+            // ENS domain exists - update records
+            console.log("ENS domain exists, updating records...");
+            
+            const resolverABI = ['function addr(bytes32 node) view returns (address)'];
+            const resolver = new ethers.Contract(resolverAddress, resolverABI, provider);
+            const address = await resolver.addr(node);
+            console.log(".................. Current Address:", address);
+
+            try {
+                const nameResolver = await provider.getResolver(ensFullName);
+                console.log(".................. Name resolver:", nameResolver);
+                let ethAddress = null;
+                if (nameResolver) {
+                    ethAddress = await nameResolver.getAddress();
+                    console.log(".................. Eth address:", ethAddress);
+                }
+            }
+            catch (error) {
+                console.log(".................. Error resolving name:", error);
+            }
+            
+            console.log("ENS address found:", ensAddress);
+
+            const ensNameResolver = await provider.getResolver(ensFullName);
+            if (!ensNameResolver) {
+                console.log("No resolver found for", name);
+                return;
+            }
+        
+            // Fetch the avatar text record
+            const avatar = await ensNameResolver.getText("avatar");
+            console.log("Avatar URI:", avatar);
+            
+            // Update existing ENS records
+            await manageEnsRecords();
         }
         else {
 
@@ -479,6 +476,9 @@ class EnsService {
             console.log(`✅ ENS name "${ensName}" registered with AA.`);
             console.log(`🔗 View: https://sepolia.app.ens.domains/${ensName}`);
             
+            // After successful registration, set the ENS records
+            console.log("Setting up ENS records for newly created domain...");
+            await manageEnsRecords();
         }
         
 
