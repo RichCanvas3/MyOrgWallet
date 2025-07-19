@@ -548,7 +548,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       console.log('Correct input, and name = ', brokenMessage[2] )
       console.log('ENS Name: ', brokenMessage[2])
 
-      EnsService.createEnsDomainName(brokenMessage[2], chain!)
       //createEnsDomainName(brokenMessage[2])
     }
 
@@ -560,9 +559,18 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     setAllowAutoScroll(true);
 
     addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
-    
+
     //console.info("..... process user message: ", message)
     getArgfromUserMessage(message).then(str => {
+
+      if (str.includes("ens_verification") && orgAccountClient && chain) {
+        console.log('process ens verification')
+        const ensName = message.split("ENS:")[1]
+        EnsService.createEnsDomainName(orgAccountClient, ensName, chain!).then((ensName) => {
+          console.log('ENS Name: ', ensName)
+        })
+      }
+
       addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
       console.log('Data From Stream: ', str);
     })
@@ -1188,13 +1196,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     const stateList = ['colorado', 'delaware']
     console.log(content)
 
-    if (content.toLowerCase().includes("ens:") && orgAccountClient) {
-      console.log("************************* processing ENS: ", content)
-      const ensName = content.split("ENS:")[1]
-      await EnsService.createEnsDomainName(orgAccountClient, ensName, chain!)
-    }
-
-
     var lastUserResponse = content.toLowerCase()
     var introduction = userSettings.assistantIntroductions ? userSettings.assistantIntroductions : OPENAI_DEFAULT_ASSISTANT_PROMPT
 
@@ -1215,7 +1216,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       return response.message;
     } else {
       var response = await sendMessageToLangGraphAssistant(lastUserResponse, threadID, 'none', {}, linkedInAuthRef, xAuthRef);
-      console.log('LangChain Response: ', response.message)
+      console.log('LangChain Response final: ', response.message)
       return response.message;
     }
 

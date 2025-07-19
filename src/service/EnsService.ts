@@ -28,7 +28,7 @@ import { createBundlerClient } from 'viem/account-abstraction';
 
 class EnsService {
 
-    static async createEnsDomainName(smartAccountClient: MetaMaskSmartAccount, ensName: string, chain: Chain) : Promise<void> {
+    static async createEnsDomainName(smartAccountClient: MetaMaskSmartAccount, ensName: string, chain: Chain) : Promise<string> {
 
         const provider = new ethers.BrowserProvider(window.ethereum)
         const name = ensName
@@ -36,43 +36,6 @@ class EnsService {
         // Clean the ENS name by removing invalid characters, spaces, and prefixes
         const cleanEnsName = ensName.replace(/^ENS:\s*/, '').replace(/[^a-zA-Z0-9-]/g, '').toLowerCase()
         const ensFullName = cleanEnsName + ".eth"
-    
-
-        // set resolver for the ENS domain name,   so that folks can resolve the address to the ENS name
-        // this only works for EOA addresses and not AA addresses.
-        // we are going to use EAS entries to resolve from AA to ENS name
-        // Sepolia ENS Registry
-        /*
-          const ENS_REGISTRY_ADDRESS = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e'; 
-          const PUBLIC_RESOLVER_ADDRESS = '0x8FADE66B79cC9f707aB26799354482EB93a5B7dD';
-          const ENSRegistryABI = [
-            'function setResolver(bytes32 node, address resolver) external'
-          ];
-    
-          const ensFullName = ensName + ".eth"
-          //const node = namehash("richcanvas.eth");
-          const node = namehash(ensFullName);
-          const ensRegistry = new ethers.Contract(ENS_REGISTRY_ADDRESS, ENSRegistryABI, signatory.walletClient);
-    
-          const tx = await ensRegistry.setResolver(node, PUBLIC_RESOLVER_ADDRESS);
-          console.log('Setting resolver tx sent:', tx.hash);
-    
-          await tx.wait();
-          console.log('✅ Resolver set successfully');
-    
-          // test the resolver using the ensClient
-          const ensClient = createPublicClient({
-              chain: chain,
-              transport: http(RPC_URL),
-            });
-    
-          const name = await ensClient.getName({
-            address: address as `0x${string}`,
-          });
-          console.log("Current ENS name:", name);
-    
-    
-        */
     
     
         // Use mainnet for ENS operations as it has full ENS support
@@ -481,7 +444,7 @@ class EnsService {
             await manageEnsRecords();
         }
         
-
+        return ensName;
     }
 }
 export default EnsService;
