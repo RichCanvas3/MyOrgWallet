@@ -41,7 +41,7 @@ class EnsService {
         // Use mainnet for ENS operations as it has full ENS support
         console.log("...................... process this stuff .............: ", ensFullName)
         const ensClient = createEnsPublicClient({
-              chain: chain, // Use the chain passed in by the user
+              chain: mainnet, // Use mainnet for ENS operations as it has full ENS support
               transport: http(RPC_URL),
             });
     
@@ -244,7 +244,7 @@ class EnsService {
             const ensNameResolver = await provider.getResolver(ensFullName);
             if (!ensNameResolver) {
                 console.log("No resolver found for", name);
-                return;
+                return ensFullName;
             }
         
             // Fetch the avatar text record
@@ -363,7 +363,7 @@ class EnsService {
             
             if (!domainAvailable) {
                 console.error('Domain is not available for registration');
-                return;
+                return ensFullName;
             }
             
             // Check if the commitment is still valid (not expired)
@@ -379,7 +379,7 @@ class EnsService {
                 // ENS commitments are valid for 1 minute (60 seconds)
                 if (timeDiff > 120) {
                     console.error('Commitment has expired: ' + timeDiff);
-                    return;
+                    return ensFullName;
                 }
             }
 

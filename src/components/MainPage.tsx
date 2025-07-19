@@ -344,16 +344,42 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   }, [userSettings]);
 
   useEffect(() => {
+    let isMounted = true;
+    
     async function fetchThreadID() {
-      const threadID_text = await invokeLangGraphAgent({});
-      console.log(threadID_text);
-      const threadID_Array = threadID_text.split("'");
-      const threadID = threadID_Array[1];
-      console.log("Thread ID:", threadID);
-      setThreadID(threadID);
+      if (threadID || !isMounted) {
+        return;
+      }
+      
+      console.log('fetching thread ID.....................')
+      try {
+        const threadID_text = await invokeLangGraphAgent({});
+        console.log(threadID_text);
+        const threadID_Array = threadID_text.split("'");
+        const threadIDResult = threadID_Array[1];
+        console.log("Thread ID:", threadIDResult);
+        
+        if (isMounted) {
+          setThreadID(threadIDResult);
+
+          console.log('call langchain.....................')
+          getArgfromUserMessage(threadIDResult, "lets get started").then(str => {
+            if (str) {
+              addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+            }
+          })
+        }
+      } catch (error) {
+        console.error('Error fetching thread ID:', error);
+      }
     }
+    
     fetchThreadID();
-  }, []);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [threadID]);
 
   const fetchModelById = async (modelId: string): Promise<OpenAIModel | null> => {
     try {
@@ -471,6 +497,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
       ConversationService.storeConversation(newConversation, messages);
 
+
+
       navigate(`/chat/c/${newConversation.id}`);
 
     }
@@ -530,14 +558,14 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     }
   };
 
-  async function getArgfromUserMessage(message: string): Promise<string> {
-    const args = await processUserMessage(message);
+  async function getArgfromUserMessage(currentThreadID: string, message: string): Promise<string> {
+    const args = await processUserMessage(currentThreadID, message);
     return args;
   }
 
   const callApp = (message: string, fileDataRef: FileDataRef[]) => {
 
-    if (conversation == null) {
+    if (conversation == null || threadID == null) {
       return
     }
 
@@ -561,7 +589,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
 
     //console.info("..... process user message: ", message)
-    getArgfromUserMessage(message).then(str => {
+    getArgfromUserMessage(threadID, message).then(str => {
 
       if (str.includes("ens_verification") && orgAccountClient && chain) {
         console.log('process ens verification')
@@ -1190,7 +1218,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   }
 
 
-  async function processUserMessage(content: string) {
+  async function processUserMessage(currentThreadID: string, content: string) {
 
     let args = ""
     const stateList = ['colorado', 'delaware']
@@ -1199,25 +1227,28 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     var lastUserResponse = content.toLowerCase()
     var introduction = userSettings.assistantIntroductions ? userSettings.assistantIntroductions : OPENAI_DEFAULT_ASSISTANT_PROMPT
 
+    console.info("*************** threadID: ", threadID)
+    if (currentThreadID) {
 
-    if (content.toLowerCase() == 'colorado') {
-      var response = await sendMessageToLangGraphAssistant(lastUserResponse, threadID, 'state_register', {}, linkedInAuthRef, xAuthRef);
-      console.log('adding attestation')
-      addOrgRegistrationAttestation(response['name'], response['id'], content, response["address"], response["formDate"]);
-      console.log('LangChain Response: ', response.message)
-      return response.message;
-    } else if ((content.toLowerCase())[12] == 'l') {//'https://www.linkedin.com/in') {
-      //console.log('hallo')
-      var response = await sendMessageToLangGraphAssistant(lastUserResponse, threadID, 'linkedin_verification', {}, linkedInAuthRef, xAuthRef);
-      console.log('LangChain Response: ', response.message)
-      return response.message;
-    } else if (content.toLowerCase() == 'twitter') {
-      var response = await sendMessageToLangGraphAssistant(lastUserResponse, threadID, 'x_verification', {}, linkedInAuthRef, xAuthRef);
-      return response.message;
-    } else {
-      var response = await sendMessageToLangGraphAssistant(lastUserResponse, threadID, 'none', {}, linkedInAuthRef, xAuthRef);
-      console.log('LangChain Response final: ', response.message)
-      return response.message;
+      if (content.toLowerCase() == 'colorado') {
+        var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'state_register', {}, linkedInAuthRef, xAuthRef);
+        console.log('adding attestation')
+        addOrgRegistrationAttestation(response['name'], response['id'], content, response["address"], response["formDate"]);
+        console.log('LangChain Response: ', response.message)
+        return response.message;
+      } else if ((content.toLowerCase())[12] == 'l') {//'https://www.linkedin.com/in') {
+        //console.log('hallo')
+        var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'linkedin_verification', {}, linkedInAuthRef, xAuthRef);
+        console.log('LangChain Response: ', response.message)
+        return response.message;
+      } else if (content.toLowerCase() == 'twitter') {
+        var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'x_verification', {}, linkedInAuthRef, xAuthRef);
+        return response.message;
+      } else {
+        var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'none', {}, linkedInAuthRef, xAuthRef);
+        console.log('LangChain Response final: ', response.message)
+        return response.message;
+      }
     }
 
 
