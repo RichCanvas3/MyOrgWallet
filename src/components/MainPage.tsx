@@ -558,7 +558,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     
     checkAllDirectActions("", message);
     setAllowAutoScroll(true);
+
     addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
+    
     //console.info("..... process user message: ", message)
     getArgfromUserMessage(message).then(str => {
       addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);

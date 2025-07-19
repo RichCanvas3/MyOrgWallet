@@ -4,6 +4,8 @@
 
 import LinkedInAuth, { LinkedInAuthRef } from "../components/LinkedInAuth";
 import { XAuthRef } from "../components/XAuth"
+import { LANGCHAIN_API_KEY } from "../config";
+
 
 export async function invokeLangGraphAgent({
   // parameters can be added here if needed
@@ -12,7 +14,7 @@ export async function invokeLangGraphAgent({
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': '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'
+      'x-api-key': LANGCHAIN_API_KEY
     },
     body: JSON.stringify({
       thread_id: '',
@@ -70,7 +72,7 @@ export async function sendMessageToLangGraphAssistant(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': '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'
+      'x-api-key': LANGCHAIN_API_KEY
     },
     body: JSON.stringify({
       assistant_id: 'fe096781-5601-53d2-b2f6-0d3403f7e9ca',
