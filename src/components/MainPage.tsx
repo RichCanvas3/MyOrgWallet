@@ -37,6 +37,7 @@ import ConversationService, {
 } from "../service/ConversationService";
 import {Attestation, OrgAttestation, SocialAttestation, RegisteredDomainAttestation, WebsiteAttestation, InsuranceAttestation, EmailAttestation, StateRegistrationAttestation} from '../models/Attestation';
 import AttestationService from '../service/AttestationService';
+import EnsService from '../service/EnsService'
 import {UserContext} from '../UserContext';
 import {NotificationService} from '../service/NotificationService';
 import CustomChatSplash from './CustomChatSplash';
@@ -143,7 +144,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const { data: walletClient } = useWalletClient();
 
-  const { chain,veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, setOrgNameValue } = useWallectConnectContext();
+  const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, setOrgNameValue } = useWallectConnectContext();
 
   const [isDeleteAttestationsModalVisible, setDeleteAttestationsModalVisible] = useState(false);
   const [isApproveLeaderModalVisible, setApproveLeaderModalVisible] = useState(false);
@@ -547,7 +548,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       console.log('Correct input, and name = ', brokenMessage[2] )
       console.log('ENS Name: ', brokenMessage[2])
 
-      createEnsDomainName(brokenMessage[2])
+      EnsService.createEnsDomainName(brokenMessage[2], chain!)
+      //createEnsDomainName(brokenMessage[2])
     }
 
     // append signers
@@ -1183,6 +1185,14 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     let args = ""
     const stateList = ['colorado', 'delaware']
     console.log(content)
+
+    if (content.toLowerCase().includes("ens:") && orgAccountClient) {
+      console.log("************************* processing ENS: ", content)
+      const ensName = content.split("ENS:")[1]
+      await EnsService.createEnsDomainName(orgAccountClient, ensName, chain!)
+    }
+
+
     var lastUserResponse = content.toLowerCase()
     var introduction = userSettings.assistantIntroductions ? userSettings.assistantIntroductions : OPENAI_DEFAULT_ASSISTANT_PROMPT
 

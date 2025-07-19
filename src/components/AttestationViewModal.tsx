@@ -131,6 +131,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
             address: address as `0x${string}`,
           });
           console.log("Current ENS name:", name);
+     
 
           // Get the address for the name
           const ensAddress = await ensClient.getAddressRecord({
