@@ -86,7 +86,7 @@ class EnsService {
         // Use mainnet for ENS operations as it has full ENS support
         console.log("...................... process this stuff .............: ", ensFullName)
         const ensClient = createEnsPublicClient({
-              chain: sepolia,
+              chain: chain, // Use the chain passed in by the user
               transport: http(RPC_URL),
             });
     
@@ -122,7 +122,6 @@ class EnsService {
             const address = await resolver.addr(node);
             console.log(".................. Address:", address);
 
-
             try {
                 const nameResolver = await provider.getResolver(ensFullName);
                 console.log(".................. Name resolver:", nameResolver);
@@ -137,10 +136,6 @@ class EnsService {
                 console.log(".................. Error resolving name:", error);
             }
             
-
-
-        
-
             console.log("ENS address found:", ensAddress);
 
             const ensNameResolver = await provider.getResolver(ensFullName);
@@ -152,79 +147,155 @@ class EnsService {
             // Fetch the avatar text record
             const avatar = await ensNameResolver.getText("avatar");
             console.log("Avatar URI:", avatar);
-        
-        
-        
-
-            // get lots of data from ensdata.net
-            //const url = "https://sepolia.api.ensdata.net/" + name
-            //const res = await fetch(url)
-            //const orgInfo = await res.json()
+            
+            // Check and set ENS records only if they don't already exist
+            console.log("Checking and setting ENS records...");
+            
+            try {
+                // Create public client for reading current ENS records
+                const publicClient = createPublicClient({
+                    chain: chain,
+                    transport: http(RPC_URL),
+                });
+                
+                // Create bundler client for setting ENS records
+                const ensBundlerClient = createBundlerClient({
+                    transport: http(BUNDLER_URL),
+                    paymaster: true,
+                    chain: chain,
+                    paymasterContext: {
+                        mode: 'SPONSORED',
+                    },
+                });
+                
+                // Use fixed gas fees like in your codebase
+                const fee = {maxFeePerGas: 412596685n, maxPriorityFeePerGas: 412596676n};
+                
+                const smartAccountAddress = await smartAccountClient.getAddress();
+                console.log("Smart Account Address for ENS records:", smartAccountAddress);
+                
+                // Check current address record
+                const currentAddress = await publicClient.readContract({
+                    address: resolverAddress as `0x${string}`,
+                    abi: PublicResolverABI.abi,
+                    functionName: 'addr',
+                    args: [node]
+                });
+                console.log("Current address record:", currentAddress);
+                
+                // Check current website text record
+                const currentWebsite = await publicClient.readContract({
+                    address: resolverAddress as `0x${string}`,
+                    abi: PublicResolverABI.abi,
+                    functionName: 'text',
+                    args: [node, 'website']
+                });
+                console.log("Current website record:", currentWebsite);
+                
+                // Check current reverse name record
+                const reverseNode = namehash(smartAccountAddress.slice(2).toLowerCase() + '.addr.reverse');
+                console.log("Reverse node:", reverseNode);
+                
+                const currentReverseName = await publicClient.readContract({
+                    address: resolverAddress as `0x${string}`,
+                    abi: PublicResolverABI.abi,
+                    functionName: 'name',
+                    args: [reverseNode]
+                });
+                console.log("Current reverse name record:", currentReverseName);
+                
+                // Set address record only if it's different or empty
+                if (currentAddress !== smartAccountAddress) {
+                    console.log("Setting ENS address record...");
+                    const setAddressData = encodeFunctionData({
+                        abi: PublicResolverABI.abi,
+                        functionName: 'setAddr',
+                        args: [node, smartAccountAddress]
+                    });
+                    
+                    const addressUserOperationHash = await ensBundlerClient.sendUserOperation({
+                        account: smartAccountClient,
+                        calls: [{
+                            to: resolverAddress as `0x${string}`,
+                            data: setAddressData,
+                            value: 0n
+                        }],
+                        ...fee
+                    });
+                    
+                    const { receipt: addressReceipt } = await ensBundlerClient.waitForUserOperationReceipt({
+                        hash: addressUserOperationHash,
+                    });
+                    console.log("✅ ENS address record set successfully");
+                } else {
+                    console.log("✅ ENS address record already set correctly");
+                }
+                
+                // Set website text record only if it's different or empty
+                if (currentWebsite !== 'https://www.richcanvas3.com') {
+                    console.log("Setting ENS website text record...");
+                    const setWebsiteData = encodeFunctionData({
+                        abi: PublicResolverABI.abi,
+                        functionName: 'setText',
+                        args: [node, 'website', 'https://www.richcanvas3.com']
+                    });
+                    
+                    const websiteUserOperationHash = await ensBundlerClient.sendUserOperation({
+                        account: smartAccountClient,
+                        calls: [{
+                            to: resolverAddress as `0x${string}`,
+                            data: setWebsiteData,
+                            value: 0n
+                        }],
+                        ...fee
+                    });
+                    
+                    const { receipt: websiteReceipt } = await ensBundlerClient.waitForUserOperationReceipt({
+                        hash: websiteUserOperationHash,
+                    });
+                    console.log("✅ ENS website text record set successfully");
+                } else {
+                    console.log("✅ ENS website text record already set correctly");
+                }
+                
+                // Set reverse name record only if it's different or empty
+                if (currentReverseName !== ensFullName) {
+                    console.log("Setting reverse name record...");
+                    const setNameData = encodeFunctionData({
+                        abi: PublicResolverABI.abi,
+                        functionName: 'setName',
+                        args: [reverseNode, ensFullName]
+                    });
+                    
+                    const reverseUserOperationHash = await ensBundlerClient.sendUserOperation({
+                        account: smartAccountClient,
+                        calls: [{
+                            to: resolverAddress as `0x${string}`,
+                            data: setNameData,
+                            value: 0n
+                        }],
+                        ...fee
+                    });
+                    
+                    const { receipt: reverseReceipt } = await ensBundlerClient.waitForUserOperationReceipt({
+                        hash: reverseUserOperationHash,
+                    });
+                    console.log("✅ Reverse name record set successfully");
+                } else {
+                    console.log("✅ Reverse name record already set correctly");
+                }
+                
+                console.log(`🎉 ENS records check and update completed for ${ensFullName}`);
+                console.log(`📍 Address: ${smartAccountAddress}`);
+                console.log(`🌐 Website: https://www.richcanvas3.com`);
+                console.log(`🔄 Reverse resolution: ${smartAccountAddress} → ${ensFullName}`);
+                
+            } catch (error) {
+                console.error("Error checking/setting ENS records:", error);
+            }
         }
         else {
 
-            /*
-            console.log("ENS address not found:", ensFullName);
-
-            const ethRegistrarController = new ethers.Contract(
-                ETHRegistrarControllerAddress,
-                ETHRegistrarControllerABI.abi,
-                signer
-            )
-        
-            const publicResolver = new ethers.Contract(
-                PublicResolverAddress,
-                PublicResolverABI.abi,
-                signer
-            )
-        
-            console.log('Name: ', name)
-            console.log('Duration: ', duration)
-            console.log('Secret: ', secret)
-        
-            createName()
-        
-            async function createName() {
-            const registrationObject = {
-                label: name,
-                owner: signer.address,
-                duration: duration,
-                secret: secret,
-                resolver: publicResolver.target, // '0x0000000000000000000000000000000000000000' = null, meaning no resolver is set
-                data: [],
-                reverseRecord: 1, // 0 reverse record flag set to 0
-                referrer: '0x0000000000000000000000000000000000000000000000000000000000000000'
-            }
-        
-            const commitment = await ethRegistrarController.makeCommitment(registrationObject)
-        
-            console.log('Sending commit...')
-        
-            const tx1 = await ethRegistrarController.commit(commitment)
-            await tx1.wait()
-        
-            console.log('Commit sent. Waiting 60 seconds...')
-        
-            await new Promise ((r) => setTimeout(r, 60000))
-        
-            console.log('Waited 60 seconds!')
-            console.log('Registering...')
-        
-            const rentPrice = await ethRegistrarController.rentPrice(`${name}.eth`, 365 * 24 * 60 * 60) // 1 year in seconds
-        
-            console.log('Rent Price: ', rentPrice)
-        
-            const tx2 = await ethRegistrarController.register(registrationObject, {
-                value: BigInt('3125000000003490') // 0.003125 ETH
-            })
-        
-            await tx2.wait()
-        
-            // ENS Domain Name Created Successfully
-            console.log(`ENS name "${name}.eth" registered!`)
-            console.log(`See ENS profile here: https://sepolia.app.ens.domains/${name}.eth`)
-            }
-            */
 
             console.log("ENS address not found:", ensFullName);
 
@@ -255,7 +326,7 @@ class EnsService {
 
             // Create a public client for reading contract data
             const publicClient = createPublicClient({
-                chain: sepolia,
+                chain: chain,
                 transport: http(RPC_URL),
             });
 
@@ -274,7 +345,7 @@ class EnsService {
             const bundlerClient = createBundlerClient({
                 transport: http(BUNDLER_URL),
                 paymaster: true,
-                chain: sepolia,
+                chain: chain,
                 paymasterContext: {
                     mode: 'SPONSORED',
                 },
