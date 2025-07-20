@@ -57,6 +57,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
 
   const [ orgEthName, setOrgEthName] = useState<string>("");
   const [ orgEthAvatar, setOrgEthAvatar] = useState<string>("");
+  const [ avatarError, setAvatarError] = useState<boolean>(false);
   const [ ensData, setEnsData] = useState<{
     name: string | null;
     avatar: string | null;
@@ -77,6 +78,18 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
 
   const [activeTab, setActiveTab] = useState<'info' | 'vc' | 'vc-raw' | 'zk' | 'rzk' | 'at' >('vc');
   const { chain, veramoAgent, mascaApi, signatory, indivIssuerDelegation, orgIssuerDelegation, orgIndivDelegation, burnerAccountClient } = useWallectConnectContext();
+
+  // Helper function to get the correct ENS URL based on chain
+  const getEnsUrl = (ensName: string) => {
+    if (chain?.id === 11155111) { // Sepolia
+      return `https://sepolia.app.ens.domains/${ensName}`;
+    } else if (chain?.id === 1) { // Mainnet
+      return `https://app.ens.domains/name/${ensName}`;
+    } else {
+      // Default to Sepolia for other chains
+      return `https://sepolia.app.ens.domains/${ensName}`;
+    }
+  };
 
   const handleClose = () => {
     console.info("close attestation modal")
@@ -107,6 +120,9 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
           
           // Update state with ENS data
           setEnsData(ensDataResult);
+          
+          // Reset avatar error state when new data is loaded
+          setAvatarError(false);
           
           // Set legacy state for backward compatibility
           if (ensDataResult.name) {
@@ -550,20 +566,26 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                     {attestation?.entityId === "org(org)" ? (
                       <div className="org-info">
                         <div>
-                          <img
-                            src={ensData.avatar || orgEthAvatar || '/default-avatar.png'}
-                            alt={`${ensData.name || orgEthName || 'Organization'} avatar`}
-                            className="org-avatar"
-                            onError={(e) => {
-                              e.currentTarget.src = '/default-avatar.png';
-                            }}
-                          />
+                          {(ensData.avatar || orgEthAvatar) && !avatarError ? (
+                            <img
+                              src={ensData.avatar || orgEthAvatar}
+                              alt={`${ensData.name || orgEthName || 'Organization'} avatar`}
+                              className="org-avatar"
+                              onError={() => setAvatarError(true)}
+                            />
+                          ) : (
+                            <div className="org-avatar-placeholder">
+                              <div className="avatar-initial">
+                                {(ensData.name || orgEthName || 'O').charAt(0).toUpperCase()}
+                              </div>
+                            </div>
+                          )}
                         </div>
                         <div className="org-details">
                           <span className="org-name">
                             {ensData.name ? (
                               <a
-                                href={`https://app.ens.domains/name/${ensData.name}`}
+                                href={getEnsUrl(ensData.name)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="org-link"
@@ -572,7 +594,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                               </a>
                             ) : orgEthName ? (
                               <a
-                                href={`https://app.ens.domains/name/${orgEthName}`}
+                                href={getEnsUrl(orgEthName)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="org-link"

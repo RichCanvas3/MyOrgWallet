@@ -7,3 +7,35 @@
 .setting-panel:last-child {
   border-bottom: none;
 }
+
+/* Avatar placeholder styles */
+.org-avatar-placeholder {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.org-avatar-placeholder.hidden {
+  display: none;
+}
+
+.avatar-initial {
+  text-transform: uppercase;
+  font-family: 'Arial', sans-serif;
+}
+
+/* Ensure org-avatar has same dimensions */
+.org-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+}

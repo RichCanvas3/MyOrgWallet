@@ -437,7 +437,7 @@ class EnsService {
             });
 
             console.log(`✅ ENS name "${ensName}" registered with AA.`);
-            console.log(`🔗 View: https://sepolia.app.ens.domains/${ensName}`);
+            console.log(`🔗 View: https://sepolia.app.ens.domains/${ensName}?tab=more`);
             
             // After successful registration, set the ENS records
             console.log("Setting up ENS records for newly created domain...");
@@ -484,7 +484,7 @@ class EnsService {
 
             return {
                 name: name?.name || null,
-                avatar: null // Avatar will be handled separately if needed
+                avatar: null // Avatar will be handled separately if needed - updated
             };
         } catch (error) {
             console.error("Error getting ENS data:", error);
