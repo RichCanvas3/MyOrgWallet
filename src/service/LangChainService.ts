@@ -68,6 +68,7 @@ export async function sendMessageToLangGraphAssistant(
   linkedInAuthRef?: React.RefObject<LinkedInAuthRef>,
   XAuthRef?: React.RefObject<XAuthRef>
 ) {
+  console.log('*************** send message with config set to RichCanvas')
   const data = await fetch('https://myorgagentrichcanvas-fda39097be375d0f9756d03ee4c93846.us.langgraph.app/threads/'+ thread_id +'/runs/stream', {
     method: 'POST',
     headers: {
@@ -96,7 +97,9 @@ export async function sendMessageToLangGraphAssistant(
         tags: [''],
         recursion_limit: 15,
         configurable: {
-    
+          company: {
+            name: 'RichCanvas'
+          }
         }
       },
       //webhook: '',
@@ -113,10 +116,10 @@ export async function sendMessageToLangGraphAssistant(
     })
   })
   
-  console.log('Unjsoned Data: ', data);
+  console.log('Unjsoned Data: ', JSON.stringify(data));
   const data2 = await data.text();
   const dataList = data2.split("event: ");
-  console.log(dataList)
+  console.log('dataList: ',dataList)
   try {
     var completedMessage = dataList[dataList.length - 2];
     console.log(completedMessage);

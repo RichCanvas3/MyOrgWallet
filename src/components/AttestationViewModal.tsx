@@ -13,11 +13,12 @@ import { VerifiableCredential } from '../models/VerifiableCredential'
 import { VcZkProof, VcRevokeZkProof } from '../models/ZkProof'
 import {Attestation, IndivAccountAttestation} from '../models/Attestation';
 import AttestationService from '../service/AttestationService';
+import EnsService from '../service/EnsService';
 import { RPC_URL,  ETHERSCAN_API_KEY, ETHERSCAN_URL, EAS_URL } from "../config";
 
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService"
 import ZkProofService from "../service/ZkProofService"
-import { useWalletClient, useAccount, useConnect, useEnsName, useEnsAvatar, useDisconnect } from 'wagmi';
+import { useWalletClient, useAccount, useConnect, useDisconnect } from 'wagmi';
 import { getCachedResponse, putCachedResponse, putCachedValue } from "../service/CachedService"
 
 import { useWallectConnectContext } from "../context/walletConnectContext";
@@ -56,6 +57,23 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
 
   const [ orgEthName, setOrgEthName] = useState<string>("");
   const [ orgEthAvatar, setOrgEthAvatar] = useState<string>("");
+  const [ ensData, setEnsData] = useState<{
+    name: string | null;
+    avatar: string | null;
+    website: string | null;
+    email: string | null;
+    twitter: string | null;
+    github: string | null;
+    discord: string | null;
+  }>({
+    name: null,
+    avatar: null,
+    website: null,
+    email: null,
+    twitter: null,
+    github: null,
+    discord: null
+  });
 
   const [activeTab, setActiveTab] = useState<'info' | 'vc' | 'vc-raw' | 'zk' | 'rzk' | 'at' >('vc');
   const { chain, veramoAgent, mascaApi, signatory, indivIssuerDelegation, orgIssuerDelegation, orgIndivDelegation, burnerAccountClient } = useWallectConnectContext();
@@ -68,191 +86,88 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
 
   // Async function defined inside the component
   const handleInitOperations = async () => {
-    if (did) {
 
-      //const address = did.replace("did:pkh:eip155:" + chain?.id + ":", "") as `0x${string}`
-      const address = signatory.walletClient.account.address
-      console.info("org address: ", address)
-      console.info("signatory address: ", signatory.walletClient.account.address)
+    if (did && chain) {
+      // Extract address from DID instead of using signatory
+      const address = did.replace("did:pkh:eip155:" + chain?.id + ":", "") as `0x${string}`;
+      console.info("DID address: ", address);
+      console.info("DID: ", did);
 
+      console.info("call handle init operations");
+      const cacheKey = address;
+      const cached = await getCachedResponse(cacheKey);
       
-
-      console.info("call handle init operations")
-      const cacheKey = address
-      const cached = await getCachedResponse(cacheKey)
       if (!cached && address) {
-
-        //   PRIVATE DATA
-        const alchemyRpcUrl = RPC_URL
-
-
-        //  get org account information
-        const accountBalanceUrl = `https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
-        const res = await fetch(accountBalanceUrl)
-        const balance = await res.json()
-        console.info("account balance: ", address, balance)
-
-
-        const provider = new ethers.JsonRpcProvider(alchemyRpcUrl);
-        let name = await provider.lookupAddress(address)
-        console.info("----------------> lookup address: ", name )
-
-
-        /*
-
-        const ensClient = createEnsPublicClient({
-          chain: sepolia,
-          transport: http(RPC_URL),
-        });
-
-        // Set the name record for richcanvas.eth
         try {
-
-          const ENS_REGISTRY_ADDRESS = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e'; // Sepolia ENS Registry
-          const PUBLIC_RESOLVER_ADDRESS = '0x8FADE66B79cC9f707aB26799354482EB93a5B7dD';
-          const ENSRegistryABI = [
-            'function setResolver(bytes32 node, address resolver) external'
-          ];
-
-          const node = namehash("richcanvas.eth");
-          const ensRegistry = new ethers.Contract(ENS_REGISTRY_ADDRESS, ENSRegistryABI, signatory.walletClient);
-
-          const tx = await ensRegistry.setResolver(node, PUBLIC_RESOLVER_ADDRESS);
-          console.log('Setting resolver tx sent:', tx.hash);
-
-          await tx.wait();
-          console.log('✅ Resolver set successfully');
-
-
-
-
-          // Get the name for the address
-          const name = await ensClient.getName({
-            address: address as `0x${string}`,
-          });
-          console.log("Current ENS name:", name);
-     
-
-          // Get the address for the name
-          const ensAddress = await ensClient.getAddressRecord({
-            name: 'richcanvas.eth',
-          });
-          console.log("Current ENS address:", ensAddress);
-
-          // Note: The ENS SDK doesn't provide direct methods for setting records
-          // You would need to use the contract methods directly or use a different SDK
-          console.log("To set the address record, you need to use the contract methods directly");
+          // Get comprehensive ENS data using EnsService
+          console.info("Fetching ENS data for DID address:", address);
+          const ensDataResult = await EnsService.getEnsComprehensiveData(address, chain);
+          
+          console.info("ENS data result 1:", ensDataResult);
+          
+          // Update state with ENS data
+          setEnsData(ensDataResult);
+          
+          // Set legacy state for backward compatibility
+          if (ensDataResult.name) {
+            setOrgEthName(ensDataResult.name);
+          }
+          if (ensDataResult.avatar) {
+            setOrgEthAvatar(ensDataResult.avatar);
+          }
+          
+          // Cache the result
+          putCachedValue(cacheKey, true);
+          
         } catch (error) {
-          console.error("Error getting ENS record:", error);
+          console.error("Error fetching ENS data:", error);
         }
-        */
+      } else if (cached) {
+        // If cached, try to get basic ENS data
+        try {
+          const ensDataResult = await EnsService.getEnsData(address, chain);
 
-        /*
-
-        if (name) {
-          setOrgEthName(name)
-        }
-        else {
-          name = "richcanvas.eth"
-          setOrgEthName(name)
-        }
-
-        if (name) {
-
-          const resolver = await provider.getResolver(name);
-          if (!resolver) {
-            console.log("No resolver found for", name);
-            return null;
+          console.info("ENS data result 2: ", ensDataResult)
+          setEnsData({
+            name: ensDataResult.name,
+            avatar: ensDataResult.avatar,
+            website: null,
+            email: null,
+            twitter: null,
+            github: null,
+            discord: null
+          });
+          
+          if (ensDataResult.name) {
+            setOrgEthName(ensDataResult.name);
           }
-
-          // Fetch the avatar text record
-          const avatar = await resolver.getText("avatar");
-          console.log("Avatar URI:", avatar);
-
-          if (avatar) {
-            setOrgEthAvatar(avatar)
+          if (ensDataResult.avatar) {
+            setOrgEthAvatar(ensDataResult.avatar);
           }
-
-
-
-
-          // get lots of data from ensdata.net
-          const url = "https://api.ensdata.net/" + name
-          const res = await fetch(url)
-          const orgInfo = await res.json()
-          if (orgInfo) {
-            if (orgInfo.avatar) {
-              setOrgEthAvatar(orgInfo.avatar)
-            }
-            if (orgInfo.twitter) {
-              //console.info("x account: ", orgInfo.twitter)
-
-            }
-            if (orgInfo.url) {
-              //console.info("website: ", orgInfo.url)
-            }
-          }
+        } catch (error) {
+          console.error("Error fetching cached ENS data:", error);
         }
-        putCachedValue(cacheKey, true)
-        */
       }
-
     }
-
-
-
   }
 
   useEffect(() => {
+    console.info("handleInitOperations 123")
     handleInitOperations();
   }, [did, entityId, displayName]);
 
 
   const address = did.replace("did:pkh:eip155:" + chain?.id + ":", "") as `0x${string}`
 
-
-  // reverse lookup from address to ens name
-  // lookup from ens name to other info
-  // https://api.ensdata.net/richcanvas.eth
-  const { data: name } = useEnsName({ address: address, chainId: 1 })
-  if (name) {
-    console.info("found eth name: ", name)
-  }
-  else {
-    //console.info("not found eth name: ")
-  }
-
-
-
-
-
-
-  /*
-  async function getEnsAvatar(name: string) {
-    try {
-      // Get the resolver for the ENS name
-      const resolver = await provider.getResolver(name);
-      if (!resolver) {
-        console.log("No resolver found for", name);
-        return null;
-      }
-
-      // Fetch the avatar text record
-      const avatar = await resolver.getText("avatar");
-      console.log("Avatar URI:", avatar);
-      return avatar; // e.g., "ipfs://QmExampleHash123" or "https://example.com/image.png"
-    } catch (error) {
-      console.error("Error fetching avatar:", error);
-      return null;
+  // Log ENS data when it changes
+  useEffect(() => {
+    if (ensData.name) {
+      console.info("ENS name found:", ensData.name);
     }
-  }
-  getEnsAvatar("richcanvas.eth").then((avatar) => {
-    if (avatar) {
-      setOrgEthAvatar(avatar)
+    if (ensData.avatar) {
+      console.info("ENS avatar found:", ensData.avatar);
     }
-
-  })
-  */
+  }, [ensData]);
 
 
 
@@ -636,26 +551,82 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                       <div className="org-info">
                         <div>
                           <img
-                            src={`${orgEthAvatar}`}
-                            alt={`${orgEthName} avatar`}
+                            src={ensData.avatar || orgEthAvatar || '/default-avatar.png'}
+                            alt={`${ensData.name || orgEthName || 'Organization'} avatar`}
                             className="org-avatar"
+                            onError={(e) => {
+                              e.currentTarget.src = '/default-avatar.png';
+                            }}
                           />
                         </div>
                         <div className="org-details">
                           <span className="org-name">
-                            <a
-                              href={`https://app.ens.domains/name/${orgEthName}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="org-link"
-                            >
-                              Visit {orgEthName}
-                            </a>
+                            {ensData.name ? (
+                              <a
+                                href={`https://app.ens.domains/name/${ensData.name}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="org-link"
+                              >
+                                Visit {ensData.name}
+                              </a>
+                            ) : orgEthName ? (
+                              <a
+                                href={`https://app.ens.domains/name/${orgEthName}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="org-link"
+                              >
+                                Visit {orgEthName}
+                              </a>
+                            ) : (
+                              <span>No ENS name found</span>
+                            )}
                           </span>
                         </div>
                         <div className="org-details">
                           <span className="org-did">{did}</span>
                         </div>
+                        {/* Display additional ENS data if available */}
+                        {(ensData.website || ensData.email || ensData.twitter || ensData.github || ensData.discord) && (
+                          <div className="ens-details">
+                            <h3>ENS Information</h3>
+                            {ensData.website && (
+                              <p className="panel-text">
+                                <strong>Website:</strong>{' '}
+                                <a href={ensData.website} target="_blank" rel="noopener noreferrer" className="panel-link">
+                                  {ensData.website}
+                                </a>
+                              </p>
+                            )}
+                            {ensData.email && (
+                              <p className="panel-text">
+                                <strong>Email:</strong> {ensData.email}
+                              </p>
+                            )}
+                            {ensData.twitter && (
+                              <p className="panel-text">
+                                <strong>Twitter:</strong>{' '}
+                                <a href={`https://twitter.com/${ensData.twitter}`} target="_blank" rel="noopener noreferrer" className="panel-link">
+                                  @{ensData.twitter}
+                                </a>
+                              </p>
+                            )}
+                            {ensData.github && (
+                              <p className="panel-text">
+                                <strong>GitHub:</strong>{' '}
+                                <a href={`https://github.com/${ensData.github}`} target="_blank" rel="noopener noreferrer" className="panel-link">
+                                  {ensData.github}
+                                </a>
+                              </p>
+                            )}
+                            {ensData.discord && (
+                              <p className="panel-text">
+                                <strong>Discord:</strong> {ensData.discord}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ) : attestation?.entityId === "account(indiv)" ? (
                       <div className="account-indiv-info">

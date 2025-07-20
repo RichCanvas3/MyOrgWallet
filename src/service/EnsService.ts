@@ -41,7 +41,7 @@ class EnsService {
         // Use mainnet for ENS operations as it has full ENS support
         console.log("...................... process this stuff .............: ", ensFullName)
         const ensClient = createEnsPublicClient({
-              chain: mainnet, // Use mainnet for ENS operations as it has full ENS support
+              chain: chain as any, // Use the chain passed in by the user
               transport: http(RPC_URL),
             });
     
@@ -445,6 +445,103 @@ class EnsService {
         }
         
         return ensName;
+    }
+
+    /**
+     * Get ENS name for an address (reverse resolution)
+     */
+    static async getEnsName(address: string, chain: Chain): Promise<string | null> {
+        try {
+            const ensClient = createEnsPublicClient({
+                chain: chain as any,
+                transport: http(RPC_URL),
+            });
+
+            const name = await ensClient.getName({
+                address: address as `0x${string}`,
+            });
+
+            return name?.name || null;
+        } catch (error) {
+            console.error("Error getting ENS name:", error);
+            return null;
+        }
+    }
+
+    /**
+     * Get ENS name and basic data for an address
+     */
+    static async getEnsData(address: string, chain: Chain): Promise<{ name: string | null; avatar: string | null }> {
+        try {
+            const ensClient = createEnsPublicClient({
+                chain: chain as any,
+                transport: http(RPC_URL),
+            });
+
+            const name = await ensClient.getName({
+                address: address as `0x${string}`,
+            });
+
+            return {
+                name: name?.name || null,
+                avatar: null // Avatar will be handled separately if needed
+            };
+        } catch (error) {
+            console.error("Error getting ENS data:", error);
+            return { name: null, avatar: null };
+        }
+    }
+
+    /**
+     * Get comprehensive ENS data including text records
+     */
+    static async getEnsComprehensiveData(address: string, chain: Chain): Promise<{
+        name: string | null;
+        avatar: string | null;
+        website: string | null;
+        email: string | null;
+        twitter: string | null;
+        github: string | null;
+        discord: string | null;
+    }> {
+        try {
+            const ensData = await this.getEnsData(address, chain);
+            
+            if (!ensData.name) {
+                return {
+                    name: null,
+                    avatar: null,
+                    website: null,
+                    email: null,
+                    twitter: null,
+                    github: null,
+                    discord: null
+                };
+            }
+
+            // For now, return basic data without text records
+            // Text records can be added later when we have the correct ENS client methods
+            return {
+                name: ensData.name,
+                avatar: ensData.avatar,
+                website: null,
+                email: null,
+                twitter: null,
+                github: null,
+                discord: null
+            };
+        } catch (error) {
+            console.error("Error getting comprehensive ENS data:", error);
+            return {
+                name: null,
+                avatar: null,
+                website: null,
+                email: null,
+                twitter: null,
+                github: null,
+                discord: null
+            };
+        }
     }
 }
 export default EnsService;
