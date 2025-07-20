@@ -68,6 +68,7 @@ import AddCreditCardModal from './AddEOACrossChainAccountModal';
 import FundCreditCardModal from './FundCreditCardModal';
 import AddSavingsModal from './AddAccountModal';
 import AddAccountModal from './AddEOACrossChainAccountModal';
+import AddEnsRecordModal from './AddEnsRecordModal';
 import OrgModal from './OrgModal';
 import { invokeLangGraphAgent, sendMessageToLangGraphAssistant } from '../service/LangChainService';
 
@@ -155,6 +156,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const [isFundCreditCardModalVisible, setFundCreditCardModalVisible] = useState(false);
   const [isAddSavingsModalVisible, setAddSavingsModalVisible] = useState(false);
   const [isAddAccountModalVisible, setAddAccountModalVisible] = useState(false);
+  const [isAddEnsRecordModalVisible, setIsAddEnsRecordModalVisible] = useState(false);
+  const [existingEnsNameForUpdate, setExistingEnsNameForUpdate] = useState<string>('');
 
   const [isOrgModalVisible, setOrgModalVisible] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
@@ -192,6 +195,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   };
   const handleOnOrgModalClose = () => {
     setOrgModalVisible(false);
+  };
+  const handleOnAddEnsRecordModalClose = () => {
+    setIsAddEnsRecordModalVisible(false);
+    setExistingEnsNameForUpdate('');
   };
 
   // Refresh callbacks for sections
@@ -783,6 +790,21 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
 
 
+  // Helper function to fetch existing ENS name
+  const fetchExistingEnsName = async (): Promise<string> => {
+    if (!orgAccountClient || !chain) return '';
+    
+    try {
+      const orgAddress = await orgAccountClient.getAddress();
+      const existingEnsName = await EnsService.getEnsName(orgAddress, chain);
+      console.log("Found existing ENS name for org:", existingEnsName);
+      return existingEnsName || '';
+    } catch (error) {
+      console.error("Error fetching existing ENS name:", error);
+      return '';
+    }
+  };
+
   function checkAllDirectActions(lastAssistantResponse: string, lastUserResponse: string) {
     let actionMessage = ""
     try {
@@ -825,6 +847,62 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         console.info("add debit card ...")
         setAddAccountModalVisible(true)
         actionMessage="add debit card"
+      }
+      if (lastUserResponse.toLowerCase().includes("add ens record") || 
+          lastUserResponse.toLowerCase().includes("add ens name") ||
+          lastUserResponse.toLowerCase().includes("register ens")) {
+        console.info("add ens record ...")
+        setIsAddEnsRecordModalVisible(true)
+        setExistingEnsNameForUpdate('')
+        actionMessage="add ens record"
+      }
+      if (lastUserResponse.toLowerCase().includes("update ens logo") || 
+          lastUserResponse.toLowerCase().includes("update ens avatar") ||
+          lastUserResponse.toLowerCase().includes("change ens logo")) {
+        console.info("update ens logo ...")
+        
+        // Extract ENS name from the message if provided
+        const ensMatch = lastUserResponse.match(/(?:update|change)\s+(?:ens\s+)?(?:logo|avatar)\s+(?:for\s+)?([a-zA-Z0-9-]+\.eth)/i);
+        console.log("Chat message:", lastUserResponse);
+        console.log("Regex match result:", ensMatch);
+        let ensName = ensMatch ? ensMatch[1] : '';
+        
+        // Always fetch the correct ENS name first, then open modal
+        const handleEnsLogoUpdate = async () => {
+          let correctEnsName = '';
+          
+          console.log("Starting ENS logo update process...");
+          console.log("Extracted ENS name from message:", ensName);
+          
+          // For now, always use reverse lookup to get the correct ENS name
+          // This ensures we get the right name regardless of what was typed
+          correctEnsName = await fetchExistingEnsName();
+          
+          console.log("Correct ENS name from reverse lookup:", correctEnsName);
+          
+          if (!correctEnsName) {
+            // If no ENS name found via reverse lookup, use the extracted name as fallback
+            correctEnsName = ensName;
+            console.log("Using fallback ENS name:", correctEnsName);
+          }
+          
+          console.log("Final ENS name to use:", correctEnsName);
+          
+          if (correctEnsName) {
+            console.log("Setting ENS name in state:", correctEnsName);
+            setExistingEnsNameForUpdate(correctEnsName);
+            setIsAddEnsRecordModalVisible(true);
+          } else {
+            // No ENS name found, still open modal but with empty name
+            console.log("No ENS name found, opening modal with empty name");
+            setExistingEnsNameForUpdate('');
+            setIsAddEnsRecordModalVisible(true);
+          }
+        };
+        
+        handleEnsLogoUpdate().catch(console.error);
+        actionMessage="update ens logo"
+        return; // Exit early to prevent further processing
       }
       if (lastUserResponse.toLowerCase().includes("fund card")) {
         console.info("fund card ...")
@@ -2104,6 +2182,12 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           orgName={newOrgName?newOrgName:""}
           isVisible={isOrgModalVisible}
           onClose={handleOnOrgModalClose}
+        />
+        <AddEnsRecordModal
+          isVisible={isAddEnsRecordModalVisible}
+          onClose={handleOnAddEnsRecordModalClose}
+          onRefresh={handleRefreshAttestations}
+          existingEnsName={existingEnsNameForUpdate}
         />
         <LinkedInAuth ref={linkedInAuthRef} />
         <XAuth ref={xAuthRef} />

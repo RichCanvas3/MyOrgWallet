@@ -34,7 +34,11 @@ class EnsService {
         const name = ensName
     
         // Clean the ENS name by removing invalid characters, spaces, and prefixes
-        const cleanEnsName = ensName.replace(/^ENS:\s*/, '').replace(/[^a-zA-Z0-9-]/g, '').toLowerCase()
+        let cleanEnsName = ensName.replace(/^ENS:\s*/, '');
+        // Remove .eth suffix if present
+        cleanEnsName = cleanEnsName.replace(/\.eth$/i, '');
+        // Remove any other non-alphanumeric characters except hyphens
+        cleanEnsName = cleanEnsName.replace(/[^a-zA-Z0-9-]/g, '').toLowerCase();
         const ensFullName = cleanEnsName + ".eth"
     
     
@@ -519,11 +523,22 @@ class EnsService {
                 };
             }
 
-            // For now, return basic data without text records
+            // Fetch the avatar using the ENS name
+            let avatar = null;
+            console.log("About to fetch avatar for ENS name:", ensData.name, "on chain:", chain.name);
+            try {
+                avatar = await this.getEnsAvatar(ensData.name, chain);
+                console.log("Fetched avatar for ENS name:", ensData.name, "Avatar:", avatar);
+            } catch (avatarError) {
+                console.error("Error fetching avatar for ENS name:", ensData.name, avatarError);
+                console.error("Avatar error details:", avatarError);
+            }
+
+            // For now, return basic data with avatar
             // Text records can be added later when we have the correct ENS client methods
             return {
                 name: ensData.name,
-                avatar: ensData.avatar,
+                avatar: avatar,
                 website: null,
                 email: null,
                 twitter: null,
@@ -541,6 +556,337 @@ class EnsService {
                 github: null,
                 discord: null
             };
+        }
+    }
+
+    /**
+     * Get ENS avatar URL for a specific ENS name
+     */
+    static async getEnsAvatar(ensName: string, chain: Chain): Promise<string | null> {
+        try {
+            console.log("getEnsAvatar called with:", { ensName, chainName: chain.name });
+            
+            // Clean the ENS name
+            let cleanEnsName = ensName.replace(/^ENS:\s*/, '');
+            cleanEnsName = cleanEnsName.replace(/\.eth$/i, '');
+            cleanEnsName = cleanEnsName.replace(/[^a-zA-Z0-9-]/g, '').toLowerCase();
+            const ensFullName = cleanEnsName + ".eth";
+
+            console.log("ENS name cleaning:", { original: ensName, cleaned: cleanEnsName, fullName: ensFullName });
+            
+            // Validate the cleaned name
+            if (!cleanEnsName || cleanEnsName.length < 3) {
+                console.error("Invalid ENS name after cleaning:", { original: ensName, cleaned: cleanEnsName });
+                return null;
+            }
+
+            // Create public client for reading ENS records
+            const publicClient = createPublicClient({
+                chain: chain,
+                transport: http(RPC_URL),
+            });
+
+            const ENS_REGISTRY_ADDRESS = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
+            const node = namehash(ensFullName);
+            
+            // Get resolver address
+            const resolverAddress = await publicClient.readContract({
+                address: ENS_REGISTRY_ADDRESS as `0x${string}`,
+                abi: [{
+                    name: 'resolver',
+                    type: 'function',
+                    stateMutability: 'view',
+                    inputs: [{ name: 'node', type: 'bytes32' }],
+                    outputs: [{ name: '', type: 'address' }]
+                }],
+                functionName: 'resolver',
+                args: [node]
+            });
+
+            if (!resolverAddress || resolverAddress === '0x0000000000000000000000000000000000000000') {
+                console.log("No resolver found for ENS name:", ensFullName);
+                console.log("Resolver address returned:", resolverAddress);
+                return null;
+            }
+
+            console.log("Resolver address found:", resolverAddress);
+
+            // Get avatar text record
+            console.log("Fetching avatar text record for node:", node);
+            const avatar = await publicClient.readContract({
+                address: resolverAddress as `0x${string}`,
+                abi: PublicResolverABI.abi,
+                functionName: 'text',
+                args: [node, 'avatar']
+            });
+
+            console.log("Avatar text record result:", avatar);
+            console.log("Avatar type:", typeof avatar);
+            const result = typeof avatar === 'string' ? avatar : null;
+            console.log("Returning avatar:", result);
+            return result;
+        } catch (error) {
+            console.error("Error getting ENS avatar:", error);
+            return null;
+        }
+    }
+
+    /**
+     * Find the correct ENS name for an organization
+     */
+    static async findCorrectEnsName(smartAccountClient: MetaMaskSmartAccount, chain: Chain): Promise<string | null> {
+        try {
+            const orgAddress = await smartAccountClient.getAddress();
+            console.log("Looking for ENS name for address:", orgAddress);
+            
+            // Try to get the reverse resolution
+            const ensName = await this.getEnsName(orgAddress, chain);
+            
+            if (ensName) {
+                console.log("Found ENS name via reverse resolution:", ensName);
+                return ensName;
+            }
+            
+            console.log("No ENS name found via reverse resolution");
+            return null;
+        } catch (error) {
+            console.error("Error finding ENS name:", error);
+            return null;
+        }
+    }
+
+    /**
+     * Update ENS avatar (logo) for an existing ENS name
+     */
+    static async updateEnsAvatar(smartAccountClient: MetaMaskSmartAccount, ensName: string, avatarUrl: string, chain: Chain): Promise<boolean> {
+        try {
+
+            let cleanEnsName = ensName.replace(/^ENS:\s*/, '');
+            cleanEnsName = cleanEnsName.replace(/\.eth$/i, '');
+            cleanEnsName = cleanEnsName.replace(/[^a-zA-Z0-9-]/g, '').toLowerCase();
+
+            const ensFullName = cleanEnsName + ".eth";
+
+
+            // Create public client for reading current ENS records
+            const publicClient = createPublicClient({
+                chain: chain,
+                transport: http(RPC_URL),
+            });
+
+            // Create bundler client for setting ENS records
+            const ensBundlerClient = createBundlerClient({
+                transport: http(BUNDLER_URL),
+                paymaster: true,
+                chain: chain,
+                paymasterContext: {
+                    mode: 'SPONSORED',
+                },
+            });
+
+            // Use fixed gas fees like in your codebase
+            const fee = {maxFeePerGas: 412596685n, maxPriorityFeePerGas: 412596676n};
+
+            const ENS_REGISTRY_ADDRESS = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
+            const node = namehash(ensFullName);
+            
+            // First check if the ENS name exists by getting its owner
+            const owner = await publicClient.readContract({
+                address: ENS_REGISTRY_ADDRESS as `0x${string}`,
+                abi: [{
+                    name: 'owner',
+                    type: 'function',
+                    stateMutability: 'view',
+                    inputs: [{ name: 'node', type: 'bytes32' }],
+                    outputs: [{ name: '', type: 'address' }]
+                }],
+                functionName: 'owner',
+                args: [node]
+            });
+
+            if (!owner || owner === '0x0000000000000000000000000000000000000000') {
+                console.error("ENS name does not exist:", ensFullName);
+                console.error("Current network:", chain.name);
+                console.error("Possible solutions:");
+                console.error("1. Check if the ENS name is correct");
+                console.error("2. The ENS name might be on mainnet instead of Sepolia");
+                console.error("3. The ENS name might not be registered yet");
+                
+                // Try to suggest alternative names
+                const suggestions = [
+                    cleanEnsName.replace('eth', ''),
+                    cleanEnsName.replace('canvas', ''),
+                    cleanEnsName.replace('rich', ''),
+                    'aarichcanvas',
+                    'richcanvas'
+                ];
+                console.error("Suggested ENS names to try:", suggestions);
+                
+                return false;
+            }
+
+            console.log("ENS owner:", owner);
+            
+            // Check if the smart account is the owner
+            const smartAccountAddress = await smartAccountClient.getAddress();
+            if (owner.toLowerCase() !== smartAccountAddress.toLowerCase()) {
+                console.error("Smart account is not the owner of the ENS name");
+                console.error("Smart account address:", smartAccountAddress);
+                console.error("ENS owner:", owner);
+                console.error("You can only update ENS records if you own the ENS name");
+                return false;
+            }
+            
+            // Get resolver address
+            const resolverAddress = await publicClient.readContract({
+                address: ENS_REGISTRY_ADDRESS as `0x${string}`,
+                abi: [{
+                    name: 'resolver',
+                    type: 'function',
+                    stateMutability: 'view',
+                    inputs: [{ name: 'node', type: 'bytes32' }],
+                    outputs: [{ name: '', type: 'address' }]
+                }],
+                functionName: 'resolver',
+                args: [node]
+            });
+
+            if (!resolverAddress || resolverAddress === '0x0000000000000000000000000000000000000000') {
+                console.error("No resolver found for ENS name:", ensFullName);
+                console.error("This could mean:");
+                console.error("1. The ENS name doesn't exist");
+                console.error("2. The ENS name is on a different network");
+                console.error("3. The ENS name doesn't have a resolver set");
+                console.error("Current network:", chain.name);
+                return false;
+            }
+
+            console.log("Resolver address:", resolverAddress);
+
+            // Check current avatar to see if it's already set
+            try {
+                const currentAvatar = await publicClient.readContract({
+                    address: resolverAddress as `0x${string}`,
+                    abi: PublicResolverABI.abi,
+                    functionName: 'text',
+                    args: [node, 'avatar']
+                });
+                console.log("Current avatar:", currentAvatar);
+                
+                if (currentAvatar === avatarUrl) {
+                    console.log("Avatar is already set to the same value");
+                    return true;
+                }
+            } catch (error) {
+                console.log("Could not read current avatar, proceeding with update");
+            }
+
+            // Set avatar text record
+            const setAvatarData = encodeFunctionData({
+                abi: PublicResolverABI.abi,
+                functionName: 'setText',
+                args: [node, 'avatar', avatarUrl]
+            });
+
+            console.log("Setting avatar with data:", setAvatarData);
+            console.log("Calling resolver at:", resolverAddress);
+
+            try {
+                const avatarUserOperationHash = await ensBundlerClient.sendUserOperation({
+                    account: smartAccountClient,
+                    calls: [{
+                        to: resolverAddress as `0x${string}`,
+                        data: setAvatarData,
+                        value: 0n
+                    }],
+                    ...fee
+                });
+
+                const { receipt: avatarReceipt } = await ensBundlerClient.waitForUserOperationReceipt({
+                    hash: avatarUserOperationHash,
+                });
+
+                console.log("✅ ENS avatar updated successfully");
+                console.log(`🔗 View: https://sepolia.app.ens.domains/${ensFullName}?tab=more`);
+                
+                return true;
+            } catch (resolverError) {
+                console.error("Failed to update avatar with current resolver:", resolverError);
+                console.log("Trying to set a new resolver first...");
+                
+                // Try to set a new resolver first, then update the avatar
+                const PublicResolverAddress = '0x8FADE66B79cC9f707aB26799354482EB93a5B7dD'; // default on Sepolia
+                
+                const setResolverData = encodeFunctionData({
+                    abi: [{
+                        name: 'setResolver',
+                        type: 'function',
+                        stateMutability: 'nonpayable',
+                        inputs: [
+                            { name: 'node', type: 'bytes32' },
+                            { name: 'resolver', type: 'address' }
+                        ],
+                        outputs: []
+                    }],
+                    functionName: 'setResolver',
+                    args: [node, PublicResolverAddress as `0x${string}`]
+                });
+
+                const resolverUserOperationHash = await ensBundlerClient.sendUserOperation({
+                    account: smartAccountClient,
+                    calls: [{
+                        to: ENS_REGISTRY_ADDRESS as `0x${string}`,
+                        data: setResolverData,
+                        value: 0n
+                    }],
+                    ...fee
+                });
+
+                const { receipt: resolverReceipt } = await ensBundlerClient.waitForUserOperationReceipt({
+                    hash: resolverUserOperationHash,
+                });
+
+                console.log("✅ New resolver set successfully");
+
+                // Now try to set the avatar with the new resolver
+                const newSetAvatarData = encodeFunctionData({
+                    abi: PublicResolverABI.abi,
+                    functionName: 'setText',
+                    args: [node, 'avatar', avatarUrl]
+                });
+
+                const newAvatarUserOperationHash = await ensBundlerClient.sendUserOperation({
+                    account: smartAccountClient,
+                    calls: [{
+                        to: PublicResolverAddress as `0x${string}`,
+                        data: newSetAvatarData,
+                        value: 0n
+                    }],
+                    ...fee
+                });
+
+                const { receipt: newAvatarReceipt } = await ensBundlerClient.waitForUserOperationReceipt({
+                    hash: newAvatarUserOperationHash,
+                });
+
+                console.log("✅ ENS avatar updated successfully with new resolver");
+                console.log(`🔗 View: https://sepolia.app.ens.domains/${ensFullName}?tab=more`);
+                
+                return true;
+            }
+        } catch (error) {
+            console.error("Error updating ENS avatar:", error);
+            
+            // Provide more specific error information
+            if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string' && error.message.includes('UserOperation reverted')) {
+                console.error("The transaction was reverted. This could be because:");
+                console.error("1. The smart account doesn't have permission to update this ENS record");
+                console.error("2. The resolver contract doesn't support the setText function");
+                console.error("3. The ENS name might be on a different network");
+                console.error("4. The resolver might be outdated or incompatible");
+            }
+            
+            return false;
         }
     }
 }
