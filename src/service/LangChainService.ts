@@ -82,7 +82,7 @@ export async function sendMessageToLangGraphAssistant(
         //checkpoint_ns: '',
         //checkpoint_id: '',
         //checkpoint_map: {
-    
+
         //}
       },
       input: {
@@ -115,49 +115,96 @@ export async function sendMessageToLangGraphAssistant(
       checkpoint_during: false
     })
   })
-  
+
   console.log('Unjsoned Data: ', JSON.stringify(data));
   const data2 = await data.text();
   const dataList = data2.split("event: ");
   console.log('dataList: ',dataList)
   try {
+    if (!dataList || dataList.length < 2) {
+      console.error("Incomplete response from LangGraph agent");
+      return {
+        message: "I apologize, but I didn't receive a complete response. Could you please try your request again?",
+        id: '', name: '', formDate: '', address: ''
+      };
+    }
+
     var completedMessage = dataList[dataList.length - 2];
-    console.log(completedMessage);
+    console.log('Raw completed message:', completedMessage);
+
+    if (!completedMessage) {
+      console.error("No completed message found in response");
+      return {
+        message: "I apologize, but I couldn't process your request. Please try again.",
+        id: '', name: '', formDate: '', address: ''
+      };
+    }
+
     var dataSplit = completedMessage.split('":');
+    if (dataSplit.length < 2) {
+      console.error("Invalid message format");
+      return {
+        message: "I received an invalid response format. Please try your request again.",
+        id: '', name: '', formDate: '', address: ''
+      };
+    }
+
     var furtherSplit = dataSplit[1].split(',"');
     var furtherFurtherSplit = furtherSplit[0].replace(new RegExp(`^${'"'}+|${'"'}+$`, 'g'), '');
     var further3Split = furtherFurtherSplit.split('\\n');
-    var finalMessage = further3Split.join(' ');  
-    console.log(finalMessage);
+    var finalMessage = further3Split.join(' ');
+    console.log('Processed message:', finalMessage);
+
     if (tool == 'state_register') {
-      console.log('state data being jsoned');
+      console.log('Processing state registration data...');
       var split = finalMessage.split('-');
-      console.log(split)
+      if (split.length < 6) {
+        console.error("Invalid state registration data format");
+        return {
+          message: "I couldn't process the state registration data. Please try again.",
+          id: '', name: '', formDate: '', address: ''
+        };
+      }
+
       var id = (split[1].split('** '))[1];
       var name = 'test';
       var formDate = (split[4].split('** '))[1];
       var address = (split[5].split('** '))[1];
-      console.log(id, formDate, address)
-      return {message: finalMessage, id: id, name: name, formDate: formDate, address: address}
+      console.log('Processed state data:', { id, formDate, address });
+      return { message: finalMessage, id, name, formDate, address };
     } else if (tool == 'linkedin_verification') {
-      console.log('linkedin Oauth being done')
+      console.log('Initiating LinkedIn OAuth...');
       if (linkedInAuthRef?.current) {
         linkedInAuthRef.current.openLinkedInPopup();
       } else {
-        console.warn('linkedInAuthRef is not available or not attached to a component instance.');
+        console.warn('LinkedIn auth ref not available');
+        return {
+          message: "LinkedIn authentication is not available at the moment. Please try again later.",
+          id: '', name: '', formDate: '', address: ''
+        };
       }
-      console.log('response: ', 'response')
     } else if (tool == "x_verification") {
-      console.log("x auth being done")
+      console.log("Initiating X/Twitter auth...");
       if (XAuthRef?.current) {
         XAuthRef.current.openXPopup();
+      } else {
+        console.warn('X/Twitter auth ref not available');
+        return {
+          message: "X/Twitter authentication is not available at the moment. Please try again later.",
+          id: '', name: '', formDate: '', address: ''
+        };
       }
     }
-    //return finalMessage
-    return {message: finalMessage, id: 'test', name:'test', formDate:'test', address: 'test'}
-  } catch {
-    console.error("Error processing dataList in LangChainService");
-    return {message: 'message not completed', id: 'test', name:'test', formDate:'test', address: 'test'}
+
+    return { message: finalMessage, id: '', name: '', formDate: '', address: '' };
+
+  } catch (error) {
+    console.error("Error processing LangGraph response:", error);
+    console.error("Response data:", { dataList });
+    return {
+      message: "I encountered an error processing your request. Please try again.",
+      id: '', name: '', formDate: '', address: ''
+    };
   }
 }
 

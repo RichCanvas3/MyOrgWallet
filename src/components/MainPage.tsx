@@ -2,6 +2,7 @@ import {useContext, useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 import { hexlify, parseEther, formatEther, ethers, namehash } from 'ethers';
 import { Button } from '@mui/material';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import ETHRegistrarControllerABI from '../abis/ETHRegistrarController.json'
 import PublicResolverABI from '../abis/PublicResolver.json'
@@ -165,6 +166,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const { isConnected } = useAccount();
 
   const [threadID, setThreadID] = useState<string | null>(null);
+
+  // Add state for thinking
+  const [isThinking, setIsThinking] = useState(false);
+  const thinkingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleOnDeleteAttestationsModalClose = () => {
     setDeleteAttestationsModalVisible(false);
@@ -352,12 +357,12 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   useEffect(() => {
     let isMounted = true;
-    
+
     async function fetchThreadID() {
       if (threadID || !isMounted) {
         return;
       }
-      
+
       console.log('fetching thread ID.....................')
       try {
         const threadID_text = await invokeLangGraphAgent({});
@@ -365,7 +370,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         const threadID_Array = threadID_text.split("'");
         const threadIDResult = threadID_Array[1];
         console.log("Thread ID:", threadIDResult);
-        
+
         if (isMounted) {
           setThreadID(threadIDResult);
 
@@ -380,9 +385,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         console.error('Error fetching thread ID:', error);
       }
     }
-    
+
     fetchThreadID();
-    
+
     return () => {
       isMounted = false;
     };
@@ -571,7 +576,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   }
 
   const callApp = (message: string, fileDataRef: FileDataRef[]) => {
-
     if (conversation == null || threadID == null) {
       return
     }
@@ -582,21 +586,40 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     if (brokenMessage[0] == 'Register' && brokenMessage[1] == 'ENS:') {
       console.log('Correct input, and name = ', brokenMessage[2] )
       console.log('ENS Name: ', brokenMessage[2])
-
-      //createEnsDomainName(brokenMessage[2])
     }
 
-    // append signers
-
-    // console.log('Broken Message: ', brokenMessage)
-    
     checkAllDirectActions("", message);
+
+    // Ensure auto-scroll is enabled when sending new messages
     setAllowAutoScroll(true);
 
+    // Add user's message
     addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
 
-    //console.info("..... process user message: ", message)
+    // Force scroll to bottom after adding user message
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+
+    // Clear any existing timeout
+    if (thinkingTimeoutRef.current) {
+      clearTimeout(thinkingTimeoutRef.current);
+    }
+
+    // Set thinking state after delay
+    thinkingTimeoutRef.current = setTimeout(() => {
+      setIsThinking(true);
+      // Ensure thinking indicator is visible
+      scrollToBottom();
+    }, 750);
+
+    // Process user message
     getArgfromUserMessage(threadID, message).then(str => {
+      // Clear timeout and hide thinking state
+      if (thinkingTimeoutRef.current) {
+        clearTimeout(thinkingTimeoutRef.current);
+      }
+      setIsThinking(false);
 
       if (str.includes("ens_verification") && orgAccountClient && chain) {
         console.log('process ens verification')
@@ -608,8 +631,19 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
       addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
       console.log('Data From Stream: ', str);
-    })
-    //message = message + ", Please respond with a JSON object. Include keys like 'company_name', 'state_name', 'email' if they exist."
+
+      // Force scroll to bottom after response
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+    }).catch(error => {
+      // Clear timeout and hide thinking state on error
+      if (thinkingTimeoutRef.current) {
+        clearTimeout(thinkingTimeoutRef.current);
+      }
+      setIsThinking(false);
+      console.error('Error processing message:', error);
+    });
 
     console.info("user message entered: ", message)
   };
@@ -633,10 +667,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         content: content,
         fileDataRef: fileDataRef,
       };
-      //console.info("setMessages 3")
-      return [...prevMessages, newMsg];
-    });
+      const newMessages = [...prevMessages, newMsg];
 
+      // Enable auto-scroll for new messages
+      setAllowAutoScroll(true);
+
+      return newMessages;
+    });
 
     const newMessage: ChatMessage = {
       id: messages.length + 1,
@@ -649,7 +686,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     const updatedMessages = [...messages, newMessage];
 
     if (sendMessage) {
-      // this is going to sendMessage(...)
       sendMessage(updatedMessages, args);
     }
   };
@@ -793,7 +829,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   // Helper function to fetch existing ENS name
   const fetchExistingEnsName = async (): Promise<string> => {
     if (!orgAccountClient || !chain) return '';
-    
+
     try {
       const orgAddress = await orgAccountClient.getAddress();
       const existingEnsName = await EnsService.getEnsName(orgAddress, chain);
@@ -807,7 +843,39 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   function checkAllDirectActions(lastAssistantResponse: string, lastUserResponse: string) {
     let actionMessage = ""
+
     try {
+      if (lastUserResponse.toLowerCase().includes("show wallet") ||
+          lastUserResponse.toLowerCase().includes("show address") ||
+          lastUserResponse.toLowerCase().includes("my address") ||
+          lastUserResponse.toLowerCase().includes("smart account address")) {
+        console.info("Showing wallet addresses...");
+
+        const showAddresses = async () => {
+          const addresses = [];
+
+          if (orgAccountClient) {
+            const orgAddress = await orgAccountClient.getAddress();
+            addresses.push(`Organization Smart Account: ${orgAddress}`);
+          }
+
+          if (indivAccountClient) {
+            const indivAddress = await indivAccountClient.getAddress();
+            addresses.push(`Individual Smart Account: ${indivAddress}`);
+          }
+
+          if (burnerAccountClient) {
+            const burnerAddress = await burnerAccountClient.getAddress();
+            addresses.push(`Burner Account: ${burnerAddress}`);
+          }
+
+          const message = `Your wallet addresses:\n${addresses.join('\n')}`;
+          addMessage(Role.Assistant, MessageType.Normal, message, '', [], sendMessage);
+        };
+
+        showAddresses().catch(console.error);
+        actionMessage = "show addresses";
+      }
       if (lastUserResponse.toLowerCase().includes("delete all") ||
           lastUserResponse.toLowerCase().includes("delete attestations")) {
         setDeleteAttestationsModalVisible(true)
@@ -848,7 +916,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         setAddAccountModalVisible(true)
         actionMessage="add debit card"
       }
-      if (lastUserResponse.toLowerCase().includes("add ens record") || 
+      if (lastUserResponse.toLowerCase().includes("add ens record") ||
           lastUserResponse.toLowerCase().includes("add ens name") ||
           lastUserResponse.toLowerCase().includes("register ens")) {
         console.info("add ens record ...")
@@ -856,38 +924,38 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         setExistingEnsNameForUpdate('')
         actionMessage="add ens record"
       }
-      if (lastUserResponse.toLowerCase().includes("update ens logo") || 
+      if (lastUserResponse.toLowerCase().includes("update ens logo") ||
           lastUserResponse.toLowerCase().includes("update ens avatar") ||
           lastUserResponse.toLowerCase().includes("change ens logo")) {
         console.info("update ens logo ...")
-        
+
         // Extract ENS name from the message if provided
         const ensMatch = lastUserResponse.match(/(?:update|change)\s+(?:ens\s+)?(?:logo|avatar)\s+(?:for\s+)?([a-zA-Z0-9-]+\.eth)/i);
         console.log("Chat message:", lastUserResponse);
         console.log("Regex match result:", ensMatch);
         let ensName = ensMatch ? ensMatch[1] : '';
-        
+
         // Always fetch the correct ENS name first, then open modal
         const handleEnsLogoUpdate = async () => {
           let correctEnsName = '';
-          
+
           console.log("Starting ENS logo update process...");
           console.log("Extracted ENS name from message:", ensName);
-          
+
           // For now, always use reverse lookup to get the correct ENS name
           // This ensures we get the right name regardless of what was typed
           correctEnsName = await fetchExistingEnsName();
-          
+
           console.log("Correct ENS name from reverse lookup:", correctEnsName);
-          
+
           if (!correctEnsName) {
             // If no ENS name found via reverse lookup, use the extracted name as fallback
             correctEnsName = ensName;
             console.log("Using fallback ENS name:", correctEnsName);
           }
-          
+
           console.log("Final ENS name to use:", correctEnsName);
-          
+
           if (correctEnsName) {
             console.log("Setting ENS name in state:", correctEnsName);
             setExistingEnsNameForUpdate(correctEnsName);
@@ -899,7 +967,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             setIsAddEnsRecordModalVisible(true);
           }
         };
-        
+
         handleEnsLogoUpdate().catch(console.error);
         actionMessage="update ens logo"
         return; // Exit early to prevent further processing
@@ -1861,8 +1929,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   };
 
   const handleUserScroll = (isAtBottom: boolean) => {
-    setAllowAutoScroll(isAtBottom);
     setShowScrollButton(!isAtBottom);
+    if (isAtBottom) {
+      setAllowAutoScroll(true);
+    }
   };
 
 
@@ -2063,7 +2133,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
 
 
-    
+
 
     const name = ensName
     const duration = 31536000 // 60 * 60 * 24 * 365
@@ -2221,6 +2291,19 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
                     allowAutoScroll={allowAutoScroll}
                     loading={loading}
                   />
+                  {isThinking && (
+                    <div style={{
+                      padding: '10px 20px',
+                      color: 'gray',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      marginBottom: '20px'
+                    }}>
+                      <CircularProgress size={16} />
+                      <span>Thinking...</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Scroll to bottom button */}

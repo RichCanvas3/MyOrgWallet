@@ -25,108 +25,83 @@ interface Props {
   loading: boolean;
 }
 
-
-
 const Chat: React.FC<Props> = ({
-                                introductionMessage,
-                                 chatBlocks, onChatScroll, allowAutoScroll, model,
-                                 onModelChange, conversation, loading
-                               }) => {
-  
-  
+  introductionMessage,
+  chatBlocks,
+  onChatScroll,
+  allowAutoScroll,
+  model,
+  onModelChange,
+  conversation,
+  loading
+}) => {
   const [models, setModels] = useState<OpenAIModel[]>([]);
   const chatDivRef = useRef<HTMLDivElement>(null);
 
-
-
   useEffect(() => {
-    
     ChatService.getModels()
-        .then(models => {
-          setModels(models);
-        })
-        .catch(err => {
-          NotificationService.handleUnexpectedError(err, 'Failed to get list of models');
+      .then(models => {
+        setModels(models);
+      })
+      .catch(err => {
+        NotificationService.handleUnexpectedError(err, 'Failed to get list of models');
+      });
+  }, []);
+
+  // Always scroll to bottom when messages change
+  useEffect(() => {
+    const scrollToBottom = () => {
+      if (chatDivRef.current) {
+        const chatDiv = chatDivRef.current;
+        chatDiv.scrollTo({
+          top: chatDiv.scrollHeight,
+          behavior: 'smooth'
         });
+      }
+    };
 
-  }, []);
+    // Scroll immediately and after a delay to ensure content is rendered
+    scrollToBottom();
+    const timeoutId = setTimeout(scrollToBottom, 100);
 
-  useEffect(() => {
-    if (chatDivRef.current && allowAutoScroll) {
-      chatDivRef.current.scrollTop = chatDivRef.current.scrollHeight;
-    }
-  }, [chatBlocks]);
-
-  useEffect(() => {
-    const chatContainer = chatDivRef.current;
-    if (chatContainer) {
-      const isAtBottom =
-          chatContainer.scrollHeight - chatContainer.scrollTop ===
-          chatContainer.clientHeight;
-
-      // Initially hide the button if chat is at the bottom
-      onChatScroll(isAtBottom);
-    }
-  }, []);
-
-  const findModelById = (id: string | null): OpenAIModel | undefined => {
-    return models.find(model => model.id === id);
-  };
-
-  const formatContextWindow = (context_window: number | undefined) => {
-    if (context_window) {
-      return Math.round(context_window / 1000) + 'k';
-    }
-    return '?k';
-  }
+    return () => clearTimeout(timeoutId);
+  }, [chatBlocks, loading]); // Also trigger on loading changes
 
   const handleScroll = () => {
     if (chatDivRef.current) {
-      const scrollThreshold = 20;
-      const isAtBottom =
-          chatDivRef.current.scrollHeight -
-          chatDivRef.current.scrollTop <=
-          chatDivRef.current.clientHeight + scrollThreshold;
-
-      // Notify parent component about the auto-scroll status
+      const chatDiv = chatDivRef.current;
+      const isAtBottom = chatDiv.scrollHeight - chatDiv.scrollTop <= chatDiv.clientHeight + 50;
       onChatScroll(isAtBottom);
-
-      // Disable auto-scroll if the user scrolls up
-      if (!isAtBottom) {
-        onChatScroll(false);
-      }
     }
   };
 
-
-
-
   return (
     <div
-    id="chat-container"
-    ref={chatDivRef}
-    className="chat-container-outer"
-    onScroll={handleScroll}
-  >
-    <div id="chat-container-inner" className="chat-container-inner">
-      <ChatBlock
-        key="chat-block-0"
-        block={introductionMessage}
-        loading={false}
-        isLastBlock={false}
-      />
-
-      {chatBlocks?.map((block, index) => (
+      id="chat-container"
+      ref={chatDivRef}
+      className="chat-container-outer"
+      onScroll={handleScroll}
+      style={{ overflowY: 'auto', height: '100%' }}
+    >
+      <div id="chat-container-inner" className="chat-container-inner">
         <ChatBlock
-          key={`chat-block-${block.id}`}
-          block={block}
-          loading={index === chatBlocks.length - 1 && loading}
-          isLastBlock={index === chatBlocks.length - 1}
+          key="chat-block-0"
+          block={introductionMessage}
+          loading={false}
+          isLastBlock={false}
         />
-      ))}
-      <div className="spacer" />
+
+        {chatBlocks?.map((block, index) => (
+          <ChatBlock
+            key={`chat-block-${block.id}`}
+            block={block}
+            loading={index === chatBlocks.length - 1 && loading}
+            isLastBlock={index === chatBlocks.length - 1}
+          />
+        ))}
+        <div className="spacer" />
+      </div>
     </div>
-  </div>
   );
 };
 

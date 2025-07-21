@@ -1,38 +1,36 @@
-import { hexlify, parseEther, formatEther, ethers } from 'ethers';
-import {OPENAI_DEFAULT_SYSTEM_PROMPT, OPENAI_DEFAULT_ASSISTANT_PROMPT, RPC_URL, BUNDLER_URL} from "../config";
-import { createPublicClient, http, type Chain } from 'viem';
-import { createEnsPublicClient } from '@ensdomains/ensjs'
-import { mainnet, sepolia } from 'viem/chains'
-
-import ETHRegistrarControllerABI from '../abis/ETHRegistrarController.json'
-import PublicResolverABI from '../abis/PublicResolver.json'
-
-import {
-    Implementation,
-    toMetaMaskSmartAccount,
-    type MetaMaskSmartAccount,
-    type DelegationStruct,
-    createDelegation,
-    DelegationFramework,
-    SINGLE_DEFAULT_MODE,
-    getExplorerTransactionLink,
-    getExplorerAddressLink,
-    createExecution,
-    Delegation,
-    getDeleGatorEnvironment
-  } from "@metamask/delegation-toolkit";
-
-  import { encodeFunctionData, namehash } from 'viem';
+import { ethers, formatEther } from "ethers";
+import { createPublicClient, http, namehash, encodeFunctionData, hexToString } from 'viem';
 import { createBundlerClient } from 'viem/account-abstraction';
-
+import { type Chain } from 'viem';
+import { type MetaMaskSmartAccount } from "@metamask/delegation-toolkit";
+import { RPC_URL, BUNDLER_URL } from "../config";
+import PublicResolverABI from '../abis/PublicResolver.json';
+import ETHRegistrarControllerABI from '../abis/ETHRegistrarController.json';
+import { createEnsPublicClient } from '@ensdomains/ensjs';
+import AttestationService from './AttestationService';
+import { OrgAttestation, RegisteredDomainAttestation, WebsiteAttestation, EmailAttestation } from '../models/Attestation';
 
 class EnsService {
 
     static async createEnsDomainName(smartAccountClient: MetaMaskSmartAccount, ensName: string, chain: Chain) : Promise<string> {
+        if (!smartAccountClient) {
+            throw new Error('Smart account client is required');
+        }
+        if (!chain) {
+            throw new Error('Chain information is required');
+        }
+        if (!ensName) {
+            throw new Error('ENS name is required');
+        }
+
+        // Check if we're on Sepolia
+        if (chain.id !== 11155111) { // Sepolia chain ID
+            throw new Error('ENS registration is only supported on Sepolia testnet');
+        }
 
         const provider = new ethers.BrowserProvider(window.ethereum)
         const name = ensName
-    
+
         // Clean the ENS name by removing invalid characters, spaces, and prefixes
         let cleanEnsName = ensName.replace(/^ENS:\s*/, '');
         // Remove .eth suffix if present
@@ -40,16 +38,16 @@ class EnsService {
         // Remove any other non-alphanumeric characters except hyphens
         cleanEnsName = cleanEnsName.replace(/[^a-zA-Z0-9-]/g, '').toLowerCase();
         const ensFullName = cleanEnsName + ".eth"
-    
-    
+
+
         // Use mainnet for ENS operations as it has full ENS support
         console.log("...................... process this stuff .............: ", ensFullName)
         const ensClient = createEnsPublicClient({
               chain: chain as any, // Use the chain passed in by the user
               transport: http(RPC_URL),
             });
-    
-    
+
+
         // Get the address for the name
         console.log("...................... process this stuff .............: ", ensFullName)
         const ensAddress = await ensClient.getAddressRecord({
@@ -57,7 +55,7 @@ class EnsService {
         });
         console.log("Current ENS address:", ensAddress);
 
-        
+
         const ENS_REGISTRY_ADDRESS = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
         const ENSRegistryABI = ['function resolver(bytes32 node) view returns (address)'];
 
@@ -76,14 +74,14 @@ class EnsService {
         // Unified ENS record management function
         const manageEnsRecords = async () => {
             console.log("Managing ENS records for:", ensFullName);
-            
+
             try {
                 // Create public client for reading current ENS records
                 const publicClient = createPublicClient({
                     chain: chain,
                     transport: http(RPC_URL),
                 });
-                
+
                 // Create bundler client for setting ENS records
                 const ensBundlerClient = createBundlerClient({
                     transport: http(BUNDLER_URL),
@@ -93,13 +91,13 @@ class EnsService {
                         mode: 'SPONSORED',
                     },
                 });
-                
+
                 // Use fixed gas fees like in your codebase
                 const fee = {maxFeePerGas: 412596685n, maxPriorityFeePerGas: 412596676n};
-                
+
                 const smartAccountAddress = await smartAccountClient.getAddress();
                 console.log("Smart Account Address for ENS records:", smartAccountAddress);
-                
+
                 // Check current address record
                 const currentAddress = await publicClient.readContract({
                     address: resolverAddress as `0x${string}`,
@@ -108,7 +106,7 @@ class EnsService {
                     args: [node]
                 });
                 console.log("Current address record:", currentAddress);
-                
+
                 // Check current website text record
                 const currentWebsite = await publicClient.readContract({
                     address: resolverAddress as `0x${string}`,
@@ -117,11 +115,11 @@ class EnsService {
                     args: [node, 'website']
                 });
                 console.log("Current website record:", currentWebsite);
-                
+
                 // Check current reverse name record
                 const reverseNode = namehash(smartAccountAddress.slice(2).toLowerCase() + '.addr.reverse');
                 console.log("Reverse node:", reverseNode);
-                
+
                 const currentReverseName = await publicClient.readContract({
                     address: resolverAddress as `0x${string}`,
                     abi: PublicResolverABI.abi,
@@ -129,7 +127,7 @@ class EnsService {
                     args: [reverseNode]
                 });
                 console.log("Current reverse name record:", currentReverseName);
-                
+
                 // Set address record only if it's different or empty
                 if (currentAddress !== smartAccountAddress) {
                     console.log("Setting ENS address record...");
@@ -138,7 +136,7 @@ class EnsService {
                         functionName: 'setAddr',
                         args: [node, smartAccountAddress]
                     });
-                    
+
                     const addressUserOperationHash = await ensBundlerClient.sendUserOperation({
                         account: smartAccountClient,
                         calls: [{
@@ -148,7 +146,7 @@ class EnsService {
                         }],
                         ...fee
                     });
-                    
+
                     const { receipt: addressReceipt } = await ensBundlerClient.waitForUserOperationReceipt({
                         hash: addressUserOperationHash,
                     });
@@ -156,7 +154,7 @@ class EnsService {
                 } else {
                     console.log("✅ ENS address record already set correctly");
                 }
-                
+
                 // Set website text record only if it's different or empty
                 if (currentWebsite !== 'https://www.richcanvas3.com') {
                     console.log("Setting ENS website text record...");
@@ -165,7 +163,7 @@ class EnsService {
                         functionName: 'setText',
                         args: [node, 'website', 'https://www.richcanvas3.com']
                     });
-                    
+
                     const websiteUserOperationHash = await ensBundlerClient.sendUserOperation({
                         account: smartAccountClient,
                         calls: [{
@@ -175,7 +173,7 @@ class EnsService {
                         }],
                         ...fee
                     });
-                    
+
                     const { receipt: websiteReceipt } = await ensBundlerClient.waitForUserOperationReceipt({
                         hash: websiteUserOperationHash,
                     });
@@ -183,7 +181,7 @@ class EnsService {
                 } else {
                     console.log("✅ ENS website text record already set correctly");
                 }
-                
+
                 // Set reverse name record only if it's different or empty
                 if (currentReverseName !== ensFullName) {
                     console.log("Setting reverse name record...");
@@ -192,7 +190,7 @@ class EnsService {
                         functionName: 'setName',
                         args: [reverseNode, ensFullName]
                     });
-                    
+
                     const reverseUserOperationHash = await ensBundlerClient.sendUserOperation({
                         account: smartAccountClient,
                         calls: [{
@@ -202,7 +200,7 @@ class EnsService {
                         }],
                         ...fee
                     });
-                    
+
                     const { receipt: reverseReceipt } = await ensBundlerClient.waitForUserOperationReceipt({
                         hash: reverseUserOperationHash,
                     });
@@ -210,12 +208,12 @@ class EnsService {
                 } else {
                     console.log("✅ Reverse name record already set correctly");
                 }
-                
+
                 console.log(`🎉 ENS records check and update completed for ${ensFullName}`);
                 console.log(`📍 Address: ${smartAccountAddress}`);
                 console.log(`🌐 Website: https://www.richcanvas3.com`);
                 console.log(`🔄 Reverse resolution: ${smartAccountAddress} → ${ensFullName}`);
-                
+
             } catch (error) {
                 console.error("Error managing ENS records:", error);
             }
@@ -224,7 +222,7 @@ class EnsService {
         if (resolverAddress != "0x0000000000000000000000000000000000000000") {
             // ENS domain exists - update records
             console.log("ENS domain exists, updating records...");
-            
+
             const resolverABI = ['function addr(bytes32 node) view returns (address)'];
             const resolver = new ethers.Contract(resolverAddress, resolverABI, provider);
             const address = await resolver.addr(node);
@@ -242,7 +240,7 @@ class EnsService {
             catch (error) {
                 console.log(".................. Error resolving name:", error);
             }
-            
+
             console.log("ENS address found:", ensAddress);
 
             const ensNameResolver = await provider.getResolver(ensFullName);
@@ -250,11 +248,11 @@ class EnsService {
                 console.log("No resolver found for", name);
                 return ensFullName;
             }
-        
+
             // Fetch the avatar text record
             const avatar = await ensNameResolver.getText("avatar");
             console.log("Avatar URI:", avatar);
-            
+
             // Update existing ENS records
             await manageEnsRecords();
         }
@@ -262,192 +260,210 @@ class EnsService {
 
 
             console.log("ENS address not found:", ensFullName);
+            console.log("Starting registration process...");
 
-            // Use the smart account to register the ENS name
-            const ensName = `${cleanEnsName}.eth`;
-            const node = namehash(ensName);
-            const duration = 365 * 24 * 60 * 60;
-            const secret = hexlify(ethers.randomBytes(32)) as `0x${string}`;
+            try {
+                // Use the smart account to register the ENS name
+                const ensName = `${cleanEnsName}.eth`;
+                const node = namehash(ensName);
+                const duration = 365 * 24 * 60 * 60; // 1 year in seconds
+                const randomBytes = ethers.randomBytes(32);
+                const secret = `0x${Buffer.from(randomBytes).toString('hex')}` as `0x${string}`;
 
-            const ETHRegistrarControllerAddress = '0xfb3cE5D01e0f33f41DbB39035dB9745962F1f968'; // Sepolia ENS controller
-            const PublicResolverAddress = '0x8FADE66B79cC9f707aB26799354482EB93a5B7dD'; // default on Sepolia
+                console.log("Registration parameters:", {
+                    ensName,
+                    node,
+                    duration,
+                    secret: secret.slice(0, 10) + "..." // Don't log full secret
+                });
 
-            const owner = await smartAccountClient.getAddress();
-            console.log(".................. Owner:", owner);
+                const ETHRegistrarControllerAddress = '0xfb3cE5D01e0f33f41DbB39035dB9745962F1f968';
+                const PublicResolverAddress = '0x8FADE66B79cC9f707aB26799354482EB93a5B7dD';
 
-            const registrationObject = {
-                label: cleanEnsName,
-                owner,
-                duration,
-                secret,
-                resolver: PublicResolverAddress,
-                data: [],
-                reverseRecord: true, // Changed from 1 to true
-                referrer: '0x0000000000000000000000000000000000000000000000000000000000000000'
-            };
-            
-            console.log('Registration object:', registrationObject);
+                const owner = await smartAccountClient.getAddress();
+                console.log("Smart Account (Owner) Address:", owner);
 
-            // Create a public client for reading contract data
-            const publicClient = createPublicClient({
-                chain: chain,
-                transport: http(RPC_URL),
-            });
+                const registrationObject = {
+                    label: cleanEnsName,
+                    owner,
+                    duration,
+                    secret,
+                    resolver: PublicResolverAddress,
+                    data: [],
+                    reverseRecord: true,
+                    referrer: '0x0000000000000000000000000000000000000000000000000000000000000000'
+                };
 
-            // Step 1: makeCommitment() - use public client to read
-            const commitment = await publicClient.readContract({
-                address: ETHRegistrarControllerAddress as `0x${string}`,
-                abi: ETHRegistrarControllerABI.abi,
-                functionName: 'makeCommitment',
-                args: [registrationObject]
-            });
+                console.log('Registration object:', {
+                    ...registrationObject,
+                    secret: registrationObject.secret.slice(0, 10) + "..."
+                });
 
-            // Step 2: commit() - use bundler client to send transaction
-            console.log('Sending commit...: ', commitment);
-            
-            // Create bundler client with paymaster for AA transactions
-            const bundlerClient = createBundlerClient({
-                transport: http(BUNDLER_URL),
-                paymaster: true,
-                chain: chain,
-                paymasterContext: {
-                    mode: 'SPONSORED',
-                },
-            });
+                // Create a public client for reading contract data
+                const publicClient = createPublicClient({
+                    chain: chain,
+                    transport: http(RPC_URL),
+                });
 
-            // Use fixed gas fees like in your codebase
-            const fee = {maxFeePerGas: 412596685n, maxPriorityFeePerGas: 412596676n};
+                // Check if the domain is available first
+                console.log('Checking domain availability...');
+                const available = await publicClient.readContract({
+                    address: ETHRegistrarControllerAddress as `0x${string}`,
+                    abi: ETHRegistrarControllerABI.abi,
+                    functionName: 'available',
+                    args: [cleanEnsName]
+                });
 
-            const userOperationHash = await bundlerClient.sendUserOperation({
-                account: smartAccountClient,
-                calls: [{
-                    to: ETHRegistrarControllerAddress as `0x${string}`,
-                    data: encodeFunctionData({
-                        abi: ETHRegistrarControllerABI.abi,
-                        functionName: 'commit',
-                        args: [commitment]
-                    })
-                }],
-                ...fee
-            });
-
-            // Wait for the transaction to be mined
-            const { receipt } = await bundlerClient.waitForUserOperationReceipt({
-                hash: userOperationHash,
-            });
-
-            console.log('Commit sent. Waiting for commitment to be mined and confirmed...');
-            
-            // Wait for the commitment transaction to be mined
-            await new Promise((r) => setTimeout(r, 30000));
-            
-            // Additional wait time as required by ENS protocol
-            console.log('Waiting additional time for commitment to be confirmed...');
-            await new Promise((r) => setTimeout(r, 60000));
-            
-            // Verify the commitment was made
-            console.log('Verifying commitment...');
-            const commitmentStatus = await publicClient.readContract({
-                address: ETHRegistrarControllerAddress as `0x${string}`,
-                abi: ETHRegistrarControllerABI.abi,
-                functionName: 'commitments',
-                args: [commitment]
-            });
-            console.log('Commitment status:', commitmentStatus);
-            
-            // Check if the domain is available
-            console.log('Checking domain availability...');
-            const domainAvailable = await publicClient.readContract({
-                address: ETHRegistrarControllerAddress as `0x${string}`,
-                abi: ETHRegistrarControllerABI.abi,
-                functionName: 'available',
-                args: [cleanEnsName]
-            });
-            console.log('Domain available:', domainAvailable);
-            
-            if (!domainAvailable) {
-                console.error('Domain is not available for registration');
-                return ensFullName;
-            }
-            
-            // Check if the commitment is still valid (not expired)
-            const currentTime = Math.floor(Date.now() / 1000);
-            console.log('Current time:', currentTime);
-            console.log('Commitment timestamp:', commitmentStatus);
-            
-            if (commitmentStatus && typeof commitmentStatus === 'bigint') {
-                const commitmentTime = Number(commitmentStatus);
-                const timeDiff = currentTime - commitmentTime;
-                console.log('Time since commitment:', timeDiff, 'seconds');
-                
-                // ENS commitments are valid for 1 minute (60 seconds)
-                if (timeDiff > 120) {
-                    console.error('Commitment has expired: ' + timeDiff);
-                    return ensFullName;
+                if (!available) {
+                    throw new Error(`Domain ${ensName} is not available for registration`);
                 }
+                console.log('Domain is available ✅');
+
+                // Get current price
+                const rentPriceCheck = await publicClient.readContract({
+                    address: ETHRegistrarControllerAddress as `0x${string}`,
+                    abi: ETHRegistrarControllerABI.abi,
+                    functionName: 'rentPrice',
+                    args: [cleanEnsName, duration]
+                }) as { base: bigint; premium: bigint };
+
+                console.log('Current registration costs:', {
+                    base: formatEther(rentPriceCheck.base),
+                    premium: formatEther(rentPriceCheck.premium),
+                    total: formatEther(rentPriceCheck.base + rentPriceCheck.premium)
+                });
+
+                // Step 1: makeCommitment
+                console.log('Making commitment...');
+                const commitment = await publicClient.readContract({
+                    address: ETHRegistrarControllerAddress as `0x${string}`,
+                    abi: ETHRegistrarControllerABI.abi,
+                    functionName: 'makeCommitment',
+                    args: [registrationObject]
+                });
+                console.log('Commitment created:', commitment);
+
+                // Step 2: commit
+                const bundlerClient = createBundlerClient({
+                    transport: http(BUNDLER_URL),
+                    paymaster: true,
+                    chain: chain,
+                    paymasterContext: {
+                        mode: 'SPONSORED',
+                    },
+                });
+
+                // Get current gas prices from the public client
+                const feeData = await publicClient.estimateFeesPerGas();
+                console.log('Current fee data:', feeData);
+
+                // Use dynamic gas prices with a buffer
+                const gasConfig = {
+                    maxFeePerGas: feeData.maxFeePerGas * 2n, // Double the estimated gas price to ensure acceptance
+                    maxPriorityFeePerGas: feeData.maxPriorityFeePerGas * 2n
+                };
+                console.log('Using gas config:', gasConfig);
+
+                console.log('Sending commitment transaction...');
+                const userOperationHash = await bundlerClient.sendUserOperation({
+                    account: smartAccountClient,
+                    calls: [{
+                        to: ETHRegistrarControllerAddress as `0x${string}`,
+                        data: encodeFunctionData({
+                            abi: ETHRegistrarControllerABI.abi,
+                            functionName: 'commit',
+                            args: [commitment]
+                        })
+                    }],
+                    ...gasConfig
+                });
+
+                console.log('Commitment transaction sent:', userOperationHash);
+                const { receipt } = await bundlerClient.waitForUserOperationReceipt({
+                    hash: userOperationHash,
+                });
+                console.log('Commitment transaction mined:', receipt);
+
+                // Wait for commitment to be ready
+                console.log('Waiting for commitment to be ready (90 seconds)...');
+                await new Promise((r) => setTimeout(r, 90000));
+
+                // Verify commitment is still valid
+                console.log('Verifying commitment...');
+                const commitmentStatus = await publicClient.readContract({
+                    address: ETHRegistrarControllerAddress as `0x${string}`,
+                    abi: ETHRegistrarControllerABI.abi,
+                    functionName: 'commitments',
+                    args: [commitment]
+                });
+                console.log('Commitment status:', commitmentStatus);
+
+                if (!commitmentStatus) {
+                    throw new Error('Commitment not found or expired');
+                }
+
+                // Step 3: register
+                console.log('Preparing registration transaction...');
+                const registerData = encodeFunctionData({
+                    abi: ETHRegistrarControllerABI.abi,
+                    functionName: 'register',
+                    args: [registrationObject]
+                });
+
+                // Get final price right before registration
+                const finalPrice = await publicClient.readContract({
+                    address: ETHRegistrarControllerAddress as `0x${string}`,
+                    abi: ETHRegistrarControllerABI.abi,
+                    functionName: 'rentPrice',
+                    args: [cleanEnsName, duration]
+                }) as { base: bigint; premium: bigint };
+
+                const totalPrice = finalPrice.base + finalPrice.premium;
+                console.log('Final registration price:', formatEther(totalPrice), 'ETH');
+
+                // Check account balance
+                const balance = await publicClient.getBalance({
+                    address: smartAccountClient.address as `0x${string}`
+                });
+                console.log('Account balance:', formatEther(balance), 'ETH');
+
+                if (balance < totalPrice) {
+                    throw new Error(`Insufficient balance. Need ${formatEther(totalPrice)} ETH but have ${formatEther(balance)} ETH`);
+                }
+
+                // Use the same gas config for registration
+                const registerUserOpHash = await bundlerClient.sendUserOperation({
+                    account: smartAccountClient,
+                    calls: [{
+                        to: ETHRegistrarControllerAddress as `0x${string}`,
+                        data: registerData,
+                        value: totalPrice
+                    }],
+                    ...gasConfig
+                });
+
+                console.log('Registration transaction sent:', registerUserOpHash);
+                const { receipt: registerReceipt } = await bundlerClient.waitForUserOperationReceipt({
+                    hash: registerUserOpHash,
+                });
+                console.log('Registration transaction mined:', registerReceipt);
+
+                console.log(`✅ ENS name "${ensName}" registered successfully`);
+                console.log(`🔗 View: https://sepolia.app.ens.domains/${ensName}`);
+
+                // Set up ENS records
+                console.log("Setting up ENS records...");
+                await manageEnsRecords();
+
+                return ensName;
+
+            } catch (err) {
+                const error = err instanceof Error ? err : new Error('Unknown error occurred');
+                console.error('Error registering ENS name:', error);
+                throw new Error(`Failed to register ENS name: ${error.message}`);
             }
-
-            // Step 3: rentPrice() - use public client to read
-            const rentPriceResult = await publicClient.readContract({
-                address: ETHRegistrarControllerAddress as `0x${string}`,
-                abi: ETHRegistrarControllerABI.abi,
-                functionName: 'rentPrice',
-                args: [cleanEnsName, duration]
-            }) as { base: bigint; premium: bigint };
-
-            console.log('Rent price result:', rentPriceResult);
-            
-            // Extract the total price from the rentPrice result (base + premium)
-            const rentPrice = rentPriceResult.base + rentPriceResult.premium;
-            console.log('Total rent price:', rentPrice);
-
-            // Step 4: register() - use bundler client to send transaction
-            const registerData = encodeFunctionData({
-                abi: ETHRegistrarControllerABI.abi,
-                functionName: 'register',
-                args: [registrationObject]
-            });
-
-            console.log('Register data:', registerData);
-            console.log('Rent price for registration:', rentPrice);
-            console.log('Registration object:', registrationObject);
-
-            // Check if we have enough balance for the transaction
-            const accountBalance = await publicClient.getBalance({
-                address: smartAccountClient.address as `0x${string}`
-            });
-
-            console.log('Smart Account Address:', smartAccountClient.address);
-            console.log('Account balance:', accountBalance);
-            console.log('Required rent price:', rentPrice);
-            console.log('Has sufficient balance:', accountBalance >= rentPrice);
-
-            // Try using the same pattern as other working AA transactions in your codebase
-            const registerUserOperationHash = await bundlerClient.sendUserOperation({
-                account: smartAccountClient,
-                calls: [{
-                    to: ETHRegistrarControllerAddress as `0x${string}`,
-                    data: registerData,
-                    value: rentPrice
-                }],
-                ...fee
-            });
-            
-            console.log('Register transaction hash:', registerUserOperationHash);
-            
-            // Wait for the registration transaction to be mined
-            const { receipt: registerReceipt } = await bundlerClient.waitForUserOperationReceipt({
-                hash: registerUserOperationHash,
-            });
-
-            console.log(`✅ ENS name "${ensName}" registered with AA.`);
-            console.log(`🔗 View: https://sepolia.app.ens.domains/${ensName}?tab=more`);
-            
-            // After successful registration, set the ENS records
-            console.log("Setting up ENS records for newly created domain...");
-            await manageEnsRecords();
         }
-        
+
         return ensName;
     }
 
@@ -510,7 +526,7 @@ class EnsService {
     }> {
         try {
             const ensData = await this.getEnsData(address, chain);
-            
+
             if (!ensData.name) {
                 return {
                     name: null,
@@ -565,7 +581,7 @@ class EnsService {
     static async getEnsAvatar(ensName: string, chain: Chain): Promise<string | null> {
         try {
             console.log("getEnsAvatar called with:", { ensName, chainName: chain.name });
-            
+
             // Clean the ENS name
             let cleanEnsName = ensName.replace(/^ENS:\s*/, '');
             cleanEnsName = cleanEnsName.replace(/\.eth$/i, '');
@@ -573,7 +589,7 @@ class EnsService {
             const ensFullName = cleanEnsName + ".eth";
 
             console.log("ENS name cleaning:", { original: ensName, cleaned: cleanEnsName, fullName: ensFullName });
-            
+
             // Validate the cleaned name
             if (!cleanEnsName || cleanEnsName.length < 3) {
                 console.error("Invalid ENS name after cleaning:", { original: ensName, cleaned: cleanEnsName });
@@ -588,7 +604,7 @@ class EnsService {
 
             const ENS_REGISTRY_ADDRESS = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
             const node = namehash(ensFullName);
-            
+
             // Get resolver address
             const resolverAddress = await publicClient.readContract({
                 address: ENS_REGISTRY_ADDRESS as `0x${string}`,
@@ -638,15 +654,15 @@ class EnsService {
         try {
             const orgAddress = await smartAccountClient.getAddress();
             console.log("Looking for ENS name for address:", orgAddress);
-            
+
             // Try to get the reverse resolution
             const ensName = await this.getEnsName(orgAddress, chain);
-            
+
             if (ensName) {
                 console.log("Found ENS name via reverse resolution:", ensName);
                 return ensName;
             }
-            
+
             console.log("No ENS name found via reverse resolution");
             return null;
         } catch (error) {
@@ -689,7 +705,7 @@ class EnsService {
 
             const ENS_REGISTRY_ADDRESS = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
             const node = namehash(ensFullName);
-            
+
             // First check if the ENS name exists by getting its owner
             const owner = await publicClient.readContract({
                 address: ENS_REGISTRY_ADDRESS as `0x${string}`,
@@ -711,7 +727,7 @@ class EnsService {
                 console.error("1. Check if the ENS name is correct");
                 console.error("2. The ENS name might be on mainnet instead of Sepolia");
                 console.error("3. The ENS name might not be registered yet");
-                
+
                 // Try to suggest alternative names
                 const suggestions = [
                     cleanEnsName.replace('eth', ''),
@@ -721,12 +737,12 @@ class EnsService {
                     'richcanvas'
                 ];
                 console.error("Suggested ENS names to try:", suggestions);
-                
+
                 return false;
             }
 
             console.log("ENS owner:", owner);
-            
+
             // Check if the smart account is the owner
             const smartAccountAddress = await smartAccountClient.getAddress();
             if (owner.toLowerCase() !== smartAccountAddress.toLowerCase()) {
@@ -736,7 +752,7 @@ class EnsService {
                 console.error("You can only update ENS records if you own the ENS name");
                 return false;
             }
-            
+
             // Get resolver address
             const resolverAddress = await publicClient.readContract({
                 address: ENS_REGISTRY_ADDRESS as `0x${string}`,
@@ -772,7 +788,7 @@ class EnsService {
                     args: [node, 'avatar']
                 });
                 console.log("Current avatar:", currentAvatar);
-                
+
                 if (currentAvatar === avatarUrl) {
                     console.log("Avatar is already set to the same value");
                     return true;
@@ -808,15 +824,15 @@ class EnsService {
 
                 console.log("✅ ENS avatar updated successfully");
                 console.log(`🔗 View: https://sepolia.app.ens.domains/${ensFullName}?tab=more`);
-                
+
                 return true;
             } catch (resolverError) {
                 console.error("Failed to update avatar with current resolver:", resolverError);
                 console.log("Trying to set a new resolver first...");
-                
+
                 // Try to set a new resolver first, then update the avatar
                 const PublicResolverAddress = '0x8FADE66B79cC9f707aB26799354482EB93a5B7dD'; // default on Sepolia
-                
+
                 const setResolverData = encodeFunctionData({
                     abi: [{
                         name: 'setResolver',
@@ -871,12 +887,12 @@ class EnsService {
 
                 console.log("✅ ENS avatar updated successfully with new resolver");
                 console.log(`🔗 View: https://sepolia.app.ens.domains/${ensFullName}?tab=more`);
-                
+
                 return true;
             }
         } catch (error) {
             console.error("Error updating ENS avatar:", error);
-            
+
             // Provide more specific error information
             if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string' && error.message.includes('UserOperation reverted')) {
                 console.error("The transaction was reverted. This could be because:");
@@ -885,7 +901,7 @@ class EnsService {
                 console.error("3. The ENS name might be on a different network");
                 console.error("4. The resolver might be outdated or incompatible");
             }
-            
+
             return false;
         }
     }
