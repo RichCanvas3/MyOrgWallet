@@ -2,13 +2,9 @@ import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { useAccount } from 'wagmi';
 import { ethers } from 'ethers';
-import { encodeFunctionData, createPublicClient, http } from 'viem';
-import { createBundlerClient } from 'viem/account-abstraction';
-import { namehash } from 'viem';
-
+import { createPublicClient, http, formatEther } from 'viem';
 import {
   XMarkIcon,
-  PhotoIcon,
   GlobeAltIcon,
 } from "@heroicons/react/24/outline";
 
@@ -34,7 +30,6 @@ import { useWallectConnectContext } from "../context/walletConnectContext";
 import EnsService from '../service/EnsService';
 import { RPC_URL, BUNDLER_URL } from "../config";
 import ETHRegistrarControllerABI from '../abis/ETHRegistrarController.json';
-import { formatEther } from 'viem';
 
 interface AddEnsRecordModalProps {
   isVisible: boolean;
@@ -66,8 +61,11 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
   const [shouldSkipFirstStep, setShouldSkipFirstStep] = useState(!!existingEnsName);
   const [isFetchingAvatar, setIsFetchingAvatar] = useState(false);
   const [useBasicAvatar, setUseBasicAvatar] = useState(false);
+  const [orgBalance, setOrgBalance] = useState<string>('0');
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const availabilityTimeoutRef = useRef<NodeJS.Timeout>();
 
 
   // Update the context usage
@@ -117,6 +115,72 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
   // Simplified input handler - just update the value
   const handleEnsNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setEnsName(event.target.value);
+  };
+
+  // Update availability check function
+  const checkAvailability = async (name: string) => {
+    if (!name || !chain) return;
+
+    setIsCheckingAvailability(true);
+    setIsAvailable(null);
+    setEstimatedCost('0');
+
+    // Clear any existing timeout
+    if (availabilityTimeoutRef.current) {
+      clearTimeout(availabilityTimeoutRef.current);
+    }
+
+    try {
+      const cleanName = cleanEnsName(name);
+      if (!cleanName) {
+        setIsAvailable(false);
+        return;
+      }
+
+      // Set new timeout
+      availabilityTimeoutRef.current = setTimeout(async () => {
+        try {
+          const ETHRegistrarControllerAddress = '0xfb3cE5D01e0f33f41DbB39035dB9745962F1f968';
+          const publicClient = createPublicClient({
+            chain: chain,
+            transport: http(RPC_URL),
+          });
+
+          // Check if the domain is available
+          const available = (await publicClient.readContract({
+            address: ETHRegistrarControllerAddress as `0x${string}`,
+            abi: ETHRegistrarControllerABI.abi,
+            functionName: 'available',
+            args: [cleanName]
+          })) as boolean;
+
+          setIsAvailable(available);
+
+          if (available) {
+            // Get registration cost for 1 year
+            const duration = 365 * 24 * 60 * 60; // 1 year in seconds
+            const rentPrice = await publicClient.readContract({
+              address: ETHRegistrarControllerAddress as `0x${string}`,
+              abi: ETHRegistrarControllerABI.abi,
+              functionName: 'rentPrice',
+              args: [cleanName, duration]
+            }) as { base: bigint; premium: bigint };
+
+            const totalPrice = rentPrice.base + rentPrice.premium;
+            setEstimatedCost(formatEther(totalPrice));
+          }
+        } catch (error) {
+          console.error('Error checking availability:', error);
+          setIsAvailable(false);
+        } finally {
+          setIsCheckingAvailability(false);
+        }
+      }, 500);
+    } catch (error) {
+      console.error('Error in checkAvailability:', error);
+      setIsAvailable(false);
+      setIsCheckingAvailability(false);
+    }
   };
 
   // Handle availability check in an effect
@@ -183,11 +247,11 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
     return () => clearTimeout(checkTimeout);
   }, [ensName, chain]);
 
-  // Clean up timeout on unmount
+  // Add cleanup for timeout
   useEffect(() => {
     return () => {
-      if (window.availabilityTimeout) {
-        clearTimeout(window.availabilityTimeout);
+      if (availabilityTimeoutRef.current) {
+        clearTimeout(availabilityTimeoutRef.current);
       }
     };
   }, []);
@@ -360,6 +424,37 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
     }
   }, [existingEnsName, chain, isExistingEns]);
 
+  // Add function to fetch organization wallet balance
+  const fetchOrgBalance = async () => {
+    if (!orgAccountClient || !chain) return;
+
+    setIsLoadingBalance(true);
+    try {
+      const publicClient = createPublicClient({
+        chain: chain,
+        transport: http(),
+      });
+
+      const balance = await publicClient.getBalance({
+        address: orgAccountClient.address as `0x${string}`
+      });
+
+      setOrgBalance(formatEther(balance));
+    } catch (error) {
+      console.error('Error fetching organization balance:', error);
+      setOrgBalance('0');
+    } finally {
+      setIsLoadingBalance(false);
+    }
+  };
+
+  // Fetch balance when modal opens or org account changes
+  useEffect(() => {
+    if (isVisible && orgAccountClient) {
+      fetchOrgBalance();
+    }
+  }, [isVisible, orgAccountClient]);
+
   // Render step content
   const renderStepContent = () => {
     switch (activeStep) {
@@ -431,13 +526,35 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
                   <AlertTitle>Important</AlertTitle>
                   The registration fee must be paid from your organization's smart wallet. Make sure it has sufficient Sepolia ETH.
                   {orgAccountClient && (
-                    <Typography variant="body2" sx={{ mt: 1, wordBreak: 'break-all' }}>
-                      Organization Wallet: {' '}
-
-                      <a href={`https://sepolia.etherscan.io/address/${orgAccountClient.address}`} target="_blank">
-                        {orgAccountClient.address}
-                      </a>
-                    </Typography>
+                    <>
+                      <Typography variant="body2" sx={{ mt: 1, wordBreak: 'break-all' }}>
+                        Organization Wallet: {' '}
+                        <a href={`https://sepolia.etherscan.io/address/${orgAccountClient.address}`} target="_blank">
+                          {orgAccountClient.address}
+                        </a>
+                        {isLoadingBalance ? (
+                          <CircularProgress size={16} sx={{ ml: 1 }} />
+                        ) : (
+                          <Typography component="span" sx={{ ml: 1 }}>
+                            (Balance: {Number(orgBalance).toFixed(4)} ETH)
+                          </Typography>
+                        )}
+                      </Typography>
+                      {!isLoadingBalance && (
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            mt: 1,
+                            color: Number(orgBalance) >= 0.004 ? 'success.main' : 'error.main',
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          {Number(orgBalance) >= 0.004
+                            ? "✅ There is enough ETH for this transaction!"
+                            : "❌ Not enough. Please transfer ETH to the organization's smart wallet using the address above."}
+                        </Typography>
+                      )}
+                    </>
                   )}
                 </Alert>
               </>
@@ -574,7 +691,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
                       mb: 2,
                     }}
                   >
-                    <PhotoIcon className="h-8 w-8 text-gray-400" />
+                    <GlobeAltIcon className="h-8 w-8 text-gray-400" />
                     <Typography variant="caption" color="text.secondary" align="center">
                       No avatar selected
                     </Typography>
