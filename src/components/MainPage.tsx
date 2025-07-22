@@ -118,7 +118,6 @@ const shopifyAuthRef = { current: null as ShopifyAuthRef | null };
 const xAuthRef = { current: null as XAuthRef | null };
 const insuranceAuthRef = { current: null as InsuranceAuthRef | null };
 
-
 const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const defaultIntroduction: ChatMessage = { content: "test"} as ChatMessage;
   const [introduction, setIntroduction] = useState<ChatMessage>(defaultIntroduction);
@@ -453,6 +452,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       }
     };
 
+  
+
   const newConversation = (entities: Entity[]) => {
 
     if (conversation == undefined) {
@@ -518,12 +519,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
 
 
-
-
-
     messageBoxRef.current?.focusTextarea();
   };
 
+  const company_config = {"name": orgName, "state": 'undefined', "linkedin": 'undefined'};
 
   const handleSelectedConversation = (id: string | null) => {
     if (id && id.length > 0) {
