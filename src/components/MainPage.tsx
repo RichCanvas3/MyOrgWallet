@@ -270,15 +270,16 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       console.info("************* orgDid: ", orgDid)
 
       AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
-      
+        const company_config = {"name": orgName, "state": 'undefined', "linkedin": 'undefined', "x": 'undefined', "state_registration": 'undefined', "ens_registration": 'undefined', "domain": 'undefined'};
         if (ents != undefined) {
-
+          
           setEntities(ents)
-          const config_array = [ents]
-          console.log(config_array)
+          console.log(ents)
           for (const entity of ents) {
             if (entity.name == "org(org)" && entity.attestation) {
               setOrgNameValue((entity.attestation as OrgAttestation).name)
+            } else if (entity.name == "") {
+
             }
           }
 
@@ -522,7 +523,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     messageBoxRef.current?.focusTextarea();
   };
 
-  const company_config = {"name": orgName, "state": 'undefined', "linkedin": 'undefined'};
+  
 
   const handleSelectedConversation = (id: string | null) => {
     if (id && id.length > 0) {
@@ -648,8 +649,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
       if (str.includes("ens_verification") && orgAccountClient && chain) {
         console.log('process ens verification')
-        const ensName = message.split("ENS:")[1]
-        EnsService.createEnsDomainName(orgAccountClient, ensName, chain!).then((ensName) => {
+        setIsAddEnsRecordModalVisible(true)
+        setExistingEnsNameForUpdate(message)
+        EnsService.createEnsDomainName(orgAccountClient, message, chain!).then((ensName) => {
           console.log('ENS Name: ', ensName)
           addMessage(Role.Assistant, MessageType.Normal, `${ensName} Registered!`, '', fileDataRef, sendMessage)
         })
