@@ -164,7 +164,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const [newOrgName, setNewOrgName] = useState("");
 
   const { isConnected } = useAccount();
-
+  
   const [threadID, setThreadID] = useState<string | null>(null);
 
   // Add state for thinking
@@ -271,11 +271,12 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       console.info("************* orgDid: ", orgDid)
 
       AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
-
+      
         if (ents != undefined) {
 
           setEntities(ents)
-
+          const config_array = [ents]
+          console.log(config_array)
           for (const entity of ents) {
             if (entity.name == "org(org)" && entity.attestation) {
               setOrgNameValue((entity.attestation as OrgAttestation).name)
@@ -373,7 +374,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
         if (isMounted) {
           setThreadID(threadIDResult);
-
+          
           console.log('call langchain.....................')
           getArgfromUserMessage(threadIDResult, "lets get started").then(str => {
             if (str) {
@@ -575,7 +576,32 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     return args;
   }
 
+  async function stateRegister(company_name: string, state: string, ngrok_url: string) {
+    console.log(company_name, state)
+    try {
+      const response = await fetch(
+        `${ngrok_url}/creds/good-standing/company?company=${company_name}&state=${state}`
+      );
+
+      if (!response.ok) {
+        const text = await response.text();
+        console.error("Fetch failed:", response.status, text);
+        return `Fetch failed: ${response.status} - ${text}`;
+      }
+      console.log(response);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error during fetch:", error);
+      if (error instanceof Error) {
+        return `Error during fetch: ${error.message}`;
+      }
+      return "An unknown error occurred during fetch.";
+    }
+  }
+
   const callApp = (message: string, fileDataRef: FileDataRef[]) => {
+    var ngrok_url = 'https://b2f972629ffd.ngrok-free.app';
     if (conversation == null || threadID == null) {
       return
     }
@@ -626,10 +652,26 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         const ensName = message.split("ENS:")[1]
         EnsService.createEnsDomainName(orgAccountClient, ensName, chain!).then((ensName) => {
           console.log('ENS Name: ', ensName)
+          addMessage(Role.Assistant, MessageType.Normal, `${ensName} Registered!`, '', fileDataRef, sendMessage)
         })
+      } else if (str.includes('state_register') && orgAccountClient && chain) {
+        const listMessage = str.split(' ')
+        console.log(listMessage)
+        const data = stateRegister(orgName, message, ngrok_url);
+        console.log('state data being jsoned', data);
+        addMessage(Role.Assistant, MessageType.Normal, `${orgName} Registeration Verified!`, '', fileDataRef, sendMessage)
+        /*
+        var split = data.split('-');
+        console.log(split)
+        var id = (split[1].split('** '))[1];
+        var name = 'test';
+        var formDate = (split[4].split('** '))[1];
+        var address = (split[5].split('** '))[1];
+        console.log(id, formDate, address)
+        */
+      } else {
+        addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
       }
-
-      addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
       console.log('Data From Stream: ', str);
 
       // Force scroll to bottom after response
