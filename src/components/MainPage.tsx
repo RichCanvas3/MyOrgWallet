@@ -147,6 +147,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, setOrgNameValue } = useWallectConnectContext();
 
+console.log('org name', orgName)
+
   const [isDeleteAttestationsModalVisible, setDeleteAttestationsModalVisible] = useState(false);
   const [isApproveLeaderModalVisible, setApproveLeaderModalVisible] = useState(false);
   const [isApproveAccountAccessModalVisible, setApproveAccountAccessModalVisible] = useState(false);
@@ -261,16 +263,16 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     };
   }, []);
 
-
+  
 
   useEffect(() => {
-
+    
     if (orgAccountClient && chain && orgDid && indivDid) {
 
       console.info("************* orgDid: ", orgDid)
 
       AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
-        const company_config = {"name": orgName, "state": 'undefined', "linkedin": 'undefined', "x": 'undefined', "state_registration": 'undefined', "ens_registration": 'undefined', "domain": 'undefined'};
+        
         if (ents != undefined) {
           
           setEntities(ents)
@@ -306,6 +308,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
 
   }, [orgAccountClient, orgDid, indivDid]);
+
+  const company_config = {"name": orgName, "state": 'undefined', "linkedin": 'undefined', "x": 'undefined', "state_registration": 'undefined', "ens_registration": 'undefined', "domain": 'undefined'};
+
+console.log('company config: ', company_config)
 
   useEffect(() => {
     //console.info("........ is connected: ", isConnected)
@@ -374,9 +380,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
         if (isMounted) {
           setThreadID(threadIDResult);
-          
           console.log('call langchain.....................')
-          getArgfromUserMessage(threadIDResult, "lets get started").then(str => {
+          
+          console.log('cc name: ', company_config['name'])
+          getArgfromUserMessage(threadIDResult, `lets get started: Name: ${company_config["name"]}, State: ${company_config["state"]}, Domain: ${company_config["domain"]}, Linkedin: ${company_config["linkedin"]}, Twitter: ${company_config["x"]}, State Registration: ${company_config["state_registration"]}, ENS Registration: ${company_config["ens_registration"]}`).then(str => {
             if (str) {
               addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
             }
@@ -650,7 +657,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       if (str.includes("ens_verification") && orgAccountClient && chain) {
         console.log('process ens verification')
         setIsAddEnsRecordModalVisible(true)
-        setExistingEnsNameForUpdate(message)
+        setExistingEnsNameForUpdate('')
         EnsService.createEnsDomainName(orgAccountClient, message, chain!).then((ensName) => {
           console.log('ENS Name: ', ensName)
           addMessage(Role.Assistant, MessageType.Normal, `${ensName} Registered!`, '', fileDataRef, sendMessage)
