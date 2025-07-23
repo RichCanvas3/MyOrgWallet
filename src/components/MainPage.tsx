@@ -164,7 +164,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const [newOrgName, setNewOrgName] = useState("");
 
   const { isConnected } = useAccount();
-  
+
   const [threadID, setThreadID] = useState<string | null>(null);
 
   // Add state for thinking
@@ -271,7 +271,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       console.info("************* orgDid: ", orgDid)
 
       AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
-      
+
         if (ents != undefined) {
 
           setEntities(ents)
@@ -374,7 +374,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
         if (isMounted) {
           setThreadID(threadIDResult);
-          
+
           console.log('call langchain.....................')
           getArgfromUserMessage(threadIDResult, "lets get started").then(str => {
             if (str) {
