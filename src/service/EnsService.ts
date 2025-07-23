@@ -630,11 +630,24 @@ class EnsService {
               hash: approvalOpHash,
             });
 
-            // Verify approval
-            const approvalVerified = await baseRegistrar.isApprovedForAll(smartAccountAddress, nameWrapper.target);
-            console.log('Approval verification:', approvalVerified);
+            // Verify approval with retry logic
+            let approvalVerified = false;
+            let retries = 0;
+            const maxRetries = 5;
+
+            while (!approvalVerified && retries < maxRetries) {
+              if (retries > 0) {
+                console.log(`Approval verification attempt ${retries + 1}/${maxRetries}`);
+                await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds between retries
+              }
+
+              approvalVerified = await baseRegistrar.isApprovedForAll(smartAccountAddress, nameWrapper.target);
+              console.log('Approval verification:', approvalVerified);
+              retries++;
+            }
+
             if (!approvalVerified) {
-              throw new Error('Approval failed to set correctly');
+              throw new Error('Approval failed to set correctly after multiple verification attempts');
             }
             console.log('Approval set and verified successfully');
 
@@ -702,11 +715,24 @@ class EnsService {
             const approveTx = await baseRegistrar.setApprovalForAll(nameWrapper.target, true);
             await approveTx.wait();
 
-            // Verify approval
-            const approvalVerified = await baseRegistrar.isApprovedForAll(signerAddress, nameWrapper.target);
-            console.log('Approval verification:', approvalVerified);
+            // Verify approval with retry logic
+            let approvalVerified = false;
+            let retries = 0;
+            const maxRetries = 5;
+
+            while (!approvalVerified && retries < maxRetries) {
+              if (retries > 0) {
+                console.log(`Approval verification attempt ${retries + 1}/${maxRetries}`);
+                await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds between retries
+              }
+
+              approvalVerified = await baseRegistrar.isApprovedForAll(signerAddress, nameWrapper.target);
+              console.log('Approval verification:', approvalVerified);
+              retries++;
+            }
+
             if (!approvalVerified) {
-              throw new Error('Approval failed to set correctly');
+              throw new Error('Approval failed to set correctly after multiple verification attempts');
             }
             console.log('Approval set and verified successfully');
           }
