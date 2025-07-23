@@ -597,11 +597,10 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
     const accountDid = "did:pkh:eip155:" + selectedChain + ":" + selectedAccount
 
     console.info("*********** ADD ACCOUNT ATTESTATION ****************")
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    await window.ethereum.request({ method: "eth_requestAccounts" });
-    const walletSigner = await provider.getSigner()
 
+    const walletSigner = signatory.signer
     const walletClient = signatory.walletClient
+
     let entityId = "account(indiv)"
 
     if (walletSigner && walletClient && privateIssuerAccount && indivDid && mascaApi && privateIssuerDid) {

@@ -27,6 +27,7 @@ interface LinkedInProfile {
 }
 
 import {LINKEDIN_CLIENT_ID} from "../config";
+import { SigningApiFactory } from '@circle-fin/developer-controlled-wallets/dist/types/clients/developer-controlled-wallets';
 
 // const REDIRECT_URI = 'http://localhost:5173/linkedincallback';
 // const SCOPES = 'profile email openid';
@@ -50,7 +51,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
 
   
   const { } = props;
-  const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, indivAccountClient, indivDid, privateIssuerDid } = useWallectConnectContext();
+  const { chain, signatory, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, indivAccountClient, indivDid, privateIssuerDid } = useWallectConnectContext();
 
 
   const openLinkedInPopup = () => {
@@ -117,11 +118,8 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
               displayName: "linkedin"
             };
 
-            const provider = new ethers.BrowserProvider(window.ethereum);
-            await window.ethereum.request({ method: "eth_requestAccounts" });
-            const walletSigner = await provider.getSigner()
-  
-            console.info("proof: ", proof)
+
+            const walletSigner = signatory.signer
             const uid = await AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivIssuerDelegation], indivAccountClient, burnerAccountClient)
           
             console.info(">>>>>>>>>>>>>>>>>  added attestation complete: ", uid)

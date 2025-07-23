@@ -14,7 +14,10 @@ import type {
         const account = privateKeyToAccount(privateKey);
   
         return {
-          signatory: { account },
+          signatory: { 
+            account,
+            signer: undefined, // Burner accounts don't use ethers signers
+          },
           owner: account.address,
         };
       },

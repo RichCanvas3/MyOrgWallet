@@ -54,6 +54,7 @@ import InsuranceAuth, { InsuranceAuthRef } from './InsuranceAuth';
 import RightSide from "./RightSide";
 
 import { useWallectConnectContext } from "../context/walletConnectContext";
+import { getSignerFromSignatory } from "../signers/SignatoryTypes";
 
 import { keccak256, toUtf8Bytes } from 'ethers';
 import { useAccount, useWalletClient } from 'wagmi';
@@ -145,7 +146,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const { data: walletClient } = useWalletClient();
 
-  const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, setOrgNameValue } = useWallectConnectContext();
+  const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, setOrgNameValue, selectedSignatoryName, signatory } = useWallectConnectContext();
 
   const [isDeleteAttestationsModalVisible, setDeleteAttestationsModalVisible] = useState(false);
   const [isApproveLeaderModalVisible, setApproveLeaderModalVisible] = useState(false);
@@ -267,26 +268,40 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
       AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
 
+        console.info("************* ents: ", ents)
+
         if (ents != undefined) {
 
           setEntities(ents)
 
           for (const entity of ents) {
             if (entity.name == "org(org)" && entity.attestation) {
+              console.info("------------> org name: ", (entity.attestation as OrgAttestation).name)
               setOrgNameValue((entity.attestation as OrgAttestation).name)
             }
           }
 
           if (!conversation) {
-
+            console.info("------------> conversation is undefined so configure conversation")
             if (location.pathname.startsWith("/chat/c/")) {
+              
               let conversationId = location.pathname.replace("/chat/c/", "")
+              console.info("-------> location.pathname: ", location.pathname)
+              console.info("-------> path /chat/c/: ", conversationId)
               handleSelectedConversation(conversationId)
+              
             }
             else {
+              console.info("-------> path not /chat/c/ so set new conversation")
               newConversation(ents)
             }
           }
+          else {
+            console.info("------------> conversation is defined")
+          }
+        }
+        else {
+          console.info("------------> ents is undefined")
         }
       })
 
@@ -449,6 +464,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const newConversation = (entities: Entity[]) => {
 
+    console.info("------------> newConversation: ", conversation )
     if (conversation == undefined) {
 
       if (location.pathname.startsWith("/chat/c/")) {
@@ -504,8 +520,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
       ConversationService.storeConversation(newConversation, messages);
 
-
-
+      console.info("------------> newConversation: ", newConversation )
+      console.info("------------> navigate to: ", `/chat/c/${newConversation.id}`)
+      
       navigate(`/chat/c/${newConversation.id}`);
 
     }
@@ -540,6 +557,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             ConversationService.getChatMessages(conversation).then((msgs: ChatMessage[]) => {
               if (msgs.length === 0) {
                 console.warn('possible state problem');
+                const errorMessage: string = 'Conversation ' + location.pathname + ' not found';
+                NotificationService.handleError(errorMessage, CONVERSATION_NOT_FOUND);
               } else {
                 setMessages(msgs);
               }
@@ -984,9 +1003,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
               proof: proof
             };
 
-            const provider = new ethers.BrowserProvider(window.ethereum);
-            await window.ethereum.request({ method: "eth_requestAccounts" });
-            const walletSigner = await provider.getSigner()
+            // Use the signer directly from signatory
+            const walletSigner = signatory.signer;
+            
+            if (!walletSigner) {
+              console.error("Failed to get wallet signer");
+              return;
+            }
 
             console.info("add state registration attestation")
             const uid = await AttestationService.addStateRegistrationAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
@@ -1045,9 +1068,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           proof: proof
         };
 
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        const walletSigner = await provider.getSigner()
+        // Use the signer directly from signatory
+        const walletSigner = signatory.signer;
+        
+        if (!walletSigner) {
+          console.error("Failed to get wallet signer");
+          return;
+        }
 
         const uid = await AttestationService.addRegisteredDomainAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         console.info("add org domain attestation complete")
@@ -1094,9 +1121,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           proof: proof
         };
 
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        const walletSigner = await provider.getSigner()
+        // Use the signer directly from signatory
+        const walletSigner = signatory.signer;
+        
+        if (!walletSigner) {
+          console.error("Failed to get wallet signer");
+          return;
+        }
 
         const uid = await AttestationService.addWebsiteAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         console.info("add website attestation complete")
@@ -1144,9 +1175,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           proof: proof
         };
 
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        const walletSigner = await provider.getSigner()
+        // Use the standardized signer access
+        const walletSigner = await getSignerFromSignatory(signatory);
+        
+        if (!walletSigner) {
+          console.error("Failed to get wallet signer");
+          return;
+        }
 
         const uid = await AttestationService.addEmailAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         console.info("add email attestation complete")
@@ -1947,123 +1982,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     const network = await provider.getNetwork()
 
 
-
-
-
-
-
-
-
-/*
-
-
-
-
-      const ENS_REGISTRY_ADDRESS = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e'; // Sepolia ENS Registry
-      const PUBLIC_RESOLVER_ADDRESS = '0x8FADE66B79cC9f707aB26799354482EB93a5B7dD';
-      const ENSRegistryABI = [
-        'function setResolver(bytes32 node, address resolver) external'
-      ];
-
-      const node = namehash("richcanvas.eth");
-      const ensRegistry = new ethers.Contract(ENS_REGISTRY_ADDRESS, ENSRegistryABI, signatory.walletClient);
-
-      const tx = await ensRegistry.setResolver(node, PUBLIC_RESOLVER_ADDRESS);
-      console.log('Setting resolver tx sent:', tx.hash);
-
-      await tx.wait();
-      console.log('✅ Resolver set successfully');
-
-
-
-
-      // Get the name for the address
-      const name = await ensClient.getName({
-        address: address as `0x${string}`,
-      });
-      console.log("Current ENS name:", name);
-
-      // Get the address for the name
-      const ensAddress = await ensClient.getAddressRecord({
-        name: 'richcanvas.eth',
-      });
-      console.log("Current ENS address:", ensAddress);
-
-      // Note: The ENS SDK doesn't provide direct methods for setting records
-      // You would need to use the contract methods directly or use a different SDK
-      console.log("To set the address record, you need to use the contract methods directly");
-    } catch (error) {
-      console.error("Error getting ENS record:", error);
-    }
-
-
-    if (name) {
-      setOrgEthName(name)
-    }
-    else {
-      name = "richcanvas.eth"
-      setOrgEthName(name)
-    }
-
-    if (name) {
-
-      const resolver = await provider.getResolver(name);
-      if (!resolver) {
-        console.log("No resolver found for", name);
-        return null;
-      }
-
-      // Fetch the avatar text record
-      const avatar = await resolver.getText("avatar");
-      console.log("Avatar URI:", avatar);
-
-      if (avatar) {
-        setOrgEthAvatar(avatar)
-      }
-
-
-
-
-      // get lots of data from ensdata.net
-      const url = "https://api.ensdata.net/" + name
-      const res = await fetch(url)
-      const orgInfo = await res.json()
-      if (orgInfo) {
-        if (orgInfo.avatar) {
-          setOrgEthAvatar(orgInfo.avatar)
-        }
-        if (orgInfo.twitter) {
-          //console.info("x account: ", orgInfo.twitter)
-
-        }
-        if (orgInfo.url) {
-          //console.info("website: ", orgInfo.url)
-        }
-
-
-
-    */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
 
     const name = ensName
     const duration = 31536000 // 60 * 60 * 24 * 365

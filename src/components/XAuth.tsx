@@ -16,6 +16,7 @@ import { SocialAttestation } from '../models/Attestation'
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService'
 import {X_CLIENT_ID} from "../config";
 import { chainConfig } from 'viem/zksync';
+import { SigningApiFactory } from '@circle-fin/developer-controlled-wallets/dist/types/clients/developer-controlled-wallets';
 
 interface XProfile {
   sub: string; 
@@ -48,7 +49,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
   const { data: walletClient } = useWalletClient();
 
   const { } = props;
-  const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
+  const { chain, signatory, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
 
   
 
@@ -128,9 +129,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
             url: url
           };
 
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          await window.ethereum.request({ method: "eth_requestAccounts" });
-          const walletSigner = await provider.getSigner()
+          const walletSigner = signatory.signer
 
           const uid = AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivIssuerDelegation], orgAccountClient, burnerAccountClient)
           console.info("add social attestation complete")

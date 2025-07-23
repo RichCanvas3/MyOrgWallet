@@ -436,9 +436,8 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
     setIsDeleting(true);
     try {
       
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      await window.ethereum.request({ method: "eth_requestAccounts" });
-      const walletSigner = await provider.getSigner()
+
+      const walletSigner = signatory.signer
 
       if (attestation.class == "organization") {
         const attestations = [attestation]

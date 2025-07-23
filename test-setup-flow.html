@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Flow Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #28a745;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .info {
+            color: #17a2b8;
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid;
+            margin-bottom: 5px;
+        }
+        .step-active {
+            border-color: #007bff;
+            background-color: #007bff;
+            color: white;
+        }
+        .step-completed {
+            border-color: #28a745;
+            background-color: #28a745;
+            color: white;
+        }
+        .step-inactive {
+            border-color: #6c757d;
+            background-color: transparent;
+            color: #6c757d;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>Setup Flow Test</h1>
+    
+    <div class="container">
+        <h2>Updated Setup Flow</h2>
+        <p>This test simulates the updated setup flow without the "Connect EOA Wallet" step.</p>
+        
+        <!-- Step Indicator -->
+        <div class="step-indicator">
+            <div class="step">
+                <div class="step-circle step-active">1</div>
+                <span>Build Smart Wallets</span>
+            </div>
+            <div class="step">
+                <div class="step-circle step-inactive">2</div>
+                <span>Setup Wallet Permissions</span>
+            </div>
+        </div>
+
+        <div class="container">
+            <h3>Step 1: Build Smart Wallets</h3>
+            <p><strong>Your wallet is already connected from the welcome page!</strong></p>
+            
+            <ul>
+                <li>Build your personal smart wallet and deploy it to the blockchain.</li>
+                <li>Build your organization's smart wallet and deploy it to the blockchain.</li>
+                <li>Setup permissions between your personal smart wallet and your organization's smart wallet.</li>
+            </ul>
+
+            <button onclick="simulateBuildWallets()">Build Smart Wallets</button>
+        </div>
+
+        <div class="container" id="step2-content" style="display: none;">
+            <h3>Step 2: Setup Wallet Permissions</h3>
+            
+            <ul>
+                <li>Grant personal smart wallet permission to manage personal attestations.</li>
+                <li>Grant organization smart wallet permission to manage organization attestations.</li>
+            </ul>
+
+            <button onclick="simulateSetupPermissions()">Grant Permissions</button>
+        </div>
+
+        <div id="test-results"></div>
+    </div>
+
+    <div class="container">
+        <h2>Key Changes Made</h2>
+        <ul>
+            <li><strong>Removed "Connect EOA Wallet" step</strong> - Wallet connection now happens in welcome page</li>
+            <li><strong>Updated step numbering</strong> - Now starts with "Build Smart Wallets" as step 1</li>
+            <li><strong>Context-based signatory</strong> - Gets signatory from context instead of previous step</li>
+            <li><strong>Improved user experience</strong> - Clearer flow with fewer steps</li>
+        </ul>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const testResults = document.getElementById('test-results');
+        const step2Content = document.getElementById('step2-content');
+
+        function updateStepIndicator() {
+            const step1Circle = document.querySelector('.step-indicator .step:nth-child(1) .step-circle');
+            const step2Circle = document.querySelector('.step-indicator .step:nth-child(2) .step-circle');
+            
+            if (currentStep === 1) {
+                step1Circle.className = 'step-circle step-active';
+                step2Circle.className = 'step-circle step-inactive';
+            } else if (currentStep === 2) {
+                step1Circle.className = 'step-circle step-completed';
+                step2Circle.className = 'step-circle step-active';
+            }
+        }
+
+        function simulateBuildWallets() {
+            testResults.innerHTML = '<div class="info">🔄 Building smart wallets...</div>';
+            
+            setTimeout(() => {
+                testResults.innerHTML = '<div class="success">✅ Smart wallets built successfully!</div>';
+                currentStep = 2;
+                updateStepIndicator();
+                step2Content.style.display = 'block';
+                
+                // Scroll to step 2
+                step2Content.scrollIntoView({ behavior: 'smooth' });
+            }, 2000);
+        }
+
+        function simulateSetupPermissions() {
+            testResults.innerHTML = '<div class="info">🔄 Setting up wallet permissions...</div>';
+            
+            setTimeout(() => {
+                testResults.innerHTML = '<div class="success">✅ Permissions granted successfully!</div>';
+                
+                setTimeout(() => {
+                    testResults.innerHTML += '<div class="success">🎉 Setup flow completed! Redirecting to chat...</div>';
+                }, 1000);
+            }, 3000);
+        }
+
+        // Initialize step indicator
+        updateStepIndicator();
+    </script>
+</body>
+</html> 

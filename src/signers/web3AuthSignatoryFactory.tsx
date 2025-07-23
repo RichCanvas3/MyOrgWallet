@@ -2,6 +2,7 @@ import { CHAIN_NAMESPACES, WEB3AUTH_NETWORK } from "@web3auth/base";
 import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
 import { Web3Auth } from "@web3auth/modal";
 import { createWalletClient, custom, toHex, type Address } from "viem";
+import { ethers } from "ethers";
 import type {
   SignatoryFactoryConfig,
   SignatoryFactoryConfigurator,
@@ -11,6 +12,10 @@ export const createWeb3AuthSignatoryFactory: SignatoryFactoryConfigurator = (
   config: SignatoryFactoryConfig
 ) => {
   const { chain, rpcUrl } = config;
+  
+  if (!chain) {
+    throw new Error("Chain is required for Web3Auth signatory factory");
+  }
 
   const chainConfig = {
     chainNamespace: CHAIN_NAMESPACES.EIP155,
@@ -51,9 +56,16 @@ export const createWeb3AuthSignatoryFactory: SignatoryFactoryConfigurator = (
       account: owner,
     });
 
+    // Create ethers signer from the Web3Auth provider
+    const ethersProvider = new ethers.BrowserProvider(provider);
+    const signer = await ethersProvider.getSigner();
+
     return {
       owner,
-      signatory: { walletClient },
+      signatory: { 
+        walletClient,
+        signer, // Add the signer to the signatory
+      },
     };
   };
 

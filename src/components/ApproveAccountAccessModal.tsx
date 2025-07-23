@@ -9,6 +9,7 @@ import './UserSettingsModal.css';
 import { Transition } from '@headlessui/react';
 import AttestationService from '../service/AttestationService';
 import { useWallectConnectContext } from "../context/walletConnectContext";
+import { getSignerFromSignatory } from "../signers/SignatoryTypes";
 import { useWalletClient } from 'wagmi';
 import { IndivAttestation, AccountIndivDelAttestation, AccountOrgDelAttestation } from "../models/Attestation";
 import { Account } from "../models/Account";
@@ -41,7 +42,7 @@ interface ApproveAccountAccessModalProps {
 
 const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ isVisible, onClose }) => {
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { chain, orgDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, orgAccountClient, privateIssuerAccount, burnerAccountClient, mascaApi, veramoAgent, indivDid } = useWallectConnectContext();
+  const { chain, orgDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, orgAccountClient, privateIssuerAccount, burnerAccountClient, mascaApi, veramoAgent, indivDid, selectedSignatoryName, signatory } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -201,9 +202,13 @@ const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ i
               vciss: privateIssuerDid,
               proof: proof
           };
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          await window.ethereum.request({ method: "eth_requestAccounts" });
-          const walletSigner = await provider.getSigner()
+          // Use the signer directly from signatory
+          const walletSigner = signatory.signer;
+          
+          if (!walletSigner) {
+            console.error("Failed to get wallet signer");
+            return;
+          }
 
           console.info("***********  attestation ****************", attestation);
           const uid = await AttestationService.addAccountIndivDelAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)

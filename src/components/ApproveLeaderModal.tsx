@@ -13,6 +13,7 @@ import {Transition} from '@headlessui/react';
 
 import AttestationService from '../service/AttestationService';
 import { useWallectConnectContext } from "../context/walletConnectContext";
+import { getSignerFromSignatory } from "../signers/SignatoryTypes";
 import { useWalletClient, useAccount } from 'wagmi';
 
 import { IndivAttestation } from "../models/Attestation"
@@ -150,9 +151,13 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
           proof: proof
         };
 
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        const walletSigner = await provider.getSigner()
+        // Use the signer directly from signatory
+        const walletSigner = signatory.signer;
+        
+        if (!walletSigner) {
+          console.error("Failed to get wallet signer");
+          return;
+        }
         
         const uid = await AttestationService.addOrgIndivAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
       }

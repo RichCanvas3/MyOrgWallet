@@ -33,21 +33,19 @@ const SetupSmartWalletModal: React.FC = () => {
   }
 
   const navigate = useNavigate();
-  const { selectedSignatory, buildSmartWallet, setupSmartWallet } = useWallectConnectContext();
+  const { selectedSignatory, selectedSignatoryName, buildSmartWallet, setupSmartWallet, chain } = useWallectConnectContext();
 
 
   const [steps, setSteps] = useState<Step[]>([
-    { id: 1, title: 'Connect EOA Wallet', description: '', isActive: true, isCompleted: false },
-    { id: 2, title: 'Build Smart Wallets', description: '',isActive: false, isCompleted: false },
-    { id: 3, title: 'Setup Wallet Permissions', description: '',isActive: false, isCompleted: false },
+    { id: 1, title: 'Build Smart Wallets', description: '', isActive: true, isCompleted: false },
+    { id: 2, title: 'Setup Wallet Permissions', description: '',isActive: false, isCompleted: false },
   ]);
   const [currentStep, setCurrentStep] = useState(1);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'info' as 'info' | 'success' | 'error' });
 
-  const [signatory, setSignatory] = useState<any | undefined>();
-  const [owner, setOwner] = useState<any | undefined>();
+  // Note: signatory and owner are now obtained from context during each step
 
   // Toast helpers
   const handleToast = (message: string, severity: 'info' | 'success' | 'error' = 'info') => {
@@ -70,30 +68,62 @@ const SetupSmartWalletModal: React.FC = () => {
   };
 
   // Handlers for each step
-  const handleWalletConnect = async () => {
-    if (!selectedSignatory) return;
-    setIsSubmitting(true);
-    try {
-      const loginResp = await selectedSignatory.login();
-      setOwner(loginResp.owner)
-      console.info("*********** set signatory: ", loginResp.signatory)
-      setSignatory(loginResp.signatory)
-
-      // you can grab loginResp.owner/signatory if needed here
-      handleToast('Wallet connected', 'success');
-      advanceStep();
-    } catch (err: any) {
-      handleToast(err.message || 'Connection failed', 'error');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  // Note: Wallet connection is now handled in the welcome page via Web3Auth or MetaMask
 
 
   const handleBuildWallet = async () => {
     console.info("handle build wallet")
     setIsSubmitting(true);
     try {
+      // Get the signatory from the context (set during welcome page)
+      if (!selectedSignatory) {
+        throw new Error('No wallet connected. Please complete the welcome setup first.');
+      }
+
+      // Check if we already have the owner and signatory from the welcome page
+      let owner, signatory;
+      
+      // Check if we're using MetaMask (injected provider) or Web3Auth
+      const provider = (window as any).ethereum;
+      const isUsingMetaMask = selectedSignatory && provider && selectedSignatoryName === 'injectedProviderSignatoryFactory';
+      
+      if (isUsingMetaMask) {
+        try {
+          // Try to get current accounts without requesting permissions
+          const accounts = await provider.request({ method: 'eth_accounts' });
+          if (accounts && accounts.length > 0) {
+            // We have MetaMask accounts, use them without requesting permissions again
+            owner = accounts[0];
+            // Create wallet client without triggering new permission request
+            const { createWalletClient, custom } = await import('viem');
+            const walletClient = createWalletClient({
+              chain: chain as any,
+              transport: custom(provider),
+              account: owner,
+            });
+            signatory = { walletClient };
+          } else {
+            // No accounts found, but we have MetaMask - this means user needs to connect
+            // Since user already connected in welcome page, this shouldn't happen
+            // If it does, it means MetaMask was disconnected, so we need to reconnect
+            throw new Error('MetaMask accounts not found. Please reconnect MetaMask in the welcome page.');
+          }
+        } catch (error: unknown) {
+          // If we can't get accounts or there's an error, don't try to login again
+          // This prevents the permission conflict
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          throw new Error(`MetaMask connection error: ${errorMessage}. Please ensure MetaMask is connected and try again.`);
+        }
+      } else {
+        // For Web3Auth or other providers, we can safely call login
+        console.info("web3Auth login")
+        const loginResp = await selectedSignatory.login();
+        owner = loginResp.owner;
+        signatory = loginResp.signatory;
+        console.info("web3Auth login done: ", owner, signatory)
+      }
+
+      console.info("build smart wallet")
       await buildSmartWallet(owner, signatory);
       handleToast('Smart wallet built', 'success');
       advanceStep();
@@ -107,6 +137,52 @@ const SetupSmartWalletModal: React.FC = () => {
   const handlePermissions = async () => {
     setIsSubmitting(true);
     try {
+      // Get the signatory from the context (set during welcome page)
+      if (!selectedSignatory) {
+        throw new Error('No wallet connected. Please complete the welcome setup first.');
+      }
+
+      // Check if we already have the owner and signatory from the welcome page
+      let owner, signatory;
+      
+      // Check if we're using MetaMask (injected provider) or Web3Auth
+      const provider = (window as any).ethereum;
+      const isUsingMetaMask = selectedSignatory && provider && selectedSignatoryName === 'injectedProviderSignatoryFactory';
+      
+      if (isUsingMetaMask) {
+        try {
+          // Try to get current accounts without requesting permissions
+          const accounts = await provider.request({ method: 'eth_accounts' });
+          if (accounts && accounts.length > 0) {
+            // We have MetaMask accounts, use them without requesting permissions again
+            owner = accounts[0];
+            // Create wallet client without triggering new permission request
+            const { createWalletClient, custom } = await import('viem');
+            const walletClient = createWalletClient({
+              chain: chain as any,
+              transport: custom(provider),
+              account: owner,
+            });
+            signatory = { walletClient };
+          } else {
+            // No accounts found, but we have MetaMask - this means user needs to connect
+            // Since user already connected in welcome page, this shouldn't happen
+            // If it does, it means MetaMask was disconnected, so we need to reconnect
+            throw new Error('MetaMask accounts not found. Please reconnect MetaMask in the welcome page.');
+          }
+        } catch (error: unknown) {
+          // If we can't get accounts or there's an error, don't try to login again
+          // This prevents the permission conflict
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          throw new Error(`MetaMask connection error: ${errorMessage}. Please ensure MetaMask is connected and try again.`);
+        }
+      } else {
+        // For Web3Auth or other providers, we can safely call login
+        const loginResp = await selectedSignatory.login();
+        owner = loginResp.owner;
+        signatory = loginResp.signatory;
+      }
+
       await setupSmartWallet(owner, signatory);
       console.info("start sleep")
       await sleep(13000);
@@ -125,16 +201,8 @@ const SetupSmartWalletModal: React.FC = () => {
 
   // Decide current action
   const stepAction = [
-    { label: 'Connect EOA Wallet - Use OP Mainnet', description: `
-      <b>No wallet funds are required to get started with MyOrgWallet</b> <br/><br/>
-
-      Make sure your browser is connected to your MetaMask account and that OP Mainnnet is configured properly - this is required. <br/><br/>
-
-      Watch <a className="colored_link" href="https://youtu.be/nVbJUDLtYCM" target="_blank">How to Configure OP Mainnet</a> if you are stuck or are getting the error: <code className="error">"Unrecognized chain ID 0xa." </code> <br><br>
-
-      This local wallet account will be the owner of your newly created personal smart wallet and organization smart wallet.`
-      , onClick: handleWalletConnect },
     { label: 'Build Smart Wallets', description: `
+      <b>Your wallet is already connected from the welcome page!</b> <br/><br/>
 
       <ul style="list-style-type: disc; margin-left: 1.5em; padding-left: 0;">
         <li>Build your personal smart wallet and deploy it to the blockchain.</li>

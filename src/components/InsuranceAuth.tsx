@@ -4,6 +4,7 @@ import { keccak256, toUtf8Bytes } from 'ethers';
 import { ethers } from 'ethers';
 
 import { useWallectConnectContext } from "../context/walletConnectContext";
+import { getSignerFromSignatory } from "../signers/SignatoryTypes";
 import AttestationService from '../service/AttestationService';
 import { InsuranceAttestation } from '../models/Attestation';
 import { useWalletClient, useAccount } from 'wagmi';
@@ -23,7 +24,7 @@ const entityId = "insurance(org)"
 const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, ref) => {
 
   const { } = props;
-  const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
+  const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, signatory } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
 
@@ -44,9 +45,13 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
         const proof = result.proof
         if (proof && fullVc && chain && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
         
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          await window.ethereum.request({ method: "eth_requestAccounts" });
-          const walletSigner = await provider.getSigner()
+                            // Use the signer directly from signatory
+          const walletSigner = signatory.signer;
+          
+          if (!walletSigner) {
+            console.error("Failed to get wallet signer");
+            return;
+          }
 
           // now create attestation
           console.info("create attestation")

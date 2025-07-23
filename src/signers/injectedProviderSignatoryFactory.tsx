@@ -1,6 +1,7 @@
 import { createWalletClient, custom, toHex, type Address } from "viem";
 import { createConfig } from 'wagmi'
 import { optimism, linea, sepolia } from "viem/chains";
+import { ethers } from "ethers";
 
 import {
   UnconfiguredSignatory,
@@ -86,9 +87,16 @@ export const createInjectedProviderSignatoryFactory: SignatoryFactoryConfigurato
         account: owner,
       });
 
+      // Create ethers signer from MetaMask provider
+      const ethersProvider = new ethers.BrowserProvider(provider);
+      const signer = await ethersProvider.getSigner();
+
       return {
         owner,
-        signatory: { walletClient},
+        signatory: { 
+          walletClient,
+          signer, // Add the signer to the signatory
+        },
       };
     };
 

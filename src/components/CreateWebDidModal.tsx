@@ -69,11 +69,9 @@ const CreateWebDidModal: React.FC<CreateWebDidModalProps> = ({isVisible, onClose
 
           const domainAttestation = attestation as RegisteredDomainAttestation
 
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          await provider.send("eth_requestAccounts", []);
-          const signer = await provider.getSigner();
+          const signer = signatory.signer
           console.info("...........signer: ", signer)
-          //const address = await signer.getAddress();
+
 
           // Use ethers to sign a message and recover the public key
           const message = "get_public_key";

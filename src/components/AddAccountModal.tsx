@@ -114,11 +114,10 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose, o
     setError(null);
 
     console.info("*********** ADD ORG ACCOUNT ATTESTATION ****************")
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    await window.ethereum.request({ method: "eth_requestAccounts" });
-    const walletSigner = await provider.getSigner()
 
+    const walletSigner = signatory.signer
     const walletClient = signatory.walletClient
+
     let entityId = "account(org)"
 
     const publicClient = createPublicClient({

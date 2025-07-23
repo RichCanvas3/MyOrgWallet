@@ -69,6 +69,7 @@ import {
 import { type Chain } from 'viem'
 
 import { Account, IndivAccount, AccountType, ACCOUNT_TYPES } from '../models/Account';
+import { SingleBedRounded } from "@mui/icons-material";
 
 export interface AttestationChangeEvent {
   action: 'add' | 'edit' | 'delete' | 'delete-all' | 'revoke',
@@ -224,6 +225,7 @@ class AttestationService {
                 hash: "",
               }
               entity.attestation = att
+              console.info("------------> entity attestation: ", entity.attestation)
             }
           }
 
@@ -355,60 +357,66 @@ class AttestationService {
 
 
 
-  static async storeAttestation(chain: Chain, schema: string, encodedData: any, delegator: MetaMaskSmartAccount, delegate: MetaMaskSmartAccount, delegationChain: Delegation[]) {
-    
-    const key1 = BigInt(Date.now())      // or some secure random
-    const nonce1 = encodeNonce({ key: key1, sequence: 0n })
-
-    let tx = await eas.attest({
-      schema: schema,
-      data: {
-        recipient: delegator.address,
-        expirationTime: 0n, // BigInt in v6
-        revocable: true,
-        data: encodedData
-      }
-    })
-
-    
-    const executions = [
-      {
-        target: tx.data.to,
-        value: 0n,
-        callData: tx.data.data,
-      },
-    ];
-
-
-    const paymasterClient = createPaymasterClient({
-      transport: http(PAYMASTER_URL),
-    });
-
-
-    console.info("pimlico client configruation for BUNDLER URL")
-    const pimlicoClient = createPimlicoClient({
-      transport: http(BUNDLER_URL),
-    });
-    const bundlerClient = createBundlerClient({
-                    transport: http(BUNDLER_URL),
-                    paymaster: paymasterClient,
-                    chain: chain,
-                    paymasterContext: {
-                      mode:             'SPONSORED',
-                    },
-                  });
-
-    const data = DelegationFramework.encode.redeemDelegations({
-      delegations: [ delegationChain ],
-      modes: [SINGLE_DEFAULT_MODE],
-      executions: [executions]
-    });
-
-    
-    const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
-    let userOpHash: Hex;
-
+  static async storeAttestation(chain: Chain, schema: string, encodedData: any, delegator: MetaMaskSmartAccount, delegate: MetaMaskSmartAccount, delegationChain: Delegation[], easInstance?: EAS) {
     try {
+      const key1 = BigInt(Date.now())      // or some secure random
+      const nonce1 = encodeNonce({ key: key1, sequence: 0n })
+
+      // Use the provided EAS instance or create a new one
+      const easToUse = easInstance || eas;
+      console.info("eas connect: ", easToUse)
+      console.info("delegator: ", delegator)
+      
+      let tx = await easToUse.attest({
+        schema: schema,
+        data: {
+          recipient: delegator.address,
+          expirationTime: 0n, // BigInt in v6
+          revocable: true,
+          data: encodedData
+        }
+      })
+
+      
+      console.info("eas attest tx: ", tx)
+      const executions = [
+        {
+          target: tx.data.to,
+          value: 0n,
+          callData: tx.data.data,
+        },
+      ];
+
+
+      const paymasterClient = createPaymasterClient({
+        transport: http(PAYMASTER_URL),
+      });
+
+
+      console.info("pimlico client configruation for BUNDLER URL")
+      const pimlicoClient = createPimlicoClient({
+        transport: http(BUNDLER_URL),
+      });
+      const bundlerClient = createBundlerClient({
+                      transport: http(BUNDLER_URL),
+                      paymaster: paymasterClient,
+                      chain: chain,
+                      paymasterContext: {
+                        mode:             'SPONSORED',
+                      },
+                    });
+
+      console.info("redeem delegations: ", delegationChain)
+      const data = DelegationFramework.encode.redeemDelegations({
+        delegations: [ delegationChain ],
+        modes: [SINGLE_DEFAULT_MODE],
+        executions: [executions]
+      });
+
+      
+      const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+      let userOpHash: Hex;
+
       userOpHash = await bundlerClient.sendUserOperation({
         account: delegate,
         calls: [
@@ -422,16 +430,18 @@ class AttestationService {
         ...fee
         
       });
+
+      console.info("done sending user operation")
+    
+
+      const userOperationReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
+      console.info("......... add attestation receipt ................: ", userOperationReceipt)
     }
     catch (error) {
       console.info(">>>>>>>>>>>> error trying to save using delegate address: ", delegate.address)
       console.info(">>>>>>>>>>>>>> try saving with Delegation Manager")
       console.error("......... error: ", error)
     }
-
-
-    const userOperationReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
-    console.info("......... add attestation receipt ................: ", userOperationReceipt)
 
   }
 
@@ -671,7 +681,15 @@ class AttestationService {
   static async addOrgAttestation(chain: Chain, attestation: OrgAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {
 
     console.info("....... add org attestation signer: ", signer)
-    eas.connect(signer)
+    
+    // Create a new EAS instance for this specific chain
+    const easContractAddress = EAS_CONTRACT_ADDRESS || "0x4200000000000000000000000000000000000021";
+    const chainEas = new EAS(easContractAddress);
+    chainEas.connect(signer)
+
+    
+
+    console.info("eas is connected so add org attestation: ", attestation)
 
     const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
     const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
@@ -698,9 +716,11 @@ class AttestationService {
 
         ];
 
+        console.info("Store attestation: ", attestation)
         const encodedData = schemaEncoder.encodeData(schemaItems);
-        await AttestationService.storeAttestation(chain, this.OrgSchemaUID, encodedData, orgAccountClient, orgDelegateClient, delegationChain)
+        await AttestationService.storeAttestation(chain, this.OrgSchemaUID, encodedData, orgAccountClient, orgDelegateClient, delegationChain, chainEas)
 
+        console.info("send out attestation change event")
         let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
         attestationsEmitter.emit('attestationChangeEvent', event);
 

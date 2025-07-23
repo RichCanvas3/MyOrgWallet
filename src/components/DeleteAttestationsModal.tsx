@@ -52,16 +52,20 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
 
 
   const handleDeleteOrgAttestations = async () => {
-    console.info("delete attestations")
+    console.info("inside delete attestations 1")
+    console.info("orgDid: ", orgDid)
+    console.info("chain: ", chain)
+    console.info("orgIndivDelegation: ", orgIndivDelegation)
+    console.info("orgIssuerDelegation: ", orgIssuerDelegation)
+    console.info("indivIssuerDelegation: ", indivIssuerDelegation)
+    console.info("burnerAccountClient: ", burnerAccountClient)
+
     if (orgDid && chain && orgIndivDelegation && orgIssuerDelegation && indivIssuerDelegation && burnerAccountClient) {
-      console.info("delete org attestations")
+      console.info("delete org attestations 1")
       const attestations = await AttestationService.loadRecentAttestationsTitleOnly(chain,orgDid, "")
       if (attestations && attestations.length > 0) {
-
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        const walletSigner = await provider.getSigner()
-
+        console.info("signer a: ", signatory)
+        const walletSigner = signatory.signer
         const rslt = await AttestationService.deleteAttestations(chain, attestations, walletSigner, [orgIssuerDelegation, orgIndivDelegation], burnerAccountClient)
         console.info("delete organization attestations is done ", rslt)
       }
@@ -69,14 +73,18 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
   }
 
   const handleDeleteIndivAttestations = async () => {
+    console.info("inside delete attestations 2")
+    console.info("indivDid: ", indivDid)
+    console.info("chain: ", chain)
+    console.info("indivIssuerDelegation: ", indivIssuerDelegation)
+    console.info("burnerAccountClient: ", burnerAccountClient)
+
     if (chain && indivDid && indivIssuerDelegation && burnerAccountClient) {
-      console.info("delete indiv attestations")
+      console.info("delete indiv attestations 2")
       const attestations = await AttestationService.loadRecentAttestationsTitleOnly(chain,"", indivDid)
       if (attestations && attestations.length > 0) {
-
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        const walletSigner = await provider.getSigner()
+        console.info("signer b: ", signatory)
+        const walletSigner = signatory.signer
 
         const rsl = await AttestationService.deleteAttestations(chain, attestations, walletSigner, [indivIssuerDelegation], burnerAccountClient)
         console.info("delete all individual attestations is done ")
@@ -197,10 +205,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
             proof: proof
           };
 
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          await window.ethereum.request({ method: "eth_requestAccounts" });
-          const walletSigner = await provider.getSigner()
-          
+          const walletSigner = signatory.signer
           const uid = await AttestationService.addOrgIndivAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         }
 

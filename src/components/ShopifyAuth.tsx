@@ -14,6 +14,7 @@ import { useWalletClient, useAccount } from 'wagmi';
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService';
 
 import {SHOPIFY_CLIENT_ID} from "../config";
+import { SigningApiFactory } from '@circle-fin/developer-controlled-wallets/dist/types/clients/developer-controlled-wallets';
 
 const SHOP_NAME = "richcanvas"
 
@@ -33,7 +34,7 @@ const entityId = "shopify(org)"
 const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) => {
 
   const { } = props;
-  const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
+  const { chain, signatory, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
 
@@ -72,9 +73,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
 
       if (orgDid && chain && shopifyUrl && walletClient && mascaApi && privateIssuerAccount && orgAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && privateIssuerDid) {
 
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        const walletSigner = await provider.getSigner()
+        const walletSigner = signatory.signer
 
         const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC(entityId, orgDid, privateIssuerDid, websiteType, shopifyUrl);
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, shopifyUrl, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)

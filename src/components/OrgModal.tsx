@@ -12,6 +12,7 @@ import {OrgAttestation} from '../models/Attestation';
 import AttestationService from '../service/AttestationService';
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService'
 import { useWallectConnectContext } from "../context/walletConnectContext";
+import { getSignerFromSignatory } from "../signers/SignatoryTypes";
 import { useWalletClient, useAccount } from "wagmi"
 import { TextField, Button, Typography, Box, Paper } from "@mui/material";
 
@@ -78,9 +79,13 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
           proof: proof
         };
 
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        const walletSigner = await provider.getSigner()
+        // Use the signer directly from signatory
+        const walletSigner = signatory.signer;
+        
+        if (!walletSigner) {
+          console.error("Failed to get wallet signer");
+          return;
+        }
 
         console.info("AttestationService add org attestation")
         const uid = await AttestationService.addOrgAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)

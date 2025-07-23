@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaMask Permission Fix Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+        .button {
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background-color: #1565c0;
+        }
+        .button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .code-block {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 MetaMask Permission Conflict Fix Test</h1>
+        
+        <div class="test-section">
+            <h3>Problem Description</h3>
+            <p>The error occurs when:</p>
+            <ul>
+                <li>User connects MetaMask in welcome page</li>
+                <li>Setup page tries to call <code>selectedSignatory.login()</code> again</li>
+                <li>This triggers another <code>wallet_requestPermissions</code> request</li>
+                <li>MetaMask rejects with: "Request already pending"</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>Solution</h3>
+            <p>The fix:</p>
+            <ul>
+                <li>Check if MetaMask provider is available</li>
+                <li>Use <code>eth_accounts</code> instead of <code>eth_requestAccounts</code></li>
+                <li>Create wallet client directly without triggering new permissions</li>
+                <li>Fall back to normal login for Web3Auth</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>Test MetaMask Connection</h3>
+            <button class="button" onclick="testMetaMaskConnection()">Test MetaMask Connection</button>
+            <button class="button" onclick="testPermissionRequest()">Test Permission Request</button>
+            <button class="button" onclick="testAccountsWithoutPermission()">Test eth_accounts (No Permission)</button>
+            <button class="button" onclick="clearLog()">Clear Log</button>
+            
+            <div id="status" class="status info">
+                Ready to test MetaMask connection...
+            </div>
+            
+            <div class="log" id="log"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Code Changes</h3>
+            <div class="code-block">
+// Before (causing permission conflict):
+const loginResp = await selectedSignatory.login();
+const owner = loginResp.owner;
+const signatory = loginResp.signatory;
+
+// After (avoiding permission conflict):
+const provider = (window as any).ethereum;
+if (provider && selectedSignatory) {
+  try {
+    const accounts = await provider.request({ method: 'eth_accounts' });
+    if (accounts && accounts.length > 0) {
+      owner = accounts[0];
+      const { createWalletClient, custom } = await import('viem');
+      const walletClient = createWalletClient({
+        chain: chain as any,
+        transport: custom(provider),
+        account: owner,
+      });
+      signatory = { walletClient };
+    } else {
+      // Fall back to normal login
+      const loginResp = await selectedSignatory.login();
+      owner = loginResp.owner;
+      signatory = loginResp.signatory;
+    }
+  } catch (error) {
+    // Fall back to normal login
+    const loginResp = await selectedSignatory.login();
+    owner = loginResp.owner;
+    signatory = loginResp.signatory;
+  }
+} else {
+  // For Web3Auth or other providers
+  const loginResp = await selectedSignatory.login();
+  owner = loginResp.owner;
+  signatory = loginResp.signatory;
+}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logElement.textContent += logEntry;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+            updateStatus('Log cleared', 'info');
+        }
+
+        async function testMetaMaskConnection() {
+            log('Testing MetaMask connection...');
+            updateStatus('Testing MetaMask connection...', 'info');
+
+            if (typeof window.ethereum === 'undefined') {
+                log('❌ MetaMask not found');
+                updateStatus('MetaMask not found. Please install MetaMask.', 'error');
+                return;
+            }
+
+            try {
+                log('✅ MetaMask provider found');
+                
+                // Test eth_accounts (no permission request)
+                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                log(`📋 Current accounts: ${JSON.stringify(accounts)}`);
+                
+                if (accounts && accounts.length > 0) {
+                    log(`✅ Connected account: ${accounts[0]}`);
+                    updateStatus(`Connected to MetaMask: ${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`, 'success');
+                } else {
+                    log('⚠️ No accounts found (not connected)');
+                    updateStatus('MetaMask found but not connected', 'info');
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+                updateStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testPermissionRequest() {
+            log('Testing permission request (this may cause the conflict)...');
+            updateStatus('Testing permission request...', 'info');
+
+            if (typeof window.ethereum === 'undefined') {
+                log('❌ MetaMask not found');
+                updateStatus('MetaMask not found', 'error');
+                return;
+            }
+
+            try {
+                // This is what causes the conflict
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                log(`✅ Permission granted: ${JSON.stringify(accounts)}`);
+                updateStatus('Permission request successful', 'success');
+            } catch (error) {
+                log(`❌ Permission error: ${error.message}`);
+                updateStatus(`Permission error: ${error.message}`, 'error');
+                
+                if (error.code === -32002) {
+                    log('🔧 This is the exact error we fixed!');
+                    log('The fix uses eth_accounts instead of eth_requestAccounts');
+                }
+            }
+        }
+
+        async function testAccountsWithoutPermission() {
+            log('Testing eth_accounts (no permission request)...');
+            updateStatus('Testing eth_accounts...', 'info');
+
+            if (typeof window.ethereum === 'undefined') {
+                log('❌ MetaMask not found');
+                updateStatus('MetaMask not found', 'error');
+                return;
+            }
+
+            try {
+                // This is the fix - no permission request
+                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                log(`📋 Accounts without permission: ${JSON.stringify(accounts)}`);
+                
+                if (accounts && accounts.length > 0) {
+                    log(`✅ Successfully got account without permission request: ${accounts[0]}`);
+                    updateStatus('Successfully got account without permission request', 'success');
+                } else {
+                    log('⚠️ No accounts found (not connected)');
+                    updateStatus('No accounts found (not connected)', 'info');
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+                updateStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-test on load
+        window.addEventListener('load', () => {
+            log('🚀 MetaMask Permission Fix Test Loaded');
+            log('This test demonstrates the fix for the MetaMask permission conflict');
+            log('The error occurs when multiple wallet_requestPermissions requests are made');
+            log('The fix uses eth_accounts instead of eth_requestAccounts to avoid conflicts');
+        });
+    </script>
+</body>
+</html> 
