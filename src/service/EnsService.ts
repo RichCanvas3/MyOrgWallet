@@ -760,8 +760,14 @@ class EnsService {
         }
 
         // Check if wrapping was successful
+        // After wrapping, the BaseRegistrar should show the smart account as owner
+        // The NameWrapper ownership might take a moment to be reflected
         if (nameWrapperOwner.toLowerCase() === smartAccountAddress.toLowerCase()) {
           console.log(`✅ ${ensName}.eth has been wrapped successfully!`);
+          return ensName;
+        } else if (newBaseRegistrarOwner.toLowerCase() === smartAccountAddress.toLowerCase()) {
+          // BaseRegistrar shows correct ownership, wrapping was successful
+          console.log(`✅ ${ensName}.eth has been wrapped successfully! BaseRegistrar ownership confirmed.`);
           return ensName;
         } else if (nameWrapperOwner === ethers.ZeroAddress && newBaseRegistrarOwner === nameWrapper.target) {
           console.log(`✅ ${ensName}.eth has been wrapped successfully (owned by NameWrapper contract)!`);
@@ -900,15 +906,22 @@ class EnsService {
         let parentOwner: string;
         let isWrapped = nameStatus.isWrapped;
 
-        if (nameStatus.isWrapped && nameStatus.nameWrapperOwner) {
+        if (nameStatus.isWrapped && nameStatus.nameWrapperOwner && nameStatus.nameWrapperOwner !== '0x0000000000000000000000000000000000000000') {
           parentOwner = nameStatus.nameWrapperOwner;
           console.log('Using NameWrapper owner:', parentOwner);
-        } else if (nameStatus.ensRegistryOwner && nameStatus.ensRegistryOwner !== '0x0000000000000000000000000000000000000000') {
-          parentOwner = nameStatus.ensRegistryOwner;
-          console.log('Using ENS Registry owner:', parentOwner);
         } else if (nameStatus.baseRegistrarOwner) {
           parentOwner = nameStatus.baseRegistrarOwner;
           console.log('Using BaseRegistrar owner:', parentOwner);
+          // If it's wrapped but owned by zero address, the name is improperly wrapped
+          if (nameStatus.isWrapped && nameStatus.nameWrapperOwner === '0x0000000000000000000000000000000000000000') {
+            throw new Error(
+              `Parent name "${parentName}.eth" is wrapped but has no owner (zero address). ` +
+              `This indicates the name was not properly wrapped. Please wrap the name first using the "Wrap ENS Name" button.`
+            );
+          }
+        } else if (nameStatus.ensRegistryOwner && nameStatus.ensRegistryOwner !== '0x0000000000000000000000000000000000000000') {
+          parentOwner = nameStatus.ensRegistryOwner;
+          console.log('Using ENS Registry owner:', parentOwner);
         } else {
           throw new Error(
             `Cannot determine owner of "${parentName}.eth". ` +

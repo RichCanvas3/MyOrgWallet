@@ -65,6 +65,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
   const [orgBalance, setOrgBalance] = useState<string>('0');
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const [isCreatingSubdomain, setIsCreatingSubdomain] = useState(false);
+  const [isWrapping, setIsWrapping] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const availabilityTimeoutRef = useRef<NodeJS.Timeout>();
@@ -324,10 +325,19 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
       return;
     }
 
-    const wrappedName = await EnsService.wrapEnsDomainName(orgAccountClient, cleanName, chain);
+    setIsWrapping(true);
+    setError('');
 
-    console.log(wrappedName);
-
+    try {
+      const wrappedName = await EnsService.wrapEnsDomainName(orgAccountClient, cleanName, chain);
+      console.log('ENS name wrapped successfully:', wrappedName);
+      setSuccess(`ENS name "${wrappedName}.eth" has been wrapped successfully! You can now create subdomains.`);
+    } catch (error) {
+      console.error('Error wrapping ENS name:', error);
+      setError(`Failed to wrap ENS name: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setIsWrapping(false);
+    }
   }
 
   // Register or update ENS name
@@ -824,6 +834,22 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
               </a>
             </Typography>
           </Box>
+          <Button
+            variant="contained"
+            onClick={() => wrapEnsName(ensName)}
+            disabled={isWrapping}
+            fullWidth
+            sx={{ mb: 2 }}
+          >
+            {isWrapping ? (
+              <>
+                <CircularProgress size={20} sx={{ mr: 1 }} />
+                Wrapping ENS...
+              </>
+            ) : (
+              'Wrap ENS Name'
+            )}
+          </Button>
           <Button
             variant="contained"
             onClick={createSubdomain}
