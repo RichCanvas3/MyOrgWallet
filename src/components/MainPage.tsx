@@ -145,7 +145,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const { data: walletClient } = useWalletClient();
 
-  const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, indivName, setOrgNameValue } = useWallectConnectContext();
+  const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, indivName, indivAccountClient, setOrgNameValue } = useWallectConnectContext();
 
 console.log('org name', orgName)
 
@@ -265,56 +265,56 @@ console.log('org name', orgName)
 
 
 
-  useEffect(() => {
 
-    if (orgAccountClient && chain && orgDid && indivDid) {
+    async function init() {
+      let orgname;
+      if (orgAccountClient && chain && orgDid && indivDid) {
 
-      console.info("************* orgDid: ", orgDid)
+        console.info("************* orgDid: ", orgDid)
 
-      AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
-        if (ents != undefined) {
+        await AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
 
-          setEntities(ents)
+          if (ents != undefined) {
 
-          const date = new Date()
+            setEntities(ents)
+            console.log(ents)
+            for (const entity of ents) {
+              if (entity.name == "org(org)" && entity.attestation) {
+                setOrgNameValue((entity.attestation as OrgAttestation).name)
+                orgname = (entity.attestation as OrgAttestation).name
+                console.log('orgname: ', orgname)
+              } else if (entity.name == "") {
 
-          console.log('Date: ', date)
-          console.log('Entities: ', ents)
-          for (const entity of ents) {
-            if (entity.name == "org(org)" && entity.attestation) {
-              setOrgNameValue((entity.attestation as OrgAttestation).name)
-            } else if (entity.name == "") {
+              }
+            }
 
+            if (!conversation) {
+
+              if (location.pathname.startsWith("/chat/c/")) {
+                let conversationId = location.pathname.replace("/chat/c/", "")
+                handleSelectedConversation(conversationId)
+              }
+              else {
+                newConversation(ents)
+              }
             }
           }
-
-          if (!conversation) {
-
-            if (location.pathname.startsWith("/chat/c/")) {
-              let conversationId = location.pathname.replace("/chat/c/", "")
-              handleSelectedConversation(conversationId)
-            }
-            else {
-              newConversation(ents)
-            }
-          }
-        }
-      })
+        })
 
 
-    }
-    else {
+      }
+      else {
 
-      console.info("------------> org is not defined")
-      navigate("/")
+        console.info("------------> org is not defined")
+        navigate("/")
+      }
+
+      return {"name": orgname, "state": 'undefined', "linkedin": 'undefined', "x": 'undefined', "state_registration": 'undefined', "ens_registration": 'undefined', "domain": 'undefined'};
     }
 
+  //const company_config = ''
 
-  }, [orgAccountClient, orgDid, indivDid]);
-
-  const company_config = {"name": orgName, "state": 'undefined', "linkedin": 'undefined', "x": 'undefined', "state_registration": 'undefined', "ens_registration": 'undefined', "domain": 'undefined'};
-
-console.log('company config: ', company_config)
+  //console.log('company config: ', company_config)
 
   useEffect(() => {
     //console.info("........ is connected: ", isConnected)
@@ -385,8 +385,9 @@ console.log('company config: ', company_config)
           setThreadID(threadIDResult);
 
           console.log('call langchain.....................')
-
+          const company_config = await init();
           console.log('cc name: ', company_config['name'])
+          console.log(company_config)
           getArgfromUserMessage(threadIDResult, `lets get started: Name: ${company_config["name"]}, State: ${company_config["state"]}, Domain: ${company_config["domain"]}, Linkedin: ${company_config["linkedin"]}, Twitter: ${company_config["x"]}, State Registration: ${company_config["state_registration"]}, ENS Registration: ${company_config["ens_registration"]}`).then(str => {
             if (str) {
               addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
@@ -677,7 +678,7 @@ console.log('company config: ', company_config)
       } else if (str.includes('state_register') && orgAccountClient && chain) {
         const listMessage = str.split(' ')
         console.log(listMessage)
-        const data = stateRegister(orgName, message, ngrok_url);
+        const data = stateRegister(orgName || '', message, ngrok_url);
         console.log('state data being jsoned', data);
         addMessage(Role.Assistant, MessageType.Normal, `${orgName} Registeration Verified!`, '', fileDataRef, sendMessage)
         /*
@@ -1099,7 +1100,7 @@ console.log('company config: ', company_config)
             const attestation: StateRegistrationAttestation = {
               idnumber: idNumber,
               status: status,
-              formationdate: formationDate,
+              formationdate: new Date(formationDate).getTime() / 1000, // Convert to Unix timestamp
               state: state,
               locationaddress: locationAddress,
               name: orgName,
@@ -1519,7 +1520,7 @@ console.log('company config: ', company_config)
       return args
     }
     */
-   //return "something went wrong"
+   return "something went wrong"
   }
 
 
@@ -1727,9 +1728,8 @@ console.log('company config: ', company_config)
           let state = command["state"]
           if (state) {
             if (isFirstCall) {
-              addOrgRegistrationAttestation(state).then(() => {
-
-              })
+              // Note: State registration attestation is handled elsewhere
+              // This is just a placeholder for the UI update
 
               entities?.forEach((ent) => {
                 if (ent.name == "state-registration(org)") {
