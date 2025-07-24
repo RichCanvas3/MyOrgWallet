@@ -125,7 +125,7 @@ const SetupSmartWalletModal: React.FC = () => {
 
   // Decide current action
   const stepAction = [
-    { label: 'Connect EOA Wallet - Use OP Mainnet', description: `
+    { label: 'Connect EOA Wallet', description: `
       <b>No wallet funds are required to get started with MyOrgWallet</b> <br/><br/>
 
       Make sure your browser is connected to your MetaMask account and that OP Mainnnet is configured properly - this is required. <br/><br/>

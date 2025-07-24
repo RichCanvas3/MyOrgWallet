@@ -165,7 +165,7 @@ console.log('org name', orgName)
   const [newOrgName, setNewOrgName] = useState("");
 
   const { isConnected } = useAccount();
-  
+
   const [threadID, setThreadID] = useState<string | null>(null);
 
   // Add state for thinking
@@ -263,18 +263,17 @@ console.log('org name', orgName)
     };
   }, []);
 
-  
+
 
   useEffect(() => {
-    
+
     if (orgAccountClient && chain && orgDid && indivDid) {
 
       console.info("************* orgDid: ", orgDid)
 
       AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
-        
         if (ents != undefined) {
-          
+
           setEntities(ents)
           console.log(ents)
           for (const entity of ents) {
@@ -380,8 +379,9 @@ console.log('company config: ', company_config)
 
         if (isMounted) {
           setThreadID(threadIDResult);
+
           console.log('call langchain.....................')
-          
+
           console.log('cc name: ', company_config['name'])
           getArgfromUserMessage(threadIDResult, `lets get started: Name: ${company_config["name"]}, State: ${company_config["state"]}, Domain: ${company_config["domain"]}, Linkedin: ${company_config["linkedin"]}, Twitter: ${company_config["x"]}, State Registration: ${company_config["state_registration"]}, ENS Registration: ${company_config["ens_registration"]}`).then(str => {
             if (str) {
@@ -460,7 +460,7 @@ console.log('company config: ', company_config)
       }
     };
 
-  
+
 
   const newConversation = (entities: Entity[]) => {
 
@@ -530,7 +530,7 @@ console.log('company config: ', company_config)
     messageBoxRef.current?.focusTextarea();
   };
 
-  
+
 
   const handleSelectedConversation = (id: string | null) => {
     if (id && id.length > 0) {
