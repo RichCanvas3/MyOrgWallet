@@ -265,53 +265,56 @@ console.log('org name', orgName)
 
   
 
-  useEffect(() => {
-    
-    if (orgAccountClient && chain && orgDid && indivDid) {
+  
+    async function init() {
+      let orgname;
+      if (orgAccountClient && chain && orgDid && indivDid) {
 
-      console.info("************* orgDid: ", orgDid)
+        console.info("************* orgDid: ", orgDid)
 
-      AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
-        
-        if (ents != undefined) {
+        await AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
           
-          setEntities(ents)
-          console.log(ents)
-          for (const entity of ents) {
-            if (entity.name == "org(org)" && entity.attestation) {
-              setOrgNameValue((entity.attestation as OrgAttestation).name)
-            } else if (entity.name == "") {
+          if (ents != undefined) {
+            
+            setEntities(ents)
+            console.log(ents)
+            for (const entity of ents) {
+              if (entity.name == "org(org)" && entity.attestation) {
+                setOrgNameValue((entity.attestation as OrgAttestation).name)
+                orgname = (entity.attestation as OrgAttestation).name
+                console.log('orgname: ', orgname)
+              } else if (entity.name == "") {
 
+              }
+            }
+
+            if (!conversation) {
+
+              if (location.pathname.startsWith("/chat/c/")) {
+                let conversationId = location.pathname.replace("/chat/c/", "")
+                handleSelectedConversation(conversationId)
+              }
+              else {
+                newConversation(ents)
+              }
             }
           }
-
-          if (!conversation) {
-
-            if (location.pathname.startsWith("/chat/c/")) {
-              let conversationId = location.pathname.replace("/chat/c/", "")
-              handleSelectedConversation(conversationId)
-            }
-            else {
-              newConversation(ents)
-            }
-          }
-        }
-      })
+        })
 
 
+      }
+      else {
+
+        console.info("------------> org is not defined")
+        navigate("/")
+      }
+
+      return {"name": orgname, "state": 'undefined', "linkedin": 'undefined', "x": 'undefined', "state_registration": 'undefined', "ens_registration": 'undefined', "domain": 'undefined'};
     }
-    else {
+    
+  //const company_config = ''
 
-      console.info("------------> org is not defined")
-      navigate("/")
-    }
-
-
-  }, [orgAccountClient, orgDid, indivDid]);
-
-  const company_config = {"name": orgName, "state": 'undefined', "linkedin": 'undefined', "x": 'undefined', "state_registration": 'undefined', "ens_registration": 'undefined', "domain": 'undefined'};
-
-console.log('company config: ', company_config)
+  //console.log('company config: ', company_config)
 
   useEffect(() => {
     //console.info("........ is connected: ", isConnected)
@@ -381,8 +384,9 @@ console.log('company config: ', company_config)
         if (isMounted) {
           setThreadID(threadIDResult);
           console.log('call langchain.....................')
-          
+          const company_config = await init();
           console.log('cc name: ', company_config['name'])
+          console.log(company_config)
           getArgfromUserMessage(threadIDResult, `lets get started: Name: ${company_config["name"]}, State: ${company_config["state"]}, Domain: ${company_config["domain"]}, Linkedin: ${company_config["linkedin"]}, Twitter: ${company_config["x"]}, State Registration: ${company_config["state_registration"]}, ENS Registration: ${company_config["ens_registration"]}`).then(str => {
             if (str) {
               addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
