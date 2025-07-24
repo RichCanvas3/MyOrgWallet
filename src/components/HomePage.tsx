@@ -1,6 +1,5 @@
 import * as React from 'react';
 import {useContext, useEffect, useRef, useState} from 'react';
-import { WagmiProvider, useAccount, useConnect, useWalletClient } from 'wagmi';
 
 import detectEthereumProvider from '@metamask/detect-provider';
 
@@ -12,6 +11,8 @@ import { useNavigate } from "react-router-dom";
 import { BuildingOfficeIcon, WalletIcon, ArrowRightCircleIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 
 import {ISSUER_PRIVATE_KEY, WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, ETHERSCAN_URL, BUNDLER_URL, PAYMASTER_URL} from "../config";
+import { createWeb3AuthSignatoryFactory } from "../signers/web3AuthSignatoryFactory";
+import { createInjectedProviderSignatoryFactory } from "../signers/injectedProviderSignatoryFactory";
 
 interface HomePageProps {
   className: string;
@@ -20,14 +21,14 @@ interface HomePageProps {
 const HomePage: React.FC<HomePageProps> = ({className}) => {
 
   const navigate = useNavigate();
-  const { data: walletClient } = useWalletClient();
   const [hasProvider, setHasProvider] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [connectionFailed, setConnectionFailed] = useState(false);
   const [hasAttemptedConnection, setHasAttemptedConnection] = useState(false);
+  const [connectionMethod, setConnectionMethod] = useState<'web3auth' | 'metamask'>('web3auth');
+  const [showConnectionOptions, setShowConnectionOptions] = useState(false);
 
-  const { selectedSignatory, signatory, connect, isIndividualConnected, orgDid, indivDid, isConnectionComplete } = useWallectConnectContext();
-  const { isConnected } = useAccount();
+  const { selectedSignatoryFactory, chain, connect, isIndividualConnected, orgDid, indivDid, isConnectionComplete, setSelectedSignatoryFactoryName } = useWallectConnectContext();
 
   useEffect(() => {
     const detectProvider = async () => {
@@ -39,30 +40,66 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
   }, []);
 
   useEffect(() => {
+    console.info("************* isConnectionComplete: ", isConnectionComplete)
+    console.info("************* isIndividualConnected: ", isIndividualConnected)
+    console.info("************* orgDid: ", orgDid)
+    console.info("************* indivDid: ", indivDid)
+    console.info("************* hasAttemptedConnection: ", hasAttemptedConnection)
+    console.info("************* location.pathname: ", location.pathname)
+
     // if wallet is defined and we have not defined smart wallet
-    if (isConnected && isIndividualConnected && orgDid && indivDid && !location.pathname.startsWith('/readme')) {
+    //if (isConnected && isIndividualConnected && orgDid && indivDid && !location.pathname.startsWith('/readme')) {
+    if (isIndividualConnected && orgDid && indivDid) {
+      console.info("************* navigate .............")
       setIsLoading(false); // Clear loading state when navigation happens
       setConnectionFailed(false); // Reset connection failed state
       setHasAttemptedConnection(false); // Reset connection attempt state
+      console.info("************* navigating to chat")
       navigate('/chat/')
     } else if (isConnectionComplete && !isIndividualConnected && hasAttemptedConnection) {
       // Connection process is complete but no accounts found, and user attempted connection
       setIsLoading(false);
       setConnectionFailed(true); // Set connection failed state
     }
-  }, [isConnected, isIndividualConnected, orgDid, indivDid, isConnectionComplete, hasAttemptedConnection]);
+  }, [isIndividualConnected, orgDid, indivDid, isConnectionComplete, hasAttemptedConnection]);
 
   const handleConnect = async () => {
     setIsLoading(true);
     setHasAttemptedConnection(true); // Mark that user has attempted connection
     setConnectionFailed(false); // Reset connection failed state
+    
     try {
-      if (selectedSignatory) {
-        const loginResp = await selectedSignatory.login()
+      if (!chain) {
+        throw new Error('Chain not available');
+      }
+
+      // Create the signatory directly based on connection method
+      let signatoryToUse;
+      if (connectionMethod === 'web3auth') {
+        const web3AuthSignatory = createWeb3AuthSignatoryFactory({
+          chain: chain,
+          web3AuthClientId: WEB3_AUTH_CLIENT_ID,
+          web3AuthNetwork: WEB3_AUTH_NETWORK,
+          rpcUrl: RPC_URL,
+        });
+        signatoryToUse = web3AuthSignatory;
+        setSelectedSignatoryFactoryName("web3AuthSignatoryFactory");
+      } else {
+        const injectedSignatory = createInjectedProviderSignatoryFactory({
+          chain: chain,
+          web3AuthClientId: WEB3_AUTH_CLIENT_ID,
+          web3AuthNetwork: WEB3_AUTH_NETWORK,
+          rpcUrl: RPC_URL,
+        });
+        signatoryToUse = injectedSignatory;
+        setSelectedSignatoryFactoryName("injectedProviderSignatoryFactory");
+      }
+
+      if (signatoryToUse) {
+        const loginResp = await signatoryToUse.login()
         if (loginResp && loginResp.signatory && loginResp.owner) {
           await connect(loginResp.owner, loginResp.signatory, "", "", "")
         }
-
       }
 
       //if (walletAuthRef.current) {
@@ -96,8 +133,8 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
         } catch (error) {
         }
 
-        if (selectedSignatory) {
-          const loginResp = await selectedSignatory.login()
+        if (selectedSignatoryFactory) {
+          const loginResp = await selectedSignatoryFactory.login()
           console.info("........ response from login: ", loginResp)
           if (loginResp) {
             await connect(loginResp.owner, loginResp.signatory, "", "", "")
@@ -314,8 +351,48 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
             Connect to your Externally Owned Account (EOA).
           </Typography>
 
+          {/* Connection Method Selection */}
+          <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+            <Button
+              variant={connectionMethod === 'web3auth' ? 'contained' : 'outlined'}
+              onClick={() => setConnectionMethod('web3auth')}
+              disabled={isLoading}
+              size="small"
+              sx={{ 
+                flex: 1,
+                backgroundColor: connectionMethod === 'web3auth' ? '#48ba2f' : 'transparent',
+                color: connectionMethod === 'web3auth' ? 'white' : '#48ba2f',
+                borderColor: '#48ba2f',
+                '&:hover': { 
+                  backgroundColor: connectionMethod === 'web3auth' ? '#3a9a25' : 'rgba(72, 186, 47, 0.1)',
+                  borderColor: '#3a9a25'
+                }
+              }}
+            >
+              Web3Auth
+            </Button>
+            <Button
+              variant={connectionMethod === 'metamask' ? 'contained' : 'outlined'}
+              onClick={() => setConnectionMethod('metamask')}
+              disabled={isLoading}
+              size="small"
+              sx={{ 
+                flex: 1,
+                backgroundColor: connectionMethod === 'metamask' ? '#48ba2f' : 'transparent',
+                color: connectionMethod === 'metamask' ? 'white' : '#48ba2f',
+                borderColor: '#48ba2f',
+                '&:hover': { 
+                  backgroundColor: connectionMethod === 'metamask' ? '#3a9a25' : 'rgba(72, 186, 47, 0.1)',
+                  borderColor: '#3a9a25'
+                }
+              }}
+            >
+              MetaMask
+            </Button>
+          </Box>
+
           <Button className="connect" variant="contained" size="large" onClick={handleConnect} sx={{backgroundColor: '#48ba2f'}} disabled={isLoading}>
-            {isLoading ? <CircularProgress size={20} /> : 'Connect Wallet'}
+            {isLoading ? <CircularProgress size={20} /> : `Connect with ${connectionMethod === 'web3auth' ? 'Web3Auth' : 'MetaMask'}`}
           </Button>
 
           {connectionFailed && (

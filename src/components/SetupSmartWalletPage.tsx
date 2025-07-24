@@ -1,9 +1,7 @@
 import * as React from 'react';
 import {useContext, useEffect, useRef, useState} from 'react';
 
-import {useNavigate} from 'react-router-dom';
 
-import { useAccount } from 'wagmi';
 import { Organization } from "../models/Organization"
 import AttestationService, { attestationsEmitter } from "../service/AttestationService";
 import { Attestation } from "../models/Attestation"

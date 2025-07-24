@@ -138,6 +138,10 @@ export type Snap = {
 export type WalletConnectContextState = {
 
     connect: (owner: string, signatory: any, organizationName: string, fullName: string, email: string) => Promise<void>;
+    disconnect: () => Promise<void>;
+
+    setSelectedSignatoryFactoryName: (signatoryFactoryName: "burnerSignatoryFactory" | "web3AuthSignatoryFactory" | "injectedProviderSignatoryFactory" | undefined) => void,
+
     setIndivAndOrgInfo: (indivName: string, orgName: string, indivEmail: string) => Promise<void>;
     buildSmartWallet: (owner: string, signatory: any, ) => Promise<void>;
     setupSmartWallet: (owner: string, signatory: any, ) => Promise<void>;
@@ -159,8 +163,8 @@ export type WalletConnectContextState = {
     orgIssuerDelegation?: Delegation,
     indivIssuerDelegation?: Delegation,
 
-    selectedSignatory?: SignatoryFactory,
-    selectedSignatoryName?: "burnerSignatoryFactory" | "web3AuthSignatoryFactory" | "injectedProviderSignatoryFactory",
+    selectedSignatoryFactory?: SignatoryFactory,
+    selectedSignatoryFactoryName?: "burnerSignatoryFactory" | "web3AuthSignatoryFactory" | "injectedProviderSignatoryFactory" | undefined,
     signatory?: any,
 
     privateIssuerDid?: string;
@@ -168,7 +172,6 @@ export type WalletConnectContextState = {
     
     setOrgNameValue: (orgNameValue: string) => Promise<void>,
     setOrgDidValue: (orgDidValue: string) => Promise<void>,
-    setSelectedSignatoryName: (signatoryName: "burnerSignatoryFactory" | "web3AuthSignatoryFactory" | "injectedProviderSignatoryFactory") => void,
 
     checkIfDIDBlacklisted: (did: string) => Promise<boolean>, 
 
@@ -205,7 +208,7 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
 
   signatory: undefined,
 
-  selectedSignatoryName: undefined,
+  selectedSignatoryFactoryName: undefined,
 
   privateIssuerDid: undefined,
   privateIssuerAccount: undefined,
@@ -223,6 +226,12 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
 
   connect: () => {
     throw new Error('WalletConnectContext must be used within a WalletConnectProvider');
+  },  
+  disconnect: () => {
+    throw new Error('WalletConnectContext must be used within a WalletConnectProvider');
+  },
+  setSelectedSignatoryFactoryName: () => {
+    throw new Error('WalletConnectContext must be used within a WalletConnectProvider');
   },
   buildSmartWallet: () => {
     throw new Error('WalletConnectContext must be used within a WalletConnectProvider');
@@ -235,7 +244,6 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
   },
   setOrgNameValue: async (orgNameValue: string) => {},
   setOrgDidValue: async (orgDidValue: string) => {},
-  setSelectedSignatoryName: (signatoryName: "burnerSignatoryFactory" | "web3AuthSignatoryFactory" | "injectedProviderSignatoryFactory") => {},
   checkIfDIDBlacklisted: async (did: string) : Promise<boolean> => { return false},
 })
 
@@ -243,11 +251,10 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
 
 export const useWalletConnect = () => {
 
-    const { isConnected } = useAccount();
     const { chain } = useWallectConnectContext();
 
 
-    const {selectedSignatory, setSelectedSignatoryName, selectedSignatoryName } =
+    const {selectedSignatory, setSelectedSignatoryFactoryName, selectedSignatoryFactoryName } =
       useSelectedSignatory({
         chain: chain, 
         web3AuthClientId: WEB3_AUTH_CLIENT_ID,
@@ -255,6 +262,8 @@ export const useWalletConnect = () => {
         rpcUrl: RPC_URL,
       });
 
+    // Rename variables to avoid confusion
+    const selectedSignatoryFactory = selectedSignatory;
       
 
     const [orgDid, setOrgDid] = useState<string>();
@@ -471,7 +480,13 @@ export const useWalletConnect = () => {
 
     useEffect(() => {
 
-      if (!chain || !isConnected || connectedAddress) {
+      // For Web3Auth, we don't rely on wagmi's isConnected
+      // For MetaMask, we use wagmi's isConnected
+      const shouldResetConnection = selectedSignatoryFactoryName === 'injectedProviderSignatoryFactory' 
+        ? (!chain || !signatory || connectedAddress)
+        : (!chain || connectedAddress);
+
+      if (shouldResetConnection) {
         try {
           setConnectedAddress(undefined);
         }
@@ -480,11 +495,25 @@ export const useWalletConnect = () => {
         }
       }
 
-      setSelectedSignatoryName("injectedProviderSignatoryFactory")
+      // The signatory factory name is explicitly set by the components
+      // No need to detect it from the signatory transport
+      if (!selectedSignatoryFactoryName && signatory) {
+        console.info("************* signatory factory name not set, but signatory exists")
+        console.info("************* This should not happen as components explicitly set the factory name")
+      }
 
-    }, [chain, isConnected, connectedAddress]);
+    }, [chain, signatory, connectedAddress, selectedSignatoryFactoryName]);
 
     const setupSnap = async (ownerAddress: string) : Promise<any|undefined> => {   
+
+      // Only setup MetaMask snaps if we're using MetaMask (injected provider)
+      // For Web3Auth, we don't need MetaMask snaps
+      const isUsingMetaMask = selectedSignatoryFactoryName === 'injectedProviderSignatoryFactory';
+      
+      if (!isUsingMetaMask) {
+        console.info("Skipping MetaMask snap setup for Web3Auth");
+        return undefined;
+      }
 
       const provider = window.ethereum;
       if (provider) {
@@ -544,6 +573,8 @@ export const useWalletConnect = () => {
           let localOrgAddress = undefined
           let localOrgDid = undefined
 
+          console.info("------------> getConnected 1a: ", signatory, owner, chain)
+          console.info("------------> getConnected 2a: ", publicClient, selectedSignatory, privateIssuerDid)
           if (publicClient && selectedSignatory && privateIssuerDid) {
 
             const privateKey = ISSUER_PRIVATE_KEY;
@@ -590,6 +621,9 @@ export const useWalletConnect = () => {
             
             const orgIndivAttestation = await AttestationService.getOrgIndivAttestation(chain, localIndivDid, AttestationService.OrgIndivSchemaUID, "org-indiv(org)");
             const indivAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, localIndivDid, AttestationService.IndivSchemaUID, "indiv(indiv)", "")
+
+            console.info("------------> indivAttestation: ", indivAttestation)
+            console.info("------------> orgIndivAttestation: ", orgIndivAttestation)
 
             if (indivAttestation) {
               setIndivName((indivAttestation as IndivAttestation).name)
@@ -732,6 +766,10 @@ export const useWalletConnect = () => {
               }
             }
 
+            if (indivIssuerDel) {
+              setIndivIssuerDelegation(indivIssuerDel as Delegation)
+            }
+
             if (localOrgDid) {
               const attestation = await AttestationService.getAttestationByDidAndSchemaId(chain, localOrgDid, AttestationService.RegisteredDomainSchemaUID, "domain(org)", "")
               if (attestation) {
@@ -766,7 +804,7 @@ export const useWalletConnect = () => {
 
             // cycle through savings accounts and add burner account abstraction to each
             console.info("************* save account burner del: ", signatory.walletClient.account.address)
-            console.info("************* vals: ", localOrgDid, indivDid, indivAccountClient)
+            console.info("************* vals: ", localOrgDid, localIndivDid, indivAccountClient)
             if (localOrgDid && localIndivDid && indivAccountClient) {
               const accounts = await AttestationService.loadIndivAccounts(chain, localOrgDid, localIndivDid, "1110");
               console.info("************* accounts: ", accounts)
@@ -804,18 +842,25 @@ export const useWalletConnect = () => {
                 }
                 
               }
+
+              console.info("************* configured properly so set connection complete  ")
               setIsIndividualConnected(true)
+              setIsConnectionComplete(true);
             }
             else {
-              console.info("************* no accounts found")
+              console.info("************* not configured properly")
               setIsIndividualConnected(false)
-              setIsConnectionComplete(true);
+              //setIsConnectionComplete(true);
             }
 
           }
+          console.info("************* getConnected return")
         }
-        
-        getConnected()
+
+        console.info("************* getConnected")
+        getConnected().then(() => {
+          console.info("************* getConnected done")
+        })
       }
 
     }, [signatory, owner]);
@@ -1451,7 +1496,7 @@ export const useWalletConnect = () => {
           const addOrgAttestation = async (mascaApi: any) => {
 
             console.info("*********** ADD ORG ATTESTATION 2 ****************")
-            console.info("selectedSignatoryName: ", selectedSignatoryName);
+            console.info("selectedSignatoryFactoryName: ", selectedSignatoryFactoryName);
             console.info("signatory: ", signatory);
 
             // Use the signer directly from signatory
@@ -1689,7 +1734,7 @@ export const useWalletConnect = () => {
             }
 
             await DelegationService.saveDelegationToStorage("relationship", owner, indivAccountClient.address, burnerAccountClient.address, indivIssuerDel)
-         }
+          }
 
           setIndivIssuerDelegation(indivIssuerDel as Delegation)
 
@@ -1816,6 +1861,12 @@ export const useWalletConnect = () => {
       console.info("setup smart wallet - done")
     }
 
+    const disconnect = async () => {
+      console.info("*********** disconnect")
+      setSignatory(undefined)
+      setOwner(undefined)
+    }
+
     const connect = async (owner: any, signatory: any, organizationName: string, fullName: string, email: string) => {
       console.info("*********** set signatory: ", signatory)
       setSignatory(signatory)
@@ -1850,16 +1901,18 @@ export const useWalletConnect = () => {
             orgIssuerDelegation,
             indivIssuerDelegation,
 
-            selectedSignatory,
-            selectedSignatoryName,
+            selectedSignatoryFactory,
+            selectedSignatoryFactoryName,
 
             connect,
+            disconnect,
+            setSelectedSignatoryFactoryName,
+
             setIndivAndOrgInfo,
             buildSmartWallet,
             setupSmartWallet,
             setOrgNameValue,
             setOrgDidValue,
-            setSelectedSignatoryName,
             checkIfDIDBlacklisted,
             isConnectionComplete
 
@@ -1891,11 +1944,15 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
       indivIssuerDelegation,
 
       connect, 
+      disconnect,
+      setSelectedSignatoryFactoryName,
+
       setIndivAndOrgInfo,
       buildSmartWallet,
       setupSmartWallet,
 
-      selectedSignatory,
+      selectedSignatoryFactory,
+      selectedSignatoryFactoryName,
       signatory,
 
       privateIssuerDid,
@@ -1906,7 +1963,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
       
       setOrgNameValue,
       setOrgDidValue,
-      setSelectedSignatoryName,
+
       checkIfDIDBlacklisted,
       isConnectionComplete
     } =
@@ -1934,7 +1991,8 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         orgIssuerDelegation,
         indivIssuerDelegation,
 
-        selectedSignatory,
+        selectedSignatoryFactory,
+        selectedSignatoryFactoryName,
         signatory,
 
         privateIssuerAccount,
@@ -1944,12 +2002,15 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         mascaApi,
 
         connect,
+        disconnect, 
+        setSelectedSignatoryFactoryName,
+
         setIndivAndOrgInfo,
         buildSmartWallet,
         setupSmartWallet,
         setOrgNameValue,
         setOrgDidValue,
-        setSelectedSignatoryName,
+
         checkIfDIDBlacklisted,
         isConnectionComplete
       }),
@@ -1971,7 +2032,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         orgIssuerDelegation,
         indivIssuerDelegation,
 
-        selectedSignatory,
+        selectedSignatoryFactory,
         signatory,
 
         privateIssuerDid,
@@ -1981,12 +2042,15 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         mascaApi,
 
         connect,
+        disconnect,
+        setSelectedSignatoryFactoryName,
+
         setIndivAndOrgInfo,
         buildSmartWallet,
         setupSmartWallet,
         setOrgNameValue,
         setOrgDidValue,
-        setSelectedSignatoryName,
+
         checkIfDIDBlacklisted,
         isConnectionComplete]
     );

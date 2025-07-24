@@ -42,7 +42,7 @@ interface ApproveAccountAccessModalProps {
 
 const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ isVisible, onClose }) => {
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { chain, orgDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, orgAccountClient, privateIssuerAccount, burnerAccountClient, mascaApi, veramoAgent, indivDid, selectedSignatoryName, signatory } = useWallectConnectContext();
+  const { chain, orgDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, orgAccountClient, privateIssuerAccount, burnerAccountClient, mascaApi, veramoAgent, indivDid,  signatory } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   const [accounts, setAccounts] = useState<Account[]>([]);

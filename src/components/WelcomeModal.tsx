@@ -58,7 +58,7 @@ const WelcomeModal: React.FC = () => {
   const [connectionMethod, setConnectionMethod] = useState<'web3auth' | 'metamask'>('web3auth');
   const [toast, setToast] = useState({ open: false, message: '', severity: 'info' as 'info' | 'success' | 'error' });
 
-  const { chain, setIndivAndOrgInfo, setOrgNameValue, setOrgDidValue, checkIfDIDBlacklisted, setSelectedSignatoryName } = useWallectConnectContext();
+  const { chain, setIndivAndOrgInfo, setOrgNameValue, setOrgDidValue, checkIfDIDBlacklisted, setSelectedSignatoryFactoryName } = useWallectConnectContext();
 
   const steps: Step[] = [
     { id: 1, title: 'Your Name',      isActive: currentStep === 1, isCompleted: currentStep > 1 },
@@ -204,7 +204,7 @@ const WelcomeModal: React.FC = () => {
           handleToast(`Web3Auth account ${action} successfully!`, 'success');
           
           // Set the signatory type to Web3Auth
-          setSelectedSignatoryName("web3AuthSignatoryFactory");
+          setSelectedSignatoryFactoryName("web3AuthSignatoryFactory");
           console.log('Web3Auth signatory type set and stored:', signatory);
           
           // get ready for step 4
@@ -286,7 +286,7 @@ const WelcomeModal: React.FC = () => {
           
           // Set the signatory type to injected provider for MetaMask
           // This ensures the setup page uses the correct signatory
-          setSelectedSignatoryName("injectedProviderSignatoryFactory");
+          setSelectedSignatoryFactoryName("injectedProviderSignatoryFactory");
           console.log('MetaMask signatory type set to injected provider');
           
           // get ready for step 4

@@ -56,20 +56,16 @@ const WalletAuth = forwardRef<WalletAuthRef, WalletAuthProps>((props, ref) => {
   const { selectedSignatory, connect, orgDid } = useWallectConnectContext();
 
 
-  const navigate = useNavigate();
-
-  const { open } = useAppKit(); // Hook to control the AppKit modal
-  const { connectors } = useConnect();
-  const { address, isConnected } = useAccount();
-
   const { data: walletClient } = useWalletClient();
   const hasFiredOnce = useRef(false);
 
 
   const openWalletPopup = () => {
     console.info(">>>>>>>>>>>>>> open wallet popup")
-    selectedSignatory.login().then(( owner, signatory ) => {
-    })
+    if (selectedSignatory) {
+      selectedSignatory.login().then(( owner, signatory ) => {
+      })
+    }
 
     /*
     open().then(() => { // Opens the AppKit modal with X login option 

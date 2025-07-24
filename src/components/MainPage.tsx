@@ -146,7 +146,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const { data: walletClient } = useWalletClient();
 
-  const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, setOrgNameValue, selectedSignatoryName, signatory } = useWallectConnectContext();
+  const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, setOrgNameValue, signatory } = useWallectConnectContext();
 
   const [isDeleteAttestationsModalVisible, setDeleteAttestationsModalVisible] = useState(false);
   const [isApproveLeaderModalVisible, setApproveLeaderModalVisible] = useState(false);
@@ -163,7 +163,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const [isOrgModalVisible, setOrgModalVisible] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
 
-  const { isConnected } = useAccount();
 
   const [threadID, setThreadID] = useState<string | null>(null);
 
@@ -316,13 +315,14 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   }, [orgAccountClient, orgDid, indivDid]);
 
+
   useEffect(() => {
-    //console.info("........ is connected: ", isConnected)
-    if (isConnected == false) {
+    //console.info("........ is connected: ", signatory)
+    if (signatory == undefined) {
       navigate('/')
     }
 
-  }, [isConnected]);
+  }, [signatory]);
 
   useEffect(() => {
     conversationsEmitter.on('conversationChangeEvent', handleConversationChange);
@@ -626,11 +626,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       }
 
       addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
-      console.log('Data From Stream: ', str);
     })
     //message = message + ", Please respond with a JSON object. Include keys like 'company_name', 'state_name', 'email' if they exist."
 
-    console.info("user message entered: ", message)
   };
 
   const addMessage = (
@@ -1359,7 +1357,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         return response.message;
       } else {
         var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'none', {}, linkedInAuthRef, xAuthRef);
-        console.log('LangChain Response final: ', response.message)
         return response.message;
       }
     }

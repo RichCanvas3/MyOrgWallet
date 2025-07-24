@@ -3,6 +3,7 @@ import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
 import { Web3Auth } from "@web3auth/modal";
 import { createWalletClient, custom, toHex, type Address } from "viem";
 import { ethers } from "ethers";
+import { privateKeyToAccount } from "viem/accounts";
 import type {
   SignatoryFactoryConfig,
   SignatoryFactoryConfigurator,
@@ -44,27 +45,58 @@ export const createWeb3AuthSignatoryFactory: SignatoryFactoryConfigurator = (
       throw new Error("Failed to connect web3auth");
     }
 
+    console.info("************* web3auth.connected: ", web3auth.connected);
     const provider = web3auth.provider!;
 
-    const [owner] = (await provider.request({
-      method: "eth_accounts",
-    })) as Address[];
+    // Get the private key from Web3Auth provider
+    let privateKey: string;
+    try {
+      privateKey = await provider.request({ method: 'private_key' }) as string;
+    } catch (error) {
+      console.log('Failed to get private key with "private_key" method, trying "eth_private_key"...');
+      try {
+        privateKey = await provider.request({ method: 'eth_private_key' }) as string;
+      } catch (error2) {
+        console.log('Failed to get private key with "eth_private_key" method, trying "getPrivateKey"...');
+        try {
+          privateKey = await provider.request({ method: 'getPrivateKey' }) as string;
+        } catch (error3) {
+          console.error('All private key methods failed:', { error, error2, error3 });
+          throw new Error('Failed to get private key from Web3Auth provider');
+        }
+      }
+    }
+
+    // Ensure the private key has the correct format
+    let formattedPrivateKey = privateKey;
+    if (!privateKey.startsWith('0x')) {
+      formattedPrivateKey = `0x${privateKey}`;
+    }
+
+    // Create viem account from private key
+    const account = privateKeyToAccount(formattedPrivateKey as `0x${string}`);
+    const owner = account.address;
+
+    // Create a custom transport that uses Web3Auth provider directly
+    const customTransport = custom(provider);
 
     const walletClient = createWalletClient({
       chain,
-      transport: custom(provider),
+      transport: customTransport,
       account: owner,
     });
 
-    // Create ethers signer from the Web3Auth provider
-    const ethersProvider = new ethers.BrowserProvider(provider);
-    const signer = await ethersProvider.getSigner();
+    // Create ethers signer from the Web3Auth provider directly
+    // Don't use BrowserProvider as it might interface with MetaMask
+    const ethersProvider = new ethers.JsonRpcProvider(rpcUrl);
+    const signer = new ethers.Wallet(formattedPrivateKey, ethersProvider);
 
     return {
       owner,
       signatory: { 
         walletClient,
-        signer, // Add the signer to the signatory
+        signer,
+        account, // Include the viem account for compatibility
       },
     };
   };
@@ -76,6 +108,9 @@ export const createWeb3AuthSignatoryFactory: SignatoryFactoryConfigurator = (
   return {
     login,
     logout,
-    canLogout: () => web3auth.connected,
+    canLogout: () => {
+      console.info("************* canLogout: ", web3auth.connected);
+      return web3auth.connected;
+    },
   };
 };

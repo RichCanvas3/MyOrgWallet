@@ -19,10 +19,10 @@ const Sidebar: React.FC<SidebarProps> = ({className, isSidebarCollapsed, toggleS
   const {t} = useTranslation();
   const navigate = useNavigate();
   const [isSettingsModalVisible, setSettingsModalVisible] = useState(false);
-  const { isConnected  } = useAccount();
+  const { signatory } = useWallectConnectContext();
 
   const handleNewChat = () => {
-    if (isConnected && !location.pathname.startsWith('/readme')) {
+    if (signatory && !location.pathname.startsWith('/readme')) {
       navigate('/chat/', {state: {reset: Date.now()}});
     }
     

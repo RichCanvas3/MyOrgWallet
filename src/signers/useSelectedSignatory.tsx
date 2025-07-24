@@ -17,8 +17,8 @@ export const useSelectedSignatory = (config: SignatoryFactoryConfig) => {
     [K in SignatoryFactoryName]: SignatoryFactory;
   }>();
 
-  const [selectedSignatoryName, setSelectedSignatoryName] =
-    useState<SignatoryFactoryName>("burnerSignatoryFactory");
+  const [selectedSignatoryFactoryName, setSelectedSignatoryFactoryName] =
+    useState<SignatoryFactoryName | undefined>(undefined);
 
   useEffect(() => {
     const factoriesByName = {
@@ -32,11 +32,12 @@ export const useSelectedSignatory = (config: SignatoryFactoryConfig) => {
 
   const selectedSignatory =
     configuredFactoriesByName &&
-    configuredFactoriesByName[selectedSignatoryName];
+    selectedSignatoryFactoryName &&
+    configuredFactoriesByName[selectedSignatoryFactoryName];
 
   return {
     selectedSignatory,
-    setSelectedSignatoryName,
-    selectedSignatoryName,
+    selectedSignatoryFactoryName,
+    setSelectedSignatoryFactoryName,
   };
 };

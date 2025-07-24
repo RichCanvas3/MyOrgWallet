@@ -1,53 +1,82 @@
 import React, {useContext, useEffect, useRef, useState} from 'react';
 import { AppBar, Toolbar, IconButton, Menu, MenuItem, Typography, Box, Button } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-import myOrgWalletLogo from "/icon.png";
-import { useDisconnect } from 'wagmi';
 import UserSettingsModal from './UserSettingsModal';
 import SettingsIcon from "@mui/icons-material/Settings";
-import { useAccount, useWalletClient } from 'wagmi';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
-import ProfileService, {
-  Profile,
-  ProfileChangeEvent,
-  profileEmitter
-} from "../service/ProfileService";
 
 
 
-const handleConnect = async () => {
-    //try {
-    //  if (walletAuthRef.current) {
-    //    walletAuthRef.current.openWalletPopup()
-    //  }
-    //} catch (error) {
-    //  console.error("Wallet connection failed:", error);
-    //}
-  };
 
-  interface HeaderProps {
-    className: string;
-  }
+
+
+interface HeaderProps {
+  className: string;
+}
 
 const Header: React.FC<HeaderProps> = ({className}) => {
 
-  const { disconnect } = useDisconnect();
-  const { isConnected } = useAccount();
+  const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
 
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  const { orgName, indivName, signatory, selectedSignatoryFactoryName, selectedSignatoryFactory } = useWallectConnectContext();
 
-  const { orgName, indivName } = useWallectConnectContext();
 
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-  const handleMenuOpen = (event) => {
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
 
   const handleMenuClose = () => {
     setAnchorEl(null);
+  };
+
+  const disconnect = async () => {
+    try {
+      console.info("************* disconnect inside: signatory: ", signatory)
+      
+      // Use the signatory factory's logout method if available
+      console.info("************* selectedSignatoryFactoryName: ", selectedSignatoryFactoryName);
+      console.info("************* selectedSignatoryFactory: ", selectedSignatoryFactory);
+      console.info("************* selectedSignatoryFactory.canLogout(): ", selectedSignatoryFactory?.canLogout());
+      console.info("************* selectedSignatoryFactory.logout: ", selectedSignatoryFactory?.logout);
+      
+      if (selectedSignatoryFactory && selectedSignatoryFactory.canLogout() && selectedSignatoryFactory.logout) {
+        console.info("************* calling signatory factory logout")
+        await selectedSignatoryFactory.logout();
+      } else {
+
+        /*
+        console.info("************* signatory factory logout not available, falling back to direct methods")
+        
+        // Fallback to direct methods
+        if (selectedSignatoryFactoryName === 'web3AuthSignatoryFactory') {
+          console.info("************* web3AuthSignatoryFactory logout")
+          await Web3AuthService.disconnect();
+        }
+        */
+      }
+      
+      /*
+      // For MetaMask, also call wagmi disconnect
+      if (selectedSignatoryFactoryName === 'injectedProviderSignatoryFactory') {
+        console.info("************* injectedProviderSignatoryFactory disconnect")
+        wagmiDisconnect();
+      }
+        */
+      
+      // Clear the selected signatory factory
+      
+      disconnect();
+      
+      // Navigate back to home
+      navigate('/');
+      
+    } catch (error) {
+      console.error('Error disconnecting wallet:', error);
+    }
   };
 
   const handleWallet = () => {
@@ -90,7 +119,7 @@ const Header: React.FC<HeaderProps> = ({className}) => {
     </div>
     <div className="actions-container">
 
-    {isConnected && (
+    {signatory && (
       <>
       <div className="profile-box">
         <Typography variant="subtitle2" className="profile-text">

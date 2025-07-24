@@ -225,7 +225,7 @@ class AttestationService {
                 hash: "",
               }
               entity.attestation = att
-              console.info("------------> entity attestation: ", entity.attestation)
+              //console.info("------------> entity attestation: ", entity.attestation)
             }
           }
 
@@ -2697,7 +2697,6 @@ class AttestationService {
             children: [],
           };
   
-          console.info("@@@@@@@@@@@@@ accountAtt found: ", coaCategory, acct.parentId)
           if (acct.parentId == coaCategory) {
             accounts.push(acct);
           }
@@ -2707,7 +2706,6 @@ class AttestationService {
       }
     }
 
-    console.info("@@@@@@@@@@@@@ accounts: ", accounts)
     return accounts;
   }
 

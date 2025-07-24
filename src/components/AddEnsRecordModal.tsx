@@ -1,9 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
-import { useAccount } from 'wagmi';
-import { ethers } from 'ethers';
 import { encodeFunctionData, createPublicClient, http } from 'viem';
-import { createBundlerClient } from 'viem/account-abstraction';
 import { namehash } from 'viem';
 
 import {
@@ -66,7 +63,6 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
 
 
   const { chain, orgAccountClient, burnerAccountClient } = useWallectConnectContext();
-  const { isConnected } = useAccount();
 
   const handleNext = () => {
     setActiveStep((prevStep) => prevStep + 1);

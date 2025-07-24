@@ -14,7 +14,6 @@ import {MagnifyingGlassIcon} from "@heroicons/react/24/outline";
 
 import WelcomeModal from './WelcomeModal';
 
-import { useAccount } from 'wagmi';
 
 import '../custom_styles.css'
 

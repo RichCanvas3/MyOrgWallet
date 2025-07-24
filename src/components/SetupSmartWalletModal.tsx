@@ -33,7 +33,7 @@ const SetupSmartWalletModal: React.FC = () => {
   }
 
   const navigate = useNavigate();
-  const { selectedSignatory, selectedSignatoryName, buildSmartWallet, setupSmartWallet, chain } = useWallectConnectContext();
+  const { selectedSignatoryFactory, selectedSignatoryFactoryName, buildSmartWallet, setupSmartWallet, chain } = useWallectConnectContext();
 
 
   const [steps, setSteps] = useState<Step[]>([
@@ -76,7 +76,7 @@ const SetupSmartWalletModal: React.FC = () => {
     setIsSubmitting(true);
     try {
       // Get the signatory from the context (set during welcome page)
-      if (!selectedSignatory) {
+      if (!selectedSignatoryFactory) {
         throw new Error('No wallet connected. Please complete the welcome setup first.');
       }
 
@@ -85,9 +85,8 @@ const SetupSmartWalletModal: React.FC = () => {
       
       // Check if we're using MetaMask (injected provider) or Web3Auth
       const provider = (window as any).ethereum;
-      const isUsingMetaMask = selectedSignatory && provider && selectedSignatoryName === 'injectedProviderSignatoryFactory';
-      
-      if (isUsingMetaMask) {
+
+      if (selectedSignatoryFactoryName === 'injectedProviderSignatoryFactory') {
         try {
           // Try to get current accounts without requesting permissions
           const accounts = await provider.request({ method: 'eth_accounts' });
@@ -114,10 +113,11 @@ const SetupSmartWalletModal: React.FC = () => {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           throw new Error(`MetaMask connection error: ${errorMessage}. Please ensure MetaMask is connected and try again.`);
         }
-      } else {
+      } 
+      else if (selectedSignatoryFactoryName === 'web3AuthSignatoryFactory') {{
         // For Web3Auth or other providers, we can safely call login
         console.info("web3Auth login")
-        const loginResp = await selectedSignatory.login();
+        const loginResp = await selectedSignatoryFactory.login();
         owner = loginResp.owner;
         signatory = loginResp.signatory;
         console.info("web3Auth login done: ", owner, signatory)
@@ -127,7 +127,8 @@ const SetupSmartWalletModal: React.FC = () => {
       await buildSmartWallet(owner, signatory);
       handleToast('Smart wallet built', 'success');
       advanceStep();
-    } catch (err: any) {
+      }
+  } catch (err: any) {
       handleToast(err.message || 'Build failed', 'error');
     } finally {
       setIsSubmitting(false);
@@ -138,7 +139,7 @@ const SetupSmartWalletModal: React.FC = () => {
     setIsSubmitting(true);
     try {
       // Get the signatory from the context (set during welcome page)
-      if (!selectedSignatory) {
+      if (!selectedSignatoryFactory) {
         throw new Error('No wallet connected. Please complete the welcome setup first.');
       }
 
@@ -147,8 +148,8 @@ const SetupSmartWalletModal: React.FC = () => {
       
       // Check if we're using MetaMask (injected provider) or Web3Auth
       const provider = (window as any).ethereum;
-      const isUsingMetaMask = selectedSignatory && provider && selectedSignatoryName === 'injectedProviderSignatoryFactory';
-      
+      const isUsingMetaMask = selectedSignatoryFactory && provider && selectedSignatoryFactoryName === 'injectedProviderSignatoryFactory';
+      console.info("------------> handleBuildWallet 2: ", isUsingMetaMask)
       if (isUsingMetaMask) {
         try {
           // Try to get current accounts without requesting permissions
@@ -178,7 +179,7 @@ const SetupSmartWalletModal: React.FC = () => {
         }
       } else {
         // For Web3Auth or other providers, we can safely call login
-        const loginResp = await selectedSignatory.login();
+        const loginResp = await selectedSignatoryFactory.login();
         owner = loginResp.owner;
         signatory = loginResp.signatory;
       }

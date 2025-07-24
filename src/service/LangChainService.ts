@@ -116,39 +116,33 @@ export async function sendMessageToLangGraphAssistant(
     })
   })
   
-  console.log('Unjsoned Data: ', JSON.stringify(data));
   const data2 = await data.text();
   const dataList = data2.split("event: ");
-  console.log('dataList: ',dataList)
+
   try {
     var completedMessage = dataList[dataList.length - 2];
-    console.log(completedMessage);
+
     var dataSplit = completedMessage.split('":');
     var furtherSplit = dataSplit[1].split(',"');
     var furtherFurtherSplit = furtherSplit[0].replace(new RegExp(`^${'"'}+|${'"'}+$`, 'g'), '');
     var further3Split = furtherFurtherSplit.split('\\n');
     var finalMessage = further3Split.join(' ');  
-    console.log(finalMessage);
+    
     if (tool == 'state_register') {
-      console.log('state data being jsoned');
+      
       var split = finalMessage.split('-');
-      console.log(split)
       var id = (split[1].split('** '))[1];
       var name = 'test';
       var formDate = (split[4].split('** '))[1];
       var address = (split[5].split('** '))[1];
-      console.log(id, formDate, address)
       return {message: finalMessage, id: id, name: name, formDate: formDate, address: address}
     } else if (tool == 'linkedin_verification') {
-      console.log('linkedin Oauth being done')
       if (linkedInAuthRef?.current) {
         linkedInAuthRef.current.openLinkedInPopup();
       } else {
         console.warn('linkedInAuthRef is not available or not attached to a component instance.');
       }
-      console.log('response: ', 'response')
-    } else if (tool == "x_verification") {
-      console.log("x auth being done")
+     } else if (tool == "x_verification") {
       if (XAuthRef?.current) {
         XAuthRef.current.openXPopup();
       }

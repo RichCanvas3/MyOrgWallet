@@ -118,7 +118,6 @@ class ConversationService {
       }
     }
 
-    console.info("------------> storeConversation: ", conversation )
     conversation.messages = JSON.stringify(messagesCopy);
     await db.conversations.put(conversation);
   }

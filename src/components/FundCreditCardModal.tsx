@@ -152,7 +152,6 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
   const [isLoadingTokens, setIsLoadingTokens] = useState(false);
 
   const { signatory, chain, indivDid, orgDid, indivAccountClient, orgAccountClient, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation } = useWallectConnectContext();
-  const { isConnected } = useAccount();
 
   const { getUSDCChainTokenInfo, getUSDCBalance } = useCrossChainAccount();
 
@@ -1938,11 +1937,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
             </div>
 
             <div className="flex flex-col p-4" style={{ height: "calc(90vh - 70px)" }}>
-              {!isConnected ? (
-                <Box display="flex" flexDirection="column" alignItems="center" gap={2} p={4}>
-                  <Typography variant="h6">Connect your MetaMask wallet</Typography>
-                </Box>
-              ) : (
+
                 <Box display="flex" flexDirection="column" height="100%">
                   <Stepper activeStep={activeStep} sx={{ width: '100%', mb: 4 }}>
                     {steps.map((label) => (
@@ -1953,7 +1948,6 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
                   </Stepper>
                   {renderStepContent()}
                 </Box>
-              )}
             </div>
           </div>
         </Transition.Child>

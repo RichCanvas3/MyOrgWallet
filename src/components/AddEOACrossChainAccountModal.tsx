@@ -185,7 +185,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
 
   const { getUSDCChainTokenInfo, getUSDCBalance, getEthBalance } = useCrossChainAccount();
 
-  const { isConnected, address } = useAccount();
+
   const { connect } = useConnect();
 
   const handleNext = () => {
@@ -717,14 +717,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
                 Select Chain & MetaMask Account
               </Typography>
               
-              {!isConnected ? (
-                <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
-                  <Typography variant="body1">Please connect your MetaMask wallet</Typography>
-                  <Button variant="contained" onClick={connectWallet}>
-                    Connect MetaMask
-                  </Button>
-                </Box>
-              ) : (
+
                 <Box display="flex" flexDirection="column" gap={3}>
                   <FormControl fullWidth>
                     <InputLabel>Select Chain</InputLabel>
@@ -792,10 +785,10 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
                     </Box>
                   )}
                 </Box>
-              )}
+
             </Box>
 
-            {isConnected && (
+
               <Box display="flex" justifyContent="space-between" gap={2} mt={4}>
                 <Button onClick={handleBack} tabIndex={-1}>
                   Back
@@ -808,7 +801,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
                   Next
                 </Button>
               </Box>
-            )}
+
           </Box>
         );
 
@@ -1086,13 +1079,9 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
 
   useEffect(() => {
     if (isVisible && activeStep === 0) {
-      if (!isConnected) {
-        connectWallet();
-      } else {
         getMetaMaskAccounts();
-      }
     }
-  }, [isVisible, activeStep, isConnected]);
+  }, [isVisible, activeStep]);
 
   return (
     <Transition show={isVisible} as={React.Fragment}>

@@ -1,9 +1,7 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import { useAccount, useConnect } from 'wagmi';
-import { injected } from 'wagmi/connectors';
+
 import { keccak256, toUtf8Bytes } from 'ethers';
-import { ethers, AbiCoder } from 'ethers';
 import { encodeFunctionData, hashMessage, createPublicClient, createWalletClient, WalletClient, toHex, http, zeroAddress, publicActions, custom, verifyMessage, signatureToCompactSignature  } from "viem";
 
 import {
@@ -76,7 +74,6 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose, o
 
   const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, signatory, indivDid, indivName, indivAccountClient } = useWallectConnectContext();
 
-  const { isConnected, address } = useAccount();
 
   const findValidOrgAccount = async(owner: any, signatory: any, publicClient: any) : Promise<ToMetaMaskSmartAccountReturnType<Implementation.Hybrid> | undefined> => {
     const startSeed = 50000
@@ -105,7 +102,8 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose, o
   }
 
   const handleSave = async () => {
-    if (!address || !accountName || !coaCode || !coaCategory) {
+    const ownerAddress = signatory.walletClient.account.address
+    if (!ownerAddress || !accountName || !coaCode || !coaCategory) {
       setError('Missing required information');
       return;
     }
@@ -125,7 +123,7 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose, o
       transport: http(RPC_URL),
     });
 
-    const accountClient = await findValidOrgAccount(address, signatory, publicClient)
+    const accountClient = await findValidOrgAccount(ownerAddress, signatory, publicClient)
     let isDeployed = await accountClient?.isDeployed()
     console.info("is indivAccountClient deployed: ", isDeployed)
 
@@ -245,11 +243,10 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose, o
 
       console.info("fullVc: ", fullVc)
       console.info("chain: ", chain)
-      console.info("indivAccountClient: ", indivAccountClient)
-      console.info("burnerAccountClient: ", burnerAccountClient)
-      console.info("orgIssuerDelegation: ", orgIssuerDelegation)
-      console.info("orgIndivDelegation: ", orgIndivDelegation)
-      console.info("orgAccountClient: ", orgAccountClient)
+      console.info("indivAccountClient 1: ", indivAccountClient)
+      console.info("burnerAccountClient 1: ", burnerAccountClient)
+      console.info("orgIssuerDelegation 1: ", orgIssuerDelegation)
+      console.info("orgIndivDelegation 1: ", orgAccountClient)
       if (fullVc && chain && indivAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient) {
 
         // now create attestation
@@ -323,11 +320,7 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose, o
             </div>
 
             <div className="flex flex-col p-4" style={{ height: "calc(80vh - 70px)" }}>
-              {!isConnected ? (
-                <Box display="flex" flexDirection="column" alignItems="center" gap={2} p={4}>
-                  <Typography variant="h6">Connect your MetaMask wallet</Typography>
-                </Box>
-              ) : (
+
                 <Box display="flex" flexDirection="column" gap={3} p={2}>
                   <Box display="flex" alignItems="center" gap={1} sx={{ mb: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary">
@@ -419,7 +412,6 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose, o
                     </Button>
                   </Box>
                 </Box>
-              )}
             </div>
           </div>
         </Transition.Child>

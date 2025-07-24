@@ -100,5 +100,16 @@ export const createInjectedProviderSignatoryFactory: SignatoryFactoryConfigurato
       };
     };
 
-    return { login, canLogout: () => false };
+    const logout = async () => {
+      // For MetaMask, we need to use wagmi's disconnect
+      // This will be handled by the context when the signatory is cleared
+      // The actual disconnect is done in the Header component using wagmi's useDisconnect
+      console.info("MetaMask logout - handled by wagmi disconnect");
+    };
+
+    return { 
+      login, 
+      logout,
+      canLogout: () => true 
+    };
   };

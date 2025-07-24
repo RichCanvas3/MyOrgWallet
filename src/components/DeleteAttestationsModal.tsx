@@ -55,10 +55,10 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
     console.info("inside delete attestations 1")
     console.info("orgDid: ", orgDid)
     console.info("chain: ", chain)
-    console.info("orgIndivDelegation: ", orgIndivDelegation)
-    console.info("orgIssuerDelegation: ", orgIssuerDelegation)
-    console.info("indivIssuerDelegation: ", indivIssuerDelegation)
-    console.info("burnerAccountClient: ", burnerAccountClient)
+    console.info("orgIndivDelegation 2: ", orgIndivDelegation)
+    console.info("orgIssuerDelegation 2: ", orgIssuerDelegation)
+    console.info("indivIssuerDelegation 2: ", indivIssuerDelegation)
+    console.info("burnerAccountClient 2: ", burnerAccountClient)
 
     if (orgDid && chain && orgIndivDelegation && orgIssuerDelegation && indivIssuerDelegation && burnerAccountClient) {
       console.info("delete org attestations 1")
@@ -76,11 +76,11 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
     console.info("inside delete attestations 2")
     console.info("indivDid: ", indivDid)
     console.info("chain: ", chain)
-    console.info("indivIssuerDelegation: ", indivIssuerDelegation)
-    console.info("burnerAccountClient: ", burnerAccountClient)
+    console.info("indivIssuerDelegation 4: ", indivIssuerDelegation)
+    console.info("burnerAccountClient 4: ", burnerAccountClient)
 
     if (chain && indivDid && indivIssuerDelegation && burnerAccountClient) {
-      console.info("delete indiv attestations 2")
+      console.info("delete indiv attestations 4")
       const attestations = await AttestationService.loadRecentAttestationsTitleOnly(chain,"", indivDid)
       if (attestations && attestations.length > 0) {
         console.info("signer b: ", signatory)
