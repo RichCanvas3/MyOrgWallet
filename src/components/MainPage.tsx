@@ -145,7 +145,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const { data: walletClient } = useWalletClient();
 
-  const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, setOrgNameValue } = useWallectConnectContext();
+  const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, indivName, setOrgNameValue } = useWallectConnectContext();
 
 console.log('org name', orgName)
 
@@ -275,7 +275,11 @@ console.log('org name', orgName)
         if (ents != undefined) {
 
           setEntities(ents)
-          console.log(ents)
+
+          const date = new Date()
+
+          console.log('Date: ', date)
+          console.log('Entities: ', ents)
           for (const entity of ents) {
             if (entity.name == "org(org)" && entity.attestation) {
               setOrgNameValue((entity.attestation as OrgAttestation).name)
@@ -479,6 +483,14 @@ console.log('company config: ', company_config)
 
       // Set the initial introduction message to the requested string
       let introduction = "Hello!";
+
+      // If we have the individual's name, personalize the greeting
+      if (indivName) {
+        // Extract first name (everything before the first space)
+        const firstName = indivName.split(' ')[0];
+        introduction = `Hello, ${firstName}!`;
+      }
+
       let instruction : string | undefined
 
       if (entities != undefined) {
