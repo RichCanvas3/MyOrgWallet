@@ -30,6 +30,7 @@ import { useWallectConnectContext } from "../context/walletConnectContext";
 import EnsService from '../service/EnsService';
 import { RPC_URL, BUNDLER_URL } from "../config";
 import ETHRegistrarControllerABI from '../abis/ETHRegistrarController.json';
+import { wrappedDomainDetailsFragment } from '@ensdomains/ensjs/dist/types/functions/subgraph/fragments';
 
 interface AddEnsRecordModalProps {
   isVisible: boolean;
@@ -63,6 +64,8 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
   const [useBasicAvatar, setUseBasicAvatar] = useState(false);
   const [orgBalance, setOrgBalance] = useState<string>('0');
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  const [isCreatingSubdomain, setIsCreatingSubdomain] = useState(false);
+  const [isWrapping, setIsWrapping] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const availabilityTimeoutRef = useRef<NodeJS.Timeout>();
@@ -309,6 +312,33 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
     return `data:image/svg+xml;base64,${btoa(svg)}`;
   };
 
+  async function wrapEnsName(ensName: string) {
+    const cleanName = cleanEnsName(ensName);
+
+    if (!ensName || !chain || !orgAccountClient) {
+      console.error('Missing required information:', {
+        ensName: !!ensName,
+        chain: !!chain,
+        orgAccountClient: !!orgAccountClient
+      });
+      setError('Missing required information');
+      return;
+    }
+
+    setIsWrapping(true);
+    setError('');
+
+    try {
+      const wrappedName = await EnsService.wrapEnsDomainName(orgAccountClient, cleanName, chain);
+      console.log('ENS name wrapped successfully:', wrappedName);
+      setSuccess(`ENS name "${wrappedName}.eth" has been wrapped successfully! You can now create subdomains.`);
+    } catch (error) {
+      console.error('Error wrapping ENS name:', error);
+      setError(`Failed to wrap ENS name: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setIsWrapping(false);
+    }
+  }
 
   // Register or update ENS name
   const handleRegister = async () => {
@@ -354,7 +384,6 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
         const result = await EnsService.createEnsDomainName(orgAccountClient, cleanName, chain);
         setSuccess(`ENS name "${result}" registered successfully!`);
       }
-
       // Refresh the parent component
       if (onRefresh) {
         onRefresh();
@@ -365,6 +394,27 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
       setError(error instanceof Error ? error.message : 'Failed to register/update ENS name. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const createSubdomain = async () => {
+    if (!ensName || !chain || !orgAccountClient) {
+      setError('Missing required information');
+      return;
+    }
+
+    setIsCreatingSubdomain(true);
+    setError(null);
+
+    try {
+      const cleanParentName = cleanEnsName(ensName);
+      const result = await EnsService.createSubdomain(orgAccountClient, cleanParentName, 'bob', chain);
+      setSuccess(`Subdomain "${result}" created successfully!`);
+    } catch (error) {
+      console.error('Error creating subdomain:', error);
+      setError(error instanceof Error ? error.message : 'Failed to create subdomain');
+    } finally {
+      setIsCreatingSubdomain(false);
     }
   };
 
@@ -551,7 +601,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
                         >
                           {Number(orgBalance) >= 0.004
                             ? "✅ There is enough ETH for this transaction!"
-                            : "❌ Not enough. Please transfer ETH to the organization's smart wallet using the address above."}
+                            : "❌ Not enough. Please transfer ETH to the organization's smart wallet using the address above (0.004 ETH minimum)"}
                         </Typography>
                       )}
                     </>
@@ -786,9 +836,40 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
           </Box>
           <Button
             variant="contained"
+            onClick={() => wrapEnsName(ensName)}
+            disabled={isWrapping}
+            fullWidth
+            sx={{ mb: 2 }}
+          >
+            {isWrapping ? (
+              <>
+                <CircularProgress size={20} sx={{ mr: 1 }} />
+                Wrapping ENS...
+              </>
+            ) : (
+              'Wrap ENS Name'
+            )}
+          </Button>
+          <Button
+            variant="contained"
+            onClick={createSubdomain}
+            disabled={isCreatingSubdomain}
+            fullWidth
+            sx={{ mb: 2 }}
+          >
+            {isCreatingSubdomain ? (
+              <>
+                <CircularProgress size={20} sx={{ mr: 1 }} />
+                Creating Subdomain...
+              </>
+            ) : (
+              'Create "bob" Subdomain'
+            )}
+          </Button>
+          <Button
+            variant="outlined"
             onClick={handleClose}
             fullWidth
-            sx={{ mt: 2 }}
           >
             Close
           </Button>

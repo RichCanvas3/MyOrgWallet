@@ -165,7 +165,7 @@ console.log('org name', orgName)
   const [newOrgName, setNewOrgName] = useState("");
 
   const { isConnected } = useAccount();
-  
+
   const [threadID, setThreadID] = useState<string | null>(null);
 
   // Add state for thinking
@@ -263,7 +263,7 @@ console.log('org name', orgName)
     };
   }, []);
 
-  
+
 
   
     async function init() {
@@ -383,6 +383,7 @@ console.log('org name', orgName)
 
         if (isMounted) {
           setThreadID(threadIDResult);
+
           console.log('call langchain.....................')
           const company_config = await init();
           console.log('cc name: ', company_config['name'])
@@ -464,7 +465,7 @@ console.log('org name', orgName)
       }
     };
 
-  
+
 
   const newConversation = (entities: Entity[]) => {
 
@@ -534,7 +535,7 @@ console.log('org name', orgName)
     messageBoxRef.current?.focusTextarea();
   };
 
-  
+
 
   const handleSelectedConversation = (id: string | null) => {
     if (id && id.length > 0) {
