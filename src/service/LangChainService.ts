@@ -5,7 +5,7 @@
 import LinkedInAuth, { LinkedInAuthRef } from "../components/LinkedInAuth";
 import { XAuthRef } from "../components/XAuth"
 import { LANGCHAIN_API_KEY } from "../config";
-
+import company_config from "../components/MainPage"
 
 export async function invokeLangGraphAgent({
   // parameters can be added here if needed
@@ -97,9 +97,7 @@ export async function sendMessageToLangGraphAssistant(
         tags: [''],
         recursion_limit: 15,
         configurable: {
-          company: {
-            name: 'RichCanvas'
-          }
+          company: company_config
         }
       },
       //webhook: '',

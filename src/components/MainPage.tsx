@@ -118,7 +118,6 @@ const shopifyAuthRef = { current: null as ShopifyAuthRef | null };
 const xAuthRef = { current: null as XAuthRef | null };
 const insuranceAuthRef = { current: null as InsuranceAuthRef | null };
 
-
 const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const defaultIntroduction: ChatMessage = { content: "test"} as ChatMessage;
   const [introduction, setIntroduction] = useState<ChatMessage>(defaultIntroduction);
@@ -147,6 +146,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const { data: walletClient } = useWalletClient();
 
   const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, setOrgNameValue } = useWallectConnectContext();
+
+console.log('org name', orgName)
 
   const [isDeleteAttestationsModalVisible, setDeleteAttestationsModalVisible] = useState(false);
   const [isApproveLeaderModalVisible, setApproveLeaderModalVisible] = useState(false);
@@ -271,15 +272,15 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       console.info("************* orgDid: ", orgDid)
 
       AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
-
         if (ents != undefined) {
 
           setEntities(ents)
-          const config_array = [ents]
-          console.log(config_array)
+          console.log(ents)
           for (const entity of ents) {
             if (entity.name == "org(org)" && entity.attestation) {
               setOrgNameValue((entity.attestation as OrgAttestation).name)
+            } else if (entity.name == "") {
+
             }
           }
 
@@ -306,6 +307,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
 
   }, [orgAccountClient, orgDid, indivDid]);
+
+  const company_config = {"name": orgName, "state": 'undefined', "linkedin": 'undefined', "x": 'undefined', "state_registration": 'undefined', "ens_registration": 'undefined', "domain": 'undefined'};
+
+console.log('company config: ', company_config)
 
   useEffect(() => {
     //console.info("........ is connected: ", isConnected)
@@ -376,7 +381,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           setThreadID(threadIDResult);
 
           console.log('call langchain.....................')
-          getArgfromUserMessage(threadIDResult, "lets get started").then(str => {
+
+          console.log('cc name: ', company_config['name'])
+          getArgfromUserMessage(threadIDResult, `lets get started: Name: ${company_config["name"]}, State: ${company_config["state"]}, Domain: ${company_config["domain"]}, Linkedin: ${company_config["linkedin"]}, Twitter: ${company_config["x"]}, State Registration: ${company_config["state_registration"]}, ENS Registration: ${company_config["ens_registration"]}`).then(str => {
             if (str) {
               addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
             }
@@ -453,6 +460,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       }
     };
 
+
+
   const newConversation = (entities: Entity[]) => {
 
     if (conversation == undefined) {
@@ -518,11 +527,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
 
 
-
-
-
     messageBoxRef.current?.focusTextarea();
   };
+
 
 
   const handleSelectedConversation = (id: string | null) => {
@@ -649,8 +656,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
       if (str.includes("ens_verification") && orgAccountClient && chain) {
         console.log('process ens verification')
-        const ensName = message.split("ENS:")[1]
-        EnsService.createEnsDomainName(orgAccountClient, ensName, chain!).then((ensName) => {
+        setIsAddEnsRecordModalVisible(true)
+        setExistingEnsNameForUpdate('')
+        EnsService.createEnsDomainName(orgAccountClient, message, chain!).then((ensName) => {
           console.log('ENS Name: ', ensName)
           addMessage(Role.Assistant, MessageType.Normal, `${ensName} Registered!`, '', fileDataRef, sendMessage)
         })
