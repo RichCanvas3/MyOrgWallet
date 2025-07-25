@@ -671,10 +671,8 @@ console.log('org name', orgName)
         console.log('process ens verification')
         setIsAddEnsRecordModalVisible(true)
         setExistingEnsNameForUpdate('')
-        EnsService.createEnsDomainName(orgAccountClient, message, chain!).then((ensName) => {
-          console.log('ENS Name: ', ensName)
-          addMessage(Role.Assistant, MessageType.Normal, `${ensName} Registered!`, '', fileDataRef, sendMessage)
-        })
+        // Remove the immediate ENS registration call - it will be handled by the modal
+        addMessage(Role.Assistant, MessageType.Normal, `Opening ENS registration modal...`, '', fileDataRef, sendMessage)
       } else if (str.includes('state_register') && orgAccountClient && chain) {
         const listMessage = str.split(' ')
         console.log(listMessage)
@@ -998,40 +996,18 @@ console.log('org name', orgName)
         console.log("Regex match result:", ensMatch);
         let ensName = ensMatch ? ensMatch[1] : '';
 
-        // Always fetch the correct ENS name first, then open modal
-        const handleEnsLogoUpdate = async () => {
-          let correctEnsName = '';
+        // Open modal immediately without fetching ENS name to avoid MetaMask popup
+        console.log("Opening ENS logo update modal...");
+        console.log("Extracted ENS name from message:", ensName);
 
-          console.log("Starting ENS logo update process...");
-          console.log("Extracted ENS name from message:", ensName);
+        // Use the extracted name if available, otherwise leave empty for user to enter
+        if (ensName) {
+          setExistingEnsNameForUpdate(ensName);
+        } else {
+          setExistingEnsNameForUpdate('');
+        }
 
-          // For now, always use reverse lookup to get the correct ENS name
-          // This ensures we get the right name regardless of what was typed
-          correctEnsName = await fetchExistingEnsName();
-
-          console.log("Correct ENS name from reverse lookup:", correctEnsName);
-
-          if (!correctEnsName) {
-            // If no ENS name found via reverse lookup, use the extracted name as fallback
-            correctEnsName = ensName;
-            console.log("Using fallback ENS name:", correctEnsName);
-          }
-
-          console.log("Final ENS name to use:", correctEnsName);
-
-          if (correctEnsName) {
-            console.log("Setting ENS name in state:", correctEnsName);
-            setExistingEnsNameForUpdate(correctEnsName);
-            setIsAddEnsRecordModalVisible(true);
-          } else {
-            // No ENS name found, still open modal but with empty name
-            console.log("No ENS name found, opening modal with empty name");
-            setExistingEnsNameForUpdate('');
-            setIsAddEnsRecordModalVisible(true);
-          }
-        };
-
-        handleEnsLogoUpdate().catch(console.error);
+        setIsAddEnsRecordModalVisible(true);
         actionMessage="update ens logo"
         return; // Exit early to prevent further processing
       }
