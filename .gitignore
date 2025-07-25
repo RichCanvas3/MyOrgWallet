@@ -4,3 +4,4 @@ node_modules.tar.gz
 Access-Control-*
 Host*
 Origin*.env.production
+dist/
