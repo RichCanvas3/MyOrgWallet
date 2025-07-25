@@ -33,7 +33,7 @@ const SetupSmartWalletModal: React.FC = () => {
   }
 
   const navigate = useNavigate();
-  const { selectedSignatoryFactory, selectedSignatoryFactoryName, buildSmartWallet, setupSmartWallet, chain } = useWallectConnectContext();
+  const {  signatory, owner, buildSmartWallet, setupSmartWallet, chain } = useWallectConnectContext();
 
 
   const [steps, setSteps] = useState<Step[]>([
@@ -74,74 +74,31 @@ const SetupSmartWalletModal: React.FC = () => {
   const handleBuildWallet = async () => {
     console.info("handle build wallet")
     setIsSubmitting(true);
-    try {
-      // Get the signatory from the context (set during welcome page)
-      if (!selectedSignatoryFactory) {
-        throw new Error('No wallet connected. Please complete the welcome setup first.');
-      }
 
-      // Check if we already have the owner and signatory from the welcome page
-      let owner, signatory;
-      
-      // Check if we're using MetaMask (injected provider) or Web3Auth
-      const provider = (window as any).ethereum;
-
-      if (selectedSignatoryFactoryName === 'injectedProviderSignatoryFactory') {
-        try {
-          // Try to get current accounts without requesting permissions
-          const accounts = await provider.request({ method: 'eth_accounts' });
-          if (accounts && accounts.length > 0) {
-            // We have MetaMask accounts, use them without requesting permissions again
-            owner = accounts[0];
-            // Create wallet client without triggering new permission request
-            const { createWalletClient, custom } = await import('viem');
-            const walletClient = createWalletClient({
-              chain: chain as any,
-              transport: custom(provider),
-              account: owner,
-            });
-            signatory = { walletClient };
-          } else {
-            // No accounts found, but we have MetaMask - this means user needs to connect
-            // Since user already connected in welcome page, this shouldn't happen
-            // If it does, it means MetaMask was disconnected, so we need to reconnect
-            throw new Error('MetaMask accounts not found. Please reconnect MetaMask in the welcome page.');
-          }
-        } catch (error: unknown) {
-          // If we can't get accounts or there's an error, don't try to login again
-          // This prevents the permission conflict
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          throw new Error(`MetaMask connection error: ${errorMessage}. Please ensure MetaMask is connected and try again.`);
-        }
-      } 
-      else if (selectedSignatoryFactoryName === 'web3AuthSignatoryFactory') {{
-        // For Web3Auth or other providers, we can safely call login
-        console.info("web3Auth login")
-        const loginResp = await selectedSignatoryFactory.login();
-        owner = loginResp.owner;
-        signatory = loginResp.signatory;
-        console.info("web3Auth login done: ", owner, signatory)
-      }
-
-      console.info("build smart wallet")
+    console.info("build smart wallet")
+    console.info("owner: ", owner)
+    console.info("signatory: ", signatory)
+    if (owner && signatory) {
       await buildSmartWallet(owner, signatory);
       handleToast('Smart wallet built', 'success');
-      advanceStep();
-      }
-  } catch (err: any) {
-      handleToast(err.message || 'Build failed', 'error');
-    } finally {
-      setIsSubmitting(false);
     }
+    
+    advanceStep();
+  
+    setIsSubmitting(false);
   };
 
   const handlePermissions = async () => {
     setIsSubmitting(true);
     try {
+
+      /*
       // Get the signatory from the context (set during welcome page)
       if (!selectedSignatoryFactory) {
         throw new Error('No wallet connected. Please complete the welcome setup first.');
       }
+
+
 
       // Check if we already have the owner and signatory from the welcome page
       let owner, signatory;
@@ -183,14 +140,19 @@ const SetupSmartWalletModal: React.FC = () => {
         owner = loginResp.owner;
         signatory = loginResp.signatory;
       }
+      */
 
-      await setupSmartWallet(owner, signatory);
-      console.info("start sleep")
-      await sleep(13000);
-      console.info("end sleep")
-      handleToast('Permissions granted', 'success');
+      if (owner && signatory) {
+        await setupSmartWallet(owner, signatory);
+        console.info("start sleep")
+        await sleep(13000);
+        console.info("end sleep")
+        handleToast('Permissions granted', 'success');
 
-      navigate('/chat/')
+        console.info("************* navigating to chat 2")
+        navigate('/chat/')
+      }
+      
     } catch (err: any) {
       handleToast(err.message || 'Permission denied', 'error');
     } finally {

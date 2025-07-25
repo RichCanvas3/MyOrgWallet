@@ -566,6 +566,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           } else {
             const errorMessage: string = 'Conversation ' + location.pathname + ' not found';
             NotificationService.handleError(errorMessage, CONVERSATION_NOT_FOUND);
+
+            console.info("************* navigating to chat 3")
             //navigate('/chat/');
           }
         });

@@ -28,7 +28,10 @@ import { domainSeparator } from 'viem';
 import { useAccount } from 'wagmi';
 
 import '../custom_styles.css'
-import { chainIdNetworkParamsMapping } from '@blockchain-lab-um/masca-connector';
+
+import {ISSUER_PRIVATE_KEY, WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, ETHERSCAN_URL, BUNDLER_URL, PAYMASTER_URL} from "../config";
+import { createWeb3AuthSignatoryFactory } from "../signers/web3AuthSignatoryFactory";
+import { createInjectedProviderSignatoryFactory } from "../signers/injectedProviderSignatoryFactory";
 
 interface Step {
   id: number;
@@ -58,7 +61,7 @@ const WelcomeModal: React.FC = () => {
   const [connectionMethod, setConnectionMethod] = useState<'web3auth' | 'metamask'>('web3auth');
   const [toast, setToast] = useState({ open: false, message: '', severity: 'info' as 'info' | 'success' | 'error' });
 
-  const { chain, setIndivAndOrgInfo, setOrgNameValue, setOrgDidValue, checkIfDIDBlacklisted, setSelectedSignatoryFactoryName } = useWallectConnectContext();
+  const { chain, connect, setIndivAndOrgInfo, setOrgNameValue, setOrgDidValue, checkIfDIDBlacklisted, setSelectedSignatoryFactoryName } = useWallectConnectContext();
 
   const steps: Step[] = [
     { id: 1, title: 'Your Name',      isActive: currentStep === 1, isCompleted: currentStep > 1 },
@@ -140,6 +143,8 @@ const WelcomeModal: React.FC = () => {
 
   const handleNextStep = async () => {
 
+    console.info("************** handleNextStep ***************")
+
     function getDomainFromEmail(email: string): string | null {
       const atIndex = email.lastIndexOf('@');
       if (atIndex <= 0 || atIndex === email.length - 1) {
@@ -148,6 +153,8 @@ const WelcomeModal: React.FC = () => {
       }
       return email.slice(atIndex + 1);
     }
+
+    console.info("************** handleNextStep 2 ***************")
 
     // Step 1: full name
     if (currentStep === 1) {
@@ -176,6 +183,11 @@ const WelcomeModal: React.FC = () => {
 
     // Step 3: wallet connection (Web3Auth or MetaMask)
     if (currentStep === 3) {
+
+      console.info("************** wallet connection step 3 ***************")
+      let signatoryToUse;
+
+
       if (connectionMethod === 'web3auth') {
         // Web3Auth connection
         if (!email.trim() || !email.includes('@')) {
@@ -186,6 +198,15 @@ const WelcomeModal: React.FC = () => {
           handleToast('Please enter your password.', 'error');
           return;
         }
+
+        const web3AuthSignatoryFactory = createWeb3AuthSignatoryFactory({
+          chain: chain,
+          web3AuthClientId: WEB3_AUTH_CLIENT_ID,
+          web3AuthNetwork: WEB3_AUTH_NETWORK,
+          rpcUrl: RPC_URL,
+        });
+        signatoryToUse = web3AuthSignatoryFactory;
+
 
         // Web3Auth username/password authentication
         setIsWeb3AuthConnecting(true);
@@ -198,7 +219,8 @@ const WelcomeModal: React.FC = () => {
           
           // Connect using email/password (sign up if new account, sign in if existing)
           const signatory = await Web3AuthService.connectWithEmailPassword(email, password, isSignUpMode);
-          
+
+
           const action = isSignUpMode ? 'created' : 'connected';
           console.log(`Web3Auth ${action} successfully:`, signatory);
           handleToast(`Web3Auth account ${action} successfully!`, 'success');
@@ -259,16 +281,25 @@ const WelcomeModal: React.FC = () => {
         } finally {
           setIsWeb3AuthConnecting(false);
         }
-        return;
       } else if (connectionMethod === 'metamask') {
+
         // MetaMask connection
         if (!email.trim() || !email.includes('@')) {
           handleToast('Please enter a valid email address.', 'error');
           return;
         }
 
+        const injectedSignatoryFactory = createInjectedProviderSignatoryFactory({
+          chain: chain,
+          web3AuthClientId: WEB3_AUTH_CLIENT_ID,
+          web3AuthNetwork: WEB3_AUTH_NETWORK,
+          rpcUrl: RPC_URL,
+        });
+        signatoryToUse = injectedSignatoryFactory;
+
         setIsMetaMaskConnecting(true);
         try {
+
           // Check if MetaMask is available
           if (typeof window.ethereum === 'undefined') {
             throw new Error('MetaMask not found. Please install MetaMask and try again.');
@@ -297,9 +328,11 @@ const WelcomeModal: React.FC = () => {
             console.info("chain: ", chain)
             setOrgNameValue("")
             setOrgDidValue("")
+
             const registeredDomainAttestations = await AttestationService.getRegisteredDomainAttestations(chain, domain, AttestationService.RegisteredDomainSchemaUID, "domain(org)")
             console.info("registered domain attestations: ", registeredDomainAttestations)
             if (registeredDomainAttestations) {
+
               for (const registeredDomainAttestation of registeredDomainAttestations) {
 
                 console.info("registered domain: ", registeredDomainAttestation)
@@ -341,8 +374,19 @@ const WelcomeModal: React.FC = () => {
         } finally {
           setIsMetaMaskConnecting(false);
         }
-        return;
       }
+
+
+      console.info("***** signatoryToUse: ", signatoryToUse)
+      if (signatoryToUse) {
+        console.info("***** signatoryToUse login: ")
+        const loginResp = await signatoryToUse.login()
+        if (loginResp && loginResp.signatory && loginResp.owner) {
+          console.info("***** connect to login 2: ", loginResp.owner, loginResp.signatory)
+          await connect(loginResp.owner, loginResp.signatory, "", "", "")
+        }
+      }
+
     }
 
     // Step 4: organization name

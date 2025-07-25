@@ -75,7 +75,7 @@ export const createWeb3AuthSignatoryFactory: SignatoryFactoryConfigurator = (
 
     // Create viem account from private key
     const account = privateKeyToAccount(formattedPrivateKey as `0x${string}`);
-    const owner = account.address;
+    const accountOwnerAddress = account.address;
 
     // Create a custom transport that uses Web3Auth provider directly
     const customTransport = custom(provider);
@@ -83,7 +83,7 @@ export const createWeb3AuthSignatoryFactory: SignatoryFactoryConfigurator = (
     const walletClient = createWalletClient({
       chain,
       transport: customTransport,
-      account: owner,
+      account: accountOwnerAddress,
     });
 
     // Create ethers signer from the Web3Auth provider directly
@@ -92,11 +92,10 @@ export const createWeb3AuthSignatoryFactory: SignatoryFactoryConfigurator = (
     const signer = new ethers.Wallet(formattedPrivateKey, ethersProvider);
 
     return {
-      owner,
+      owner: accountOwnerAddress, 
       signatory: { 
         walletClient,
-        signer,
-        account, // Include the viem account for compatibility
+        signer
       },
     };
   };

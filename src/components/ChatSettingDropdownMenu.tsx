@@ -48,7 +48,8 @@ const ChatSettingDropdownMenu: React.FC<ChatSettingDropdownMenuProps> = ({
   }
 
   const onEdit = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-    navigate('/chat/custom/editor/' + chatSetting?.id)
+    console.info("************* navigating to chat 9")
+    //navigate('/chat/custom/editor/' + chatSetting?.id)
   }
 
   const onDuplicate = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
@@ -56,7 +57,8 @@ const ChatSettingDropdownMenu: React.FC<ChatSettingDropdownMenuProps> = ({
     event.stopPropagation();
     if (chatSetting) {
       const newChatSetting = {...chatSetting, id: 0, name: `${chatSetting.name} (Copy)`, author: 'user'};
-      navigate('/chat/custom/editor/', {state: {initialChatSetting: newChatSetting}});
+      console.info("************* navigating to chat 8")
+      //navigate('/chat/custom/editor/', {state: {initialChatSetting: newChatSetting}});
     }
   }
 

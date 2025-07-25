@@ -20,7 +20,7 @@ const Header: React.FC<HeaderProps> = ({className}) => {
 
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
 
-  const { orgName, indivName, signatory, selectedSignatoryFactoryName, selectedSignatoryFactory } = useWallectConnectContext();
+  const { orgName, indivName, signatory, selectedSignatoryFactoryName, selectedSignatoryFactory, disconnect } = useWallectConnectContext();
 
 
   const navigate = useNavigate();
@@ -33,7 +33,7 @@ const Header: React.FC<HeaderProps> = ({className}) => {
     setAnchorEl(null);
   };
 
-  const disconnect = async () => {
+  const disconnectWallet = async () => {
     try {
       console.info("************* disconnect inside: signatory: ", signatory)
       
@@ -47,28 +47,8 @@ const Header: React.FC<HeaderProps> = ({className}) => {
         console.info("************* calling signatory factory logout")
         await selectedSignatoryFactory.logout();
       } else {
+      }
 
-        /*
-        console.info("************* signatory factory logout not available, falling back to direct methods")
-        
-        // Fallback to direct methods
-        if (selectedSignatoryFactoryName === 'web3AuthSignatoryFactory') {
-          console.info("************* web3AuthSignatoryFactory logout")
-          await Web3AuthService.disconnect();
-        }
-        */
-      }
-      
-      /*
-      // For MetaMask, also call wagmi disconnect
-      if (selectedSignatoryFactoryName === 'injectedProviderSignatoryFactory') {
-        console.info("************* injectedProviderSignatoryFactory disconnect")
-        wagmiDisconnect();
-      }
-        */
-      
-      // Clear the selected signatory factory
-      
       disconnect();
       
       // Navigate back to home
@@ -80,7 +60,8 @@ const Header: React.FC<HeaderProps> = ({className}) => {
   };
 
   const handleWallet = () => {
-    navigate('/chat/')
+    console.info("************* navigating to chat 5")
+    //navigate('/chat/')
   };
 
   const handleOrganizations = () => {
@@ -132,7 +113,7 @@ const Header: React.FC<HeaderProps> = ({className}) => {
         </Typography>
       </div>
       <button
-        onClick={() => disconnect()}
+        onClick={() => disconnectWallet()}
         className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disconnect"
       >
         Disconnect Wallet

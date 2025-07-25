@@ -166,6 +166,7 @@ export type WalletConnectContextState = {
     selectedSignatoryFactory?: SignatoryFactory,
     selectedSignatoryFactoryName?: "burnerSignatoryFactory" | "web3AuthSignatoryFactory" | "injectedProviderSignatoryFactory" | undefined,
     signatory?: any,
+    owner?: string,
 
     privateIssuerDid?: string;
     privateIssuerAccount?: PrivateKeyAccount,
@@ -207,8 +208,10 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
   indivIssuerDelegation: undefined,
 
   signatory: undefined,
+  owner: undefined,
 
   selectedSignatoryFactoryName: undefined,
+
 
   privateIssuerDid: undefined,
   privateIssuerAccount: undefined,
@@ -508,12 +511,12 @@ export const useWalletConnect = () => {
 
       // Only setup MetaMask snaps if we're using MetaMask (injected provider)
       // For Web3Auth, we don't need MetaMask snaps
-      const isUsingMetaMask = selectedSignatoryFactoryName === 'injectedProviderSignatoryFactory';
+      //const isUsingMetaMask = selectedSignatoryFactoryName === 'injectedProviderSignatoryFactory';
       
-      if (!isUsingMetaMask) {
-        console.info("Skipping MetaMask snap setup for Web3Auth");
-        return undefined;
-      }
+      //if (!isUsingMetaMask) {
+      //  console.info("Skipping MetaMask snap setup for Web3Auth");
+      //  return undefined;
+      //}
 
       const provider = window.ethereum;
       if (provider) {
@@ -850,7 +853,7 @@ export const useWalletConnect = () => {
             else {
               console.info("************* not configured properly")
               setIsIndividualConnected(false)
-              //setIsConnectionComplete(true);
+              setIsConnectionComplete(true);
             }
 
           }
@@ -974,7 +977,7 @@ export const useWalletConnect = () => {
       console.info("findValidExistingOrgAccount: ", orgAddressValue)
       console.info("owner: ", owner)
       console.info("publicClient: ", publicClient)
-      console.info("signatory: ", signatory)
+      console.info("signatory 1: ", signatory)
 
       const orgAccountClient = await toMetaMaskSmartAccount({
         address: orgAddressValue,
@@ -1438,7 +1441,8 @@ export const useWalletConnect = () => {
         console.info("setup snap for owner: ", owner)
         const mascaApi = await setupSnap(owner)
 
-        console.info("orgIndivDelegation: ", orgIndivDelegation)
+        console.info("mascaApi 2: ", mascaApi)
+        console.info("orgIndivDelegation 2: ", orgIndivDelegation)
         console.info("orgAccountClient 2: ", orgAccountClient)
 
         if (orgIndivDelegation && orgAccountClient) {
@@ -1497,7 +1501,7 @@ export const useWalletConnect = () => {
 
             console.info("*********** ADD ORG ATTESTATION 2 ****************")
             console.info("selectedSignatoryFactoryName: ", selectedSignatoryFactoryName);
-            console.info("signatory: ", signatory);
+            console.info("signatory 2: ", signatory);
 
             // Use the signer directly from signatory
             const walletSigner = signatory.signer;
@@ -1687,6 +1691,7 @@ export const useWalletConnect = () => {
             }
             else {
               console.info("*********** no wallet signer or client or indivDid or orgDid or orgIssuerDel")  
+              console.info("mascaApi: ", mascaApi)
               console.info("walletSigner: ", walletSigner)
               console.info("walletClient: ", walletClient)
               console.info("privateIssuerAccount: ", privateIssuerAccount)
@@ -1890,6 +1895,7 @@ export const useWalletConnect = () => {
             indivAccountClient,
 
             signatory,
+            owner,
 
             privateIssuerDid,
             privateIssuerAccount,
@@ -1953,7 +1959,9 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
       selectedSignatoryFactory,
       selectedSignatoryFactoryName,
+
       signatory,
+      owner,
 
       privateIssuerDid,
       privateIssuerAccount,
@@ -1993,7 +2001,9 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
         selectedSignatoryFactory,
         selectedSignatoryFactoryName,
+
         signatory,
+        owner,
 
         privateIssuerAccount,
         privateIssuerDid,
@@ -2034,6 +2044,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
         selectedSignatoryFactory,
         signatory,
+        owner,
 
         privateIssuerDid,
         privateIssuerAccount,

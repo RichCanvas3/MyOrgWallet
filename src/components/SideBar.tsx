@@ -23,7 +23,7 @@ const Sidebar: React.FC<SidebarProps> = ({className, isSidebarCollapsed, toggleS
 
   const handleNewChat = () => {
     if (signatory && !location.pathname.startsWith('/readme')) {
-      navigate('/chat/', {state: {reset: Date.now()}});
+      //navigate('/chat/', {state: {reset: Date.now()}});
     }
     
   }

@@ -91,11 +91,13 @@ export const createInjectedProviderSignatoryFactory: SignatoryFactoryConfigurato
       const ethersProvider = new ethers.BrowserProvider(provider);
       const signer = await ethersProvider.getSigner();
 
+      console.info("***************** injectedProviderSignatoryFactory login done: ", owner, signer)
+
       return {
         owner,
         signatory: { 
           walletClient,
-          signer, // Add the signer to the signatory
+          signer
         },
       };
     };

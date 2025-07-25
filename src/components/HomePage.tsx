@@ -28,7 +28,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
   const [connectionMethod, setConnectionMethod] = useState<'web3auth' | 'metamask'>('web3auth');
   const [showConnectionOptions, setShowConnectionOptions] = useState(false);
 
-  const { selectedSignatoryFactory, chain, connect, isIndividualConnected, orgDid, indivDid, isConnectionComplete, setSelectedSignatoryFactoryName } = useWallectConnectContext();
+  const { selectedSignatoryFactory, chain, connect, signatory, isIndividualConnected, orgDid, indivDid, isConnectionComplete, setSelectedSignatoryFactoryName } = useWallectConnectContext();
 
   useEffect(() => {
     const detectProvider = async () => {
@@ -49,19 +49,19 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
 
     // if wallet is defined and we have not defined smart wallet
     //if (isConnected && isIndividualConnected && orgDid && indivDid && !location.pathname.startsWith('/readme')) {
-    if (isIndividualConnected && orgDid && indivDid) {
+    if (isIndividualConnected && orgDid && indivDid && signatory) {
       console.info("************* navigate .............")
       setIsLoading(false); // Clear loading state when navigation happens
       setConnectionFailed(false); // Reset connection failed state
       setHasAttemptedConnection(false); // Reset connection attempt state
-      console.info("************* navigating to chat")
+      console.info("************* navigating to chat 1")
       navigate('/chat/')
     } else if (isConnectionComplete && !isIndividualConnected && hasAttemptedConnection) {
       // Connection process is complete but no accounts found, and user attempted connection
       setIsLoading(false);
       setConnectionFailed(true); // Set connection failed state
     }
-  }, [isIndividualConnected, orgDid, indivDid, isConnectionComplete, hasAttemptedConnection]);
+  }, [isConnectionComplete, isIndividualConnected, orgDid, indivDid,  hasAttemptedConnection, signatory]);
 
   const handleConnect = async () => {
     setIsLoading(true);
@@ -76,37 +76,38 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
       // Create the signatory directly based on connection method
       let signatoryToUse;
       if (connectionMethod === 'web3auth') {
-        const web3AuthSignatory = createWeb3AuthSignatoryFactory({
+        const web3AuthSignatoryFactory = createWeb3AuthSignatoryFactory({
           chain: chain,
           web3AuthClientId: WEB3_AUTH_CLIENT_ID,
           web3AuthNetwork: WEB3_AUTH_NETWORK,
           rpcUrl: RPC_URL,
         });
-        signatoryToUse = web3AuthSignatory;
+        signatoryToUse = web3AuthSignatoryFactory;
         setSelectedSignatoryFactoryName("web3AuthSignatoryFactory");
       } else {
-        const injectedSignatory = createInjectedProviderSignatoryFactory({
+        const injectedSignatoryFactory = createInjectedProviderSignatoryFactory({
           chain: chain,
           web3AuthClientId: WEB3_AUTH_CLIENT_ID,
           web3AuthNetwork: WEB3_AUTH_NETWORK,
           rpcUrl: RPC_URL,
         });
-        signatoryToUse = injectedSignatory;
+        signatoryToUse = injectedSignatoryFactory;
         setSelectedSignatoryFactoryName("injectedProviderSignatoryFactory");
       }
 
       if (signatoryToUse) {
         const loginResp = await signatoryToUse.login()
         if (loginResp && loginResp.signatory && loginResp.owner) {
+          console.info("***** connect to login 1: ", loginResp.owner, loginResp.signatory)
           await connect(loginResp.owner, loginResp.signatory, "", "", "")
         }
       }
 
-      //if (walletAuthRef.current) {
-      //  walletAuthRef.current.openWalletPopup()
-      //}
+      setIsLoading(false);
+
     } catch (error: any) {
 
+      /*
       if (error.message === "Signatory not configured") {
         // Handle this specific error with a user-friendly message
         alert("Please configure your wallet signatory before connecting.");
@@ -147,6 +148,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
         alert("An error occurred " + error.message);
         setIsLoading(false); // Clear loading state on error
       }
+      */
     }
   };
 
@@ -403,7 +405,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
               <Button 
                 variant="outlined" 
                 size="small" 
-                onClick={() => navigate('/setup/')}
+                onClick={() => navigate('/welcome/')}
                 sx={{ borderColor: '#48ba2f', color: '#48ba2f', '&:hover': { borderColor: '#3a9a25', color: '#3a9a25' } }}
               >
                 Get Started
