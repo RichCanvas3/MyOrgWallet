@@ -6,6 +6,9 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import {useConfirmDialog} from './ConfirmDialog';
+import {NotificationService} from "../service/NotificationService";
+import AttestationService from "../service/AttestationService";
 
 
 
@@ -19,8 +22,9 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({className}) => {
 
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
+  const {showConfirmDialog, ConfirmDialog, isOpen} = useConfirmDialog();
 
-  const { orgName, indivName, signatory, selectedSignatoryFactoryName, selectedSignatoryFactory, disconnect } = useWallectConnectContext();
+  const { orgName, indivName, signatory, selectedSignatoryFactoryName, selectedSignatoryFactory, disconnect, orgDid, indivDid, chain, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, burnerAccountClient } = useWallectConnectContext();
 
 
   const navigate = useNavigate();
@@ -66,6 +70,68 @@ const Header: React.FC<HeaderProps> = ({className}) => {
 
   const handleOrganizations = () => {
     navigate('/organizations/')
+  };
+
+  const handleClearStorage = () => {
+    showConfirmDialog({
+      message: 'Are you sure you want to clear all local storage? This action cannot be undone.',
+      confirmText: 'Clear',
+      confirmButtonVariant: 'critical',
+      onConfirm: () => {
+        localStorage.clear();
+        console.info("clear all local storage");
+        NotificationService.handleSuccess("All local storage has been successfully cleared.");
+      },
+    });
+  };
+
+  const handleDeleteAllAttestations = async () => {
+    showConfirmDialog({
+      message: 'Are you sure you want to delete all attestations? This action cannot be undone.',
+      confirmText: 'Delete',
+      confirmButtonVariant: 'critical',
+      onConfirm: async () => {
+        try {
+          console.info("inside delete all attestations")
+          console.info("orgDid: ", orgDid)
+          console.info("indivDid: ", indivDid)
+          console.info("chain: ", chain)
+
+          // Delete organization attestations
+          if (orgDid && chain && orgIndivDelegation && orgIssuerDelegation && indivIssuerDelegation && burnerAccountClient) {
+            console.info("delete org attestations")
+            const orgAttestations = await AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, "")
+            if (orgAttestations && orgAttestations.length > 0) {
+              console.info("signer a: ", signatory)
+              const walletSigner = signatory.signer
+              const rslt = await AttestationService.deleteAttestations(chain, orgAttestations, walletSigner, [orgIssuerDelegation, orgIndivDelegation], burnerAccountClient)
+              console.info("delete organization attestations is done ", rslt)
+            }
+          }
+
+          // Delete individual attestations
+          if (chain && indivDid && indivIssuerDelegation && burnerAccountClient) {
+            console.info("delete indiv attestations")
+            const indivAttestations = await AttestationService.loadRecentAttestationsTitleOnly(chain, "", indivDid)
+            if (indivAttestations && indivAttestations.length > 0) {
+              console.info("signer b: ", signatory)
+              const walletSigner = signatory.signer
+              const rsl = await AttestationService.deleteAttestations(chain, indivAttestations, walletSigner, [indivIssuerDelegation], burnerAccountClient)
+              console.info("delete all individual attestations is done ")
+            }
+          }
+
+          NotificationService.handleSuccess("All attestations have been successfully deleted.");
+        } catch (error) {
+          console.error('Failed to delete all attestations:', error);
+          if (error instanceof Error) {
+            NotificationService.handleUnexpectedError(error, "Failed to delete all attestations");
+          } else {
+            NotificationService.handleUnexpectedError(new Error('An unknown error occurred'), "Failed to delete all attestations");
+          }
+        }
+      },
+    });
   };
 
   const [isSettingsModalVisible, setSettingsModalVisible] = useState(false);
@@ -147,7 +213,16 @@ const Header: React.FC<HeaderProps> = ({className}) => {
         <MenuItem onClick={handleOrganizations} className="menu-item">
           Organizations
         </MenuItem>
+        <MenuItem onClick={handleClearStorage} className="menu-item">
+          Clear Storage
+        </MenuItem>
+        {signatory && (
+          <MenuItem onClick={handleDeleteAllAttestations} className="menu-item">
+            Delete All Attestations
+          </MenuItem>
+        )}
       </Menu>
+      {ConfirmDialog}
     </div>
   </Toolbar>
 </AppBar>

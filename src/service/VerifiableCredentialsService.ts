@@ -436,6 +436,7 @@ class VerifiableCredentialsService {
       const did = await credentialManager.getDID() 
       const key = entityId + "-" + displayName + "-" + did.data
 
+      console.log("******************** getCredential from localStorage using key", key)
       const existingCredentialJSON = localStorage.getItem(key)
       if (existingCredentialJSON) {
         const existingCredential = JSON.parse(existingCredentialJSON)
@@ -444,22 +445,35 @@ class VerifiableCredentialsService {
       }
 
 
+      console.log("getCredential from credentialManager")
       const vcs = await credentialManager.queryCredentials();
 
-      console.info("entityId: ", entityId)
+      console.info("entityId 1: ", entityId)
+      console.info("vcs.data 1: ", vcs.data)
       for (const vc of vcs.data) {
-        console.info("vc.data.credentialSubject?.provider: ", vc.data.credentialSubject?.provider, vc.data.credentialSubject)
-        if (vc.data.credentialSubject?.provider?.toLowerCase() == entityId.toLowerCase()) {
-          console.info("found vc: ", vc.data.credentialSubject, displayName)
-          if (vc.data.credentialSubject?.displayName?.toLowerCase() == displayName.toLowerCase()) {
-            const credentialJSON = JSON.stringify(vc.data);
+
+        // adjust to account for differences in data being received
+        let data
+        if (vc.data) {
+          data = vc.data
+        }
+        else {
+          data = vc
+        }
+
+        console.info("vc 3: ", data)
+        console.info("vc.data.credentialSubject?.provider: ", data.credentialSubject?.provider, data.credentialSubject)
+        if (data.credentialSubject?.provider?.toLowerCase() == entityId.toLowerCase()) {
+          console.info("found vc: ", data.credentialSubject, displayName)
+          if (data.credentialSubject?.displayName?.toLowerCase() == displayName.toLowerCase()) {
+            const credentialJSON = JSON.stringify(data);
             localStorage.setItem(key, credentialJSON)
-            return vc.data
+            return data
           }
-          else if (vc.data.credentialSubject?.displayName === undefined) {
-            const credentialJSON = JSON.stringify(vc.data);
+          else if (data.credentialSubject?.displayName === undefined) {
+            const credentialJSON = JSON.stringify(data);
             localStorage.setItem(key, credentialJSON)
-            return vc.data 
+            return data 
           }
         } 
       }

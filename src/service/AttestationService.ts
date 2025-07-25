@@ -2362,7 +2362,7 @@ class AttestationService {
 
 
       const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
-      //console.info("data: ", data)
+      console.info("************** attestations data: ", data)
 
       const attestations : Attestation[] = []
       for (const item of data.attestations) {
@@ -3257,42 +3257,4 @@ export default AttestationService;
 
 
 
-
-    /*
-    const EAS_CONTRACT_ADDRESS = "0x4200000000000000000000000000000000000021"; // Sepolia v0.26 address
-    const eas = new EAS(EAS_CONTRACT_ADDRESS);
-    const provider = new ethers.JsonRpcProvider("https://mainnet.optimism.io");
-    eas.connect(provider);
-
-    const uid = "0x6547a0a10b5ab3c7bb7a40e08178a3cc7ae0be5b6d54cfcbc5de60468acc1758"
-    
-    try {
-        const attestation = await eas.getAttestation(uid); // This function returns an attestation object
-
-
-        console.info("...........EAS attestation")
-        console.info(attestation);
-
-        console.log('Attestation Details:');
-        console.log('UID:', attestation.uid);
-        console.log('Recipient:', attestation.recipient);
-        console.log('Attester:', attestation.attester);
-        console.log('Time:', attestation.time);
-        console.log('Expiration Time:', attestation.expirationTime);
-        console.log('Revocation Time:', attestation.revocationTime);
-        console.log('Data:', attestation.data);
-
-        const schemaUID = attestation.schema;
-        //console.log('Schema UID:', schemaUID);
-
-        const schemaString = 'string statement';
-        const schemaEncoder = new SchemaEncoder(schemaString);
-        const decodedData = schemaEncoder.decodeData(attestation.data);
-        //console.info("....... decoded data: ", decodedData)
-
-
-    } catch (error) {
-        console.error("Error fetching attestation:", error);
-    }
-    */
 

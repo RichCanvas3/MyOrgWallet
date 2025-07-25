@@ -69,8 +69,10 @@ export class LocalStorageCredentialManager {
    * Query all credentials from localStorage
    */
   async queryCredentials(): Promise<{ data: VerifiableCredential[] }> {
+    console.log('******************** queryCredentials');
     try {
       const credentials = this.getAllCredentials();
+      console.log('******************** queryCredentials', credentials);
       return {
         data: credentials.map(cred => cred.data)
       };
@@ -85,7 +87,9 @@ export class LocalStorageCredentialManager {
    */
   async getCredential(entityId: string, displayName: string): Promise<VerifiableCredential | undefined> {
     try {
+      console.log('******************** getCredential', entityId, displayName);
       const credentials = this.getAllCredentials();
+      console.log('******************** getCredential', credentials);
       
       for (const cred of credentials) {
         const subject = cred.data.credentialSubject as any;
