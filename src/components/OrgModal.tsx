@@ -32,7 +32,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
 
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { chain, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, signatory, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, setOrgNameValue } = useWallectConnectContext();
+  const { chain, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, signatory, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, setOrgNameValue } = useWallectConnectContext();
   const { data: walletClient }= useWalletClient()
 
 
@@ -52,14 +52,14 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
 
     //console.info("fields: ", orgDid, privateIssuerDid, walletClient, signatory, orgAccountClient, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, walletClient)
     console.info("fields: ", orgIssuerDelegation, orgIndivDelegation)
-    if (orgDid && privateIssuerDid && mascaApi && walletClient && privateIssuerAccount && signatory && orgAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+            if (orgDid && privateIssuerDid && credentialManager && walletClient && privateIssuerAccount && signatory && orgAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
 
       // set the org name locally and in profile
       //console.info("set org name: ", orgName)
       //setOrgName(orgName)
 
       const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, privateIssuerDid, orgName);
-      const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgName, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgName, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
       if (fullVc && signatory && chain && orgAccountClient && walletClient) {

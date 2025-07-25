@@ -42,7 +42,7 @@ interface ApproveAccountAccessModalProps {
 
 const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ isVisible, onClose }) => {
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { chain, orgDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, orgAccountClient, privateIssuerAccount, burnerAccountClient, mascaApi, veramoAgent, indivDid,  signatory } = useWallectConnectContext();
+  const { chain, orgDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, orgAccountClient, privateIssuerAccount, burnerAccountClient, credentialManager, veramoAgent, indivDid,  signatory } = useWallectConnectContext();
   const { data: walletClient } = useWalletClient();
 
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -173,7 +173,7 @@ const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ i
           indivDelegationJsonStr
         )           
 
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, name, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+        const result = await VerifiableCredentialsService.createCredential(vc, entityId, name, accountDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
 

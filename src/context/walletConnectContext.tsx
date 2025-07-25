@@ -117,6 +117,7 @@ import { OrgService } from "../service/OrgService"
 import { OrgIndivAttestation, IndivEmailAttestation, IndivAttestation, OrgAttestation, RegisteredDomainAttestation } from "../models/Attestation";
 import AttestationService from "../service/AttestationService";
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService";
+import { CredentialManagerFactory, type CredentialManagerType } from "../service/CredentialManagerFactory";
 import { Navigate } from "react-router-dom";
 
 const defaultChain = CHAIN_NAME == "optimism" ? optimism : CHAIN_NAME == "sepolia" ? sepolia : CHAIN_NAME == "linea" ? linea : optimism
@@ -179,7 +180,7 @@ export type WalletConnectContextState = {
     isIndividualConnected: boolean
 
     veramoAgent?: any
-    mascaApi?: any
+    credentialManager?: any
 
     isConnectionComplete: boolean
 
@@ -219,7 +220,7 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
   isIndividualConnected: false,
 
   veramoAgent: undefined,
-  mascaApi: undefined,
+  credentialManager: undefined,
 
   isConnectionComplete: false,
 
@@ -274,7 +275,8 @@ export const useWalletConnect = () => {
     const [privateIssuerDid, setPrivateIssuerDid] = useState<string>();
 
     const [veramoAgent, setVeramoAgent] = useState<any>();
-    const [mascaApi, setMascaApi] = useState<any>();
+    // mascaApi is now handled by credentialManager
+    const [credentialManager, setCredentialManager] = useState<any>();
 
     const [orgName, setOrgName] = useState<string>();
     const [indivName, setIndivName] = useState<string>();
@@ -507,54 +509,71 @@ export const useWalletConnect = () => {
 
     }, [chain, signatory, connectedAddress, selectedSignatoryFactoryName]);
 
-    const setupSnap = async (ownerAddress: string) : Promise<any|undefined> => {   
-
-      // Only setup MetaMask snaps if we're using MetaMask (injected provider)
-      // For Web3Auth, we don't need MetaMask snaps
-      //const isUsingMetaMask = selectedSignatoryFactoryName === 'injectedProviderSignatoryFactory';
-      
-      //if (!isUsingMetaMask) {
-      //  console.info("Skipping MetaMask snap setup for Web3Auth");
-      //  return undefined;
-      //}
-
-      const provider = window.ethereum;
-      if (provider) {
-        await provider.request({
-          method: 'wallet_requestSnaps',
-          params: {
-            [snapId]: { version: snapVersion },
-          },
-        });
-      }
-
-      const mascaRslt = await enableMasca(ownerAddress, {
-        snapId: snapId,
-        supportedMethods: ['did:ethr', 'did:key', 'did:pkh'], // Specify supported DID methods
-      });
-
-      const api = await (mascaRslt as any).data.getMascaApi();
-      setMascaApi(api)
-
-      if (provider) {
-
-        const res = await api.getSnapSettings();
-        const disablePopups = res.data?.dApp?.disablePopups
-        if (!disablePopups || disablePopups == false) {
-          await provider.request({
-            method: 'wallet_invokeSnap',
-            params: {
-              snapId: snapId,
-              request: {
-                method: 'togglePopups',
+    const initializeCredentialManager = async (ownerAddress: string, did?: string) => {
+      try {
+        const credentialManagerType = CredentialManagerFactory.getDefaultCredentialManagerType();
+        console.info(`Initializing credential manager with type: ${credentialManagerType}`);
+        
+        if (credentialManagerType === 'masca') {
+          // Setup MetaMask snaps for masca
+          const provider = window.ethereum;
+          if (provider) {
+            await provider.request({
+              method: 'wallet_requestSnaps',
+              params: {
+                [snapId]: { version: snapVersion },
               },
-            },
+            });
+          }
+
+          const mascaRslt = await enableMasca(ownerAddress, {
+            snapId: snapId,
+            supportedMethods: ['did:ethr', 'did:key', 'did:pkh'],
           });
+
+          const api = await (mascaRslt as any).data.getMascaApi();
+          setCredentialManager(api);
+
+          if (provider) {
+            const res = await api.getSnapSettings();
+            const disablePopups = res.data?.dApp?.disablePopups;
+            if (!disablePopups || disablePopups == false) {
+              await provider.request({
+                method: 'wallet_invokeSnap',
+                params: {
+                  snapId: snapId,
+                  request: {
+                    method: 'togglePopups',
+                  },
+                },
+              });
+            }
+          }
+          
+          return api;
+        } else {
+          // Use localStorage credential manager
+          const localStorageManager = await CredentialManagerFactory.createDefaultCredentialManager(
+            'localStorage',
+            did
+          );
+          setCredentialManager(localStorageManager);
+          return localStorageManager;
         }
+      } catch (error) {
+        console.error('Error initializing credential manager:', error);
+        // Fallback to localStorage if masca fails
+        const localStorageManager = await CredentialManagerFactory.createDefaultCredentialManager(
+          'localStorage',
+          did
+        );
+        setCredentialManager(localStorageManager);
+        return localStorageManager;
       }
+    };
 
-      return api
-
+    const setupSnap = async (ownerAddress: string) : Promise<any|undefined> => {   
+      return await initializeCredentialManager(ownerAddress);
     }
 
 
@@ -588,7 +607,8 @@ export const useWalletConnect = () => {
             const veramoAgent = await setupVeramoAgent(privateIssuerDid)
             setVeramoAgent(veramoAgent)
 
-            const mascaApi = await setupSnap(ownerEOAAddress)
+            const credentialManager = await setupSnap(ownerEOAAddress)
+            setCredentialManager(credentialManager)
 
             // connect to issuer account abstraction
             let burnerPrivateKey = await DelegationService.getBurnerKeyFromStorage(owner)
@@ -1439,9 +1459,9 @@ export const useWalletConnect = () => {
         setVeramoAgent(veramoAgent)
 
         console.info("setup snap for owner: ", owner)
-        const mascaApi = await setupSnap(owner)
+        const credentialManager = await setupSnap(owner)
 
-        console.info("mascaApi 2: ", mascaApi)
+                    console.info("credentialManager 2: ", credentialManager)
         console.info("orgIndivDelegation 2: ", orgIndivDelegation)
         console.info("orgAccountClient 2: ", orgAccountClient)
 
@@ -1497,7 +1517,7 @@ export const useWalletConnect = () => {
 
           // add new org attestation
           console.info("add new org attestation")
-          const addOrgAttestation = async (mascaApi: any) => {
+          const addOrgAttestation = async (credentialManager: any) => {
 
             console.info("*********** ADD ORG ATTESTATION 2 ****************")
             console.info("selectedSignatoryFactoryName: ", selectedSignatoryFactoryName);
@@ -1516,15 +1536,15 @@ export const useWalletConnect = () => {
             const entityId = "org(org)"
         
 
-            console.info("fields: ", orgName, orgDid, privateIssuerDid, orgIssuerDel, indivDid, mascaApi, walletSigner, walletClient)
-            console.info("mascaApi: ", mascaApi)
+            console.info("fields: ", orgName, orgDid, privateIssuerDid, orgIssuerDel, indivDid, credentialManager, walletSigner, walletClient)
+            console.info("credentialManager: ", credentialManager)
             console.info("walletSigner: ", walletSigner)
             console.info("walletClient: ", walletClient)
-            if (walletSigner && walletClient && mascaApi && chain && privateIssuerAccount && orgName && orgDid && orgIssuerDel && mascaApi) {
+            if (walletSigner && walletClient && credentialManager && chain && privateIssuerAccount && orgName && orgDid && orgIssuerDel && credentialManager) {
         
               console.info("create credential for org attestation")
               const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, privateIssuerDid, orgName);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgName, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgName, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
               if (fullVc) {
@@ -1549,7 +1569,7 @@ export const useWalletConnect = () => {
             }
           }
 
-          const addDomainAttestation = async (mascaApi: any) => {
+          const addDomainAttestation = async (credentialManager: any) => {
 
             function getDomainFromEmail(email: string): string | null {
               const atIndex = email.lastIndexOf('@');
@@ -1572,7 +1592,7 @@ export const useWalletConnect = () => {
         
             const entityId = "domain(org)"
         
-            if (walletSigner && walletClient && orgName && orgDid && orgIssuerDel && indivEmail && mascaApi) {
+            if (walletSigner && walletClient && orgName && orgDid && orgIssuerDel && indivEmail && credentialManager) {
 
               console.info("*********** ADD DOMAIN ATTESTATION ****************")
 
@@ -1595,7 +1615,7 @@ export const useWalletConnect = () => {
 
           
                 const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, privateIssuerDid, domainName, "");
-                const result = await VerifiableCredentialsService.createCredential(vc, entityId, domainName, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+                const result = await VerifiableCredentialsService.createCredential(vc, entityId, domainName, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
                 const fullVc = result.vc
                 const proof = result.proof
                 if (fullVc) {
@@ -1629,13 +1649,13 @@ export const useWalletConnect = () => {
             const orgAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, orgDid, AttestationService.OrgIndivSchemaUID, "org(org)", "")
             if (!orgAttestation) {
               console.info("=============> no org attestation so add one")
-              await addOrgAttestation(mascaApi)
+              await addOrgAttestation(credentialManager)
             }
           }
 
 
           // add new org indiv attestation
-          const addOrgIndivAttestation = async (mascaApi: any) => {
+          const addOrgIndivAttestation = async (credentialManager: any) => {
 
             // Use the signer directly from signatory
             const walletSigner = signatory.signer;
@@ -1649,7 +1669,7 @@ export const useWalletConnect = () => {
         
             const entityId = "org-indiv(org)"
         
-            if (mascaApi && walletSigner && walletClient && privateIssuerAccount && indivDid && orgDid && orgIssuerDel) {
+            if (credentialManager && walletSigner && walletClient && privateIssuerAccount && indivDid && orgDid && orgIssuerDel) {
 
               console.info("*********** ADD ORG INDIV ATTESTATION 2 ****************")
 
@@ -1661,7 +1681,7 @@ export const useWalletConnect = () => {
               const delegationJsonStr = JSON.stringify(orgIndivDelegation)
         
               const vc = await VerifiableCredentialsService.createOrgIndivVC(entityId, orgDid, indivDid, indName, delegationJsonStr, privateIssuerDid);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indName, orgDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indName, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
 
@@ -1691,7 +1711,7 @@ export const useWalletConnect = () => {
             }
             else {
               console.info("*********** no wallet signer or client or indivDid or orgDid or orgIssuerDel")  
-              console.info("mascaApi: ", mascaApi)
+              console.info("credentialManager: ", credentialManager)
               console.info("walletSigner: ", walletSigner)
               console.info("walletClient: ", walletClient)
               console.info("privateIssuerAccount: ", privateIssuerAccount)
@@ -1705,8 +1725,8 @@ export const useWalletConnect = () => {
             const orgIndivAttestation = await AttestationService.getOrgIndivAttestation(chain,indivDid, AttestationService.OrgIndivSchemaUID, "org-indiv(org)")
             if (!orgIndivAttestation) {
               console.info("=============> no indiv attestation so add one")
-              await addDomainAttestation(mascaApi)
-              await addOrgIndivAttestation(mascaApi)
+              await addDomainAttestation(credentialManager)
+              await addOrgIndivAttestation(credentialManager)
             }
           }
           
@@ -1747,7 +1767,7 @@ export const useWalletConnect = () => {
 
 
           // add indiv  attestation
-          const addIndivAttestation = async (mascaApi: any) => {
+          const addIndivAttestation = async (credentialManager: any) => {
 
             console.info("*********** ADD INDIV ATTESTATION 1 ****************")
             // Use existing signatory instead of creating new MetaMask connection
@@ -1758,7 +1778,7 @@ export const useWalletConnect = () => {
         
             const entityId = "indiv(indiv)"
         
-            if (walletSigner && walletClient && privateIssuerAccount && indivDid && orgDid && mascaApi) {
+            if (walletSigner && walletClient && privateIssuerAccount && indivDid && orgDid && credentialManager) {
 
               let indName = "name";
               if (indivName) {
@@ -1766,7 +1786,7 @@ export const useWalletConnect = () => {
               }
         
               const vc = await VerifiableCredentialsService.createIndivVC(entityId, indivDid, privateIssuerDid, orgDid, indName);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indName, indivDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indName, indivDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
 
@@ -1794,7 +1814,7 @@ export const useWalletConnect = () => {
           }
           
           // add indiv email attestation
-          const addIndivEmailAttestation = async (mascaApi: any) => {
+          const addIndivEmailAttestation = async (credentialManager: any) => {
 
             console.info("*********** ADD INDIV EMAIL ATTESTATION ****************")
             // Use existing signatory instead of creating new MetaMask connection
@@ -1805,7 +1825,7 @@ export const useWalletConnect = () => {
         
             const entityId = "email(indiv)"
         
-            if (walletSigner && walletClient && privateIssuerAccount && indivDid && mascaApi) {
+            if (walletSigner && walletClient && privateIssuerAccount && indivDid && credentialManager) {
 
               let indEmail = "email";
               if (indivEmail) {
@@ -1813,7 +1833,7 @@ export const useWalletConnect = () => {
               }
         
               const vc = await VerifiableCredentialsService.createIndivEmailVC(entityId, indivDid, privateIssuerDid, "business", indEmail);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indEmail, indivDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, indEmail, indivDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
               const fullVc = result.vc
               const proof = result.proof
 
@@ -1850,12 +1870,12 @@ export const useWalletConnect = () => {
           if (indivDid && orgDid && indivIssuerDel) {
             const indivAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, indivDid, AttestationService.IndivSchemaUID, "indiv(indiv)", "")
             if (!indivAttestation) {
-              addIndivAttestation(mascaApi)
+              addIndivAttestation(credentialManager)
             }
 
             const indivEmailAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, indivDid, AttestationService.IndivEmailSchemaUID, "email(indiv)", "")
             if (!indivEmailAttestation) {
-              addIndivEmailAttestation(mascaApi)
+              addIndivEmailAttestation(credentialManager)
             }
           }
         }
@@ -1901,7 +1921,7 @@ export const useWalletConnect = () => {
             privateIssuerAccount,
 
             veramoAgent,
-            mascaApi,
+            credentialManager,
             
             orgIndivDelegation,
             orgIssuerDelegation,
@@ -1968,6 +1988,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
       veramoAgent,
       mascaApi,
+      credentialManager,
       
       setOrgNameValue,
       setOrgDidValue,
@@ -2009,7 +2030,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         privateIssuerDid,
 
         veramoAgent,
-        mascaApi,
+        credentialManager,
 
         connect,
         disconnect, 
@@ -2050,7 +2071,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         privateIssuerAccount,
 
         veramoAgent,
-        mascaApi,
+        credentialManager,
 
         connect,
         disconnect,

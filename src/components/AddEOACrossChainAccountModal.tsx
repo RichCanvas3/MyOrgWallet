@@ -181,7 +181,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
   const [usdcBalance, setUsdcBalance] = useState<string>('0');
   const [isLoadingBalances, setIsLoadingBalances] = useState(false);
 
-  const { chain, orgDid, orgIndivDelegation, orgIssuerDelegation, orgAccountClient, veramoAgent, mascaApi, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, indivAccountClient, indivDid, privateIssuerDid, signatory } = useWallectConnectContext();
+  const { chain, orgDid, orgIndivDelegation, orgIssuerDelegation, orgAccountClient, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, indivAccountClient, indivDid, privateIssuerDid, signatory } = useWallectConnectContext();
 
   const { getUSDCChainTokenInfo, getUSDCBalance, getEthBalance } = useCrossChainAccount();
 
@@ -603,10 +603,10 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
 
     let entityId = "account(indiv)"
 
-    if (walletSigner && walletClient && privateIssuerAccount && indivDid && mascaApi && privateIssuerDid) {
+            if (walletSigner && walletClient && privateIssuerAccount && indivDid && credentialManager && privateIssuerDid) {
 
       const vc = await VerifiableCredentialsService.createAccountVC(entityId, privateIssuerDid, accountDid, indivDid, accountName);
-      const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountName, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountName, accountDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
 
@@ -642,7 +642,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
     console.info("*********** ADD ORG ACCOUNT DELEGATION ATTESTATION ****************")
     entityId = "account-org(org)"
 
-    if (walletSigner && walletClient && privateIssuerAccount && orgDid && mascaApi && privateIssuerDid) {
+            if (walletSigner && walletClient && privateIssuerAccount && orgDid && credentialManager && privateIssuerDid) {
 
         
 
@@ -669,7 +669,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
         const delegationJsonStr = ""
 
         const vc = await VerifiableCredentialsService.createAccountOrgDelVC(entityId, privateIssuerDid, accountDid, orgDid, accountName, coaCode, selectedCoaCategory, delegationJsonStr);
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountName, accountDid, mascaApi, privateIssuerAccount, burnerAccountClient, veramoAgent)
+        const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountName, accountDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
 

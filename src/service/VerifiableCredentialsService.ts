@@ -407,7 +407,7 @@ class VerifiableCredentialsService {
       return vc;
     }
 
-    static async saveCredential(mascaApi: any, credential: VerifiableCredential, entityId: string, displayName: string) {
+    static async saveCredential(credentialManager: any, credential: VerifiableCredential, entityId: string, displayName: string) {
         
          const cred : W3CVerifiableCredential = {
           ...credential,
@@ -418,10 +418,10 @@ class VerifiableCredentialsService {
         };
         
 
-        // using masca snap storage
-        const result = await mascaApi?.saveCredential(cred)
+        // using credential manager (masca or localStorage)
+        const result = await credentialManager?.saveCredential(cred)
 
-        const did = await mascaApi.getDID() 
+        const did = await credentialManager.getDID() 
         const key = entityId + "-" + displayName + "-" + did.data
 
         const credentialJSON = JSON.stringify(cred);
@@ -430,10 +430,10 @@ class VerifiableCredentialsService {
 
     }
 
-    static async getCredential(mascaApi: any, entityId: string, displayName: string): Promise<VerifiableCredential | undefined> {
+    static async getCredential(credentialManager: any, entityId: string, displayName: string): Promise<VerifiableCredential | undefined> {
 
 
-      const did = await mascaApi.getDID() 
+      const did = await credentialManager.getDID() 
       const key = entityId + "-" + displayName + "-" + did.data
 
       const existingCredentialJSON = localStorage.getItem(key)
@@ -444,7 +444,7 @@ class VerifiableCredentialsService {
       }
 
 
-      const vcs = await mascaApi.queryCredentials();
+      const vcs = await credentialManager.queryCredentials();
 
       console.info("entityId: ", entityId)
       for (const vc of vcs.data) {
@@ -474,7 +474,7 @@ class VerifiableCredentialsService {
       entityId: string,
       displayName: string,
       did: string, 
-      mascaApi: any,
+      credentialManager: any,
       privateIssuerAccount: PrivateKeyAccount, 
       burnerAccountClient: any,
       veramoAgent: any): Promise<any | undefined> {
@@ -574,10 +574,10 @@ class VerifiableCredentialsService {
             });
 
 
-          // save vc to metamask snap storage
-          if (mascaApi) {
+          // save vc to credential manager (masca or localStorage)
+          if (credentialManager) {
             console.info("save credential: ", veramoVC)
-            await VerifiableCredentialsService.saveCredential(mascaApi, veramoVC, entityId, displayName)
+            await VerifiableCredentialsService.saveCredential(credentialManager, veramoVC, entityId, displayName)
           }
           
         }

@@ -48,7 +48,7 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
 }) => {
 
   const { getUSDCBalance } = useCrossChainAccount();
-  const { chain, veramoAgent, mascaApi, signatory, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, burnerAccountClient } = useWallectConnectContext();
+  const { chain, veramoAgent, credentialManager, signatory, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, burnerAccountClient } = useWallectConnectContext();
   
   // Add state for view type
   const [viewType, setViewType] = useState<'chart' | 'list'>('chart');

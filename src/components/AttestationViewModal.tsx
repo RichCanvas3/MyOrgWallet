@@ -77,7 +77,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
   });
 
   const [activeTab, setActiveTab] = useState<'info' | 'vc' | 'vc-raw' | 'zk' | 'rzk' | 'at' >('vc');
-  const { chain, veramoAgent, mascaApi, signatory, indivIssuerDelegation, orgIssuerDelegation, orgIndivDelegation, burnerAccountClient } = useWallectConnectContext();
+  const { chain, veramoAgent, credentialManager, signatory, indivIssuerDelegation, orgIssuerDelegation, orgIndivDelegation, burnerAccountClient } = useWallectConnectContext();
 
   // Helper function to get the correct ENS URL based on chain
   const getEnsUrl = (ensName: string) => {
@@ -308,14 +308,14 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                 }
                 */
 
-                if (mascaApi) {
+                if (credentialManager) {
                   setHasInfo(true)
 
                   setHasCredential(false)
                   setCredential(undefined)
 
                   console.info("------> get credential: ", att.entityId, att.displayName)
-                  VerifiableCredentialsService.getCredential(mascaApi, att.entityId, att.displayName || "").then((cred) => {
+                  VerifiableCredentialsService.getCredential(credentialManager, att.entityId, att.displayName || "").then((cred) => {
                     if (cred) {
                       setHasCredential(true)
                       console.info(",,,,,,,,,, credential: ", cred)
