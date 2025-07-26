@@ -280,6 +280,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           console.log(ents)
           for (const entity of ents) {
             if (entity.name == "org(org)" && entity.attestation) {
+              console.info("&&&&&&&&&&&&&&&&&&&&&&&&&&&& entity.attestation 2: ", entity)
               setOrgNameValue((entity.attestation as OrgAttestation).name)
               orgname = (entity.attestation as OrgAttestation).name
               console.log('orgname: ', orgname)

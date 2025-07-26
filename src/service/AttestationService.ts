@@ -263,7 +263,7 @@ class AttestationService {
             }
 
             if (att != undefined) {
-              entity.attestation = attributesToProps
+              entity.attestation = att
               console.info(`Set attestation for entity ${entityId}:`, att.displayName || att.entityId)
             } else {
               console.info(`Constructor returned undefined for entity ${entityId}, skipping`)
@@ -865,6 +865,8 @@ class AttestationService {
           proof: proof,
           name: name
         }
+
+        console.info("&&&&&&&&&&&&&&&&&&&&&&&&&&&& OrgAttestation: ", att)
 
         return att
       }
