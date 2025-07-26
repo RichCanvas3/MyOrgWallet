@@ -88,6 +88,11 @@ export interface RegisteredDomainAttestation extends Attestation {
   domaincreationdate?: number | null,
 }
 
+export interface RegisteredENSAttestation extends Attestation {
+  name: string,
+  enscreationdate?: number | null,
+}
+
 export interface WebsiteAttestation extends Attestation {
   type: string, // public, ecommerce, blog, customer portal
 }

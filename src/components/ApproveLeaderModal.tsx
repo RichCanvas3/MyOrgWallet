@@ -13,8 +13,7 @@ import {Transition} from '@headlessui/react';
 
 import AttestationService from '../service/AttestationService';
 import { useWallectConnectContext } from "../context/walletConnectContext";
-import { getSignerFromSignatory } from "../signers/SignatoryTypes";
-import { useWalletClient, useAccount } from 'wagmi';
+
 
 import { IndivAttestation } from "../models/Attestation"
 
@@ -62,7 +61,6 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const { chain, veramoAgent, credentialManager, signatory, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, burnerAccountClient } = useWallectConnectContext();
-  const { data: walletClient } = useWalletClient();
 
   const [attestations, setAttestations] = useState<IndivAttestation[]>([]);
   const [activeStep, setActiveStep] = useState(0);
@@ -95,8 +93,8 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
 
   const processSelectedAttestation = async (att: IndivAttestation) => {
     // if this user has been granted permissions through orgIndivDelegation
-    console.info("need these values: ", orgIndivDelegation, orgDid, privateIssuerDid, walletClient)
-    if (orgIndivDelegation && chain && orgDid && privateIssuerDid && walletClient && orgAccountClient && privateIssuerAccount) {
+    console.info("need these values: ", orgIndivDelegation, orgDid, privateIssuerDid)
+    if (orgIndivDelegation && chain && orgDid && privateIssuerDid && orgAccountClient && privateIssuerAccount) {
 
       console.info("************************   CREATE DELEGATION FOR: ", att.name)
       const leaderIndivAddress = att.attester.replace('did:pkh:eip155:' + chain?.id + ':', '') as `0x${string}`
@@ -123,8 +121,9 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
 
       const delegationJsonStr = JSON.stringify(leaderOrgIndivDel)
 
-      const vc = await VerifiableCredentialsService.createOrgIndivVC("org-indiv", orgDid, leaderIndivDid, delegationJsonStr, att.name, privateIssuerDid);
-              const result = await VerifiableCredentialsService.createCredential(vc, "org-indiv", att.name, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
+      const entityId = "org-indiv(org)"
+      const vc = await VerifiableCredentialsService.createOrgIndivVC(entityId, orgDid, leaderIndivDid, delegationJsonStr, att.name, privateIssuerDid);
+              const result = await VerifiableCredentialsService.createCredential(vc, entityId, att.name, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
 
       console.info("result of create credential: ", result)
       const fullVc = result.vc

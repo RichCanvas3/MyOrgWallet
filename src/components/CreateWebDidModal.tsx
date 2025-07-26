@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {useContext, useEffect, useRef, useState} from 'react';
-import { encodeFunctionData, hashMessage, createPublicClient, createWalletClient, WalletClient, toHex, http, zeroAddress, publicActions, custom, verifyMessage  } from "viem";
+import { hashMessage  } from "viem";
 
 
 import { ethers } from 'ethers';
@@ -16,7 +16,7 @@ import {Transition} from '@headlessui/react';
 
 import AttestationService from '../service/AttestationService';
 import { useWallectConnectContext } from "../context/walletConnectContext";
-import { useWalletClient } from 'wagmi';
+
 
 import { IndivAttestation, RegisteredDomainAttestation } from "../models/Attestation"
 
@@ -44,8 +44,8 @@ const CreateWebDidModal: React.FC<CreateWebDidModalProps> = ({isVisible, onClose
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { chain, veramoAgent, mascaApi, signatory, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, burnerAccountClient } = useWallectConnectContext();
-  const { data: walletClient } = useWalletClient();
+  const { chain, veramoAgent, signatory, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, burnerAccountClient } = useWallectConnectContext();
+
 
   const [attestations, setAttestations] = useState<IndivAttestation[]>([]);
   const [webDidJson, setWebDidJson] = useState<any>();

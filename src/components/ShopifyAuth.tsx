@@ -9,7 +9,6 @@ import { ethers } from 'ethers';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import AttestationService from '../service/AttestationService';
 import { WebsiteAttestation } from '../models/Attestation';
-import { useWalletClient, useAccount } from 'wagmi';
 
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService';
 
@@ -35,7 +34,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
 
   const { } = props;
   const { chain, signatory, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
-  const { data: walletClient } = useWalletClient();
+
 
 
   const openShopifyPopup = () => {
@@ -71,7 +70,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
       var shopifyUrl = res.data.shop.domain
       var websiteType = "commerce"
 
-              if (orgDid && chain && shopifyUrl && walletClient && credentialManager && privateIssuerAccount && orgAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && privateIssuerDid) {
+              if (orgDid && chain && shopifyUrl && credentialManager && privateIssuerAccount && orgAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && privateIssuerDid) {
 
         const walletSigner = signatory.signer
 
@@ -79,7 +78,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
                   const result = await VerifiableCredentialsService.createCredential(vc, entityId, shopifyUrl, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
-        if (fullVc && walletSigner && orgAccountClient && walletClient) {
+        if (fullVc && walletSigner && orgAccountClient) {
         
           // now create attestation
           const hash = keccak256(toUtf8Bytes("hash value"));

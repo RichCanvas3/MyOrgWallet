@@ -67,6 +67,7 @@ This document provides a comprehensive mapping between attestation categories an
 | Category | Entity ID Pattern | Description | Points |
 |----------|------------------|-------------|---------|
 | `identity` | Various | General identity verifications | 25/15 |
+| `ens` | `ens(org)` | ENS ownership verification | 25/15 |
 | `domain` | `domain(org)` | Domain ownership verification | 25/15 |
 | `website` | Various | Website presence and verification | 25/15 |
 | `social` | Various | Social media presence verification | 25/15 |

@@ -9,8 +9,7 @@ import './UserSettingsModal.css';
 import { Transition } from '@headlessui/react';
 import AttestationService from '../service/AttestationService';
 import { useWallectConnectContext } from "../context/walletConnectContext";
-import { getSignerFromSignatory } from "../signers/SignatoryTypes";
-import { useWalletClient } from 'wagmi';
+
 import { IndivAttestation, AccountIndivDelAttestation, AccountOrgDelAttestation } from "../models/Attestation";
 import { Account } from "../models/Account";
 import { AttestationCard } from "./AttestationCard";
@@ -43,7 +42,6 @@ interface ApproveAccountAccessModalProps {
 const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ isVisible, onClose }) => {
   const dialogRef = useRef<HTMLDivElement>(null);
   const { chain, orgDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, orgAccountClient, privateIssuerAccount, burnerAccountClient, credentialManager, veramoAgent, indivDid,  signatory } = useWallectConnectContext();
-  const { data: walletClient } = useWalletClient();
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [individuals, setIndividuals] = useState<IndivAttestation[]>([]);
@@ -103,14 +101,13 @@ const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ i
       console.info("***********  approve account access handleConfirm ****************");
 
       // Prepare delegation and attestation
-      if (orgIndivDelegation && chain && orgDid && privateIssuerDid && walletClient && orgAccountClient && privateIssuerAccount && burnerAccountClient) {
+      if (orgIndivDelegation && chain && orgDid && privateIssuerDid && orgAccountClient && privateIssuerAccount && burnerAccountClient) {
         
 
         console.info("***********  orgIndivDelegation ****************", orgIndivDelegation);
         console.info("***********  chain ****************", chain);
         console.info("***********  orgDid ****************", orgDid);
         console.info("***********  privateIssuerDid ****************", privateIssuerDid);
-        console.info("***********  walletClient ****************", walletClient);
         console.info("***********  orgAccountClient ****************", orgAccountClient);
         console.info("***********  privateIssuerAccount ****************", privateIssuerAccount); 
 

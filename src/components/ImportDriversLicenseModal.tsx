@@ -14,7 +14,6 @@ import {Transition} from '@headlessui/react';
 
 import AttestationService from '../service/AttestationService';
 import { useWallectConnectContext } from "../context/walletConnectContext";
-import { useWalletClient } from 'wagmi';
 
 
 
@@ -35,7 +34,7 @@ const ImportDriversLicenseModal: React.FC<ImportDriversLicenseModalProps> = ({is
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const { veramoAgent, credentialManager, signatory, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, burnerAccountClient } = useWallectConnectContext();
-  const { data: walletClient } = useWalletClient();
+
 
   const [driversLicenses, setDriversLicenses] = useState<string[]>([])
   const [session, setSession] = useState<any>(null)

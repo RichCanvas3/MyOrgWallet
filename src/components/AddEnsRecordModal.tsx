@@ -4,6 +4,13 @@ import { useState, useEffect, useRef } from 'react';
 
 import { createPublicClient, http, formatEther } from 'viem';
 
+import AttestationService from '../service/AttestationService';
+import VerifiableCredentialsService from '../service/VerifiableCredentialsService';
+
+import {Attestation, RegisteredENSAttestation } from '../models/Attestation';
+
+
+import { keccak256, toUtf8Bytes } from 'ethers';
 
 import {
   XMarkIcon,
@@ -75,7 +82,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
 
 
   // Update the context usage
-  const { chain, orgAccountClient, burnerAccountClient, orgDid } = useWallectConnectContext();
+  const { chain, signatory, privateIssuerDid, veramoAgent,orgIssuerDelegation, orgIndivDelegation, credentialManager, privateIssuerAccount, orgAccountClient, burnerAccountClient, orgDid } = useWallectConnectContext();
 
 
   const handleNext = () => {
@@ -386,6 +393,49 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
         console.log('Registering new ENS name:', cleanName);
         const result = await EnsService.createEnsDomainName(orgAccountClient, cleanName, chain);
         setSuccess(`ENS name "${result}" registered successfully!`);
+
+        // now create attestation
+        const enscreationdate = new Date("2023-03-10")
+        const enscreationdateSeconds = Math.floor(enscreationdate.getTime() / 1000); // Convert to seconds
+    
+        const entityId = "ens(org)"
+        if (orgDid && privateIssuerDid && credentialManager && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
+    
+          const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, privateIssuerDid, cleanName, enscreationdate.toDateString());
+          const result = await VerifiableCredentialsService.createCredential(vc, entityId, cleanName, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
+          const fullVc = result.vc
+          const proof = result.proof
+          if (proof && fullVc && chain && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation ) {
+    
+            // now create attestation
+            const hash = keccak256(toUtf8Bytes("hash value"));
+            const attestation: RegisteredENSAttestation = {
+              name: cleanName,
+              enscreationdate: enscreationdateSeconds,
+              attester: orgDid,
+              entityId: entityId,
+              class: "organization",
+              category: "identity",
+              hash: hash,
+              vccomm: (fullVc.credentialSubject as any).commitment.toString(),
+              vcsig: (fullVc.credentialSubject as any).commitmentSignature,
+              vciss: privateIssuerDid,
+              proof: proof
+            };
+    
+            // Use the signer directly from signatory
+            const walletSigner = signatory.signer;
+            
+            if (!walletSigner) {
+              console.error("Failed to get wallet signer");
+              return;
+            }
+    
+            const uid = await AttestationService.addRegisteredENSAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+            console.info("add org ens attestation complete")
+    
+          }
+        }
       }
       // Refresh the parent component
       if (onRefresh) {

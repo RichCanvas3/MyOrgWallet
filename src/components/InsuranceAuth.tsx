@@ -7,7 +7,7 @@ import { useWallectConnectContext } from "../context/walletConnectContext";
 import { getSignerFromSignatory } from "../signers/SignatoryTypes";
 import AttestationService from '../service/AttestationService';
 import { InsuranceAttestation } from '../models/Attestation';
-import { useWalletClient, useAccount } from 'wagmi';
+
 
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService';
 
@@ -25,7 +25,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
 
   const { } = props;
   const { chain, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, signatory } = useWallectConnectContext();
-  const { data: walletClient } = useWalletClient();
+
 
 
   
@@ -35,7 +35,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
     console.info("############## inside open insurance popup")
 
       var insuranceNumber = "10"
-      if (privateIssuerAccount && orgDid && insuranceNumber && walletClient && orgAccountClient && burnerAccountClient && privateIssuerDid) {
+      if (privateIssuerAccount && orgDid && insuranceNumber && orgAccountClient && burnerAccountClient && privateIssuerDid) {
 
         const vc = await VerifiableCredentialsService.createInsuranceVC(entityId, orgDid, privateIssuerDid, insuranceNumber);
 
@@ -43,7 +43,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, insuranceNumber, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
-        if (proof && fullVc && chain && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+        if (proof && fullVc && chain && orgAccountClient && orgIssuerDelegation && orgIndivDelegation) {
         
                             // Use the signer directly from signatory
           const walletSigner = signatory.signer;

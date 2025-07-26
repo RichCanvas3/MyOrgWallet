@@ -28,7 +28,7 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose}) => {
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const { chain, indivDid, indivAccountClient } = useWallectConnectContext();
-  const { data: walletClient }= useWalletClient()
+
 
   const [attestation, setAttestation] = useState<Attestation | null>(null);
   const [name, setName] = useState("");
@@ -42,15 +42,14 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose}) => {
 
 
   const handleSave = () => {
-    if (indivAccountClient && walletClient) {
+    if (indivAccountClient) {
 
       let att = attestation as SocialAttestation
       att.name = name
       att.url = url
 
       console.info("update social attestation: ", att)
-      //AttestationService.updateSocialAttestation(att, signer, indivAccountClient, walletClient).then((rsl) => {
-      //})
+
 
     };
 

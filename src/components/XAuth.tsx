@@ -6,7 +6,6 @@ import { ethers } from 'ethers';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 
 import { keccak256, toUtf8Bytes } from 'ethers';
-import { useWalletClient, useAccount } from 'wagmi';
 import ConversationService from "../service/ConversationService"
 import {ChatMessage, MessageType, Role} from "../models/ChatCompletion";
 
@@ -46,7 +45,6 @@ export interface XAuthRef {
 const entityId = "x(indiv)"
 const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
 
-  const { data: walletClient } = useWalletClient();
 
   const { } = props;
   const { chain, signatory, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
@@ -105,13 +103,13 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
       let url = "https://x.com/" + res["data"]["data"]["username"]
 
 
-              if (orgDid && privateIssuerDid && walletClient && credentialManager && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
+      if (orgDid && privateIssuerDid && credentialManager && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
   
         const vc = await VerifiableCredentialsService.createSocialVC(entityId, orgDid, privateIssuerDid, name, url);
-                  const result = await VerifiableCredentialsService.createCredential(vc, "x", entityId, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
+        const result = await VerifiableCredentialsService.createCredential(vc, entityId, entityId, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
-        if (proof && fullVc && chain && orgAccountClient && indivIssuerDelegation && walletClient) {
+        if (proof && fullVc && chain && orgAccountClient && indivIssuerDelegation) {
         
           // add attestation
           const hash = keccak256(toUtf8Bytes("hash value"));

@@ -64,7 +64,7 @@ export const useTrustScore = ({ orgDid, indivDid }: UseTrustScoreProps) => {
     },
     identity: {
       categories: ['identity', 'domain', 'website', 'social', 'email', 'phone', 'address'],
-      entityPatterns: ['domain(org)', 'website(org)', 'email(org)'],
+      entityPatterns: ['domain(org)', 'ens(org)', 'website(org)', 'email(org)'],
       verifiedPoints: 25,
       unverifiedPoints: 15
     },

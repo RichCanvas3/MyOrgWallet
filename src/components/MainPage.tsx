@@ -58,7 +58,6 @@ import { useWallectConnectContext } from "../context/walletConnectContext";
 import { getSignerFromSignatory } from "../signers/SignatoryTypes";
 
 import { keccak256, toUtf8Bytes } from 'ethers';
-import { useAccount, useWalletClient } from 'wagmi';
 
 
 import DeleteAttestationsModal from './DeleteAttestationsModal';
@@ -123,7 +122,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const defaultIntroduction: ChatMessage = { content: "test"} as ChatMessage;
   const [introduction, setIntroduction] = useState<ChatMessage>(defaultIntroduction);
 
-  const [setRegisterEnsDomainNameMessage, setSetRegisterEnsDomainNameMessage] = useState('');
 
   const {userSettings, setUserSettings} = useContext(UserContext);
   const {t} = useTranslation();
@@ -144,7 +142,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const entitiesRef = useRef(entities);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
 
-  const { data: walletClient } = useWalletClient();
 
 
   const { chain, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, indivName, indivAccountClient, setOrgNameValue, signatory } = useWallectConnectContext();
@@ -1052,7 +1049,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     const entityId = "state-registration(org)"
 
-    if (orgAccountClient && walletClient) {
+    if (orgAccountClient) {
 
       //console.info(">>>>>>>>>>>>> org name: ", orgName)
       if (orgName != undefined) {
@@ -1068,7 +1065,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         const state = st
         const formationDate = formDate
 
-        if (orgDid && privateIssuerDid && walletClient && credentialManager && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
+        if (orgDid && privateIssuerDid && credentialManager && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
 
           const vc = await VerifiableCredentialsService.createStateRegistrationVC(entityId, orgDid, privateIssuerDid, idNumber, orgName, status, formationDate, state, locationAddress);
                       const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgName, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
@@ -1076,9 +1073,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           const fullVc = result.vc
           const proof = result.proof
 
-          console.info("fields: ", proof, fullVc, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, walletClient)
+          console.info("fields: ", proof, fullVc, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation)
           console.info("orgIndivDelegation: ", orgIndivDelegation)
-          if (chain && proof && fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+          if (chain && proof && fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation) {
 
             // now create attestation
             const hash = keccak256(toUtf8Bytes("hash value"));
@@ -1140,13 +1137,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     const domaincreationdate = new Date("2023-03-10")
     const domaincreationdateSeconds = Math.floor(domaincreationdate.getTime() / 1000); // Convert to seconds
 
-    if (orgDid && privateIssuerDid && credentialManager && walletClient && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
+    if (orgDid && privateIssuerDid && credentialManager && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
 
       const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, privateIssuerDid, domain, domaincreationdate.toDateString());
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, "state-registration", orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
-      if (proof && fullVc && chain && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+      if (proof && fullVc && chain && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation) {
 
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -1193,13 +1190,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     const websiteType = "public"
 
     const entityId = "website(org)"
-    if (orgDid && credentialManager && walletClient && privateIssuerAccount && orgAccountClient && burnerAccountClient && privateIssuerDid) {
+    if (orgDid && credentialManager && privateIssuerAccount && orgAccountClient && burnerAccountClient && privateIssuerDid) {
 
       const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC(entityId, orgDid, privateIssuerDid, websiteType, website);
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, website, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
-      if (proof && chain && fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+      if (proof && chain && fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation) {
 
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -1247,13 +1244,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     const emailType = "info"
 
     const entityId = "email(org)"
-    if (orgDid && privateIssuerDid && credentialManager && walletClient && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
+    if (orgDid && privateIssuerDid && credentialManager && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
 
       const vc = await VerifiableCredentialsService.createEmailVC(entityId, orgDid, privateIssuerDid, emailType, email);
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, email, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
-      if (proof && chain &&fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+      if (proof && chain &&fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation) {
 
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));

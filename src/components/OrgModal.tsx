@@ -5,15 +5,12 @@ import {
   XMarkIcon
 } from "@heroicons/react/24/outline";
 import './UserSettingsModal.css';
-import {useTranslation} from 'react-i18next';
 import {Transition} from '@headlessui/react';
 
 import {OrgAttestation} from '../models/Attestation';
 import AttestationService from '../service/AttestationService';
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService'
 import { useWallectConnectContext } from "../context/walletConnectContext";
-import { getSignerFromSignatory } from "../signers/SignatoryTypes";
-import { useWalletClient, useAccount } from "wagmi"
 import { TextField, Button, Typography, Box, Paper } from "@mui/material";
 
 import { keccak256, toUtf8Bytes } from 'ethers';
@@ -33,7 +30,6 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const { chain, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, signatory, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, setOrgNameValue } = useWallectConnectContext();
-  const { data: walletClient }= useWalletClient()
 
 
   const [name, setName] = useState("");
@@ -50,9 +46,9 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
 
     const entityId = "org(org)"
 
-    //console.info("fields: ", orgDid, privateIssuerDid, walletClient, signatory, orgAccountClient, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, walletClient)
+    //console.info("fields: ", orgDid, privateIssuerDid, walletClient, signatory, orgAccountClient, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation)
     console.info("fields: ", orgIssuerDelegation, orgIndivDelegation)
-            if (orgDid && privateIssuerDid && credentialManager && walletClient && privateIssuerAccount && signatory && orgAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && walletClient) {
+            if (orgDid && privateIssuerDid && credentialManager && walletClient && privateIssuerAccount && signatory && orgAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation) {
 
       // set the org name locally and in profile
       //console.info("set org name: ", orgName)
@@ -62,7 +58,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
               const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgName, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
-      if (fullVc && signatory && chain && orgAccountClient && walletClient) {
+      if (fullVc && signatory && chain && orgAccountClient) {
       
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -129,7 +125,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
 
 
   const handleSave = () => {
-    if (signatory && orgAccountClient && walletClient) {
+    if (signatory && orgAccountClient) {
       addOrgAttestation(name)
     };
     onClose()

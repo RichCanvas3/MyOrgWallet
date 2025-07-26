@@ -217,6 +217,18 @@ const App = () => {
       setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
+    if (cmd.action == "edit" && cmd.entityId == "ens(org)" && cmd.did && cmd.displayName) {
+      setSelectedEntityId("ens(org)")
+      setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
+      setAttestationViewModalVisible(true)
+    }
+    if (cmd.action == "show" && cmd.entityId == "ens(org)" && cmd.did && cmd.displayName) { 
+      setSelectedEntityId("ens(org)")
+      setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
+      setAttestationViewModalVisible(true)
+    }
     if (cmd.action == "edit" && cmd.entityId == "state-registration(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("state-registration(org)")
       setSelectedDid(cmd.did)

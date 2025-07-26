@@ -14,6 +14,7 @@ import { Attestation,
   AccountIndivDelAttestation,
   SocialAttestation,
   RegisteredDomainAttestation,
+  RegisteredENSAttestation,
   WebsiteAttestation,
   InsuranceAttestation,
   EmailAttestation,
@@ -251,6 +252,9 @@ class AttestationService {
             }
             if (entityId == "domain(org)") {
               att = this.constructRegisteredDomainAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+            }
+            if (entityId == "ens(org)") {
+              att = this.constructRegisteredENSAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "website(org)") {
               att = this.constructWebsiteAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
@@ -1621,6 +1625,109 @@ class AttestationService {
     return undefined
   }
 
+
+  static RegisteredENSSchemaUID = "0x7dd352f8f4627032d9fb4dc209bc4a31baa82038803b9c5bab2abadf566f7fe5"
+  static RegisteredENSSchema = this.BaseSchema + "string name, uint64 enscreationdate"
+  static async addRegisteredENSAttestation(chain: Chain, attestation: RegisteredENSAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {
+
+    eas.connect(signer)
+
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
+
+    if (attestation.vccomm && attestation.vcsig && attestation.vcsig && attestation.vciss && attestation.proof && attestation.name && attestation.enscreationdate) {
+
+      const schemaEncoder = new SchemaEncoder(this.RegisteredENSSchema);
+      const schemaItems : SchemaItem[] = [
+
+          { name: 'entityid', value: attestation.entityId, type: 'string' },
+          { name: 'hash', value: attestation.hash, type: 'bytes32' },
+          { name: 'issuedate', value: issuedate, type: 'uint64' },
+          { name: 'expiredate', value: expiredate, type: 'uint64' },
+
+          { name: 'vccomm', value: attestation.vccomm, type: 'string' },
+          { name: 'vcsig', value: attestation.vcsig, type: 'string' },
+          { name: 'vciss', value: attestation.vciss, type: 'string' },
+
+          { name: 'proof', value: attestation.proof, type: 'string' },
+
+          { name: 'name', value: attestation.name, type: 'string' },
+          { name: 'enscreationdate', value: attestation.enscreationdate, type: 'uint64' },
+
+        ];
+
+        const encodedData = schemaEncoder.encodeData(schemaItems);
+        await AttestationService.storeAttestation(chain, this.RegisteredENSSchemaUID, encodedData, orgAccountClient, orgDelegateClient, delegationChain)
+
+        let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
+        attestationsEmitter.emit('attestationChangeEvent', event);
+
+    }
+
+    return attestation.entityId
+
+  }
+  static constructRegisteredENSAttestation(chain: Chain, uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
+
+    let vccomm : string | undefined
+    let vcsig : string | undefined
+    let vciss : string | undefined
+    let name : string | undefined
+    let proof : string | undefined
+
+
+    for (const field of decodedData) {
+      let fieldName = field["name"]
+
+      if (fieldName == "hash") {
+        hash = field["value"].value as string
+      }
+      if (fieldName == "vccomm") {
+        vccomm = field["value"].value as string
+      }
+      if (fieldName == "vcsig") {
+        vcsig = field["value"].value as string
+      }
+      if (fieldName == "vciss") {
+        vciss = field["value"].value as string
+      }
+      if (fieldName == "proof") {
+        proof = field["value"].value as string
+      }
+      if (fieldName == "name") {
+        name = field["value"].value as string
+      }
+    }
+
+
+    const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
+      if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && name != undefined) {
+        //console.info("set to org attestation with name: ", name)
+        const att : RegisteredENSAttestation = {
+          displayName: name,
+          entityId: entityId,
+          class: "organization",
+          category: "identity",
+          attester: attesterDid,
+          schemaId: schemaId,
+          uid: uid,
+          hash: hash,
+          vccomm: vccomm,
+          vcsig: vcsig,
+          vciss: vciss,
+          proof: proof,
+          name: name
+        }
+
+        return att
+      }
+
+
+
+    return undefined
+  }
+
+
   static StateRegistrationSchemaUID = "0xbf0c8858b40faa691436c577b53a6cc4789a175268d230b7ea0c572b0f46c62b"
   static StateRegistrationSchema = this.BaseSchema + "string name, string idnumber, string status, uint64 formationdate, string locationaddress"
   static async addStateRegistrationAttestation(chain: Chain, attestation: StateRegistrationAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {
@@ -2529,6 +2636,9 @@ class AttestationService {
             if (entityId == "state-registration(org)") {
               att = this.constructStateRegistrationAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
+            if (entityId == "ens(org)") {
+              att = this.constructRegisteredENSAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+            }
             if (entityId == "domain(org)") {
               att = this.constructRegisteredDomainAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
@@ -2913,6 +3023,13 @@ class AttestationService {
           rtnAttestation = this.constructRegisteredDomainAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
         }
       }
+      if (schemaId == this.RegisteredENSSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.RegisteredENSSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          rtnAttestation = this.constructRegisteredENSAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
       if (schemaId == this.SocialSchemaUID) {
         const schemaEncoder = new SchemaEncoder(this.SocialSchema);
         const decodedData = schemaEncoder.decodeData(item.data);
@@ -3226,6 +3343,14 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
           },
         },
       }]
+    },
+    {
+      name: "ens(org)",
+      schemaId: this.RegisteredENSSchemaUID,
+      schema: this.RegisteredENSSchema,
+      priority: 200,
+      introduction: "What is the ENS name for [org] so we can verify it",
+      instruction: "ask user if they can enter ENS name for [org] for verification",
     },
     {
       name: "linkedin(indiv)",

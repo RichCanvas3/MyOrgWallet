@@ -79,6 +79,10 @@ const getEntityIcon = (entityId: string, category?: string): React.ElementType =
   if (lowerEntityId === 'domain(org)') {
     return LanguageIcon;
   }
+
+  if (lowerEntityId === 'ens(org)') {
+    return LanguageIcon;
+  }
   
   if (lowerEntityId === 'website(org)') {
     return PublicIcon;

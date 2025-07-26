@@ -18,7 +18,6 @@ import { RPC_URL,  ETHERSCAN_API_KEY, ETHERSCAN_URL, EAS_URL } from "../config";
 
 import VerifiableCredentialsService from "../service/VerifiableCredentialsService"
 import ZkProofService from "../service/ZkProofService"
-import { useWalletClient, useAccount, useConnect, useDisconnect } from 'wagmi';
 import { getCachedResponse, putCachedResponse, putCachedValue } from "../service/CachedService"
 
 import { useWallectConnectContext } from "../context/walletConnectContext";
@@ -53,7 +52,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
   const [hasInfo, setHasInfo] = useState(false);
   const [hasCredential, setHasCredential] = useState(false);
   const [verified, setVerified] = useState(false);
-  const { data: walletClient } = useWalletClient();
+
 
   const [ orgEthName, setOrgEthName] = useState<string>("");
   const [ orgEthAvatar, setOrgEthAvatar] = useState<string>("");
@@ -228,6 +227,9 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
           }
           if (entityId == "domain(org)") {
             schemaUid = AttestationService.RegisteredDomainSchemaUID
+          }
+          if (entityId == "ens(org)") {
+            schemaUid = AttestationService.RegisteredENSSchemaUID
           }
           if (entityId == "shopify(org)") {
             schemaUid = AttestationService.WebsiteSchemaUID
