@@ -2,6 +2,7 @@ import {useContext, useEffect, useRef, useState} from 'react';
 import * as React from 'react';
 import { hexlify, parseEther, formatEther, ethers, namehash } from 'ethers';
 import { Button } from '@mui/material';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import ETHRegistrarControllerABI from '../abis/ETHRegistrarController.json'
 import PublicResolverABI from '../abis/PublicResolver.json'
@@ -118,7 +119,6 @@ const shopifyAuthRef = { current: null as ShopifyAuthRef | null };
 const xAuthRef = { current: null as XAuthRef | null };
 const insuranceAuthRef = { current: null as InsuranceAuthRef | null };
 
-
 const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const defaultIntroduction: ChatMessage = { content: "test"} as ChatMessage;
   const [introduction, setIntroduction] = useState<ChatMessage>(defaultIntroduction);
@@ -146,7 +146,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const { data: walletClient } = useWalletClient();
 
-  const { chain, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, setOrgNameValue, signatory } = useWallectConnectContext();
+
+  const { chain, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, indivName, indivAccountClient, setOrgNameValue, signatory } = useWallectConnectContext();
+
 
   const [isDeleteAttestationsModalVisible, setDeleteAttestationsModalVisible] = useState(false);
   const [isApproveLeaderModalVisible, setApproveLeaderModalVisible] = useState(false);
@@ -165,6 +167,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
 
   const [threadID, setThreadID] = useState<string | null>(null);
+
+  // Add state for thinking
+  const [isThinking, setIsThinking] = useState(false);
+  const thinkingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleOnDeleteAttestationsModalClose = () => {
     setDeleteAttestationsModalVisible(false);
@@ -259,48 +265,39 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
 
 
-  useEffect(() => {
-
+  
+  async function init() {
+    let orgname;
     if (orgAccountClient && chain && orgDid && indivDid) {
 
       console.info("************* orgDid: ", orgDid)
 
-      AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
-
-        console.info("************* ents: ", ents)
+      await AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
 
         if (ents != undefined) {
 
           setEntities(ents)
-
+          console.log(ents)
           for (const entity of ents) {
             if (entity.name == "org(org)" && entity.attestation) {
-              console.info("------------> org name: ", (entity.attestation as OrgAttestation).name)
               setOrgNameValue((entity.attestation as OrgAttestation).name)
+              orgname = (entity.attestation as OrgAttestation).name
+              console.log('orgname: ', orgname)
+            } else if (entity.name == "") {
+
             }
           }
 
           if (!conversation) {
-            console.info("------------> conversation is undefined so configure conversation")
+
             if (location.pathname.startsWith("/chat/c/")) {
-              
               let conversationId = location.pathname.replace("/chat/c/", "")
-              console.info("-------> location.pathname: ", location.pathname)
-              console.info("-------> path /chat/c/: ", conversationId)
               handleSelectedConversation(conversationId)
-              
             }
             else {
-              console.info("-------> path not /chat/c/ so set new conversation")
               newConversation(ents)
             }
           }
-          else {
-            console.info("------------> conversation is defined")
-          }
-        }
-        else {
-          console.info("------------> ents is undefined")
         }
       })
 
@@ -312,8 +309,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       navigate("/")
     }
 
+    return {"name": orgname, "state": 'undefined', "linkedin": 'undefined', "x": 'undefined', "state_registration": 'undefined', "ens_registration": 'undefined', "domain": 'undefined'};
+  }
 
-  }, [orgAccountClient, orgDid, indivDid]);
+  
+  //const company_config = ''
+
+  //console.log('company config: ', company_config)
 
 
   useEffect(() => {
@@ -367,12 +369,12 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   useEffect(() => {
     let isMounted = true;
-    
+
     async function fetchThreadID() {
       if (threadID || !isMounted) {
         return;
       }
-      
+
       console.log('fetching thread ID.....................')
       try {
         const threadID_text = await invokeLangGraphAgent({});
@@ -380,12 +382,15 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         const threadID_Array = threadID_text.split("'");
         const threadIDResult = threadID_Array[1];
         console.log("Thread ID:", threadIDResult);
-        
+
         if (isMounted) {
           setThreadID(threadIDResult);
 
           console.log('call langchain.....................')
-          getArgfromUserMessage(threadIDResult, "lets get started").then(str => {
+          const company_config = await init();
+          console.log('cc name: ', company_config['name'])
+          console.log(company_config)
+          getArgfromUserMessage(threadIDResult, `lets get started: Name: ${company_config["name"]}, State: ${company_config["state"]}, Domain: ${company_config["domain"]}, Linkedin: ${company_config["linkedin"]}, Twitter: ${company_config["x"]}, State Registration: ${company_config["state_registration"]}, ENS Registration: ${company_config["ens_registration"]}`).then(str => {
             if (str) {
               addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
             }
@@ -395,9 +400,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         console.error('Error fetching thread ID:', error);
       }
     }
-    
+
     fetchThreadID();
-    
+
     return () => {
       isMounted = false;
     };
@@ -462,6 +467,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       }
     };
 
+
+
   const newConversation = (entities: Entity[]) => {
 
     console.info("------------> newConversation: ", conversation )
@@ -480,6 +487,14 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
       // Set the initial introduction message to the requested string
       let introduction = "Hello!";
+
+      // If we have the individual's name, personalize the greeting
+      if (indivName) {
+        // Extract first name (everything before the first space)
+        const firstName = indivName.split(' ')[0];
+        introduction = `Hello, ${firstName}!`;
+      }
+
       let instruction : string | undefined
 
       if (entities != undefined) {
@@ -529,11 +544,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
 
 
-
-
-
     messageBoxRef.current?.focusTextarea();
   };
+
 
 
   const handleSelectedConversation = (id: string | null) => {
@@ -591,8 +604,32 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     return args;
   }
 
-  const callApp = (message: string, fileDataRef: FileDataRef[]) => {
+  async function stateRegister(company_name: string, state: string, ngrok_url: string) {
+    console.log(company_name, state)
+    try {
+      const response = await fetch(
+        `${ngrok_url}/creds/good-standing/company?company=${company_name}&state=${state}`
+      );
 
+      if (!response.ok) {
+        const text = await response.text();
+        console.error("Fetch failed:", response.status, text);
+        return `Fetch failed: ${response.status} - ${text}`;
+      }
+      console.log(response);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error during fetch:", error);
+      if (error instanceof Error) {
+        return `Error during fetch: ${error.message}`;
+      }
+      return "An unknown error occurred during fetch.";
+    }
+  }
+
+  const callApp = (message: string, fileDataRef: FileDataRef[]) => {
+    var ngrok_url = 'https://b2f972629ffd.ngrok-free.app';
     if (conversation == null || threadID == null) {
       return
     }
@@ -603,33 +640,80 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     if (brokenMessage[0] == 'Register' && brokenMessage[1] == 'ENS:') {
       console.log('Correct input, and name = ', brokenMessage[2] )
       console.log('ENS Name: ', brokenMessage[2])
-
-      //createEnsDomainName(brokenMessage[2])
     }
 
-    // append signers
-
-    // console.log('Broken Message: ', brokenMessage)
-    
     checkAllDirectActions("", message);
+
+    // Ensure auto-scroll is enabled when sending new messages
     setAllowAutoScroll(true);
 
+    // Add user's message
     addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
 
-    //console.info("..... process user message: ", message)
+    // Force scroll to bottom after adding user message
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+
+    // Clear any existing timeout
+    if (thinkingTimeoutRef.current) {
+      clearTimeout(thinkingTimeoutRef.current);
+    }
+
+    // Set thinking state after delay
+    thinkingTimeoutRef.current = setTimeout(() => {
+      setIsThinking(true);
+      // Ensure thinking indicator is visible
+      scrollToBottom();
+    }, 750);
+
+    // Process user message
     getArgfromUserMessage(threadID, message).then(str => {
+      // Clear timeout and hide thinking state
+      if (thinkingTimeoutRef.current) {
+        clearTimeout(thinkingTimeoutRef.current);
+      }
+      setIsThinking(false);
 
       if (str.includes("ens_verification") && orgAccountClient && chain) {
         console.log('process ens verification')
-        const ensName = message.split("ENS:")[1]
-        EnsService.createEnsDomainName(orgAccountClient, ensName, chain!).then((ensName) => {
-          console.log('ENS Name: ', ensName)
-        })
+        setIsAddEnsRecordModalVisible(true)
+        setExistingEnsNameForUpdate('')
+        // Remove the immediate ENS registration call - it will be handled by the modal
+        addMessage(Role.Assistant, MessageType.Normal, `Opening ENS registration modal...`, '', fileDataRef, sendMessage)
+      } else if (str.includes('state_register') && orgAccountClient && chain) {
+        const listMessage = str.split(' ')
+        console.log(listMessage)
+        const data = stateRegister(orgName || '', message, ngrok_url);
+        console.log('state data being jsoned', data);
+        addMessage(Role.Assistant, MessageType.Normal, `${orgName} Registeration Verified!`, '', fileDataRef, sendMessage)
+        /*
+        var split = data.split('-');
+        console.log(split)
+        var id = (split[1].split('** '))[1];
+        var name = 'test';
+        var formDate = (split[4].split('** '))[1];
+        var address = (split[5].split('** '))[1];
+        console.log(id, formDate, address)
+        */
+      } else {
+        addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
       }
+      console.log('Data From Stream: ', str);
 
-      addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
-    })
-    //message = message + ", Please respond with a JSON object. Include keys like 'company_name', 'state_name', 'email' if they exist."
+      // Force scroll to bottom after response
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+    }).catch(error => {
+      // Clear timeout and hide thinking state on error
+      if (thinkingTimeoutRef.current) {
+        clearTimeout(thinkingTimeoutRef.current);
+      }
+      setIsThinking(false);
+      console.error('Error processing message:', error);
+    });
+
 
   };
 
@@ -652,10 +736,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         content: content,
         fileDataRef: fileDataRef,
       };
-      //console.info("setMessages 3")
-      return [...prevMessages, newMsg];
-    });
+      const newMessages = [...prevMessages, newMsg];
 
+      // Enable auto-scroll for new messages
+      setAllowAutoScroll(true);
+
+      return newMessages;
+    });
 
     const newMessage: ChatMessage = {
       id: messages.length + 1,
@@ -668,7 +755,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     const updatedMessages = [...messages, newMessage];
 
     if (sendMessage) {
-      // this is going to sendMessage(...)
       sendMessage(updatedMessages, args);
     }
   };
@@ -812,7 +898,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   // Helper function to fetch existing ENS name
   const fetchExistingEnsName = async (): Promise<string> => {
     if (!orgAccountClient || !chain) return '';
-    
+
     try {
       const orgAddress = await orgAccountClient.getAddress();
       const existingEnsName = await EnsService.getEnsName(orgAddress, chain);
@@ -826,7 +912,39 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   function checkAllDirectActions(lastAssistantResponse: string, lastUserResponse: string) {
     let actionMessage = ""
+
     try {
+      if (lastUserResponse.toLowerCase().includes("show wallet") ||
+          lastUserResponse.toLowerCase().includes("show address") ||
+          lastUserResponse.toLowerCase().includes("my address") ||
+          lastUserResponse.toLowerCase().includes("smart account address")) {
+        console.info("Showing wallet addresses...");
+
+        const showAddresses = async () => {
+          const addresses = [];
+
+          if (orgAccountClient) {
+            const orgAddress = await orgAccountClient.getAddress();
+            addresses.push(`Organization Smart Account: ${orgAddress}`);
+          }
+
+          if (indivAccountClient) {
+            const indivAddress = await indivAccountClient.getAddress();
+            addresses.push(`Individual Smart Account: ${indivAddress}`);
+          }
+
+          if (burnerAccountClient) {
+            const burnerAddress = await burnerAccountClient.getAddress();
+            addresses.push(`Burner Account: ${burnerAddress}`);
+          }
+
+          const message = `Your wallet addresses:\n${addresses.join('\n')}`;
+          addMessage(Role.Assistant, MessageType.Normal, message, '', [], sendMessage);
+        };
+
+        showAddresses().catch(console.error);
+        actionMessage = "show addresses";
+      }
       if (lastUserResponse.toLowerCase().includes("delete all") ||
           lastUserResponse.toLowerCase().includes("delete attestations")) {
         setDeleteAttestationsModalVisible(true)
@@ -867,7 +985,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         setAddAccountModalVisible(true)
         actionMessage="add debit card"
       }
-      if (lastUserResponse.toLowerCase().includes("add ens record") || 
+      if (lastUserResponse.toLowerCase().includes("add ens record") ||
           lastUserResponse.toLowerCase().includes("add ens name") ||
           lastUserResponse.toLowerCase().includes("register ens")) {
         console.info("add ens record ...")
@@ -875,51 +993,29 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         setExistingEnsNameForUpdate('')
         actionMessage="add ens record"
       }
-      if (lastUserResponse.toLowerCase().includes("update ens logo") || 
+      if (lastUserResponse.toLowerCase().includes("update ens logo") ||
           lastUserResponse.toLowerCase().includes("update ens avatar") ||
           lastUserResponse.toLowerCase().includes("change ens logo")) {
         console.info("update ens logo ...")
-        
+
         // Extract ENS name from the message if provided
         const ensMatch = lastUserResponse.match(/(?:update|change)\s+(?:ens\s+)?(?:logo|avatar)\s+(?:for\s+)?([a-zA-Z0-9-]+\.eth)/i);
         console.log("Chat message:", lastUserResponse);
         console.log("Regex match result:", ensMatch);
         let ensName = ensMatch ? ensMatch[1] : '';
-        
-        // Always fetch the correct ENS name first, then open modal
-        const handleEnsLogoUpdate = async () => {
-          let correctEnsName = '';
-          
-          console.log("Starting ENS logo update process...");
-          console.log("Extracted ENS name from message:", ensName);
-          
-          // For now, always use reverse lookup to get the correct ENS name
-          // This ensures we get the right name regardless of what was typed
-          correctEnsName = await fetchExistingEnsName();
-          
-          console.log("Correct ENS name from reverse lookup:", correctEnsName);
-          
-          if (!correctEnsName) {
-            // If no ENS name found via reverse lookup, use the extracted name as fallback
-            correctEnsName = ensName;
-            console.log("Using fallback ENS name:", correctEnsName);
-          }
-          
-          console.log("Final ENS name to use:", correctEnsName);
-          
-          if (correctEnsName) {
-            console.log("Setting ENS name in state:", correctEnsName);
-            setExistingEnsNameForUpdate(correctEnsName);
-            setIsAddEnsRecordModalVisible(true);
-          } else {
-            // No ENS name found, still open modal but with empty name
-            console.log("No ENS name found, opening modal with empty name");
-            setExistingEnsNameForUpdate('');
-            setIsAddEnsRecordModalVisible(true);
-          }
-        };
-        
-        handleEnsLogoUpdate().catch(console.error);
+
+        // Open modal immediately without fetching ENS name to avoid MetaMask popup
+        console.log("Opening ENS logo update modal...");
+        console.log("Extracted ENS name from message:", ensName);
+
+        // Use the extracted name if available, otherwise leave empty for user to enter
+        if (ensName) {
+          setExistingEnsNameForUpdate(ensName);
+        } else {
+          setExistingEnsNameForUpdate('');
+        }
+
+        setIsAddEnsRecordModalVisible(true);
         actionMessage="update ens logo"
         return; // Exit early to prevent further processing
       }
@@ -988,7 +1084,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             const attestation: StateRegistrationAttestation = {
               idnumber: idNumber,
               status: status,
-              formationdate: formationDate,
+              formationdate: new Date(formationDate).getTime() / 1000, // Convert to Unix timestamp
               state: state,
               locationaddress: locationAddress,
               name: orgName,
@@ -1423,7 +1519,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       return args
     }
     */
-   //return "something went wrong"
+   return "something went wrong"
   }
 
 
@@ -1631,9 +1727,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           let state = command["state"]
           if (state) {
             if (isFirstCall) {
-              addOrgRegistrationAttestation(state).then(() => {
-
-              })
+              // Note: State registration attestation is handled elsewhere
+              // This is just a placeholder for the UI update
 
               entities?.forEach((ent) => {
                 if (ent.name == "state-registration(org)") {
@@ -1895,8 +1990,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   };
 
   const handleUserScroll = (isAtBottom: boolean) => {
-    setAllowAutoScroll(isAtBottom);
     setShowScrollButton(!isAtBottom);
+    if (isAtBottom) {
+      setAllowAutoScroll(true);
+    }
   };
 
 
@@ -2138,6 +2235,19 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
                     allowAutoScroll={allowAutoScroll}
                     loading={loading}
                   />
+                  {isThinking && (
+                    <div style={{
+                      padding: '10px 20px',
+                      color: 'gray',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      marginBottom: '20px'
+                    }}>
+                      <CircularProgress size={16} />
+                      <span>Thinking...</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Scroll to bottom button */}

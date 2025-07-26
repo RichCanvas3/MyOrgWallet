@@ -164,6 +164,8 @@ const SetupSmartWalletModal: React.FC = () => {
 
   // Decide current action
   const stepAction = [
+
+
     { label: 'Build Smart Wallets', description: `
       <b>Your wallet is already connected from the welcome page!</b> <br/><br/>
 
