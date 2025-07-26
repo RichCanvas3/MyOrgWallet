@@ -1085,7 +1085,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
               idnumber: idNumber,
               status: status,
               formationdate: new Date(formationDate).getTime() / 1000, // Convert to Unix timestamp
-              state: state,
               locationaddress: locationAddress,
               name: orgName,
               attester: orgDid,
@@ -1439,22 +1438,42 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     console.info("*************** threadID: ", threadID)
     if (currentThreadID) {
 
+      // Check if user wants to skip the current entity
+      if (content.toLowerCase().includes('skip')) {
+        if (entities) {
+          const updatedEntities = markCurrentEntityAsSkipped([...entities]);
+          setEntities(updatedEntities);
+
+          // Find next entity to prompt for
+          const nextEntity = getCurrentEntity(updatedEntities);
+          if (nextEntity && orgName) {
+            const nextPrompt = nextEntity.introduction?.replace("[org]", orgName) || "What would you like to do next?";
+            return `I understand you'd like to skip that for now. ${nextPrompt}`;
+          } else {
+            return "No problem! You've completed all the required attestations. Feel free to let me know if you'd like to add any additional verifications or if you have any questions.";
+          }
+        }
+        return "I understand you'd like to skip that for now. What would you like to do next?";
+      }
+
       if (content.toLowerCase() == 'colorado') {
-        var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'state_register', {}, linkedInAuthRef, xAuthRef);
+        var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'state_register', entities || [], {}, linkedInAuthRef, xAuthRef);
         console.log('adding attestation')
         addOrgRegistrationAttestation(response['name'], response['id'], content, response["address"], response["formDate"]);
         console.log('LangChain Response: ', response.message)
         return response.message;
       } else if ((content.toLowerCase())[12] == 'l') {//'https://www.linkedin.com/in') {
         //console.log('hallo')
-        var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'linkedin_verification', {}, linkedInAuthRef, xAuthRef);
+        var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'linkedin_verification', entities || [], {}, linkedInAuthRef, xAuthRef);
         console.log('LangChain Response: ', response.message)
         return response.message;
       } else if (content.toLowerCase() == 'twitter') {
-        var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'x_verification', {}, linkedInAuthRef, xAuthRef);
+        var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'x_verification', entities || [], {}, linkedInAuthRef, xAuthRef);
         return response.message;
       } else {
-        var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'none', {}, linkedInAuthRef, xAuthRef);
+
+        var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'none', entities || [], {}, linkedInAuthRef, xAuthRef);
+        console.log('LangChain Response final: ', response.message)
         return response.message;
       }
     }
@@ -1533,8 +1552,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     if (entities && org) {
       for (const entity of entities) {
-        //console.info("entity: ", entity, entity.attestation)
-        if (entity.attestation == undefined && entity.introduction != "" ) {
+        //console.info("entity: ", entity, entity.attestation, entity.skipped)
+        if (entity.attestation == undefined && !entity.skipped && entity.introduction != "" ) {
           if (entity.introduction != undefined) {
             console.info("found introduction: ", entity.name)
             defaultIntroduction = entity.introduction.replace("[org]", org)
@@ -1568,6 +1587,45 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   }
 
+
+  // Function to mark the current entity as skipped
+  function markCurrentEntityAsSkipped(entities: Entity[]): Entity[] {
+    if (!entities || !orgName) return entities;
+
+    // Find the current entity being prompted for (first missing, non-skipped entity by priority)
+    for (const entity of entities) {
+      if (entity.attestation == undefined && !entity.skipped && entity.introduction != "") {
+        console.info("marking entity as skipped: ", entity.name);
+        entity.skipped = true;
+        break;
+      }
+    }
+    return entities;
+  }
+
+  // Function to un-skip an entity (for later use)
+  function unSkipEntity(entities: Entity[], entityName: string): Entity[] {
+    if (!entities) return entities;
+
+    const entity = entities.find(e => e.name === entityName);
+    if (entity) {
+      console.info("un-skipping entity: ", entity.name);
+      entity.skipped = false;
+    }
+    return entities;
+  }
+
+  // Function to get the current entity being prompted for
+  function getCurrentEntity(entities: Entity[]): Entity | undefined {
+    if (!entities) return undefined;
+
+    for (const entity of entities) {
+      if (entity.attestation == undefined && !entity.skipped && entity.introduction != "") {
+        return entity;
+      }
+    }
+    return undefined;
+  }
 
   function processAssistantMessage(isFirstCall: boolean, content: string, args: string, prevMessages: ChatMessage[], updatedMessage: ChatMessage, fileDataRef: FileDataRef[]) {
 
@@ -2146,6 +2204,15 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     }
   }
 
+  // Function to handle un-skipping entities from the UI
+  const handleUnSkipEntity = (entityName: string) => {
+    if (entities) {
+      const updatedEntities = unSkipEntity([...entities], entityName);
+      setEntities(updatedEntities);
+      console.info("Un-skipped entity: ", entityName);
+    }
+  };
+
   return (
       <div className="flex  w-full">
         <DeleteAttestationsModal
@@ -2291,6 +2358,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             appCommand={appCommand}
             onRefreshAttestations={handleRefreshAttestations}
             onRefreshAccounts={handleRefreshAccounts}
+            entities={entities}
+            onUnSkipEntity={handleUnSkipEntity}
           />
         </div>
       </div>

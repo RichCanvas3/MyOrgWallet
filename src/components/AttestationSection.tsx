@@ -5,13 +5,28 @@ import {
   InputAdornment,
   Typography,
   Tab,
-  Tabs as MuiTabs
+  Tabs as MuiTabs,
+  Chip,
+  Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Divider
 } from '@mui/material';
 
 import { TabContext, TabList, TabPanel } from '@mui/lab';
 
 import SearchIcon from '@mui/icons-material/Search';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import PendingIcon from '@mui/icons-material/Pending';
+import CloseIcon from '@mui/icons-material/Close';
 import {
   Attestation,
   AttestationCategory,
@@ -24,17 +39,215 @@ import AttestationService, {
   attestationsEmitter,
 } from '../service/AttestationService';
 import { useWallectConnectContext } from "../context/walletConnectContext";
+import { Entity } from '../models/Entity';
 
 interface AttestationSectionProps {
   orgDid?: string;
   indivDid?: string;
   onSelectAttestation: (attestation: Attestation) => void;
+  entities?: Entity[];
+  onUnSkipEntity?: (entityName: string) => void;
 }
+
+// Attestation Statistics Component
+const AttestationStats: React.FC<{
+  entities?: Entity[];
+  onUnSkip?: (entityName: string) => void;
+}> = ({ entities, onUnSkip }) => {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogType, setDialogType] = useState<'completed' | 'missing' | 'skipped'>('completed');
+
+  if (!entities) return null;
+
+  const completed: string[] = [];
+  const missing: string[] = [];
+  const skipped: string[] = [];
+
+  const stats = entities.reduce((acc, entity) => {
+    if (entity.attestation) {
+      acc.completed++;
+      completed.push(entity.name);
+    } else if (entity.skipped) {
+      acc.skipped++;
+      skipped.push(entity.name);
+    } else {
+      acc.missing++;
+      missing.push(entity.name);
+    }
+    return acc;
+  }, { completed: 0, missing: 0, skipped: 0 });
+
+  const total = stats.completed + stats.missing + stats.skipped;
+  const completionPercentage = total > 0 ? Math.round((stats.completed / total) * 100) : 0;
+
+  const handleChipClick = (type: 'completed' | 'missing' | 'skipped') => {
+    setDialogType(type);
+    setDialogOpen(true);
+  };
+
+  const handleUnSkip = (entityName: string) => {
+    if (onUnSkip) {
+      onUnSkip(entityName);
+      setDialogOpen(false);
+    }
+  };
+
+  const formatEntityName = (entityName: string) => {
+    // Convert entity names like "linkedin(indiv)" to "LinkedIn (Individual)"
+    const parts = entityName.match(/^([^(]+)\(([^)]+)\)$/);
+    if (parts) {
+      const [, name, type] = parts;
+      const formattedName = name.charAt(0).toUpperCase() + name.slice(1);
+      const formattedType = type === 'indiv' ? 'Individual' :
+                           type === 'org' ? 'Organization' : type;
+      return `${formattedName} (${formattedType})`;
+    }
+    return entityName;
+  };
+
+  return (
+    <>
+      <Paper
+        elevation={1}
+        sx={{
+          p: 2,
+          mb: 2,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          backgroundColor: 'background.paper'
+        }}
+      >
+        <Box display="flex" alignItems="center" gap={2}>
+          <Chip
+            icon={<CheckCircleIcon />}
+            label={`${stats.completed} Completed`}
+            color="success"
+            variant="outlined"
+            onClick={() => handleChipClick('completed')}
+            sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'success.light', color: 'white' } }}
+          />
+          <Chip
+            icon={<PendingIcon />}
+            label={`${stats.missing} Missing`}
+            color="warning"
+            variant="outlined"
+            onClick={() => handleChipClick('missing')}
+            sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'warning.light', color: 'white' } }}
+          />
+          {stats.skipped > 0 && (
+            <Chip
+              icon={<PendingIcon />}
+              label={`${stats.skipped} Skipped`}
+              color="info"
+              variant="outlined"
+              onClick={() => handleChipClick('skipped')}
+              sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'info.light', color: 'white' } }}
+            />
+          )}
+        </Box>
+        <Typography variant="body2" color="text.secondary" sx={{ ml: 3 }}>
+          {completionPercentage}% Complete
+        </Typography>
+      </Paper>
+
+      {/* Attestation Details Dialog */}
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box display="flex" alignItems="center" gap={1}>
+            {dialogType === 'completed' ? (
+              <>
+                <CheckCircleIcon color="success" />
+                <Typography variant="h6">Completed Attestations</Typography>
+              </>
+            ) : dialogType === 'skipped' ? (
+              <>
+                <PendingIcon color="info" />
+                <Typography variant="h6">Skipped Attestations</Typography>
+              </>
+            ) : (
+              <>
+                <PendingIcon color="warning" />
+                <Typography variant="h6">Missing Attestations</Typography>
+              </>
+            )}
+          </Box>
+          <Button onClick={() => setDialogOpen(false)} color="inherit">
+            <CloseIcon />
+          </Button>
+        </DialogTitle>
+
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            {dialogType === 'completed'
+              ? `You have ${stats.completed} verified attestations:`
+              : dialogType === 'skipped'
+              ? `You have ${stats.skipped} skipped attestations (you can come back to these later):`
+              : `You can add ${stats.missing} more attestations to improve your profile:`
+            }
+          </Typography>
+
+          <List>
+            {(dialogType === 'completed' ? completed : dialogType === 'skipped' ? skipped : missing).map((entityName, index) => (
+              <React.Fragment key={entityName}>
+                <ListItem>
+                  <ListItemIcon>
+                    {dialogType === 'completed' ? (
+                      <CheckCircleIcon color="success" />
+                    ) : dialogType === 'skipped' ? (
+                      <PendingIcon color="info" />
+                    ) : (
+                      <PendingIcon color="warning" />
+                    )}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={formatEntityName(entityName)}
+                    secondary={
+                      dialogType === 'completed'
+                        ? 'Verified and on-chain'
+                        : dialogType === 'skipped'
+                        ? 'Skipped - click "Add Back" to resume'
+                        : 'Click in chat to add this attestation'
+                    }
+                  />
+                  {dialogType === 'skipped' && (
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleUnSkip(entityName)}
+                      sx={{ ml: 2 }}
+                    >
+                      Add Back
+                    </Button>
+                  )}
+                </ListItem>
+                {index < (dialogType === 'completed' ? completed : missing).length - 1 && <Divider />}
+              </React.Fragment>
+            ))}
+          </List>
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(false)} variant="contained">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
+  );
+};
 
 const AttestationSection: React.FC<AttestationSectionProps> = ({
   orgDid,
   indivDid,
   onSelectAttestation,
+  entities,
+  onUnSkipEntity
 }) => {
     const [tabValue, setTabValue] = useState<'individual' | 'organization'>('individual');
     const [categories, setCategories] = useState<AttestationCategory[]>([]);
@@ -146,21 +359,21 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
       a.entityId?.toLowerCase().includes(searchTerm.toLowerCase()) &&
       a.class === tabValue
   );
-  
+
   // Remove duplicates based on uid, entityId, and attester combination
-  const uniqueAttestations = filtered.filter((att, index, self) => 
-    index === self.findIndex(a => 
-      a.uid === att.uid && 
-      a.entityId === att.entityId && 
+  const uniqueAttestations = filtered.filter((att, index, self) =>
+    index === self.findIndex(a =>
+      a.uid === att.uid &&
+      a.entityId === att.entityId &&
       a.attester === att.attester
     )
   );
-  
+
   // Sort attestations by category ID
   const sortedAttestations = uniqueAttestations.sort((a, b) => {
     const idA = currentCategories.find(cat => cat.name === a.category)?.id || '';
     const idB = currentCategories.find(cat => cat.name === b.category)?.id || '';
-    
+
     // Sort by category ID numerically
     return idA.localeCompare(idB);
   });
@@ -194,7 +407,7 @@ return (
             Attestations
           </Typography>
         </Box>
-        
+
         {/* Tabs */}
         <TabList onChange={handleTabChange} aria-label="Attestation tabs">
           <Tab label="Individual" value="individual" />
@@ -219,6 +432,9 @@ return (
         sx={{ width: 200 }}
       />
     </Box>
+
+    {/* ── STATISTICS: Attestation completion stats ───────────────────── */}
+            <AttestationStats entities={entities} onUnSkip={onUnSkipEntity} />
 
     {/* ── PANEL: Results only, scrollable ───────────────────── */}
     <TabPanel

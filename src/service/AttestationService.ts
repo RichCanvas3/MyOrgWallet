@@ -3,22 +3,22 @@ import FileDataService from './FileDataService';
 import { ChatMessage } from '../models/ChatCompletion';
 import { Entity } from '../models/Entity';
 
-import { Attestation, 
-  AttestationCategory, 
-  IndivAttestation, 
-  OrgIndivAttestation, 
-  OrgAttestation, 
-  IndivAccountAttestation, 
+import { Attestation,
+  AttestationCategory,
+  IndivAttestation,
+  OrgIndivAttestation,
+  OrgAttestation,
+  IndivAccountAttestation,
   OrgAccountAttestation,
   AccountOrgDelAttestation,
   AccountIndivDelAttestation,
-  SocialAttestation, 
-  RegisteredDomainAttestation, 
-  WebsiteAttestation, 
-  InsuranceAttestation, 
-  EmailAttestation, 
-  StateRegistrationAttestation, 
-  IndivEmailAttestation} 
+  SocialAttestation,
+  RegisteredDomainAttestation,
+  WebsiteAttestation,
+  InsuranceAttestation,
+  EmailAttestation,
+  StateRegistrationAttestation,
+  IndivEmailAttestation}
   from '../models/Attestation';
 
 import { Organization } from '../models/Organization';
@@ -70,6 +70,7 @@ import { type Chain } from 'viem'
 
 import { Account, IndivAccount, AccountType, ACCOUNT_TYPES } from '../models/Account';
 import { SingleBedRounded } from "@mui/icons-material";
+import { attributesToProps } from "html-react-parser";
 
 export interface AttestationChangeEvent {
   action: 'add' | 'edit' | 'delete' | 'delete-all' | 'revoke',
@@ -87,7 +88,7 @@ const easApolloClient = new ApolloClient({
 });
 
 
-const easContractAddress = EAS_CONTRACT_ADDRESS ||"0x4200000000000000000000000000000000000021"; 
+const easContractAddress = EAS_CONTRACT_ADDRESS ||"0x4200000000000000000000000000000000000021";
 const eas = new EAS(easContractAddress);
 
 
@@ -139,6 +140,7 @@ class AttestationService {
           }
         ) {
           id
+          attester
           schemaId
           data
         }
@@ -209,23 +211,62 @@ class AttestationService {
 
           // construct correct attestation
           if (entity != undefined) {
-            if (entity.name == "org(org)") {
-              let att = this.constructOrgAttestation(chain, item.id, item.schemaId, entityId, orgAddress, hash, decodedData)
-              if (att != undefined) {
-                entity.attestation = att
-              }
+            let att: Attestation | undefined;
 
+            if (entityId == "indiv(indiv)") {
+              att = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
-            else {
-              const att : Attestation = {
-                entityId: entity.name,
-                attester: "did:pkh:eip155:" + chain?.id + ":" + item.attester,
-                uid: item.id,
-                schemaId: item.schemaId,
-                hash: "",
-              }
-              entity.attestation = att
-              //console.info("------------> entity attestation: ", entity.attestation)
+            if (entityId == "account(indiv)") {
+              att = this.constructIndivAccountAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+            }
+            if (entityId == "account-org(org)") {
+              att = this.constructAccountOrgDelAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+            }
+            if (entityId == "account-indiv(org)") {
+              att = this.constructAccountIndivDelAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+            }
+            if (entityId == "account(org)") {
+              att = this.constructOrgAccountAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+            }
+            if (entityId == "org(org)") {
+              att = this.constructOrgAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+            }
+            if (entityId == "org-indiv(org)") {
+              att = this.constructOrgIndivAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+            }
+            if (entityId == "linkedin(indiv)") {
+              att = this.constructSocialAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+            }
+            if (entityId == "x(indiv)") {
+              att = this.constructSocialAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+            }
+            if (entityId == "shopify(org)") {
+              att = this.constructWebsiteAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+            }
+            if (entityId == "insurance(org)") {
+              att = this.constructInsuranceAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+            }
+            if (entityId == "state-registration(org)") {
+              att = this.constructStateRegistrationAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+            }
+            if (entityId == "domain(org)") {
+              att = this.constructRegisteredDomainAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+            }
+            if (entityId == "website(org)") {
+              att = this.constructWebsiteAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+            }
+            if (entityId == "email(org)") {
+              att = this.constructEmailAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+            }
+            if (entityId == "email(indiv)") {
+              att = this.constructIndivEmailAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+            }
+
+            if (att != undefined) {
+              entity.attestation = attributesToProps
+              console.info(`Set attestation for entity ${entityId}:`, att.displayName || att.entityId)
+            } else {
+              console.info(`Constructor returned undefined for entity ${entityId}, skipping`)
             }
           }
 
@@ -278,7 +319,7 @@ class AttestationService {
             },
           })
 
-        
+
     let resp = await swTx.wait()
 
     return ""
@@ -357,7 +398,60 @@ class AttestationService {
 
 
 
+
   static async storeAttestation(chain: Chain, schema: string, encodedData: any, delegator: MetaMaskSmartAccount, delegate: MetaMaskSmartAccount, delegationChain: Delegation[], easInstance?: EAS) {
+
+    const key1 = BigInt(Date.now())      // or some secure random
+    const nonce1 = encodeNonce({ key: key1, sequence: 0n })
+
+    let tx = await eas.attest({
+      schema: schema,
+      data: {
+        recipient: delegator.address,
+        expirationTime: 0n, // BigInt in v6
+        revocable: true,
+        data: encodedData
+      }
+    })
+
+
+    const executions = [
+      {
+        target: tx.data.to,
+        value: 0n,
+        callData: tx.data.data,
+      },
+    ];
+
+
+    const paymasterClient = createPaymasterClient({
+      transport: http(PAYMASTER_URL),
+    });
+
+
+    console.info("pimlico client configruation for BUNDLER URL")
+    const pimlicoClient = createPimlicoClient({
+      transport: http(BUNDLER_URL),
+    });
+    const bundlerClient = createBundlerClient({
+                    transport: http(BUNDLER_URL),
+                    paymaster: paymasterClient,
+                    chain: chain,
+                    paymasterContext: {
+                      mode:             'SPONSORED',
+                    },
+                  });
+
+    const data = DelegationFramework.encode.redeemDelegations({
+      delegations: [ delegationChain ],
+      modes: [SINGLE_DEFAULT_MODE],
+      executions: [executions]
+    });
+
+
+    const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+    let userOpHash: Hex;
+
     try {
       const key1 = BigInt(Date.now())      // or some secure random
       const nonce1 = encodeNonce({ key: key1, sequence: 0n })
@@ -428,7 +522,7 @@ class AttestationService {
         nonce: nonce1,
         paymaster: paymasterClient,
         ...fee
-        
+
       });
 
       console.info("done sending user operation")
@@ -471,7 +565,7 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
-          
+
           { name: 'proof', value: attestation.proof, type: 'string' },
 
           { name: 'orgdid', value: attestation.orgDid, type: 'string' },
@@ -488,7 +582,7 @@ class AttestationService {
         console.info("********************  done adding indiv attestation *********************")
 
     }
-    
+
 
 
     return attestation.entityId
@@ -553,8 +647,8 @@ class AttestationService {
 
       return att
     }
-    
-    
+
+
 
     return undefined
   }
@@ -581,7 +675,7 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
-          
+
           { name: 'proof', value: attestation.proof, type: 'string' },
 
           { name: 'indivdid', value: attestation.indivDid, type: 'string' },
@@ -599,7 +693,7 @@ class AttestationService {
         console.info("********************  done adding attestation *********************")
 
     }
-    
+
 
 
     return attestation.entityId
@@ -669,8 +763,8 @@ class AttestationService {
 
       return att
     }
-    
-    
+
+
 
     return undefined
   }
@@ -709,7 +803,7 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
-          
+
           { name: 'proof', value: attestation.proof, type: 'string' },
 
           { name: 'name', value: attestation.name, type: 'string' },
@@ -725,7 +819,7 @@ class AttestationService {
         attestationsEmitter.emit('attestationChangeEvent', event);
 
     }
-    
+
 
 
     return attestation.entityId
@@ -782,11 +876,11 @@ class AttestationService {
           proof: proof,
           name: name
         }
-  
+
         return att
       }
-    
-    
+
+
 
     return undefined
   }
@@ -819,7 +913,7 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
-          
+
           { name: 'proof', value: attestation.proof, type: 'string' },
 
           { name: 'accountname', value: attestation.accountName, type: 'string' },
@@ -834,7 +928,7 @@ class AttestationService {
         attestationsEmitter.emit('attestationChangeEvent', event);
 
     }
-    
+
 
 
     return attestation.entityId
@@ -897,12 +991,12 @@ class AttestationService {
           accountDid: accountDid,
           accountBalance: "0"
         }
-  
+
         return att
       } else {
       }
-    
-    
+
+
 
     return undefined
   }
@@ -929,11 +1023,11 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
-          
+
           { name: 'proof', value: attestation.proof, type: 'string' },
 
           { name: 'accountdid', value: attestation.accountDid, type: 'string' },
-          { name: 'accountname', value: attestation.accountName, type: 'string' }, 
+          { name: 'accountname', value: attestation.accountName, type: 'string' },
 
 
           { name: 'coacode', value: attestation.coaCode, type: 'string' },
@@ -950,7 +1044,7 @@ class AttestationService {
         attestationsEmitter.emit('attestationChangeEvent', event);
 
     }
-    
+
 
 
     return attestation.entityId
@@ -1025,11 +1119,11 @@ class AttestationService {
           accountDid: accountDid,
           delegation: delegation
         }
-  
+
         return att
       }
-    
-    
+
+
 
     return undefined
   }
@@ -1056,24 +1150,24 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
-          
+
           { name: 'proof', value: attestation.proof, type: 'string' },
 
           { name: 'indivdid', value: attestation.indivDid, type: 'string' },
 
           { name: 'accountdid', value: attestation.accountDid, type: 'string' },
-          { name: 'accountname', value: attestation.accountName, type: 'string' }, 
+          { name: 'accountname', value: attestation.accountName, type: 'string' },
 
 
           { name: 'coacode', value: attestation.coaCode, type: 'string' },
           { name: 'coacategory', value: attestation.coaCategory, type: 'string' },
 
-          
+
           { name: 'orgdelegation', value: attestation.orgDelegation, type: 'string' },
           { name: 'indivdelegation', value: attestation.indivDelegation, type: 'string' },
 
         ];
-        
+
 
         const encodedData = schemaEncoder.encodeData(schemaItems);
         await AttestationService.storeAttestation(chain,this.AccountIndivDelSchemaUID, encodedData, orgAccountClient, orgDelegateClient, delegationChain)
@@ -1082,7 +1176,7 @@ class AttestationService {
         attestationsEmitter.emit('attestationChangeEvent', event);
 
     }
-    
+
 
 
     return attestation.entityId
@@ -1167,11 +1261,11 @@ class AttestationService {
           orgDelegation: orgDelegation,
           indivDelegation: indivDelegation
         }
-  
+
         return att
       }
-    
-    
+
+
 
     return undefined
   }
@@ -1199,11 +1293,11 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
-          
+
           { name: 'proof', value: attestation.proof, type: 'string' },
 
           { name: 'accountdid', value: attestation.accountDid, type: 'string' },
-          { name: 'accountname', value: attestation.accountName, type: 'string' }, 
+          { name: 'accountname', value: attestation.accountName, type: 'string' },
 
 
           { name: 'coacode', value: attestation.coaCode, type: 'string' },
@@ -1218,7 +1312,7 @@ class AttestationService {
         attestationsEmitter.emit('attestationChangeEvent', event);
 
     }
-    
+
 
 
     return attestation.entityId
@@ -1289,11 +1383,11 @@ class AttestationService {
           coaCategory: coaCategory,
           accountDid: accountDid
         }
-  
+
         return att
       }
-    
-    
+
+
 
     return undefined
   }
@@ -1309,7 +1403,7 @@ class AttestationService {
     const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
     const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
-    
+
     if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.name != undefined && attestation.url != undefined && attestation.proof != undefined) {
 
       const schemaEncoder = new SchemaEncoder(this.SocialSchema);
@@ -1318,7 +1412,7 @@ class AttestationService {
           { name: 'hash', value: attestation.hash, type: 'bytes32' },
           { name: 'issuedate', value: issuedate, type: 'uint64' },
           { name: 'expiredate', value: expiredate, type: 'uint64' },
-          
+
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
@@ -1408,7 +1502,7 @@ class AttestationService {
       console.info("set to social attestation with name: ", name)
       let displayName = name
       if (displayName == "" || displayName == undefined || displayName == null) {
-        displayName = entityId.replace("(org)", "").replace("(indiv)", "")  
+        displayName = entityId.replace("(org)", "").replace("(indiv)", "")
       }
 
       const att : SocialAttestation = {
@@ -1430,7 +1524,7 @@ class AttestationService {
 
       return att
     }
-    
+
 
     return undefined
   }
@@ -1453,24 +1547,24 @@ class AttestationService {
           { name: 'hash', value: attestation.hash, type: 'bytes32' },
           { name: 'issuedate', value: issuedate, type: 'uint64' },
           { name: 'expiredate', value: expiredate, type: 'uint64' },
-  
+
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
-          
+
           { name: 'proof', value: attestation.proof, type: 'string' },
 
           { name: 'domain', value: attestation.domain, type: 'string' },
           { name: 'domaincreationdate', value: attestation.domaincreationdate, type: 'uint64' },
-          
+
         ];
 
         const encodedData = schemaEncoder.encodeData(schemaItems);
         await AttestationService.storeAttestation(chain, this.RegisteredDomainSchemaUID, encodedData, orgAccountClient, orgDelegateClient, delegationChain)
-  
+
         let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
         attestationsEmitter.emit('attestationChangeEvent', event);
-      
+
     }
 
     return attestation.entityId
@@ -1527,17 +1621,17 @@ class AttestationService {
           proof: proof,
           domain: domain
         }
-  
+
         return att
       }
-    
+
 
 
     return undefined
   }
 
   static StateRegistrationSchemaUID = "0xbf0c8858b40faa691436c577b53a6cc4789a175268d230b7ea0c572b0f46c62b"
-  static StateRegistrationSchema = this.BaseSchema + "string name, string idnumber, string status, uint64 formationdate, string locationaddress" 
+  static StateRegistrationSchema = this.BaseSchema + "string name, string idnumber, string status, uint64 formationdate, string locationaddress"
   static async addStateRegistrationAttestation(chain: Chain, attestation: StateRegistrationAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {
 
     eas.connect(signer)
@@ -1567,17 +1661,17 @@ class AttestationService {
           { name: 'formationdate', value: issuedate, type: 'uint64' },
           { name: 'locationaddress', value: attestation.locationaddress, type: 'string' },
         ];
-      
-      
+
+
         const encodedData = schemaEncoder.encodeData(schemaItems);
 
         console.info("store state registration ... attestation")
         await AttestationService.storeAttestation(chain, this.StateRegistrationSchemaUID, encodedData, orgAccountClient, orgDelegateClient, delegationChain)
-  
+
         let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
         attestationsEmitter.emit('attestationChangeEvent', event);
-  
-      
+
+
     }
 
     return attestation.entityId
@@ -1665,7 +1759,7 @@ class AttestationService {
 
 
   static EmailSchemaUID = "0x34c055dd7ac09404aa617dab38193f9fe80ab7f1abafb03cb7e38bee1589e2d0"
-  static EmailSchema = this.BaseSchema + "string type, string email" 
+  static EmailSchema = this.BaseSchema + "string type, string email"
   static async addEmailAttestation(chain: Chain, attestation: EmailAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {
 
     eas.connect(signer)
@@ -1692,18 +1786,18 @@ class AttestationService {
 
           { name: 'type', value: attestation.type, type: 'string' },
           { name: 'email', value: attestation.email, type: 'string' },
-          
+
         ];
 
 
-      
+
       const encodedData = schemaEncoder.encodeData(schemaItems);
       await AttestationService.storeAttestation(chain, this.EmailSchemaUID, encodedData, orgAccountClient, orgDelegateClient, delegationChain)
 
       let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
       attestationsEmitter.emit('attestationChangeEvent', event);
-  
-      
+
+
     }
 
     return attestation.entityId
@@ -1717,7 +1811,7 @@ class AttestationService {
     let type : string | undefined
     let email : string | undefined
 
-    
+
     for (const field of decodedData) {
       let fieldName = field["name"]
 
@@ -1801,7 +1895,7 @@ class AttestationService {
   }
 
   static WebsiteSchemaUID = "0x5c209bedd0113303dbdd2cda8e8f9aaca673a567cd6a031cbb8cdaecbe01642b"
-  static WebsiteSchema = this.BaseSchema + "string type, string url" 
+  static WebsiteSchema = this.BaseSchema + "string type, string url"
   static async addWebsiteAttestation(chain: Chain, attestation: WebsiteAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {
 
     eas.connect(signer)
@@ -1826,16 +1920,16 @@ class AttestationService {
           { name: 'type', value: attestation.type, type: 'string' },
           { name: 'url', value: attestation.url, type: 'string' },
         ];
-            
+
       const encodedData = schemaEncoder.encodeData(schemaItems);
       await AttestationService.storeAttestation(chain, this.WebsiteSchemaUID, encodedData, orgAccountClient, orgDelegateClient, delegationChain)
 
       let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
       attestationsEmitter.emit('attestationChangeEvent', event);
-  
+
 
     }
-    
+
 
     return attestation.entityId
   }
@@ -1884,7 +1978,7 @@ class AttestationService {
 
 
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && vccomm != undefined && vcsig != undefined && vciss != undefined  && url != undefined && type != undefined) {
-      
+
       const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
       const att : WebsiteAttestation = {
         displayName: url,
@@ -1912,7 +2006,7 @@ class AttestationService {
 
 
   static InsuranceSchemaUID = "0xcfca6622a02b4b1d7f49fc4edf63eff73b062b86c25b221e713ee8eea7d37b6f"
-  static InsuranceSchema = this.BaseSchema + "string type, string policy" 
+  static InsuranceSchema = this.BaseSchema + "string type, string policy"
   static async addInsuranceAttestation(chain: Chain, attestation: InsuranceAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {
 
     eas.connect(signer)
@@ -1941,10 +2035,10 @@ class AttestationService {
 
         const encodedData = schemaEncoder.encodeData(schemaItems);
         await AttestationService.storeAttestation(chain, this.InsuranceSchemaUID, encodedData, orgAccountClient, orgDelegateClient, delegationChain)
-  
+
         let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
         attestationsEmitter.emit('attestationChangeEvent', event);
-      
+
     }
 
     return attestation.entityId
@@ -2021,7 +2115,7 @@ class AttestationService {
 
 
   static IndivEmailSchemaUID = "0x0679112c62bedf14255c9b20b07486233f25e98505e1a8adb270e20c17893baf"
-  static IndivEmailSchema = this.BaseSchema + "string class, string email" 
+  static IndivEmailSchema = this.BaseSchema + "string class, string email"
   static async addIndivEmailAttestation(chain: Chain, attestation: IndivEmailAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], indivAccountClient: MetaMaskSmartAccount, burnerAccountClient: MetaMaskSmartAccount): Promise<string> {
 
     eas.connect(signer)
@@ -2048,18 +2142,18 @@ class AttestationService {
 
           { name: 'class', value: attestation.type, type: 'string' },
           { name: 'email', value: attestation.email, type: 'string' },
-          
+
         ];
 
 
-      
+
       const encodedData = schemaEncoder.encodeData(schemaItems);
       await AttestationService.storeAttestation(chain, this.IndivEmailSchemaUID, encodedData, indivAccountClient, burnerAccountClient, delegationChain)
 
       let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
       attestationsEmitter.emit('attestationChangeEvent', event);
-  
-      
+
+
     }
 
     return attestation.entityId
@@ -2073,7 +2167,7 @@ class AttestationService {
     let type : string | undefined
     let email : string | undefined
 
-    
+
     for (const field of decodedData) {
       let fieldName = field["name"]
 
@@ -2183,13 +2277,13 @@ class AttestationService {
       const delTx = await burnerAccountClient.sendTransaction(txs, {
         paymasterServiceData: {
           mode: 'SPONSORED',
-        }, 
+        },
       })
       const delResp = await delTx.wait()
       console.info("delete done: ", delResp)
 
     }
-      
+
 
   }
 
@@ -2222,7 +2316,7 @@ class AttestationService {
 
     for (const att of atts) {
       if (att.schemaId && att.uid) {
-        
+
         const tx = await eas.revoke({ schema: att.schemaId, data: { uid: att.uid }})
 
         let execution = [
@@ -2290,17 +2384,17 @@ class AttestationService {
       },
       {
         class: "organization",
-        name: "leadership", 
+        name: "leadership",
         id: "20"
       },
       {
         class: "organization",
-        name: "finance", 
+        name: "finance",
         id: "30"
       },
       {
         class: "organization",
-        name: "compliance", 
+        name: "compliance",
         id: "40"
       },
       {
@@ -2376,14 +2470,14 @@ class AttestationService {
             }
           }
 
-          
+
           if (schema) {
 
             let entityId = "entityId"
             let hash = ""
 
             let decodedData : SchemaDecodedItem[] = []
-            
+
             try {
               const schemaEncoder = new SchemaEncoder(schema);
               decodedData = schemaEncoder.decodeData(item.data);
@@ -2480,12 +2574,12 @@ class AttestationService {
             }
 
             //console.info("push att on list: ", att)
-            
+
           }
-      
+
       }
       return attestations;
-      
+
     } catch (error) {
       console.error("Error loading recent attestations:", error);
       throw error;
@@ -2536,8 +2630,8 @@ class AttestationService {
 
     return false
   }
-  
-  
+
+
   static async loadOrganizations(chain: Chain): Promise<Organization[]> {
     try {
 
@@ -2564,11 +2658,11 @@ class AttestationService {
       const organizations : Organization[] = []
 
       let id = 1
-      
+
       for (const item of data.attestations) {
 
         let schema = this.OrgSchema
-        
+
         if (schema) {
 
           let name = ""
@@ -2626,12 +2720,12 @@ class AttestationService {
               organizations.push(org)
             }
           }
-          
+
         }
-        
+
       }
       return organizations;
-      
+
     } catch (error) {
       console.error("Error loading recent attestations:", error);
       throw error;
@@ -2640,7 +2734,7 @@ class AttestationService {
 
   static async loadOrgAccounts(chain: Chain, orgDid: string, coaCategory: string): Promise<Account[]> {
 
-  
+
     const allAttestations = await AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, "")
 
     const accounts : Account[] = [];
@@ -2665,7 +2759,7 @@ class AttestationService {
         if (acct.parentId == coaCategory) {
           accounts.push(acct);
         }
-        
+
       }
     }
 
@@ -2673,7 +2767,7 @@ class AttestationService {
   }
   static async loadIndivAccounts(chain: Chain, orgDid: string, indivDid: string, coaCategory: string): Promise<IndivAccount[]> {
 
-  
+
     const allAttestations = await AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, "")
 
     const accounts : IndivAccount[] = [];
@@ -2683,7 +2777,7 @@ class AttestationService {
       if (att.entityId === "account-indiv(org)") {
         const accountAtt = att as AccountIndivDelAttestation;
         if (accountAtt.indivDid == indivDid) {
-          
+
           const acct: IndivAccount = {
             id: accountAtt.coaCategory + '-' + accountAtt.coaCode,
             code: accountAtt.coaCategory + '-' + accountAtt.coaCode,
@@ -2696,13 +2790,16 @@ class AttestationService {
             parentId: accountAtt.coaCategory,
             children: [],
           };
-  
+
+
+          console.info("@@@@@@@@@@@@@ accountAtt found: ", coaCategory, acct.parentId)
+
           if (acct.parentId == coaCategory) {
             accounts.push(acct);
           }
         }
-        
-        
+
+
       }
     }
 
@@ -2723,7 +2820,7 @@ class AttestationService {
 
     return false
   }
-  
+
   static async getAttestationByDidAndSchemaId(chain: Chain, did: string, schemaId: string, entityId: string, displayName: string): Promise<Attestation | undefined> {
 
     //console.info("get attestation by address and schemaId and entityId: ", address, schemaId, entityId)
@@ -2877,7 +2974,7 @@ class AttestationService {
     }
 
 
-      
+
 
     return rtnAttestation;
   }
@@ -2920,13 +3017,13 @@ class AttestationService {
           }
         }
       }
-      
+
     }
 
     console.info("return attestations array b: ", rtnAttestations)
     return rtnAttestations;
 }
-  
+
 static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Promise<IndivAttestation[] | undefined> {
 
   const entityId = "indiv(indiv)"
@@ -2968,9 +3065,9 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
           rtnAttestations.push(indAtt as IndivAttestation)
         }
       }
-      
+
     }
-    
+
   }
 
   return rtnAttestations;
@@ -3013,7 +3110,7 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
           }
         }
       }
-      
+
     }
 
     return rtnAttestation;
@@ -3171,7 +3268,7 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
       introduction: "Can we verify your shopify account (yes/no)",
       instruction: "ask user if we can verify their shopify account (yes/no)"
     },
-    
+
     {
       name: "website(org)",
       schemaId: this.WebsiteSchemaUID,
@@ -3222,13 +3319,13 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
         },
       }]
     },
-    
+
   ]
 
   static async revokeAttestation(uid: string, orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount, delegationChain: Delegation[]): Promise<void> {
     try {
       console.info("Revoking attestation:", uid);
-      
+
       // TODO: Implement actual revocation using EAS
       // This will need to be implemented using the EAS SDK
       // const revoke = await eas.revoke({
@@ -3254,7 +3351,6 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
 
 export const attestationsEmitter = new EventEmitter<AttestationChangeEvent>();
 export default AttestationService;
-
 
 
 

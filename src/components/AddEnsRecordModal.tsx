@@ -1,7 +1,9 @@
 import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
 
-import { encodeFunctionData, createPublicClient, http, formatEther } from 'viem';
+
+import { createPublicClient, http, formatEther } from 'viem';
+
 
 import {
   XMarkIcon,

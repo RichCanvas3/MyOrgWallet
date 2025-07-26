@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, useRef, useMemo, useCallback, ReactNode } from "react";
 
 
+
+
 import { encodeFunctionData, hashMessage, createPublicClient, createWalletClient, WalletClient, toHex, http, zeroAddress, publicActions, custom, verifyMessage, signatureToCompactSignature  } from "viem";
 import { keccak256, toUtf8Bytes } from 'ethers';
 import { ethers, AbiCoder } from 'ethers';
@@ -252,7 +254,6 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
 
 
 export const useWalletConnect = () => {
-
 
     const { chain } = useWallectConnectContext();
 
@@ -569,8 +570,10 @@ export const useWalletConnect = () => {
     };
 
 
+
     const setupSnap = async (ownerAddress: string) : Promise<any|undefined> => {   
       return await initializeCredentialManager(ownerAddress);
+
     }
 
 
@@ -646,7 +649,10 @@ export const useWalletConnect = () => {
             console.info("------------> orgIndivAttestation: ", orgIndivAttestation)
 
             if (indivAttestation) {
-              setIndivName((indivAttestation as IndivAttestation).name)
+              // Only set name from attestation if we don't already have a manually set name
+              if (!indivName) {
+                setIndivName((indivAttestation as IndivAttestation).name)
+              }
             }
             else {
               localIndivAddress = undefined
@@ -878,6 +884,7 @@ export const useWalletConnect = () => {
         }
 
 
+
         console.info("************* getConnected")
         getConnected().then(() => {
           console.info("************* getConnected done")
@@ -955,6 +962,7 @@ export const useWalletConnect = () => {
         } catch (error) {
           console.error(`Error creating smart account attempt ${i + 1}:`, error);
           // Continue to next attempt
+
 
         }
       }
@@ -1526,6 +1534,7 @@ export const useWalletConnect = () => {
             console.info("signatory 2: ", signatory);
 
 
+
             // Use the signer directly from signatory
             const walletSigner = signatory.signer;
             
@@ -1544,6 +1553,7 @@ export const useWalletConnect = () => {
             console.info("walletSigner: ", walletSigner)
             console.info("walletClient: ", walletClient)
             if (walletSigner && walletClient && credentialManager && chain && privateIssuerAccount && orgName && orgDid && orgIssuerDel && credentialManager) {
+
 
               console.info("create credential for org attestation")
               const vc = await VerifiableCredentialsService.createOrgVC(entityId, orgDid, privateIssuerDid, orgName);
@@ -1583,6 +1593,7 @@ export const useWalletConnect = () => {
               return email.slice(atIndex + 1);
             }
 
+
             // Use the signer directly from signatory
             const walletSigner = signatory.signer;
             
@@ -1596,6 +1607,7 @@ export const useWalletConnect = () => {
             const entityId = "domain(org)"
         
             if (walletSigner && walletClient && orgName && orgDid && orgIssuerDel && indivEmail && credentialManager) {
+
 
 
               console.info("*********** ADD DOMAIN ATTESTATION ****************")
@@ -1661,6 +1673,7 @@ export const useWalletConnect = () => {
           // add new org indiv attestation
           const addOrgIndivAttestation = async (credentialManager: any) => {
 
+
             // Use the signer directly from signatory
             const walletSigner = signatory.signer;
             
@@ -1674,6 +1687,7 @@ export const useWalletConnect = () => {
             const entityId = "org-indiv(org)"
         
             if (credentialManager && walletSigner && walletClient && privateIssuerAccount && indivDid && orgDid && orgIssuerDel) {
+
 
               console.info("*********** ADD ORG INDIV ATTESTATION 2 ****************")
 
@@ -1714,9 +1728,9 @@ export const useWalletConnect = () => {
               }
             }
             else {
+
               console.info("*********** no wallet signer or client or indivDid or orgDid or orgIssuerDel")  
               console.info("credentialManager: ", credentialManager)
-
               console.info("walletSigner: ", walletSigner)
               console.info("walletClient: ", walletClient)
               console.info("privateIssuerAccount: ", privateIssuerAccount)
@@ -1776,6 +1790,7 @@ export const useWalletConnect = () => {
 
             console.info("*********** ADD INDIV ATTESTATION 1 ****************")
 
+
             // Use existing signatory instead of creating new MetaMask connection
             let walletSigner, walletClient;
             walletSigner = signatory.signer;
@@ -1824,6 +1839,7 @@ export const useWalletConnect = () => {
           const addIndivEmailAttestation = async (credentialManager: any) => {
 
             console.info("*********** ADD INDIV EMAIL ATTESTATION ****************")
+
             // Use existing signatory instead of creating new MetaMask connection
             let walletSigner, walletClient;
             
@@ -1833,7 +1849,6 @@ export const useWalletConnect = () => {
             const entityId = "email(indiv)"
         
             if (walletSigner && walletClient && privateIssuerAccount && indivDid && credentialManager) {
-
 
               let indEmail = "email";
               if (indivEmail) {
@@ -1932,6 +1947,7 @@ export const useWalletConnect = () => {
 
             credentialManager,
 
+
             orgIndivDelegation,
             orgIssuerDelegation,
             indivIssuerDelegation,
@@ -1992,13 +2008,12 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
       signatory,
       owner,
 
-      privateIssuerDid,
       privateIssuerAccount,
+      privateIssuerDid,
 
       veramoAgent,
 
       credentialManager,
-      
 
       setOrgNameValue,
       setOrgDidValue,
@@ -2059,27 +2074,26 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
         indivName,
         orgName,
-
         orgDid,
         indivDid,
-
         isIndividualConnected,
-
         burnerAccountClient,
         orgAccountClient,
         indivAccountClient,
-
         orgIndivDelegation,
         orgIssuerDelegation,
         indivIssuerDelegation,
+
 
         signatory,
         owner,
 
         privateIssuerDid,
-        privateIssuerAccount,
 
+        privateIssuerAccount,
+        privateIssuerDid,
         veramoAgent,
+
         credentialManager,
 
         connect,
@@ -2094,6 +2108,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
         checkIfDIDBlacklisted,
         isConnectionComplete]
+
     );
 
     return <WalletConnectContext.Provider value={providerProps}>{children}</WalletConnectContext.Provider>;

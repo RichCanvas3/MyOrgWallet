@@ -5,7 +5,7 @@
 import LinkedInAuth, { LinkedInAuthRef } from "../components/LinkedInAuth";
 import { XAuthRef } from "../components/XAuth"
 import { LANGCHAIN_API_KEY } from "../config";
-import company_config from "../components/MainPage"
+import { Entity } from "../models/Entity";
 
 export async function invokeLangGraphAgent({
   // parameters can be added here if needed
@@ -64,6 +64,7 @@ export async function sendMessageToLangGraphAssistant(
   message: string,
   thread_id: string,
   tool: string,
+  entities: Entity[] = [],
   options: Record<string, any> = {},
   linkedInAuthRef?: React.RefObject<LinkedInAuthRef>,
   XAuthRef?: React.RefObject<XAuthRef>
@@ -97,7 +98,7 @@ export async function sendMessageToLangGraphAssistant(
         tags: [''],
         recursion_limit: 15,
         configurable: {
-          company: company_config
+          entities: entities
         }
       },
       //webhook: '',

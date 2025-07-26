@@ -10,6 +10,7 @@ import MainSection from "./MainSection";
 import { Attestation } from "../models/Attestation"
 import { Account } from "../models/Account"
 import { Command } from "../models/Command"
+import { Entity } from "../models/Entity"
 
 import { useWallectConnectContext } from "../context/walletConnectContext";
 
@@ -18,9 +19,11 @@ interface RightSideProps {
   appCommand: (cmd: Command) => void;
   onRefreshAttestations?: () => void;
   onRefreshAccounts?: () => void;
+  entities?: Entity[];
+  onUnSkipEntity?: (entityName: string) => void;
 }
 
-const RightSide: React.FC<RightSideProps> = ({className, appCommand, onRefreshAttestations, onRefreshAccounts}) => {
+const RightSide: React.FC<RightSideProps> = ({className, appCommand, onRefreshAttestations, onRefreshAccounts, entities, onUnSkipEntity}) => {
   const {t} = useTranslation();
   const navigate = useNavigate();
 
@@ -54,6 +57,12 @@ const RightSide: React.FC<RightSideProps> = ({className, appCommand, onRefreshAt
     console.log('Selected account:', account);
   };
 
+  const handleUnSkipEntity = (entityName: string) => {
+    if (onUnSkipEntity) {
+      onUnSkipEntity(entityName);
+    }
+  };
+
   useEffect(() => {
     // For demo, set static data; replace with fetchLinkedInData() for real use
     setProfileData({ companyName: "Example Corp" , fullName: "John Doe" });
@@ -64,13 +73,15 @@ const RightSide: React.FC<RightSideProps> = ({className, appCommand, onRefreshAt
       <div className="scrollbar-trigger relative flex-1 items-start border-white/20">
         <h2 className="sr-only">Attestation and Account Management</h2>
         <nav className="flex flex-col p-2" aria-label="Main navigation">
-          <MainSection 
-            orgDid={orgDid} 
-            indivDid={indivDid} 
+          <MainSection
+            orgDid={orgDid}
+            indivDid={indivDid}
             onSelectAttestation={handleSelectAttestation}
             onSelectAccount={handleSelectAccount}
             onRefreshAttestations={onRefreshAttestations}
             onRefreshAccounts={onRefreshAccounts}
+            entities={entities}
+            onUnSkipEntity={handleUnSkipEntity}
           />
         </nav>
       </div>
