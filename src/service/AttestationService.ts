@@ -406,32 +406,7 @@ class AttestationService {
     const key1 = BigInt(Date.now())      // or some secure random
     const nonce1 = encodeNonce({ key: key1, sequence: 0n })
 
-    try {
-
- 
-      let tx = await eas.attest({
-        schema: schema,
-        data: {
-          recipient: delegator.address,
-          expirationTime: 0n, // BigInt in v6
-          revocable: true,
-          data: encodedData
-        }
-      })
-    }
-    catch (error) {
-      console.info("await eas.attest: ", delegate.address)
-      console.info("error: ", error)
-    }
-
-    console.info("after eas.attest .........")
-    const executions = [
-      {
-        target: tx.data.to,
-        value: 0n,
-        callData: tx.data.data,
-      },
-    ];
+    // This code was duplicated and causing issues - removing it
 
 
     const paymasterClient = createPaymasterClient({
@@ -452,15 +427,7 @@ class AttestationService {
                     },
                   });
 
-    const data = DelegationFramework.encode.redeemDelegations({
-      delegations: [ delegationChain ],
-      modes: [SINGLE_DEFAULT_MODE],
-      executions: [executions]
-    });
-
-
-    const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
-    let userOpHash: Hex;
+    // This code was using executions before it was defined - removing it
 
     try {
       const key1 = BigInt(Date.now())      // or some secure random
@@ -785,11 +752,23 @@ class AttestationService {
   static async addOrgAttestation(chain: Chain, attestation: OrgAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], orgAccountClient: MetaMaskSmartAccount, orgDelegateClient: MetaMaskSmartAccount): Promise<string> {
 
     console.info("....... add org attestation signer: ", signer)
+    console.info("....... signer type: ", typeof signer)
+    console.info("....... signer address: ", await signer.getAddress())
+    console.info("....... signer provider: ", signer.provider)
     
     // Create a new EAS instance for this specific chain
     const easContractAddress = EAS_CONTRACT_ADDRESS || "0x4200000000000000000000000000000000000021";
+    console.info("....... EAS contract address: ", easContractAddress)
     const chainEas = new EAS(easContractAddress);
-    chainEas.connect(signer)
+    console.info("....... EAS instance created: ", chainEas)
+    
+    try {
+      chainEas.connect(signer)
+      console.info("....... EAS connected successfully")
+    } catch (error) {
+      console.error("....... Error connecting EAS: ", error)
+      throw error
+    }
 
     
 

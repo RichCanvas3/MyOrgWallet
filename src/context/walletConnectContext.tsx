@@ -1553,6 +1553,24 @@ export const useWalletConnect = () => {
               return;
             }
             
+            // Ensure the signer is properly connected to the correct network
+            try {
+              const signerAddress = await walletSigner.getAddress();
+              console.info("Signer address:", signerAddress);
+              
+              // Check if signer is connected to the correct network
+              const signerChainId = await walletSigner.provider?.getNetwork();
+              console.info("Signer chain ID:", signerChainId);
+              
+              if (signerChainId && signerChainId.chainId !== BigInt(chain.id)) {
+                console.error("Signer is not connected to the correct network");
+                return;
+              }
+            } catch (error) {
+              console.error("Error checking signer:", error);
+              return;
+            }
+            
             const walletClient = signatory.walletClient;
         
 
