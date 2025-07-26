@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
-import { useAccount } from 'wagmi';
+
 import { ethers } from 'ethers';
 import { createPublicClient, http, formatEther } from 'viem';
 import {
@@ -73,7 +73,6 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
 
   // Update the context usage
   const { chain, orgAccountClient, burnerAccountClient, orgDid } = useWallectConnectContext();
-  const { isConnected } = useAccount();
 
   const handleNext = () => {
     setActiveStep((prevStep) => prevStep + 1);
@@ -482,7 +481,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
     try {
       const publicClient = createPublicClient({
         chain: chain,
-        transport: http(),
+        transport: http(RPC_URL),
       });
 
       const balance = await publicClient.getBalance({

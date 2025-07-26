@@ -8,6 +8,7 @@ export interface Entity {
   introduction?: string;
   instruction?: string;
   attestation?: Attestation | null;
+  skipped?: boolean;
   tools?: [any]
 }
 

@@ -9,6 +9,7 @@ import ChartOfAccountsSection from './ChartOfAccountsSection';
 import TrustScoreSection from './TrustScoreSection';
 import { Attestation } from '../models/Attestation';
 import { Account } from '../models/Account';
+import { Entity } from '../models/Entity';
 
 interface MainSectionProps {
   orgDid?: string;
@@ -17,6 +18,8 @@ interface MainSectionProps {
   onSelectAccount?: (account: Account) => void;
   onRefreshAttestations?: () => void;
   onRefreshAccounts?: () => void;
+  entities?: Entity[];
+  onUnSkipEntity?: (entityName: string) => void;
 }
 
 const MainSection: React.FC<MainSectionProps> = ({
@@ -26,6 +29,8 @@ const MainSection: React.FC<MainSectionProps> = ({
   onSelectAccount,
   onRefreshAttestations,
   onRefreshAccounts,
+  entities,
+  onUnSkipEntity
 }) => {
   const [currentView, setCurrentView] = useState<'attestations' | 'accounts' | 'trustscore'>('attestations');
 
@@ -41,20 +46,20 @@ const MainSection: React.FC<MainSectionProps> = ({
           onChange={handleChange}
           aria-label="main section tabs"
         >
-          <Tab 
-            label="Attestations" 
+          <Tab
+            label="Attestations"
             value="attestations"
             id="attestations-tab"
             aria-controls="attestations-panel"
           />
-          <Tab 
-            label="Chart of Accounts" 
+          <Tab
+            label="Chart of Accounts"
             value="accounts"
             id="accounts-tab"
             aria-controls="accounts-panel"
           />
-          <Tab 
-            label="Trust Score" 
+          <Tab
+            label="Trust Score"
             value="trustscore"
             id="trustscore-tab"
             aria-controls="trustscore-panel"
@@ -73,6 +78,8 @@ const MainSection: React.FC<MainSectionProps> = ({
             orgDid={orgDid}
             indivDid={indivDid}
             onSelectAttestation={onSelectAttestation}
+            entities={entities}
+            onUnSkipEntity={onUnSkipEntity}
           />
         )}
       </Box>
@@ -108,4 +115,4 @@ const MainSection: React.FC<MainSectionProps> = ({
   );
 };
 
-export default MainSection; 
+export default MainSection;
