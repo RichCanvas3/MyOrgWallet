@@ -60,14 +60,17 @@ const WelcomeModal: React.FC = () => {
   const [isSignUpMode, setIsSignUpMode] = useState(false);
   const [connectionMethod, setConnectionMethod] = useState<'web3auth' | 'metamask'>('web3auth');
   const [toast, setToast] = useState({ open: false, message: '', severity: 'info' as 'info' | 'success' | 'error' });
+  const [hasValidEarlyAccess, setHasValidEarlyAccess] = useState(false);
+  const [isWalletConnected, setIsWalletConnected] = useState(false);
+  const [web3AuthEmail, setWeb3AuthEmail] = useState<string>('');
 
   const { chain, connect, setIndivAndOrgInfo, setOrgNameValue, setOrgDidValue, checkIfDIDBlacklisted, setSelectedSignatoryFactoryName } = useWallectConnectContext();
 
   const steps: Step[] = [
-    { id: 1, title: 'Your Name',      isActive: currentStep === 1, isCompleted: currentStep > 1 },
-    { id: 2, title: 'Early Access', isActive: currentStep === 2, isCompleted: currentStep > 2 },
-    { id: 3, title: 'Connect Wallet', isActive: currentStep === 3, isCompleted: currentStep > 3 },
-    { id: 4, title: 'Your Org Name',      isActive: currentStep === 4, isCompleted: currentStep > 4 },
+    { id: 1, title: 'Connect', isActive: currentStep === 1, isCompleted: currentStep > 1 },
+    { id: 2, title: 'Your Name', isActive: currentStep === 2, isCompleted: currentStep > 2 },
+    { id: 3, title: 'Your Email', isActive: currentStep === 3, isCompleted: currentStep > 3 },
+    { id: 4, title: 'Your Org Name', isActive: currentStep === 4, isCompleted: currentStep > 4 },
   ];
 
   const handleToast = (message: string, severity: 'info' | 'success' | 'error' = 'info') => {
@@ -105,6 +108,20 @@ const WelcomeModal: React.FC = () => {
     }
   };
 
+  const handleEarlyAccessCodeSubmit = () => {
+    if (!earlyAccessCode.trim()) {
+      handleToast('Please enter your early access code.', 'error');
+      return;
+    }
+    // You can add validation for specific access codes here
+    if (earlyAccessCode.toLowerCase() !== 'early2024' && earlyAccessCode.toLowerCase() !== 'beta') {
+      handleToast('Invalid early access code. Please check your code and try again.', 'error');
+      return;
+    }
+    setHasValidEarlyAccess(true);
+    handleToast('Early access code validated successfully!', 'success');
+  };
+
   const sendVerificationEmail = async () => {
     if (!email.trim() || !email.includes('@')) {
       handleToast('Please enter a valid email address.', 'error');
@@ -113,7 +130,7 @@ const WelcomeModal: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/send-verification`, { email });
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/send-verification-email`, { email });
       setShowEmailVerification(true);
       handleToast('Verification code sent to your email.', 'success');
     } catch (err: any) {
@@ -133,11 +150,103 @@ const WelcomeModal: React.FC = () => {
     try {
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/verify-code`, { email, code: verificationCode });
       handleToast('Email verified successfully!', 'success');
+      setShowEmailVerification(false);
+      setVerificationCode('');
       setCurrentStep(4);
     } catch (err: any) {
       handleToast(err.response?.data?.error || 'Invalid verification code.', 'error');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleConnectWallet = async () => {
+    if (connectionMethod === 'web3auth') {
+      setIsWeb3AuthConnecting(true);
+      try {
+        // Import Web3AuthService dynamically
+        const { default: Web3AuthService } = await import('../service/Web3AuthService');
+        
+        // Initialize Web3Auth
+        await Web3AuthService.initialize();
+        
+        // Connect using Web3Auth (this will open the modal)
+        console.log('Calling Web3AuthService.connect()...');
+        let signatory;
+        try {
+          signatory = await Web3AuthService.connect();
+          console.log('Web3AuthService.connect() completed successfully:', signatory);
+        } catch (error) {
+          console.error('Web3AuthService.connect() failed:', error);
+          throw error;
+        }
+
+        console.log('Web3Auth connected successfully:', signatory);
+        handleToast('Web3Auth connected successfully!', 'success');
+        
+        // Set the signatory type to Web3Auth
+        setSelectedSignatoryFactoryName("web3AuthSignatoryFactory");
+        console.log('Web3Auth signatory type set and stored:', signatory);
+        
+        // Try to get email and name from Web3Auth user info
+        if (signatory && signatory.userInfo) {
+          if (signatory.userInfo.email) {
+            setWeb3AuthEmail(signatory.userInfo.email);
+            setEmail(signatory.userInfo.email);
+            console.log('Email from Web3Auth:', signatory.userInfo.email);
+          }
+          if (signatory.userInfo.name) {
+            setFullName(signatory.userInfo.name);
+            console.log('Name from Web3Auth:', signatory.userInfo.name);
+          }
+        }
+        
+        setIsWalletConnected(true);
+        setCurrentStep(2);
+      } catch (error: unknown) {
+        console.error('Web3Auth connection error:', error);
+        if (error instanceof Error) {
+          handleToast(`Web3Auth connection failed: ${error.message}`, 'error');
+        } else {
+          handleToast('Web3Auth connection failed. Please try again.', 'error');
+        }
+      } finally {
+        setIsWeb3AuthConnecting(false);
+      }
+    } else if (connectionMethod === 'metamask') {
+      setIsMetaMaskConnecting(true);
+      try {
+        // Check if MetaMask is available
+        if (typeof window.ethereum === 'undefined') {
+          throw new Error('MetaMask not found. Please install MetaMask and try again.');
+        }
+
+        // Request MetaMask connection
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        if (!accounts || accounts.length === 0) {
+          throw new Error('No MetaMask accounts found. Please connect MetaMask first.');
+        }
+
+        const owner = accounts[0];
+        console.log('MetaMask connected successfully:', owner);
+        handleToast('MetaMask connected successfully!', 'success');
+        
+        // Set the signatory type to injected provider for MetaMask
+        setSelectedSignatoryFactoryName("injectedProviderSignatoryFactory");
+        console.log('MetaMask signatory type set to injected provider');
+        
+        setIsWalletConnected(true);
+        setCurrentStep(2);
+      } catch (error: unknown) {
+        console.error('MetaMask connection error:', error);
+        if (error instanceof Error) {
+          handleToast(`MetaMask connection failed: ${error.message}`, 'error');
+        } else {
+          handleToast('MetaMask connection failed. Please try again.', 'error');
+        }
+      } finally {
+        setIsMetaMaskConnecting(false);
+      }
     }
   };
 
@@ -156,237 +265,40 @@ const WelcomeModal: React.FC = () => {
 
     console.info("************** handleNextStep 2 ***************")
 
-    // Step 1: full name
+    // Step 1: Connect wallet (handled by handleConnectWallet)
     if (currentStep === 1) {
-      if (!fullName.trim()) {
-        handleToast('Please enter your name.', 'error');
-        return;
-      }
-      setCurrentStep(2);
+      await handleConnectWallet();
       return;
     }
 
-    // Step 2: early access code
+    // Step 2: full name
     if (currentStep === 2) {
-      if (!earlyAccessCode.trim()) {
-        handleToast('Please enter your early access code.', 'error');
-        return;
-      }
-      // You can add validation for specific access codes here
-      if (earlyAccessCode.toLowerCase() !== 'early2024' && earlyAccessCode.toLowerCase() !== 'beta') {
-        handleToast('Invalid early access code. Please check your code and try again.', 'error');
+      if (!fullName.trim()) {
+        handleToast('Please enter your name.', 'error');
         return;
       }
       setCurrentStep(3);
       return;
     }
 
-    // Step 3: wallet connection (Web3Auth or MetaMask)
+    // Step 3: Email verification (only for MetaMask)
     if (currentStep === 3) {
-
-      console.info("************** wallet connection step 3 ***************")
-      let signatoryToUse;
-
-
-      if (connectionMethod === 'web3auth') {
-        // Web3Auth connection
+      if (connectionMethod === 'metamask') {
         if (!email.trim() || !email.includes('@')) {
           handleToast('Please enter a valid email address.', 'error');
           return;
         }
-        if (!password.trim()) {
-          handleToast('Please enter your password.', 'error');
-          return;
+        // Send verification email
+        await sendVerificationEmail();
+        return;
+      } else if (connectionMethod === 'web3auth') {
+        // For Web3Auth, show email but skip verification
+        if (web3AuthEmail) {
+          setEmail(web3AuthEmail);
         }
-
-        const web3AuthSignatoryFactory = createWeb3AuthSignatoryFactory({
-          chain: chain,
-          web3AuthClientId: WEB3_AUTH_CLIENT_ID,
-          web3AuthNetwork: WEB3_AUTH_NETWORK,
-          rpcUrl: RPC_URL,
-        });
-        signatoryToUse = web3AuthSignatoryFactory;
-
-
-        // Web3Auth username/password authentication
-        setIsWeb3AuthConnecting(true);
-        try {
-          // Import Web3AuthService dynamically
-          const { default: Web3AuthService } = await import('../service/Web3AuthService');
-          
-          // Initialize Web3Auth
-          await Web3AuthService.initialize();
-          
-          // Connect using email/password (sign up if new account, sign in if existing)
-          const signatory = await Web3AuthService.connectWithEmailPassword(email, password, isSignUpMode);
-
-
-          const action = isSignUpMode ? 'created' : 'connected';
-          console.log(`Web3Auth ${action} successfully:`, signatory);
-          handleToast(`Web3Auth account ${action} successfully!`, 'success');
-          
-          // Set the signatory type to Web3Auth
-          setSelectedSignatoryFactoryName("web3AuthSignatoryFactory");
-          console.log('Web3Auth signatory type set and stored:', signatory);
-          
-          // get ready for step 4
-          // if email is for existing registered domain then set org name
-          const domain = getDomainFromEmail(email)
-          if (domain && chain) {
-            console.info("domain: ", domain)
-            console.info("chain: ", chain)
-            setOrgNameValue("")
-            setOrgDidValue("")
-            const registeredDomainAttestations = await AttestationService.getRegisteredDomainAttestations(chain, domain, AttestationService.RegisteredDomainSchemaUID, "domain(org)")
-            console.info("registered domain attestations: ", registeredDomainAttestations)
-            if (registeredDomainAttestations) {
-              for (const registeredDomainAttestation of registeredDomainAttestations) {
-
-                console.info("registered domain: ", registeredDomainAttestation)
-                const orgDid = registeredDomainAttestation.attester
-                const orgAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, orgDid, AttestationService.OrgSchemaUID, "org(org)", "")
-                console.info("org attestation: ", orgAttestation)
-                if (orgAttestation) {
-
-                  const orgDidValue = (orgAttestation as OrgAttestation).attester
-
-                  console.info("check if blacklisted: ", orgDidValue)
-                  const isBlacklisted = await checkIfDIDBlacklisted(orgDidValue)
-                  if (!isBlacklisted) {
-
-                    console.info("not blacklisted so continue: ", orgDidValue)
-
-                    console.info("set org did value: ", orgDidValue)
-                    setOrgDidValue(orgDidValue)
-
-                    setOrganizationName((orgAttestation as OrgAttestation).name)
-                    setOrgNameValue((orgAttestation as OrgAttestation).name)
-
-                    break
-
-                  }
-                  else {
-                    console.info("blacklisted so don't use it: ", orgDidValue)
-                  }
-                }
-              }
-            }
-          }
-
-          setCurrentStep(4);
-        } catch (error: unknown) {
-          console.error('Web3Auth authentication error:', error);
-          const errorMessage = error instanceof Error ? error.message : 'Failed to authenticate with Web3Auth';
-          handleToast(errorMessage, 'error');
-        } finally {
-          setIsWeb3AuthConnecting(false);
-        }
-      } else if (connectionMethod === 'metamask') {
-
-        // MetaMask connection
-        if (!email.trim() || !email.includes('@')) {
-          handleToast('Please enter a valid email address.', 'error');
-          return;
-        }
-
-        const injectedSignatoryFactory = createInjectedProviderSignatoryFactory({
-          chain: chain,
-          web3AuthClientId: WEB3_AUTH_CLIENT_ID,
-          web3AuthNetwork: WEB3_AUTH_NETWORK,
-          rpcUrl: RPC_URL,
-        });
-        signatoryToUse = injectedSignatoryFactory;
-
-        setIsMetaMaskConnecting(true);
-        try {
-
-          // Check if MetaMask is available
-          if (typeof window.ethereum === 'undefined') {
-            throw new Error('MetaMask not found. Please install MetaMask and try again.');
-          }
-
-          // Request MetaMask connection
-          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-          if (!accounts || accounts.length === 0) {
-            throw new Error('No MetaMask accounts found. Please connect MetaMask first.');
-          }
-
-          const owner = accounts[0];
-          console.log('MetaMask connected successfully:', owner);
-          handleToast('MetaMask connected successfully!', 'success');
-          
-          // Set the signatory type to injected provider for MetaMask
-          // This ensures the setup page uses the correct signatory
-          setSelectedSignatoryFactoryName("injectedProviderSignatoryFactory");
-          console.log('MetaMask signatory type set to injected provider');
-          
-          // get ready for step 4
-          // if email is for existing registered domain then set org name
-          const domain = getDomainFromEmail(email)
-          if (domain && chain) {
-            console.info("domain: ", domain)
-            console.info("chain: ", chain)
-            setOrgNameValue("")
-            setOrgDidValue("")
-
-            const registeredDomainAttestations = await AttestationService.getRegisteredDomainAttestations(chain, domain, AttestationService.RegisteredDomainSchemaUID, "domain(org)")
-            console.info("registered domain attestations: ", registeredDomainAttestations)
-            if (registeredDomainAttestations) {
-
-              for (const registeredDomainAttestation of registeredDomainAttestations) {
-
-                console.info("registered domain: ", registeredDomainAttestation)
-                const orgDid = registeredDomainAttestation.attester
-                const orgAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, orgDid, AttestationService.OrgSchemaUID, "org(org)", "")
-                console.info("org attestation: ", orgAttestation)
-                if (orgAttestation) {
-
-                  const orgDidValue = (orgAttestation as OrgAttestation).attester
-
-                  console.info("check if blacklisted: ", orgDidValue)
-                  const isBlacklisted = await checkIfDIDBlacklisted(orgDidValue)
-                  if (!isBlacklisted) {
-
-                    console.info("not blacklisted so continue: ", orgDidValue)
-
-                    console.info("set org did value: ", orgDidValue)
-                    setOrgDidValue(orgDidValue)
-
-                    setOrganizationName((orgAttestation as OrgAttestation).name)
-                    setOrgNameValue((orgAttestation as OrgAttestation).name)
-
-                    break
-
-                  }
-                  else {
-                    console.info("blacklisted so don't use it: ", orgDidValue)
-                  }
-                }
-              }
-            }
-          }
-
-          setCurrentStep(4);
-        } catch (error: unknown) {
-          console.error('MetaMask connection error:', error);
-          const errorMessage = error instanceof Error ? error.message : 'Failed to connect MetaMask';
-          handleToast(errorMessage, 'error');
-        } finally {
-          setIsMetaMaskConnecting(false);
-        }
+        setCurrentStep(4);
+        return;
       }
-
-
-      console.info("***** signatoryToUse: ", signatoryToUse)
-      if (signatoryToUse) {
-        console.info("***** signatoryToUse login: ")
-        const loginResp = await signatoryToUse.login()
-        if (loginResp && loginResp.signatory && loginResp.owner) {
-          console.info("***** connect to login 2: ", loginResp.owner, loginResp.signatory)
-          await connect(loginResp.owner, loginResp.signatory, "", "", "")
-        }
-      }
-
     }
 
     // Step 4: organization name
@@ -396,15 +308,23 @@ const WelcomeModal: React.FC = () => {
         return;
       }
 
-      setIsSubmitting(true);
       try {
-        await setIndivAndOrgInfo(fullName, organizationName, email);
-        handleToast('Organization setup completed!', 'success');
+        // Set organization name
+        setOrgNameValue(organizationName);
+        
+        // Extract domain from email for MetaMask users
+        if (connectionMethod === 'metamask' && email) {
+          const domain = getDomainFromEmail(email);
+          if (domain) {
+            setOrgDidValue(domain);
+          }
+        }
+
+        // Navigate to setup page
         navigate('/setup');
-      } catch (err: any) {
-        handleToast(err.message || 'Failed to complete setup.', 'error');
-      } finally {
-        setIsSubmitting(false);
+      } catch (error) {
+        console.error('Error completing setup:', error);
+        handleToast('Failed to complete setup. Please try again.', 'error');
       }
     }
   };
@@ -433,90 +353,26 @@ const WelcomeModal: React.FC = () => {
         borderRadius: 2 
       }}>
         <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {/* Header */}
-          <Box textAlign="center">
-            <Typography variant="h4">Welcome to MyOrgWallet</Typography>
-            <Typography variant="body2" sx={{ mt: 1 }}>Set up your organization's wallet with Web3Auth or MetaMask</Typography>
-          </Box>
-
-          {/* Step Indicator */}
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {steps.map((step, idx) => (
-              <React.Fragment key={step.id}>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    width: 80,
-                  }}
-                >
-                  {/* circle */}
-                  <Box
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: '50%',
-                      border: '2px solid',
-                      borderColor: step.isCompleted || step.isActive ? 'primary.main' : 'grey.300',
-                      bgcolor: step.isCompleted ? 'primary.main' : 'transparent',
-                      color: step.isCompleted ? 'white' : step.isActive ? 'primary.main' : 'grey.500',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    {step.isCompleted ? <Check fontSize="small" /> : step.id}
-                  </Box>
-                  {/* label */}
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      mt: 1,
-                      textAlign: 'center',
-                      color: step.isActive || step.isCompleted ? 'primary.main' : 'grey.500',
-                    }}
-                  >
-                    {step.title}
+          {/* Early Access Check */}
+          {!hasValidEarlyAccess ? (
+            <Fade in>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {/* Header */}
+                <Box textAlign="center">
+                  <Typography variant="h4">Welcome to MyOrgWallet</Typography>
+                  <Typography variant="body2" sx={{ mt: 1, mb: 2 }}>
+                    We're currently in beta phase with a limited user community. 
+                    Join our exclusive group of early adopters to help shape the future of organizational wallet management.
                   </Typography>
                 </Box>
-                {/* connector */}
-                {idx < steps.length - 1 && (
-                  <Box
-                    sx={{
-                      flex: 1,
-                      height: 2,
-                      mx: 1,
-                      bgcolor:
-                        steps[idx + 1].isActive || steps[idx + 1].isCompleted
-                          ? 'primary.main'
-                          : 'grey.300',
-                    }}
-                  />
-                )}
-              </React.Fragment>
-            ))}
-          </Box>
 
-          <Divider />
+                <Divider />
 
-          {/* Step content */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {currentStep === 1 && (
-              <Fade in>
+                {/* Early Access Code Input */}
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Typography>Your full name</Typography>
-                  <TextField fullWidth placeholder="Jane Doe" value={fullName} onChange={e => setFullName(e.target.value)} />
-                </Box>
-              </Fade>
-            )}
-
-            {currentStep === 2 && (
-              <Fade in>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Typography>Early Access Code</Typography>
+                  <Typography variant="h6">Early Access Code</Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Enter your early access code to continue
+                    Enter your early access code to continue with the setup process
                   </Typography>
                   <TextField
                     fullWidth
@@ -525,138 +381,220 @@ const WelcomeModal: React.FC = () => {
                     onChange={e => setEarlyAccessCode(e.target.value)}
                     type="password"
                   />
+                  <Button
+                    variant="contained"
+                    onClick={handleEarlyAccessCodeSubmit}
+                    disabled={isSubmitting || !earlyAccessCode.trim()}
+                    sx={{ mt: 2 }}
+                  >
+                    Validate Code
+                  </Button>
                 </Box>
-              </Fade>
-            )}
 
-            {currentStep === 3 && (
-              <Fade in>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {/* Connection Method Selection */}
-                  <Typography variant="h6" sx={{ mb: 2 }}>
-                    Choose Your Connection Method
+                {/* Request Early Access Link */}
+                <Box textAlign="center">
+                  <Typography variant="body2" color="text.secondary">
+                    Don't have an access code?
                   </Typography>
-                  
-                  <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-                    <Button
-                      variant={connectionMethod === 'web3auth' ? 'contained' : 'outlined'}
-                      onClick={() => setConnectionMethod('web3auth')}
-                      disabled={isWeb3AuthConnecting || isMetaMaskConnecting}
-                      sx={{ flex: 1 }}
-                    >
-                      Web3Auth
-                    </Button>
-                    <Button
-                      variant={connectionMethod === 'metamask' ? 'contained' : 'outlined'}
-                      onClick={() => setConnectionMethod('metamask')}
-                      disabled={isWeb3AuthConnecting || isMetaMaskConnecting}
-                      sx={{ flex: 1 }}
-                    >
-                      MetaMask
-                    </Button>
-                  </Box>
+                  <Button
+                    variant="text"
+                    onClick={() => setShowEarlyAccessDialog(true)}
+                    sx={{ mt: 1 }}
+                  >
+                    Request Early Access
+                  </Button>
+                </Box>
+              </Box>
+            </Fade>
+          ) : (
+            <>
+              {/* Header */}
+              <Box textAlign="center">
+                <Typography variant="h4">Welcome to MyOrgWallet</Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>Set up your organization's wallet with Web3Auth or MetaMask</Typography>
+              </Box>
 
-                  {connectionMethod === 'web3auth' && (
-                    <>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        {isSignUpMode 
-                          ? 'Create a new Web3Auth account with your email and password. This will create a secure wallet for your organization.'
-                          : 'Sign in to your existing Web3Auth account or create a new one. This will provide a secure wallet for your organization.'
-                        }
+              {/* Step Indicator */}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {steps.map((step, idx) => (
+                  <React.Fragment key={step.id}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        width: 80,
+                      }}
+                    >
+                      {/* circle */}
+                      <Box
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '50%',
+                          border: '2px solid',
+                          borderColor: step.isCompleted || step.isActive ? 'primary.main' : 'grey.300',
+                          bgcolor: step.isCompleted ? 'primary.main' : 'transparent',
+                          color: step.isCompleted ? 'white' : step.isActive ? 'primary.main' : 'grey.500',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {step.isCompleted ? <Check fontSize="small" /> : step.id}
+                      </Box>
+                      {/* label */}
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          mt: 1,
+                          textAlign: 'center',
+                          color: step.isActive || step.isCompleted ? 'primary.main' : 'grey.500',
+                        }}
+                      >
+                        {step.title}
+                      </Typography>
+                    </Box>
+                    {/* connector */}
+                    {idx < steps.length - 1 && (
+                      <Box
+                        sx={{
+                          flex: 1,
+                          height: 2,
+                          mx: 1,
+                          bgcolor:
+                            steps[idx + 1].isActive || steps[idx + 1].isCompleted
+                              ? 'primary.main'
+                              : 'grey.300',
+                        }}
+                      />
+                    )}
+                  </React.Fragment>
+                ))}
+              </Box>
+
+              <Divider />
+
+              {/* Step content */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {currentStep === 1 && (
+                  <Fade in>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      {/* Connection Method Selection */}
+                      <Typography variant="h6" sx={{ mb: 2 }}>
+                        Choose Your Connection Method
                       </Typography>
                       
-                      {/* Sign Up/Sign In Toggle */}
-                      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
                         <Button
-                          variant={!isSignUpMode ? 'contained' : 'outlined'}
-                          size="small"
-                          onClick={() => setIsSignUpMode(false)}
-                          disabled={isWeb3AuthConnecting}
-                          sx={{ mr: 1 }}
+                          variant={connectionMethod === 'web3auth' ? 'contained' : 'outlined'}
+                          onClick={() => setConnectionMethod('web3auth')}
+                          disabled={isWeb3AuthConnecting || isMetaMaskConnecting}
+                          sx={{ flex: 1 }}
                         >
-                          Sign In
+                          Web3Auth
                         </Button>
                         <Button
-                          variant={isSignUpMode ? 'contained' : 'outlined'}
-                          size="small"
-                          onClick={() => setIsSignUpMode(true)}
-                          disabled={isWeb3AuthConnecting}
+                          variant={connectionMethod === 'metamask' ? 'contained' : 'outlined'}
+                          onClick={() => setConnectionMethod('metamask')}
+                          disabled={isWeb3AuthConnecting || isMetaMaskConnecting}
+                          sx={{ flex: 1 }}
                         >
-                          Sign Up
+                          MetaMask
                         </Button>
                       </Box>
-                      
-                      <Typography>Your email at organization</Typography>
-                      <TextField
-                        fullWidth
-                        type="email"
-                        placeholder="you@organization.com"
-                        value={email}
-                        onChange={e => setEmail(e.target.value)}
-                        disabled={isWeb3AuthConnecting}
-                      />
-                      <Typography>Your password</Typography>
-                      <TextField
-                        fullWidth
-                        type="password"
-                        placeholder={isSignUpMode ? "Create a password" : "Enter your password"}
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        disabled={isWeb3AuthConnecting}
-                      />
-                      {isWeb3AuthConnecting && (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                          <Typography variant="body2" color="text.secondary">
-                            {isSignUpMode ? 'Creating account with Web3Auth...' : 'Signing in with Web3Auth...'}
-                          </Typography>
-                        </Box>
-                      )}
-                    </>
-                  )}
 
-                  {connectionMethod === 'metamask' && (
-                    <>
+                      {connectionMethod === 'web3auth' && (
+                        <>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            Connect using Web3Auth for a seamless authentication experience. This will open a modal for you to sign in.
+                          </Typography>
+                        </>
+                      )}
+
+                      {connectionMethod === 'metamask' && (
+                        <>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            Connect using MetaMask wallet. Make sure you have MetaMask installed and connected to the correct network.
+                          </Typography>
+                        </>
+                      )}
+                    </Box>
+                  </Fade>
+                )}
+
+                {currentStep === 2 && (
+                  <Fade in>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <Typography>Your full name</Typography>
+                      <TextField 
+                        fullWidth 
+                        placeholder="Jane Doe" 
+                        value={fullName} 
+                        onChange={e => setFullName(e.target.value)}
+                        disabled={connectionMethod === 'web3auth' && fullName.trim() !== ''}
+                        sx={connectionMethod === 'web3auth' && fullName.trim() !== '' ? { backgroundColor: '#f5f5f5' } : {}}
+                      />
+                      {connectionMethod === 'web3auth' && fullName.trim() !== '' && (
+                        <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
+                          ✓ Using name from Web3Auth: {fullName}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Fade>
+                )}
+
+                {currentStep === 3 && (
+                  <Fade in>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <Typography>Your email at organization</Typography>
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        Connect using MetaMask wallet. Make sure you have MetaMask installed and connected to the correct network.
+                        {connectionMethod === 'metamask' 
+                          ? "We'll send a verification code to this email address."
+                          : "Email from your Web3Auth account will be used."
+                        }
                       </Typography>
-                      
-                      <Typography>Your email at organization</Typography>
                       <TextField
                         fullWidth
                         type="email"
                         placeholder="you@organization.com"
                         value={email}
                         onChange={e => setEmail(e.target.value)}
-                        disabled={isMetaMaskConnecting}
+                        disabled={isSubmitting || connectionMethod === 'web3auth'}
+                        sx={connectionMethod === 'web3auth' ? { backgroundColor: '#f5f5f5' } : {}}
                       />
-                      
-                      {isMetaMaskConnecting && (
+                      {connectionMethod === 'web3auth' && web3AuthEmail && (
+                        <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
+                          ✓ Using email from Web3Auth: {web3AuthEmail}
+                        </Typography>
+                      )}
+                      {isSubmitting && (
                         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
                           <Typography variant="body2" color="text.secondary">
-                            Connecting to MetaMask...
+                            Sending verification code...
                           </Typography>
                         </Box>
                       )}
-                    </>
-                  )}
-                </Box>
-              </Fade>
-            )}
+                    </Box>
+                  </Fade>
+                )}
 
-            {currentStep === 4 && (
-              <Fade in>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Typography>Your organization name</Typography>
-                  <TextField 
-                    fullWidth 
-                    placeholder="Acme Corp" 
-                    value={organizationName} 
-                    onChange={e => setOrganizationName(e.target.value)} 
-                  />
-                </Box>
-              </Fade>
-            )}
-          </Box>
+                {currentStep === 4 && (
+                  <Fade in>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <Typography>Your organization name</Typography>
+                      <TextField 
+                        fullWidth 
+                        placeholder="Acme Corp" 
+                        value={organizationName} 
+                        onChange={e => setOrganizationName(e.target.value)} 
+                      />
+                    </Box>
+                  </Fade>
+                )}
+
+
+              </Box>
 
           {/* Action Area */}
           <Box sx={{ textAlign: 'center', mt: 2 }}>
@@ -666,10 +604,9 @@ const WelcomeModal: React.FC = () => {
               variant="contained"
               onClick={handleNextStep}
               disabled={
-                (currentStep === 1 && !fullName.trim()) ||
-                (currentStep === 2 && !earlyAccessCode.trim()) ||
-                (currentStep === 3 && connectionMethod === 'web3auth' && (!email.trim() || !password.trim())) ||
+                (currentStep === 2 && !fullName.trim()) ||
                 (currentStep === 3 && connectionMethod === 'metamask' && !email.trim()) ||
+                (currentStep === 3 && connectionMethod === 'web3auth' && !web3AuthEmail) ||
                 (currentStep === 4 && !organizationName.trim()) ||
                 isSubmitting ||
                 isWeb3AuthConnecting ||
@@ -681,19 +618,21 @@ const WelcomeModal: React.FC = () => {
             </Button>
           </Box>
 
-          {/* Back & (implicit) Next */}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-start', pt: 2 }}>
-            {currentStep > 1 && (
-              <Button
-                className="outlined"
-                variant="outlined"
-                startIcon={<ArrowBack />}
-                onClick={handlePreviousStep}
-              >
-                Back
-              </Button>
-            )}
-          </Box>
+              {/* Back & (implicit) Next */}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-start', pt: 2 }}>
+                {currentStep > 1 && (
+                  <Button
+                    className="outlined"
+                    variant="outlined"
+                    startIcon={<ArrowBack />}
+                    onClick={handlePreviousStep}
+                  >
+                    Back
+                  </Button>
+                )}
+              </Box>
+            </>
+          )}
 
           {/* Early access dialog */}
           <Dialog open={showEarlyAccessDialog} onClose={() => setShowEarlyAccessDialog(false)}>

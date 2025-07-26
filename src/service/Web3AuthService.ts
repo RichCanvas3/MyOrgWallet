@@ -72,7 +72,7 @@ class Web3AuthService {
    * Connect using email/password authentication (sign in or sign up)
    */
   static async connectWithEmailPassword(email: string, password: string, isSignUp: boolean = false): Promise<any> {
-          console.log('Web3AuthService.connectWithEmailPassword called with:', { email, isSignUp });
+
       if (!this.isInitialized) {
         await this.initialize();
       }
@@ -159,13 +159,23 @@ class Web3AuthService {
           console.log(`Web3Auth ${action} successfully with email/password`);
           console.log('Address:', address);
 
+          // Get user information including email
+          let userInfo = null;
+          try {
+            userInfo = await this.web3Auth.getUserInfo();
+            console.log('Web3Auth user info:', userInfo);
+          } catch (error) {
+            console.log('Could not retrieve user info from Web3Auth:', error);
+          }
+
           return {
             address,
             provider,
             walletClient,
             account,
             privateKey: formattedPrivateKey,
-            isNewAccount: isSignUp
+            isNewAccount: isSignUp,
+            userInfo
           };
         } catch (accountError) {
           console.error('Error creating viem account from private key:', accountError);
@@ -214,7 +224,24 @@ class Web3AuthService {
     }
 
     try {
-      await this.web3Auth.connect();
+      console.log('Attempting to connect to Web3Auth...');
+      console.log('Web3Auth instance:', this.web3Auth);
+      
+      // Open the Web3Auth modal
+      console.log('About to call web3Auth.connect()...');
+      
+      // Check if already connected
+      if (this.web3Auth.connected) {
+        console.log('Web3Auth already connected');
+      } else {
+        console.log('Web3Auth not connected, attempting to connect...');
+        await this.web3Auth.connect();
+        console.log('Web3Auth connect() called');
+      }
+      
+      console.log('Web3Auth modal call completed');
+      
+      console.log('Web3Auth connect() called, checking connection status...');
       
       if (!this.web3Auth.connected) {
         throw new Error('Failed to connect to Web3Auth');
@@ -249,12 +276,22 @@ class Web3AuthService {
       console.log('Web3Auth connected successfully');
       console.log('Address:', address);
 
+      // Get user information including email
+      let userInfo = null;
+      try {
+        userInfo = await this.web3Auth.getUserInfo();
+        console.log('Web3Auth user info:', userInfo);
+      } catch (error) {
+        console.log('Could not retrieve user info from Web3Auth:', error);
+      }
+
       return {
         address,
         provider,
         walletClient,
         account,
-        privateKey: formattedPrivateKey
+        privateKey: formattedPrivateKey,
+        userInfo
       };
     } catch (error) {
       console.error('Web3Auth connection error:', error);
