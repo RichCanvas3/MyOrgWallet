@@ -30,13 +30,7 @@ export const useSelectedSignatory = (config: SignatoryFactoryConfig) => {
     setConfiguredFactoriesByName(factoriesByName);
   }, []);
 
-  const selectedSignatory =
-    configuredFactoriesByName &&
-    selectedSignatoryFactoryName &&
-    configuredFactoriesByName[selectedSignatoryFactoryName];
-
   return {
-    selectedSignatory,
     selectedSignatoryFactoryName,
     setSelectedSignatoryFactoryName,
   };

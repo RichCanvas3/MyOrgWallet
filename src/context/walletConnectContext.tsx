@@ -1,7 +1,5 @@
 import { createContext, useContext, useEffect, useState, useRef, useMemo, useCallback, ReactNode } from "react";
 
-import { useSwitchChain, useWalletClient } from "wagmi";
-import { useNavigate } from 'react-router-dom';
 
 import { encodeFunctionData, hashMessage, createPublicClient, createWalletClient, WalletClient, toHex, http, zeroAddress, publicActions, custom, verifyMessage, signatureToCompactSignature  } from "viem";
 import { keccak256, toUtf8Bytes } from 'ethers';
@@ -259,7 +257,7 @@ export const useWalletConnect = () => {
     const { chain } = useWallectConnectContext();
 
 
-    const {selectedSignatory, setSelectedSignatoryFactoryName, selectedSignatoryFactoryName } =
+    const { setSelectedSignatoryFactoryName, selectedSignatoryFactoryName } =
       useSelectedSignatory({
         chain: chain,
         web3AuthClientId: WEB3_AUTH_CLIENT_ID,
@@ -595,8 +593,8 @@ export const useWalletConnect = () => {
           let localOrgDid = undefined
 
           console.info("------------> getConnected 1a: ", signatory, owner, chain)
-          console.info("------------> getConnected 2a: ", publicClient, selectedSignatory, privateIssuerDid)
-          if (publicClient && selectedSignatory && privateIssuerDid) {
+          console.info("------------> getConnected 2a: ", publicClient, privateIssuerDid)
+          if (publicClient && privateIssuerDid) {
 
             const privateKey = ISSUER_PRIVATE_KEY;
             if (!privateKey) {
@@ -1140,7 +1138,7 @@ export const useWalletConnect = () => {
 
           // if orgDid is already defined then use it
           if (orgDid) {
-            console.info("############ orgDid is defined: ", orgDid)
+            console.info("############ orgDid is defined 1: ", orgDid)
             orgDidValue = orgDid
             orgAddressValue = orgDid.replace('did:pkh:eip155:' + chain?.id + ':', '') as `0x${string}`
           }
@@ -1160,7 +1158,7 @@ export const useWalletConnect = () => {
             setOrgIndivDelegation(orgIndivDel)
 
             if (indivAddress == orgIndivDel.delegate) {
-              console.info("*********** valid individual-org attestation so lets use this org address")
+              console.info("*********** valid individual-org attestation so lets use this org address: ", orgIndivDel.delegator)
               // need to validate signature at some point
               orgAddressValue = orgIndivDel.delegator
               orgDidValue = 'did:pkh:eip155:' + chain?.id + ':' + orgAddressValue
@@ -1183,6 +1181,8 @@ export const useWalletConnect = () => {
             console.info(" org address value is defined so lets try and connect: ", orgAddressValue)
 
             let isOwner = false
+
+            console.info("get code for org address: ", orgAddressValue)
             const code = await publicClient.getCode({ address: orgAddressValue });
             console.info("code: ", code)
             const isDeployed = code !== '0x';
@@ -1936,12 +1936,12 @@ export const useWalletConnect = () => {
             orgIssuerDelegation,
             indivIssuerDelegation,
 
-            selectedSignatoryFactory,
             selectedSignatoryFactoryName,
+            setSelectedSignatoryFactoryName,
 
             connect,
             disconnect,
-            setSelectedSignatoryFactoryName,
+
 
             setIndivAndOrgInfo,
             buildSmartWallet,
@@ -1980,15 +1980,14 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
       connect, 
       disconnect,
-      setSelectedSignatoryFactoryName,
-
-
+ 
       setIndivAndOrgInfo,
       buildSmartWallet,
       setupSmartWallet,
 
-      selectedSignatoryFactory,
       selectedSignatoryFactoryName,
+      setSelectedSignatoryFactoryName,
+
 
       signatory,
       owner,
@@ -2031,8 +2030,8 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         orgIssuerDelegation,
         indivIssuerDelegation,
 
-        selectedSignatoryFactory,
         selectedSignatoryFactoryName,
+        setSelectedSignatoryFactoryName,
 
         signatory,
         owner,
@@ -2045,7 +2044,7 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
 
         connect,
         disconnect, 
-        setSelectedSignatoryFactoryName,
+        
 
         setIndivAndOrgInfo,
         buildSmartWallet,
@@ -2074,7 +2073,6 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         orgIssuerDelegation,
         indivIssuerDelegation,
 
-        selectedSignatoryFactory,
         signatory,
         owner,
 

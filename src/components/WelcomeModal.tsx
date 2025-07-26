@@ -22,16 +22,11 @@ import {
 import { Check, ArrowForward, ArrowBack } from '@mui/icons-material';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 
-import AttestationService from "../service/AttestationService"
-import { OrgAttestation, RegisteredDomainAttestation } from "../models/Attestation"
-import { domainSeparator } from 'viem';
-import { useAccount } from 'wagmi';
+
+import { ethers } from 'ethers';
 
 import '../custom_styles.css'
 
-import {ISSUER_PRIVATE_KEY, WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, ETHERSCAN_URL, BUNDLER_URL, PAYMASTER_URL} from "../config";
-import { createWeb3AuthSignatoryFactory } from "../signers/web3AuthSignatoryFactory";
-import { createInjectedProviderSignatoryFactory } from "../signers/injectedProviderSignatoryFactory";
 
 interface Step {
   id: number;
@@ -63,6 +58,8 @@ const WelcomeModal: React.FC = () => {
   const [hasValidEarlyAccess, setHasValidEarlyAccess] = useState(false);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [web3AuthEmail, setWeb3AuthEmail] = useState<string>('');
+  const [connectedSignatory, setConnectedSignatory] = useState<any>(null);
+  const [connectedOwner, setConnectedOwner] = useState<string>('');
 
   const { chain, connect, setIndivAndOrgInfo, setOrgNameValue, setOrgDidValue, checkIfDIDBlacklisted, setSelectedSignatoryFactoryName } = useWallectConnectContext();
 
@@ -188,16 +185,39 @@ const WelcomeModal: React.FC = () => {
         setSelectedSignatoryFactoryName("web3AuthSignatoryFactory");
         console.log('Web3Auth signatory type set and stored:', signatory);
         
+        // Store the signatory and owner for later use
+        setConnectedSignatory(signatory);
+        setConnectedOwner(signatory.address);
+        
         // Try to get email and name from Web3Auth user info
         if (signatory && signatory.userInfo) {
+          console.log('Full Web3Auth userInfo object:', signatory.userInfo);
+          
           if (signatory.userInfo.email) {
             setWeb3AuthEmail(signatory.userInfo.email);
             setEmail(signatory.userInfo.email);
             console.log('Email from Web3Auth:', signatory.userInfo.email);
           }
+          
+          // Try different possible name fields from Web3Auth
+          let userName = null;
           if (signatory.userInfo.name) {
-            setFullName(signatory.userInfo.name);
-            console.log('Name from Web3Auth:', signatory.userInfo.name);
+            userName = signatory.userInfo.name;
+          } else if (signatory.userInfo.full_name) {
+            userName = signatory.userInfo.full_name;
+          } else if (signatory.userInfo.given_name && signatory.userInfo.family_name) {
+            userName = `${signatory.userInfo.given_name} ${signatory.userInfo.family_name}`;
+          } else if (signatory.userInfo.given_name) {
+            userName = signatory.userInfo.given_name;
+          } else if (signatory.userInfo.family_name) {
+            userName = signatory.userInfo.family_name;
+          }
+          
+          if (userName) {
+            setFullName(userName);
+            console.log('Name from Web3Auth:', userName);
+          } else {
+            console.log('No name found in Web3Auth userInfo, available fields:', Object.keys(signatory.userInfo));
           }
         }
         
@@ -234,6 +254,22 @@ const WelcomeModal: React.FC = () => {
         // Set the signatory type to injected provider for MetaMask
         setSelectedSignatoryFactoryName("injectedProviderSignatoryFactory");
         console.log('MetaMask signatory type set to injected provider');
+
+
+        const { createWalletClient, custom } = await import('viem');
+        const provider = (window as any).ethereum;
+        const walletClient = createWalletClient({
+          chain: chain as any,
+          transport: custom(provider),
+          account: owner,
+        });
+
+        const ethersProvider = new ethers.BrowserProvider(provider);
+        const signer = await ethersProvider.getSigner();
+        const metamaskSignatory = { walletClient, signer };
+        
+        setConnectedSignatory(metamaskSignatory);
+        setConnectedOwner(owner);
         
         setIsWalletConnected(true);
         setCurrentStep(2);
@@ -316,9 +352,22 @@ const WelcomeModal: React.FC = () => {
         if (connectionMethod === 'metamask' && email) {
           const domain = getDomainFromEmail(email);
           if (domain) {
-            setOrgDidValue(domain);
+            console.info("*********** domain: ", domain)
+            //setOrgDidValue(domain);
           }
         }
+
+        // Call connect function with the collected information
+        if (connectedSignatory && connectedOwner) {
+          await connect(connectedOwner, connectedSignatory, organizationName, fullName, email);
+        } else if (connectedOwner) {
+          // For MetaMask, we need to create a signatory object
+          // This will be handled by the injected provider signatory factory
+          await connect(connectedOwner, null, organizationName, fullName, email);
+        }
+        
+        // Set the individual and org info
+        await setIndivAndOrgInfo(fullName, organizationName, email);
 
         // Navigate to setup page
         navigate('/setup');
