@@ -24,7 +24,7 @@ const Header: React.FC<HeaderProps> = ({className}) => {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const {showConfirmDialog, ConfirmDialog, isOpen} = useConfirmDialog();
 
-  const { orgName, indivName, signatory, selectedSignatoryFactoryName, selectedSignatoryFactory, disconnect, orgDid, indivDid, chain, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, burnerAccountClient } = useWallectConnectContext();
+  const { orgName, indivName, signatory, selectedSignatoryFactoryName, disconnect, orgDid, indivDid, chain, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, burnerAccountClient } = useWallectConnectContext();
 
 
   const navigate = useNavigate();
@@ -40,19 +40,9 @@ const Header: React.FC<HeaderProps> = ({className}) => {
   const disconnectWallet = async () => {
     try {
       console.info("************* disconnect inside: signatory: ", signatory)
-      
-      // Use the signatory factory's logout method if available
       console.info("************* selectedSignatoryFactoryName: ", selectedSignatoryFactoryName);
-      console.info("************* selectedSignatoryFactory: ", selectedSignatoryFactory);
-      console.info("************* selectedSignatoryFactory.canLogout(): ", selectedSignatoryFactory?.canLogout());
-      console.info("************* selectedSignatoryFactory.logout: ", selectedSignatoryFactory?.logout);
       
-      if (selectedSignatoryFactory && selectedSignatoryFactory.canLogout() && selectedSignatoryFactory.logout) {
-        console.info("************* calling signatory factory logout")
-        await selectedSignatoryFactory.logout();
-      } else {
-      }
-
+      // The disconnect function in the context will handle the signatory factory logout
       disconnect();
       
       // Navigate back to home

@@ -22,10 +22,13 @@ import {
 import { Check, ArrowForward, ArrowBack } from '@mui/icons-material';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 
+import { createWeb3AuthSignatoryFactory } from "../signers/web3AuthSignatoryFactory";
+import { createInjectedProviderSignatoryFactory } from "../signers/injectedProviderSignatoryFactory";
 
 import { ethers } from 'ethers';
 
 import '../custom_styles.css'
+import { RPC_URL, WEB3_AUTH_CLIENT_ID, WEB3_AUTH_NETWORK } from '../config';
 
 
 interface Step {
@@ -169,55 +172,64 @@ const WelcomeModal: React.FC = () => {
         
         // Connect using Web3Auth (this will open the modal)
         console.log('Calling Web3AuthService.connect()...');
-        let signatory;
+        let web3AuthSignatory;
         try {
-          signatory = await Web3AuthService.connect();
-          console.log('Web3AuthService.connect() completed successfully:', signatory);
+          web3AuthSignatory = await Web3AuthService.connect();
+          console.log('Web3AuthService.connect() completed successfully:', web3AuthSignatory);
         } catch (error) {
           console.error('Web3AuthService.connect() failed:', error);
           throw error;
         }
 
-        console.log('Web3Auth connected successfully:', signatory);
+        console.log('Web3Auth connected successfully:', web3AuthSignatory);
         handleToast('Web3Auth connected successfully!', 'success');
         
         // Set the signatory type to Web3Auth
         setSelectedSignatoryFactoryName("web3AuthSignatoryFactory");
-        console.log('Web3Auth signatory type set and stored:', signatory);
+        console.log('Web3Auth signatory type set and stored:', web3AuthSignatory);
+
+        const signatoryFactory = createWeb3AuthSignatoryFactory({
+              chain: chain as any,
+              web3AuthClientId: WEB3_AUTH_CLIENT_ID,
+              web3AuthNetwork: WEB3_AUTH_NETWORK,
+              rpcUrl: RPC_URL,
+            });
+
+        const credentials = await signatoryFactory.login()
         
         // Store the signatory and owner for later use
-        setConnectedSignatory(signatory);
-        setConnectedOwner(signatory.address);
+        setConnectedSignatory(credentials.signatory);
+        setConnectedOwner(credentials.owner);
         
         // Try to get email and name from Web3Auth user info
-        if (signatory && signatory.userInfo) {
-          console.log('Full Web3Auth userInfo object:', signatory.userInfo);
+        if (web3AuthSignatory && web3AuthSignatory.userInfo) {
+          console.log('Full Web3Auth userInfo object:', web3AuthSignatory.userInfo);
           
-          if (signatory.userInfo.email) {
-            setWeb3AuthEmail(signatory.userInfo.email);
-            setEmail(signatory.userInfo.email);
-            console.log('Email from Web3Auth:', signatory.userInfo.email);
+          if (web3AuthSignatory.userInfo.email) {
+            setWeb3AuthEmail(web3AuthSignatory.userInfo.email);
+            setEmail(web3AuthSignatory.userInfo.email);
+            console.log('Email from Web3Auth:', web3AuthSignatory.userInfo.email);
           }
           
           // Try different possible name fields from Web3Auth
           let userName = null;
-          if (signatory.userInfo.name) {
-            userName = signatory.userInfo.name;
-          } else if (signatory.userInfo.full_name) {
-            userName = signatory.userInfo.full_name;
-          } else if (signatory.userInfo.given_name && signatory.userInfo.family_name) {
-            userName = `${signatory.userInfo.given_name} ${signatory.userInfo.family_name}`;
-          } else if (signatory.userInfo.given_name) {
-            userName = signatory.userInfo.given_name;
-          } else if (signatory.userInfo.family_name) {
-            userName = signatory.userInfo.family_name;
+          if (web3AuthSignatory.userInfo.name) {
+            userName = web3AuthSignatory.userInfo.name;
+          } else if (web3AuthSignatory.userInfo.full_name) {
+            userName = web3AuthSignatory.userInfo.full_name;
+          } else if (web3AuthSignatory.userInfo.given_name && web3AuthSignatory.userInfo.family_name) {
+            userName = `${web3AuthSignatory.userInfo.given_name} ${web3AuthSignatory.userInfo.family_name}`;
+          } else if (web3AuthSignatory.userInfo.given_name) {
+            userName = web3AuthSignatory.userInfo.given_name;
+          } else if (web3AuthSignatory.userInfo.family_name) {
+            userName = web3AuthSignatory.userInfo.family_name;
           }
           
           if (userName) {
             setFullName(userName);
             console.log('Name from Web3Auth:', userName);
           } else {
-            console.log('No name found in Web3Auth userInfo, available fields:', Object.keys(signatory.userInfo));
+            console.log('No name found in Web3Auth userInfo, available fields:', Object.keys(web3AuthSignatory.userInfo));
           }
         }
         
@@ -255,21 +267,17 @@ const WelcomeModal: React.FC = () => {
         setSelectedSignatoryFactoryName("injectedProviderSignatoryFactory");
         console.log('MetaMask signatory type set to injected provider');
 
-
-        const { createWalletClient, custom } = await import('viem');
-        const provider = (window as any).ethereum;
-        const walletClient = createWalletClient({
-          chain: chain as any,
-          transport: custom(provider),
-          account: owner,
+        const signatoryFactory = createInjectedProviderSignatoryFactory({
+          chain: chain,
+          web3AuthClientId: WEB3_AUTH_CLIENT_ID,
+          web3AuthNetwork: WEB3_AUTH_NETWORK,
+          rpcUrl: RPC_URL,
         });
 
-        const ethersProvider = new ethers.BrowserProvider(provider);
-        const signer = await ethersProvider.getSigner();
-        const metamaskSignatory = { walletClient, signer };
+        const credentials = await signatoryFactory.login()
         
-        setConnectedSignatory(metamaskSignatory);
-        setConnectedOwner(owner);
+        setConnectedSignatory(credentials.signatory);
+        setConnectedOwner(credentials.owner);
         
         setIsWalletConnected(true);
         setCurrentStep(2);

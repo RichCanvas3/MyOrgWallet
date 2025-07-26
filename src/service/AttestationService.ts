@@ -401,20 +401,30 @@ class AttestationService {
 
   static async storeAttestation(chain: Chain, schema: string, encodedData: any, delegator: MetaMaskSmartAccount, delegate: MetaMaskSmartAccount, delegationChain: Delegation[], easInstance?: EAS) {
 
+    console.info("inside store attestation: ", delegator.address)
+
     const key1 = BigInt(Date.now())      // or some secure random
     const nonce1 = encodeNonce({ key: key1, sequence: 0n })
 
-    let tx = await eas.attest({
-      schema: schema,
-      data: {
-        recipient: delegator.address,
-        expirationTime: 0n, // BigInt in v6
-        revocable: true,
-        data: encodedData
-      }
-    })
+    try {
 
+ 
+      let tx = await eas.attest({
+        schema: schema,
+        data: {
+          recipient: delegator.address,
+          expirationTime: 0n, // BigInt in v6
+          revocable: true,
+          data: encodedData
+        }
+      })
+    }
+    catch (error) {
+      console.info("await eas.attest: ", delegate.address)
+      console.info("error: ", error)
+    }
 
+    console.info("after eas.attest .........")
     const executions = [
       {
         target: tx.data.to,

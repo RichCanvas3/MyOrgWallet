@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState, useRef, useMemo, useCallback, ReactNode } from "react";
 
-
-
+import { useDisconnect } from 'wagmi';
 
 import { encodeFunctionData, hashMessage, createPublicClient, createWalletClient, WalletClient, toHex, http, zeroAddress, publicActions, custom, verifyMessage, signatureToCompactSignature  } from "viem";
 import { keccak256, toUtf8Bytes } from 'ethers';
@@ -24,7 +23,10 @@ import { CredentialStatusPlugin } from '@veramo/credential-status';
 import { DIDResolverPlugin } from '@veramo/did-resolver';
 import { enableMasca} from '@blockchain-lab-um/masca-connector';
 
+import { createInjectedProviderSignatoryFactory } from "../signers/injectedProviderSignatoryFactory";
+import { createWeb3AuthSignatoryFactory } from "../signers/web3AuthSignatoryFactory";
 
+            
 import {
   KeyDIDProvider,
   getDidKeyResolver as keyDidResolver,
@@ -256,7 +258,7 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
 export const useWalletConnect = () => {
 
     const { chain } = useWallectConnectContext();
-
+    const { disconnect: wagmiDisconnect } = useDisconnect();
 
     const { setSelectedSignatoryFactoryName, selectedSignatoryFactoryName } =
       useSelectedSignatory({
@@ -265,6 +267,14 @@ export const useWalletConnect = () => {
         web3AuthNetwork: WEB3_AUTH_NETWORK,
         rpcUrl: RPC_URL,
       });
+
+    // Create the selected signatory factory based on the name
+    const selectedSignatoryFactory = useMemo(() => {
+      if (!selectedSignatoryFactoryName) return undefined;
+      
+      // We'll create the factory dynamically when needed instead of here
+      return undefined;
+    }, [selectedSignatoryFactoryName, chain]);
 
 
     const [orgDid, setOrgDid] = useState<string>();
@@ -1911,8 +1921,73 @@ export const useWalletConnect = () => {
 
     const disconnect = async () => {
       console.info("*********** disconnect")
-      setSignatory(undefined)
-      setOwner(undefined)
+      
+      try {
+        // Get the signatory factory and call its logout method if available
+        if (selectedSignatoryFactoryName) {
+          let signatoryFactory;
+          
+          if (selectedSignatoryFactoryName === 'web3AuthSignatoryFactory') {
+            signatoryFactory = createWeb3AuthSignatoryFactory({
+              chain: chain as any,
+              web3AuthClientId: WEB3_AUTH_CLIENT_ID,
+              web3AuthNetwork: WEB3_AUTH_NETWORK,
+              rpcUrl: RPC_URL,
+            });
+          } else if (selectedSignatoryFactoryName === 'injectedProviderSignatoryFactory') {
+            signatoryFactory = createInjectedProviderSignatoryFactory({
+              chain: chain as any,
+              web3AuthClientId: WEB3_AUTH_CLIENT_ID,
+              web3AuthNetwork: WEB3_AUTH_NETWORK,
+              rpcUrl: RPC_URL,
+            });
+          }
+          
+          if (signatoryFactory && signatoryFactory.canLogout() && signatoryFactory.logout) {
+            console.info(`Calling logout for ${selectedSignatoryFactoryName}`);
+            await signatoryFactory.logout();
+          }
+        }
+        
+        // Disconnect based on the selected signatory factory
+        if (selectedSignatoryFactoryName === 'web3AuthSignatoryFactory') {
+          // Disconnect from Web3Auth service
+          const { default: Web3AuthService } = await import('../service/Web3AuthService');
+          await Web3AuthService.disconnect();
+          console.info("Web3Auth service disconnected");
+        } else if (selectedSignatoryFactoryName === 'injectedProviderSignatoryFactory') {
+          // Use wagmi's disconnect for MetaMask
+          console.info("MetaMask logout - using wagmi disconnect");
+          wagmiDisconnect();
+        }
+        
+        // Clear all state
+        setSignatory(undefined);
+        setOwner(undefined);
+        setOrgDid(undefined);
+        setIndivDid(undefined);
+        setOrgName(undefined);
+        setIndivName(undefined);
+        setIndivEmail(undefined);
+        setBurnerAccountClient(undefined);
+        setOrgAccountClient(undefined);
+        setIndivAccountClient(undefined);
+        setOrgIndivDelegation(undefined);
+        setOrgIssuerDelegation(undefined);
+        setIndivIssuerDelegation(undefined);
+        setVeramoAgent(undefined);
+        setCredentialManager(undefined);
+        setIsIndividualConnected(false);
+        setIsConnectionComplete(false);
+        setSelectedSignatoryFactoryName(undefined);
+        
+        console.info("All wallet state cleared");
+      } catch (error) {
+        console.error('Error during disconnect:', error);
+        // Even if there's an error, clear the state
+        setSignatory(undefined);
+        setOwner(undefined);
+      }
     }
 
     const connect = async (owner: any, signatory: any, organizationName: string, fullName: string, email: string) => {
