@@ -14,6 +14,7 @@ import { publicKeyToAddress } from 'viem/accounts';
 import bodyParser from 'body-parser';
 import { v4 as uuidv4 } from 'uuid';
 import { Storage } from '@google-cloud/storage';
+import { create } from '@web3-storage/w3up-client';
 
 // Initialize application
 console.log('Starting application...');
@@ -36,6 +37,13 @@ const validateEnvVars = () => {
     'SHOPIFY_CLIENT_SECRET',
     'SHOPIFY_SHOP_NAME'
   ];
+  
+  // Optional Web3.Storage configuration
+  if (process.env.WEB3_STORAGE_EMAIL && process.env.WEB3_STORAGE_SPACE_DID) {
+    console.log('Web3.Storage configuration detected');
+  } else {
+    console.log('Web3.Storage not configured - will use fallback storage');
+  }
   requiredVars.forEach((varName) => {
     if (!process.env[varName]) {
       console.error(`Missing environment variable: ${varName}`);
@@ -84,11 +92,71 @@ app.use(bodyParser.json());
 
 const verificationCodes = new Map();
 
+// Web3.Storage client initialization
+let web3StorageClient = null;
+let web3StorageInitialized = false;
+
+const initializeWeb3Storage = async () => {
+  if (web3StorageInitialized) return web3StorageClient;
+  
+  try {
+    if (!process.env.WEB3_STORAGE_EMAIL || !process.env.WEB3_STORAGE_SPACE_DID) {
+      console.log('Web3.Storage not configured, skipping initialization');
+      return null;
+    }
+
+    console.log('Initializing Web3.Storage client...');
+    web3StorageClient = await create();
+    
+    console.log('Logging in to Web3.Storage...');
+    await web3StorageClient.login(process.env.WEB3_STORAGE_EMAIL);
+    
+    console.log('Getting available spaces...');
+    const spaces = await web3StorageClient.spaces();
+    console.log(`Found ${spaces.length} spaces`);
+    
+    // Check if the configured space is available
+    const targetSpaceDid = process.env.WEB3_STORAGE_SPACE_DID;
+    const spaceAvailable = spaces.find(s => s.did() === targetSpaceDid);
+    
+    if (spaceAvailable) {
+      console.log(`✅ Target space ${targetSpaceDid} is available and ready to use`);
+      
+      // Store the target space for direct uploads
+      web3StorageClient.targetSpace = spaceAvailable;
+      console.log('✅ Target space stored for direct uploads');
+      
+      web3StorageInitialized = true;
+      console.log('Web3.Storage client initialized successfully');
+      return web3StorageClient;
+    } else {
+      console.log(`⚠️  Target space ${targetSpaceDid} is not available`);
+      console.log('💡 This means your configured space needs to be activated.');
+      console.log('📧 To activate your space:');
+      console.log('1. Visit https://console.web3.storage/');
+      console.log('2. Log in with your email');
+      console.log('3. Look for authorization emails or pending invitations');
+      console.log('4. Accept the space invitation');
+      console.log('5. Restart the server');
+      return null;
+    }
+  } catch (error) {
+    console.error('Failed to initialize Web3.Storage client:', error);
+    console.error('Error details:', error.message);
+    if (error.stack) {
+      console.error('Stack trace:', error.stack);
+    }
+    return null;
+  }
+};
+
 const generateCode = () => {
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   console.log('Generated verification code:', code);
   return code;
 };
+
+// Helper function removed - no longer creating or activating spaces
 
 //const storage = new Storage();
 //const bucket = storage.bucket(process.env.GCLOUD_BUCKET_NAME);
@@ -507,7 +575,166 @@ app.post('/session/:sessionId', (req, res) => {
   res.json({ received: true })
 })
 
+// Web3.Storage API endpoints
+app.post('/api/web3storage/upload', async (req, res) => {
+  console.log('Handling Web3.Storage upload request');
+  
+  try {
+    const client = await initializeWeb3Storage();
+    if (!client) {
+      return res.status(500).json({ error: 'Web3.Storage not available' });
+    }
 
+    const { data, filename = 'credentials.json' } = req.body;
+    if (!data) {
+      return res.status(400).json({ error: 'Data is required' });
+    }
+
+    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    const file = new File([blob], filename);
+
+    await client.setCurrentSpace(client.targetSpace.did());
+    
+    console.log('📤 Uploading test file...');
+    const cid = await client.uploadFile(file);
+
+    console.log('Successfully uploaded to Web3.Storage:', cid.toString());
+    res.json({ 
+      success: true, 
+      cid: cid.toString(),
+      url: `https://${cid.toString()}.ipfs.w3s.link`
+    });
+  } catch (error) {
+    console.error('Error uploading to Web3.Storage:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/web3storage/download/:cid', async (req, res) => {
+  console.log('Handling Web3.Storage download request');
+  
+  try {
+    const { cid } = req.params;
+    if (!cid) {
+      return res.status(400).json({ error: 'CID is required' });
+    }
+
+    const url = `https://${cid}.ipfs.w3s.link`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    const data = await response.json();
+    console.log('Successfully downloaded from Web3.Storage:', cid);
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('Error downloading from Web3.Storage:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/web3storage/credentials/save', async (req, res) => {
+  console.log('Handling Web3.Storage credentials save request');
+  
+  try {
+    const { credentials, did } = req.body;
+    if (!credentials || !did) {
+      return res.status(400).json({ error: 'Credentials and DID are required' });
+    }
+
+    const client = await initializeWeb3Storage();
+    if (!client) {
+      return res.status(500).json({ error: 'Web3.Storage not available' });
+    }
+
+    const filename = `credentials_${did}.json`;
+    const blob = new Blob([JSON.stringify(credentials)], { type: 'application/json' });
+    const file = new File([blob], filename);
+
+    await client.setCurrentSpace(client.targetSpace.did());
+    const cid = await client.uploadFile(file);
+
+    console.log('Successfully saved credentials to Web3.Storage:', cid.toString());
+    res.json({ 
+      success: true, 
+      cid: cid.toString(),
+      url: `https://${cid.toString()}.ipfs.w3s.link`
+    });
+  } catch (error) {
+    console.error('Error saving credentials to Web3.Storage:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/web3storage/credentials/:did', async (req, res) => {
+  console.log('Handling Web3.Storage credentials retrieval request');
+  
+  try {
+    const { did } = req.params;
+    if (!did) {
+      return res.status(400).json({ error: 'DID is required' });
+    }
+
+    // For now, we'll return empty data since we need to implement hash tracking
+    // In a real implementation, you'd store the hash mapping in a database
+    res.json({ success: true, data: [] });
+  } catch (error) {
+    console.error('Error retrieving credentials from Web3.Storage:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/web3storage/credentials/:did', async (req, res) => {
+  console.log('Handling Web3.Storage credentials deletion request');
+  
+  try {
+    const { did } = req.params;
+    if (!did) {
+      return res.status(400).json({ error: 'DID is required' });
+    }
+
+    // For now, we'll return success since deletion is handled client-side
+    // In a real implementation, you'd track and delete the actual files
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting credentials from Web3.Storage:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Helper endpoint to check Web3.Storage status and available spaces
+app.get('/api/web3storage/status', async (req, res) => {
+  console.log('Handling Web3.Storage status request');
+  
+  try {
+    if (!process.env.WEB3_STORAGE_EMAIL) {
+      return res.json({ 
+        configured: false, 
+        error: 'WEB3_STORAGE_EMAIL not configured' 
+      });
+    }
+    
+    const client = await Client.create();
+    await client.login(process.env.WEB3_STORAGE_EMAIL);
+    const spaces = await client.spaces();
+    
+    res.json({
+      configured: true,
+      email: process.env.WEB3_STORAGE_EMAIL,
+      spaceDid: process.env.WEB3_STORAGE_SPACE_DID,
+      availableSpaces: spaces.map(s => s.did()),
+      targetSpaceExists: spaces.find(s => s.did() === process.env.WEB3_STORAGE_SPACE_DID) !== undefined
+    });
+  } catch (error) {
+    console.error('Error checking Web3.Storage status:', error);
+    res.status(500).json({ 
+      configured: false, 
+      error: error.message 
+    });
+  }
+});
 
 // Start the server
 const port = process.env.PORT || 4000;

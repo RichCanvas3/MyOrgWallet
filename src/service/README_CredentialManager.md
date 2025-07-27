@@ -1,6 +1,6 @@
 # Credential Manager System
 
-This system provides a unified interface for managing verifiable credentials with support for both MetaMask (masca) and localStorage storage backends.
+This system provides a unified interface for managing verifiable credentials with support for MetaMask (masca), localStorage, Infura IPFS, and server-based Web3.Storage backends.
 
 ## Features
 
@@ -21,6 +21,12 @@ VITE_CREDENTIAL_MANAGER_TYPE=localStorage
 
 # For MetaMask masca
 VITE_CREDENTIAL_MANAGER_TYPE=masca
+
+# For Infura IPFS
+VITE_CREDENTIAL_MANAGER_TYPE=infuraIPFS
+
+# For Server-based Web3.Storage (recommended)
+VITE_CREDENTIAL_MANAGER_TYPE=serverWeb3Storage
 ```
 
 ### In Components

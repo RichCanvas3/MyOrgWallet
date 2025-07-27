@@ -18,6 +18,7 @@ export default defineConfig({
       buffer: 'buffer',
       stream: 'stream-browserify',
       util: 'util',
+      crypto: 'crypto-browserify',
     },
   },
   plugins: [
@@ -31,9 +32,11 @@ export default defineConfig({
         process: true,
       },
       protocolImports: true,
+      include: ['buffer', 'crypto', 'stream', 'util'],
     }),
   ],
   optimizeDeps: {
+    include: ['buffer', 'crypto-browserify', 'stream-browserify'],
     esbuildOptions: {
       target: 'esnext',
       define: {
@@ -74,6 +77,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 2000, // in kilobytes
     sourcemap: true,
     rollupOptions: {
+      external: ['fs', 'path', 'os'],
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],

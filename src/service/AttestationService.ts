@@ -30,7 +30,7 @@ import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
 
 import { encodeNonce } from "permissionless/utils"
 
-import { error } from "console";
+
 
 import {WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, BUNDLER_URL, PAYMASTER_URL, EAS_URL, EAS_CONTRACT_ADDRESS} from "../config";
 

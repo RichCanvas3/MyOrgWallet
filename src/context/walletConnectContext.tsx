@@ -559,17 +559,17 @@ export const useWalletConnect = () => {
           
           return api;
         } else {
-          // Use localStorage credential manager
-          const localStorageManager = await CredentialManagerFactory.createDefaultCredentialManager(
-            'localStorage',
+          // Use the factory to create the appropriate credential manager
+          const credentialManager = await CredentialManagerFactory.createDefaultCredentialManager(
+            credentialManagerType,
             did
           );
-          setCredentialManager(localStorageManager);
-          return localStorageManager;
+          setCredentialManager(credentialManager);
+          return credentialManager;
         }
       } catch (error) {
         console.error('Error initializing credential manager:', error);
-        // Fallback to localStorage if masca fails
+        // Fallback to localStorage if any manager fails
         const localStorageManager = await CredentialManagerFactory.createDefaultCredentialManager(
           'localStorage',
           did

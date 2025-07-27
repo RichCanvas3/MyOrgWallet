@@ -1,6 +1,8 @@
 import { LocalStorageCredentialManager, createLocalStorageCredentialManager } from './LocalStorageCredentialManager';
+import { InfuraIPFSCredentialManager, createInfuraIPFSCredentialManager } from './InfuraIPFSCredentialManager';
+import { ServerWeb3StorageCredentialManager, createServerWeb3StorageCredentialManager } from './ServerWeb3StorageCredentialManager';
 
-export type CredentialManagerType = 'masca' | 'localStorage';
+export type CredentialManagerType = 'masca' | 'localStorage' | 'infuraIPFS' | 'serverWeb3Storage';
 
 export interface CredentialManagerConfig {
   type: CredentialManagerType;
@@ -39,6 +41,22 @@ export class CredentialManagerFactory {
         }
         return localStorageManager;
         
+      case 'infuraIPFS':
+        const infuraIPFSManager = createInfuraIPFSCredentialManager(config.did);
+        if (config.did) {
+          infuraIPFSManager.setDID(config.did);
+        }
+        return infuraIPFSManager;
+        
+
+        
+      case 'serverWeb3Storage':
+        const serverWeb3StorageManager = createServerWeb3StorageCredentialManager(config.did);
+        if (config.did) {
+          serverWeb3StorageManager.setDID(config.did);
+        }
+        return serverWeb3StorageManager;
+        
       default:
         throw new Error(`Unknown credential manager type: ${config.type}`);
     }
@@ -63,7 +81,7 @@ export class CredentialManagerFactory {
    */
   static getDefaultCredentialManagerType(): CredentialManagerType {
     const envType = import.meta.env.VITE_CREDENTIAL_MANAGER_TYPE;
-    if (envType === 'masca' || envType === 'localStorage') {
+    if (envType === 'masca' || envType === 'localStorage' || envType === 'infuraIPFS' || envType === 'serverWeb3Storage') {
       return envType;
     }
     return 'localStorage'; // Default to localStorage
