@@ -98,8 +98,9 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
                       const result = await VerifiableCredentialsService.createCredential(vc, entityId, "linkedin", indivDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
           const fullVc = result.vc
           const proof = result.proof
+          const vcId = result.vcId
 
-          if (proof && fullVc && chain && indivAccountClient && indivIssuerDelegation) {
+          if (proof && fullVc && vcId && chain && indivAccountClient && indivIssuerDelegation) {
           
             // add attestation
             const hash = keccak256(toUtf8Bytes("hash value"));
@@ -112,6 +113,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
               vccomm: (fullVc.credentialSubject as any).commitment.toString(),
               vcsig: (fullVc.credentialSubject as any).commitmentSignature,
               vciss: privateIssuerDid,
+              vcid: vcId,
               proof: proof,
               name: "",
               url: "",

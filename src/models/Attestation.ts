@@ -13,6 +13,7 @@ export interface Attestation {
   vccomm?: string;      // hash           - commitment
   vcsig?: string;     // hash signature - commitment Signature
   vciss?: string;     // hash issuer    - commitment Issuer
+  vcid?: string;      // vc id
   issuedate?: number | null;
   expiredate?: number | null;
   url?: string | null;

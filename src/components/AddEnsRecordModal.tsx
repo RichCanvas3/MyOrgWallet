@@ -405,6 +405,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
           const result = await VerifiableCredentialsService.createCredential(vc, entityId, cleanName, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
           const fullVc = result.vc
           const proof = result.proof
+          const vcId = result.vcId
           if (proof && fullVc && chain && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation ) {
     
             // now create attestation
@@ -420,6 +421,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
               vccomm: (fullVc.credentialSubject as any).commitment.toString(),
               vcsig: (fullVc.credentialSubject as any).commitmentSignature,
               vciss: privateIssuerDid,
+              vcid: vcId,
               proof: proof
             };
     

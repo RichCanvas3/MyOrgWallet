@@ -20,6 +20,7 @@ import { getResolver as ethrDidResolver } from 'ethr-did-resolver';
 
 import { CredentialStatusPlugin } from '@veramo/credential-status';
 import { DIDResolverPlugin } from '@veramo/did-resolver';
+import { CircleDeveloperControlledWalletsClient } from "@circle-fin/developer-controlled-wallets";
 
 
 // @ts-ignore
@@ -407,7 +408,7 @@ class VerifiableCredentialsService {
       return vc;
     }
 
-    static async saveCredential(credentialManager: any, credential: VerifiableCredential, entityId: string, displayName: string) {
+    static async saveCredential(credentialManager: any, credential: VerifiableCredential, entityId: string, displayName: string) : Promise<string>  {
         
          const cred : W3CVerifiableCredential = {
           ...credential,
@@ -418,14 +419,19 @@ class VerifiableCredentialsService {
         };
         
 
-        // using credential manager (masca or localStorage)
-        const result = await credentialManager?.saveCredential(cred)
+        // using credential manager (masca or localStorage or web3storage)
+        const vcId = await credentialManager?.saveCredential(cred)
 
         const did = await credentialManager.getDID() 
         const key = entityId + "-" + displayName + "-" + did.data
 
+        console.log('******************** saveCredential did: ', did)
+        console.log('******************** saveCredential key: ', key)
+
         const credentialJSON = JSON.stringify(cred);
         localStorage.setItem(key, credentialJSON)
+
+        return vcId;
 
 
     }
@@ -499,6 +505,7 @@ class VerifiableCredentialsService {
       const encoder = new TextEncoder();
 
       let proof = ""
+      let vcId = ""
 
 
       // Hash the subject DID
@@ -591,7 +598,7 @@ class VerifiableCredentialsService {
           // save vc to credential manager (masca or localStorage)
           if (credentialManager) {
             console.info("save credential: ", veramoVC)
-            await VerifiableCredentialsService.saveCredential(credentialManager, veramoVC, entityId, displayName)
+            vcId = await VerifiableCredentialsService.saveCredential(credentialManager, veramoVC, entityId, displayName)
           }
           
         }
@@ -601,7 +608,7 @@ class VerifiableCredentialsService {
       }
 
       console.info("done creating vc and return")
-      return { vc: veramoVC, proof: proof }
+      return { vc: veramoVC, proof: proof, vcId: vcId }
     }
 
 }

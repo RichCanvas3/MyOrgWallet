@@ -173,6 +173,7 @@ const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ i
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, name, accountDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
+        const vcId = result.vcId
 
         console.info("***********  fullVc ****************", fullVc);
 
@@ -197,6 +198,7 @@ const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ i
               vccomm: (fullVc.credentialSubject as any).commitment.toString(),
               vcsig: (fullVc.credentialSubject as any).commitmentSignature,
               vciss: privateIssuerDid,
+              vcid: vcId,
               proof: proof
           };
           // Use the signer directly from signatory

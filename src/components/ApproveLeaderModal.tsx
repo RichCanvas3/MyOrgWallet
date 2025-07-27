@@ -128,6 +128,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
       console.info("result of create credential: ", result)
       const fullVc = result.vc
       const proof = result.proof
+      const vcId = result.vcId
 
       if (proof && fullVc && chain && orgIssuerDelegation && orgIndivDelegation && burnerAccountClient) {
 
@@ -147,6 +148,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
           vccomm: (fullVc.credentialSubject as any).commitment.toString(),
           vcsig: (fullVc.credentialSubject as any).commitmentSignature,
           vciss: privateIssuerDid,
+          vcid: vcId,
           proof: proof
         };
 

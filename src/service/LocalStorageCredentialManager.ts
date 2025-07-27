@@ -43,7 +43,7 @@ export class LocalStorageCredentialManager {
   /**
    * Save a credential to localStorage
    */
-  async saveCredential(credential: VerifiableCredential): Promise<{ success: boolean }> {
+  async saveCredential(credential: VerifiableCredential): Promise<string> {
     try {
       const credentials = this.getAllCredentials();
       const newCredential: CredentialInfo = {
@@ -57,11 +57,13 @@ export class LocalStorageCredentialManager {
       
       credentials.push(newCredential);
       this.saveCredentialsToStorage(credentials);
+
+      const vcId = credential.credentialSubject.provider + "-" + credential.credentialSubject.displayName + "-" + this.did;
       
-      return { success: true };
+      return vcId;
     } catch (error) {
       console.error('Error saving credential to localStorage:', error);
-      return { success: false };
+      return '';
     }
   }
 

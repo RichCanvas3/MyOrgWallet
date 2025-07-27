@@ -58,7 +58,9 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
               const result = await VerifiableCredentialsService.createCredential(vc, entityId, orgName, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
-      if (fullVc && signatory && chain && orgAccountClient) {
+      const vcId = result.vcId
+
+      if (fullVc && vcId && signatory && chain && orgAccountClient) {
       
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -72,6 +74,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
           vccomm: (fullVc.credentialSubject as any).commitment.toString(),
           vcsig: (fullVc.credentialSubject as any).commitmentSignature,
           vciss: privateIssuerDid,
+          vcid: vcId,
           proof: proof
         };
 

@@ -1072,10 +1072,11 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           console.info("state reg createCredential result: ", result)
           const fullVc = result.vc
           const proof = result.proof
+          const vcId = result.vcId
 
           console.info("fields: ", proof, fullVc, burnerAccountClient, orgAccountClient, orgIssuerDelegation, orgIndivDelegation)
           console.info("orgIndivDelegation: ", orgIndivDelegation)
-          if (chain && proof && fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation) {
+          if (chain && proof && fullVc && vcId && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation) {
 
             // now create attestation
             const hash = keccak256(toUtf8Bytes("hash value"));
@@ -1093,6 +1094,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
               vccomm: (fullVc.credentialSubject as any).commitment.toString(),
               vcsig: (fullVc.credentialSubject as any).commitmentSignature,
               vciss: privateIssuerDid,
+              vcid: vcId,
               proof: proof
             };
 
@@ -1143,7 +1145,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, "state-registration", orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
-      if (proof && fullVc && chain && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation) {
+      const vcId = result.vcId
+      if (proof && fullVc && vcId && chain && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation) {
 
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -1158,6 +1161,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           vccomm: (fullVc.credentialSubject as any).commitment.toString(),
           vcsig: (fullVc.credentialSubject as any).commitmentSignature,
           vciss: privateIssuerDid,
+          vcid: vcId,
           proof: proof
         };
 
@@ -1196,7 +1200,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, website, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
-      if (proof && chain && fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation) {
+      const vcId = result.vcId
+      if (proof && chain && fullVc && vcId && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation) {
 
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -1211,6 +1216,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           vccomm: (fullVc.credentialSubject as any).commitment.toString(),
           vcsig: (fullVc.credentialSubject as any).commitmentSignature,
           vciss: privateIssuerDid,
+          vcid: vcId,
           proof: proof
         };
 
@@ -1250,7 +1256,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       const result = await VerifiableCredentialsService.createCredential(vc, entityId, email, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
-      if (proof && chain &&fullVc && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation) {
+      const vcId = result.vcId
+
+      if (proof && chain &&fullVc && vcId && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation) {
 
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -1265,6 +1273,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           vccomm: (fullVc.credentialSubject as any).commitment.toString(),
           vcsig: (fullVc.credentialSubject as any).commitmentSignature,
           vciss: privateIssuerDid,
+          vcid: vcId,
           proof: proof
         };
 

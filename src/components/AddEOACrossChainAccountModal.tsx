@@ -603,12 +603,13 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
 
     let entityId = "account(indiv)"
 
-            if (walletSigner && walletClient && privateIssuerAccount && indivDid && credentialManager && privateIssuerDid) {
+    if (walletSigner && walletClient && privateIssuerAccount && indivDid && credentialManager && privateIssuerDid) {
 
       const vc = await VerifiableCredentialsService.createAccountVC(entityId, privateIssuerDid, accountDid, indivDid, accountName);
-              const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountName, accountDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
+      const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountName, accountDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
       const fullVc = result.vc
       const proof = result.proof
+      const vcId = result.vcId
 
       if (fullVc && chain && indivDid && indivAccountClient && burnerAccountClient && indivIssuerDelegation && indivAccountClient) {
       
@@ -627,6 +628,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,
             vciss: privateIssuerDid,
+            vcid: vcId,
             proof: proof
         };
 
@@ -672,6 +674,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, accountName, accountDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
+        const vcId = result.vcId
 
 
         if (fullVc && chain && indivAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient) {
@@ -693,6 +696,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
               vccomm: (fullVc.credentialSubject as any).commitment.toString(),
               vcsig: (fullVc.credentialSubject as any).commitmentSignature,
               vciss: privateIssuerDid,
+              vcid: vcId,
               proof: proof
           };
 

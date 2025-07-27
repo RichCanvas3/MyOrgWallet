@@ -127,7 +127,7 @@ export class ServerWeb3StorageCredentialManager {
   /**
    * Save a credential to Web3.Storage via server
    */
-  async saveCredential(credential: VerifiableCredential): Promise<{ success: boolean }> {
+  async saveCredential(credential: VerifiableCredential): Promise<string> {
     try {
       const credentials = await this.getAllCredentials();
       const newCredential: CredentialInfo = {
@@ -140,12 +140,13 @@ export class ServerWeb3StorageCredentialManager {
       };
       
       credentials.push(newCredential);
-      await this.saveCredentialsToServer(credentials);
+      const cid = await this.saveCredentialsToServer(credentials);
+      console.log('******************** saveCredential cid: ', cid);
       
-      return { success: true };
+      return cid;
     } catch (error) {
       console.error('Error saving credential via server:', error);
-      return { success: false };
+      return '';
     }
   }
 
@@ -254,7 +255,7 @@ export class ServerWeb3StorageCredentialManager {
   /**
    * Save credentials to Web3.Storage via server
    */
-  private async saveCredentialsToServer(credentials: CredentialInfo[]): Promise<void> {
+  private async saveCredentialsToServer(credentials: CredentialInfo[]): Promise<string> {
     try {
       const response = await fetch(`${this.serverUrl}/api/web3storage/credentials/save`, {
         method: 'POST',
@@ -275,7 +276,8 @@ export class ServerWeb3StorageCredentialManager {
       const result = await response.json();
       await this.storeCredentialsHash(result.cid);
       this.credentialsCache = credentials; // Update cache
-      console.log('Credentials saved via server with hash:', result.cid);
+      console.log('Credentials saved via server with hash:', result.cid); 
+      return result.cid;
     } catch (error) {
       console.error('Error saving credentials via server:', error);
       throw error;

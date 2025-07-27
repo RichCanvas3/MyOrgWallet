@@ -398,7 +398,7 @@ class AttestationService {
   }
 
 
-  static BaseSchema = "string entityid, bytes32 hash, uint64 issuedate, uint64 expiredate, string vccomm, string vcsig, string vciss, string proof, "
+  static BaseSchema = "string entityid, bytes32 hash, uint64 issuedate, uint64 expiredate, string vccomm, string vcsig, string vciss, string vcid, string proof, "
 
 
 
@@ -534,7 +534,7 @@ class AttestationService {
 
     console.info("create attestation: ", attestation)
 
-    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.name) {
+    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.vcid && attestation.proof && attestation.name) {
 
       const schemaEncoder = new SchemaEncoder(this.IndivSchema);
       const schemaItems : SchemaItem[] = [
@@ -546,6 +546,7 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
+          { name: 'vcid', value: attestation.vcid, type: 'string' },
 
           { name: 'proof', value: attestation.proof, type: 'string' },
 
@@ -574,6 +575,7 @@ class AttestationService {
     let vccomm : string | undefined
     let vcsig : string | undefined
     let vciss : string | undefined
+    let vcid : string | undefined
     let proof : string | undefined
     let orgdid: string | undefined
     let name : string | undefined
@@ -594,6 +596,9 @@ class AttestationService {
       if (fieldName == "vciss") {
         vciss = field["value"].value as string
       }
+      if (fieldName == "vcid") {
+        vcid = field["value"].value as string
+      }
       if (fieldName == "proof") {
         proof = field["value"].value as string
       }
@@ -607,7 +612,7 @@ class AttestationService {
 
 
     const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
-    if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && orgdid != undefined && name != undefined) {
+    if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && orgdid != undefined && name != undefined && vcid != undefined) {
       //console.info("set to indiv attestation with name: ", name)
       const att : IndivAttestation = {
         displayName: name,
@@ -621,6 +626,7 @@ class AttestationService {
         vccomm: vccomm,
         vcsig: vcsig,
         vciss: vciss,
+        vcid: vcid,
         proof: proof,
         orgDid: orgdid,
         name: name
@@ -644,7 +650,7 @@ class AttestationService {
     const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
 
-    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.name && attestation.delegation) {
+    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.vcid && attestation.proof && attestation.name && attestation.delegation) {
 
       const schemaEncoder = new SchemaEncoder(this.OrgIndivSchema);
       const schemaItems : SchemaItem[] = [
@@ -656,6 +662,7 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
+          { name: 'vcid', value: attestation.vcid, type: 'string' },
 
           { name: 'proof', value: attestation.proof, type: 'string' },
 
@@ -685,6 +692,7 @@ class AttestationService {
     let vccomm : string | undefined
     let vcsig : string | undefined
     let vciss : string | undefined
+    let vcid : string | undefined
     let proof : string | undefined
     let indivdid: string | undefined
     let name : string | undefined
@@ -704,6 +712,9 @@ class AttestationService {
       }
       if (fieldName == "vciss") {
         vciss = field["value"].value as string
+      }
+      if (fieldName == "vcid") {
+        vcid = field["value"].value as string
       }
       if (fieldName == "proof") {
         proof = field["value"].value as string
@@ -734,6 +745,7 @@ class AttestationService {
         vccomm: vccomm,
         vcsig: vcsig,
         vciss: vciss,
+        vcid: vcid,
         proof: proof,
         indivDid: indivdid,
         name: name,
@@ -784,7 +796,7 @@ class AttestationService {
 
     //console.info("attestation: ", attestation)
 
-    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.name) {
+    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.vcid && attestation.proof && attestation.name) {
 
       const schemaEncoder = new SchemaEncoder(this.OrgSchema);
       const schemaItems : SchemaItem[] = [
@@ -796,6 +808,7 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
+          { name: 'vcid', value: attestation.vcid, type: 'string' },
 
           { name: 'proof', value: attestation.proof, type: 'string' },
 
@@ -823,6 +836,7 @@ class AttestationService {
     let vccomm : string | undefined
     let vcsig : string | undefined
     let vciss : string | undefined
+    let vcid : string | undefined
     let proof : string | undefined
     let name : string | undefined
 
@@ -841,6 +855,9 @@ class AttestationService {
       }
       if (fieldName == "vciss") {
         vciss = field["value"].value as string
+      }
+      if (fieldName == "vcid") {
+        vcid = field["value"].value as string
       }
       if (fieldName == "proof") {
         proof = field["value"].value as string
@@ -866,6 +883,7 @@ class AttestationService {
           vccomm: vccomm,
           vcsig: vcsig,
           vciss: vciss,
+          vcid: vcid,
           proof: proof,
           name: name
         }
@@ -896,7 +914,7 @@ class AttestationService {
 
     //console.info("attestation: ", attestation)
 
-    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.accountName) {
+    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.vcid && attestation.proof && attestation.accountName) {
 
       const schemaEncoder = new SchemaEncoder(this.IndivAccountSchema);
       const schemaItems : SchemaItem[] = [
@@ -908,6 +926,7 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
+          { name: 'vcid', value: attestation.vcid, type: 'string' },
 
           { name: 'proof', value: attestation.proof, type: 'string' },
 
@@ -934,6 +953,7 @@ class AttestationService {
     let vccomm : string | undefined
     let vcsig : string | undefined
     let vciss : string | undefined
+    let vcid : string | undefined
     let proof : string | undefined
     let accountname : string | undefined
     let accountDid : string | undefined
@@ -953,6 +973,9 @@ class AttestationService {
       }
       if (fieldName == "vciss") {
         vciss = fieldValue
+      }
+      if (fieldName == "vcid") {
+        vcid = fieldValue
       }
       if (fieldName == "proof") {
         proof = fieldValue
@@ -981,6 +1004,7 @@ class AttestationService {
           vccomm: vccomm,
           vcsig: vcsig,
           vciss: vciss,
+          vcid: vcid,
           proof: proof,
           accountName: accountname,
           accountDid: accountDid,
@@ -1006,7 +1030,7 @@ class AttestationService {
     const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
 
-    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.accountName) {
+    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.vcid && attestation.proof && attestation.accountName) {
 
       const schemaEncoder = new SchemaEncoder(this.AccountOrgDelSchema);
       const schemaItems : SchemaItem[] = [
@@ -1018,7 +1042,7 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
-
+          { name: 'vcid', value: attestation.vcid, type: 'string' },
           { name: 'proof', value: attestation.proof, type: 'string' },
 
           { name: 'accountdid', value: attestation.accountDid, type: 'string' },
@@ -1050,6 +1074,7 @@ class AttestationService {
     let vccomm : string | undefined
     let vcsig : string | undefined
     let vciss : string | undefined
+    let vcid : string | undefined
     let proof : string | undefined
     let accountname : string | undefined
     let accountDid : string | undefined
@@ -1071,6 +1096,9 @@ class AttestationService {
       }
       if (fieldName == "vciss") {
         vciss = field["value"].value as string
+      }
+      if (fieldName == "vcid") {
+        vcid = field["value"].value as string
       }
       if (fieldName == "proof") {
         proof = field["value"].value as string
@@ -1107,6 +1135,7 @@ class AttestationService {
           vccomm: vccomm,
           vcsig: vcsig,
           vciss: vciss,
+          vcid: vcid,
           proof: proof,
           accountName: accountname,
           coaCode: coaCode,
@@ -1133,7 +1162,7 @@ class AttestationService {
     const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
 
-    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.accountName) {
+    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.vcid && attestation.proof && attestation.accountName) {
 
       const schemaEncoder = new SchemaEncoder(this.AccountIndivDelSchema);
       const schemaItems : SchemaItem[] = [
@@ -1145,6 +1174,7 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
+          { name: 'vcid', value: attestation.vcid, type: 'string' },
 
           { name: 'proof', value: attestation.proof, type: 'string' },
 
@@ -1182,6 +1212,7 @@ class AttestationService {
     let vccomm : string | undefined
     let vcsig : string | undefined
     let vciss : string | undefined
+    let vcid : string | undefined
     let proof : string | undefined
     let accountname : string | undefined
     let accountDid : string | undefined
@@ -1205,6 +1236,9 @@ class AttestationService {
       }
       if (fieldName == "vciss") {
         vciss = field["value"].value as string
+      }
+      if (fieldName == "vcid") {
+        vcid = field["value"].value as string
       }
       if (fieldName == "proof") {
         proof = field["value"].value as string
@@ -1247,6 +1281,7 @@ class AttestationService {
           vccomm: vccomm,
           vcsig: vcsig,
           vciss: vciss,
+          vcid: vcid,
           proof: proof,
           accountName: accountname,
           indivDid: indivDid,
@@ -1276,7 +1311,7 @@ class AttestationService {
     const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
 
-    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.accountName) {
+    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.vcid && attestation.proof && attestation.accountName) {
 
       const schemaEncoder = new SchemaEncoder(this.OrgAccountSchema);
       const schemaItems : SchemaItem[] = [
@@ -1288,6 +1323,7 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
+          { name: 'vcid', value: attestation.vcid, type: 'string' },
 
           { name: 'proof', value: attestation.proof, type: 'string' },
 
@@ -1318,6 +1354,7 @@ class AttestationService {
     let vccomm : string | undefined
     let vcsig : string | undefined
     let vciss : string | undefined
+    let vcid : string | undefined
     let proof : string | undefined
     let accountname : string | undefined
     let accountDid : string | undefined
@@ -1338,6 +1375,9 @@ class AttestationService {
       }
       if (fieldName == "vciss") {
         vciss = field["value"].value as string
+      }
+      if (fieldName == "vcid") {
+        vcid = field["value"].value as string
       }
       if (fieldName == "proof") {
         proof = field["value"].value as string
@@ -1372,6 +1412,7 @@ class AttestationService {
           vccomm: vccomm,
           vcsig: vcsig,
           vciss: vciss,
+          vcid: vcid,
           proof: proof,
           accountName: accountname,
           coaCode: coaCode,
@@ -1399,7 +1440,7 @@ class AttestationService {
     const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
 
-    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.name != undefined && attestation.url != undefined && attestation.proof != undefined) {
+    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.vcid && attestation.name != undefined && attestation.url != undefined && attestation.proof != undefined) {
 
       const schemaEncoder = new SchemaEncoder(this.SocialSchema);
       const schemaItems : SchemaItem[] = [
@@ -1411,6 +1452,7 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
+          { name: 'vcid', value: attestation.vcid, type: 'string' },
 
           { name: 'proof', value: attestation.proof, type: 'string' },
 
@@ -1460,6 +1502,7 @@ class AttestationService {
     let vccomm : string | undefined
     let vcsig : string | undefined
     let vciss : string | undefined
+    let vcid : string | undefined
     let proof : string | undefined
     let name : string | undefined
     let url : string | undefined
@@ -1479,6 +1522,9 @@ class AttestationService {
       }
       if (fieldName == "vciss") {
         vciss = field["value"].value as string
+      }
+      if (fieldName == "vcid") {
+        vcid = field["value"].value as string
       }
       if (fieldName == "proof") {
         proof = field["value"].value as string
@@ -1512,6 +1558,7 @@ class AttestationService {
         vccomm: vccomm,
         vcsig: vcsig,
         vciss: vciss,
+        vcid: vcid,
         proof: proof,
         name: name,
         url: url
@@ -1533,7 +1580,7 @@ class AttestationService {
     const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
     const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
-    if (attestation.vccomm && attestation.vcsig && attestation.vcsig && attestation.vciss && attestation.proof && attestation.domain && attestation.domaincreationdate) {
+    if (attestation.vccomm && attestation.vcsig && attestation.vcsig && attestation.vciss && attestation.vcid && attestation.proof && attestation.domain && attestation.domaincreationdate) {
 
       const schemaEncoder = new SchemaEncoder(this.RegisteredDomainSchema);
       const schemaItems : SchemaItem[] = [
@@ -1546,6 +1593,7 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
+          { name: 'vcid', value: attestation.vcid, type: 'string' },
 
           { name: 'proof', value: attestation.proof, type: 'string' },
 
@@ -1570,6 +1618,7 @@ class AttestationService {
     let vccomm : string | undefined
     let vcsig : string | undefined
     let vciss : string | undefined
+    let vcid : string | undefined
     let domain : string | undefined
     let proof : string | undefined
 
@@ -1588,6 +1637,9 @@ class AttestationService {
       }
       if (fieldName == "vciss") {
         vciss = field["value"].value as string
+      }
+      if (fieldName == "vcid") {
+        vcid = field["value"].value as string
       }
       if (fieldName == "proof") {
         proof = field["value"].value as string
@@ -1613,6 +1665,7 @@ class AttestationService {
           vccomm: vccomm,
           vcsig: vcsig,
           vciss: vciss,
+          vcid: vcid,
           proof: proof,
           domain: domain
         }
@@ -1635,7 +1688,7 @@ class AttestationService {
     const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
     const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
-    if (attestation.vccomm && attestation.vcsig && attestation.vcsig && attestation.vciss && attestation.proof && attestation.name && attestation.enscreationdate) {
+    if (attestation.vccomm && attestation.vcsig && attestation.vcsig && attestation.vciss && attestation.vcid && attestation.proof && attestation.name && attestation.enscreationdate) {
 
       const schemaEncoder = new SchemaEncoder(this.RegisteredENSSchema);
       const schemaItems : SchemaItem[] = [
@@ -1648,6 +1701,7 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
+          { name: 'vcid', value: attestation.vcid, type: 'string' },
 
           { name: 'proof', value: attestation.proof, type: 'string' },
 
@@ -1672,6 +1726,7 @@ class AttestationService {
     let vccomm : string | undefined
     let vcsig : string | undefined
     let vciss : string | undefined
+    let vcid : string | undefined
     let name : string | undefined
     let proof : string | undefined
 
@@ -1690,6 +1745,9 @@ class AttestationService {
       }
       if (fieldName == "vciss") {
         vciss = field["value"].value as string
+      }
+      if (fieldName == "vcid") {
+        vcid = field["value"].value as string
       }
       if (fieldName == "proof") {
         proof = field["value"].value as string
@@ -1715,6 +1773,7 @@ class AttestationService {
           vccomm: vccomm,
           vcsig: vcsig,
           vciss: vciss,
+          vcid: vcid,
           proof: proof,
           name: name
         }
@@ -1737,7 +1796,7 @@ class AttestationService {
     const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
     const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
-    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.name) {
+    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.vcid && attestation.proof && attestation.name) {
 
       //console.info("adding attestation: ", attestation)
       const schemaEncoder = new SchemaEncoder(this.StateRegistrationSchema);
@@ -1750,6 +1809,7 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
+          { name: 'vcid', value: attestation.vcid, type: 'string' },
 
           { name: 'proof', value: attestation.proof, type: 'string' },
 
@@ -1780,6 +1840,7 @@ class AttestationService {
     let vccomm : string | undefined
     let vcsig : string | undefined
     let vciss : string | undefined
+    let vcid : string | undefined
     let proof : string | undefined
     let name : string | undefined
     let idnumber : string | undefined
@@ -1802,6 +1863,9 @@ class AttestationService {
       }
       if (fieldName == "vciss") {
         vciss = field["value"].value as string
+      }
+      if (fieldName == "vcid") {
+        vcid = field["value"].value as string
       }
       if (fieldName == "proof") {
         proof = field["value"].value as string
@@ -1839,6 +1903,7 @@ class AttestationService {
         vccomm: vccomm,
         vcsig: vcsig,
         vciss: vciss,
+        vcid: vcid,
         proof: proof,
         name: name,
         idnumber: idnumber,
@@ -1865,7 +1930,7 @@ class AttestationService {
     const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
     const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
-    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof) {
+    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.vcid && attestation.proof) {
 
       //console.info("add email attestation: ", attestation)
       const schemaEncoder = new SchemaEncoder(this.EmailSchema);
@@ -1879,6 +1944,7 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
+          { name: 'vcid', value: attestation.vcid, type: 'string' },
 
           { name: 'proof', value: attestation.proof, type: 'string' },
 
@@ -1905,6 +1971,7 @@ class AttestationService {
     let vccomm : string | undefined
     let vcsig : string | undefined
     let vciss : string | undefined
+    let vcid : string | undefined
     let proof : string | undefined
     let type : string | undefined
     let email : string | undefined
@@ -1924,6 +1991,9 @@ class AttestationService {
       }
       if (fieldName == "vciss") {
         vciss = field["value"].value as string
+      }
+      if (fieldName == "vcid") {
+        vcid = field["value"].value as string
       }
       if (fieldName == "proof") {
         proof = field["value"].value as string
@@ -1952,6 +2022,7 @@ class AttestationService {
         vccomm: vccomm,
         vcsig: vcsig,
         vciss: vciss,
+        vcid: vcid,
         proof: proof,
         type: type,
         email: email
@@ -2001,7 +2072,7 @@ class AttestationService {
     const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
     const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
-    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof && attestation.type && attestation.url) {
+    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.vcid && attestation.proof && attestation.type && attestation.url) {
       const schemaEncoder = new SchemaEncoder(this.WebsiteSchema);
       const schemaItems : SchemaItem[] = [
           { name: 'entityid', value: attestation.entityId, type: 'string' },
@@ -2012,6 +2083,7 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
+          { name: 'vcid', value: attestation.vcid, type: 'string' },
 
           { name: 'proof', value: attestation.proof, type: 'string' },
 
@@ -2036,6 +2108,7 @@ class AttestationService {
     let vccomm : string | undefined
     let vcsig : string | undefined
     let vciss : string | undefined
+    let vcid : string | undefined
     let proof : string | undefined
     let url : string | undefined
     let type : string | undefined
@@ -2063,6 +2136,9 @@ class AttestationService {
       if (fieldName == "vciss") {
         vciss = field["value"].value as string
       }
+      if (fieldName == "vcid") {
+        vcid = field["value"].value as string
+      }
       if (fieldName == "proof") {
         proof = field["value"].value as string
       }
@@ -2075,7 +2151,7 @@ class AttestationService {
     }
 
 
-    if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && vccomm != undefined && vcsig != undefined && vciss != undefined  && url != undefined && type != undefined) {
+    if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && vccomm != undefined && vcsig != undefined && vcid != undefined && vciss != undefined  && url != undefined && type != undefined) {
 
       const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
       const att : WebsiteAttestation = {
@@ -2090,6 +2166,7 @@ class AttestationService {
         vccomm: vccomm,
         vcsig: vcsig,
         vciss: vciss,
+        vcid: vcid,
         proof: proof,
         type: type,
         url: url,
@@ -2112,7 +2189,7 @@ class AttestationService {
     const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
     const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
-    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof) {
+    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.vcid && attestation.proof) {
 
       const schemaEncoder = new SchemaEncoder(this.InsuranceSchema);
       const schemaItems : SchemaItem[] = [
@@ -2124,6 +2201,7 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
+          { name: 'vcid', value: attestation.vcid, type: 'string' },
 
           { name: 'proof', value: attestation.proof, type: 'string' },
 
@@ -2146,6 +2224,7 @@ class AttestationService {
     let vccomm : string | undefined
     let vcsig : string | undefined
     let vciss : string | undefined
+    let vcid : string | undefined
     let proof : string | undefined
     let policy : string | undefined = ""
     let type : string | undefined = ""
@@ -2174,6 +2253,9 @@ class AttestationService {
       if (fieldName == "vciss") {
         vciss = field["value"].value as string
       }
+      if (fieldName == "vcid") {
+        vcid = field["value"].value as string
+      }
       if (fieldName == "proof") {
         proof = field["value"].value as string
       }
@@ -2186,7 +2268,7 @@ class AttestationService {
     }
 
 
-    if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && vccomm != undefined && vcsig != undefined && vciss != undefined  && policy != undefined && type != undefined) {
+    if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && vccomm != undefined && vcsig != undefined && vcid != undefined && vciss != undefined  && policy != undefined && type != undefined) {
       const att : InsuranceAttestation = {
         displayName: entityId,
         uid: uid,
@@ -2199,6 +2281,7 @@ class AttestationService {
         vccomm: vccomm,
         vcsig: vcsig,
         vciss: vciss,
+        vcid: vcid,
         proof: proof,
         type: type,
         policy: policy,
@@ -2221,7 +2304,7 @@ class AttestationService {
     const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
     const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
 
-    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.proof) {
+    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.vcid && attestation.proof) {
 
       //console.info("add email attestation: ", attestation)
       const schemaEncoder = new SchemaEncoder(this.IndivEmailSchema);
@@ -2235,6 +2318,7 @@ class AttestationService {
           { name: 'vccomm', value: attestation.vccomm, type: 'string' },
           { name: 'vcsig', value: attestation.vcsig, type: 'string' },
           { name: 'vciss', value: attestation.vciss, type: 'string' },
+          { name: 'vcid', value: attestation.vcid, type: 'string' },
 
           { name: 'proof', value: attestation.proof, type: 'string' },
 
@@ -2261,6 +2345,7 @@ class AttestationService {
     let vccomm : string | undefined
     let vcsig : string | undefined
     let vciss : string | undefined
+    let vcid : string | undefined
     let proof : string | undefined
     let type : string | undefined
     let email : string | undefined
@@ -2280,6 +2365,9 @@ class AttestationService {
       }
       if (fieldName == "vciss") {
         vciss = field["value"].value as string
+      }
+      if (fieldName == "vcid") {
+        vcid = field["value"].value as string
       }
       if (fieldName == "proof") {
         proof = field["value"].value as string
@@ -2308,6 +2396,7 @@ class AttestationService {
         vccomm: vccomm,
         vcsig: vcsig,
         vciss: vciss,
+        vcid: vcid,
         proof: proof,
         type: type,
         email: email

@@ -43,7 +43,8 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, insuranceNumber, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
-        if (proof && fullVc && chain && orgAccountClient && orgIssuerDelegation && orgIndivDelegation) {
+        const vcId = result.vcId
+        if (proof && fullVc && vcId && chain && orgAccountClient && orgIssuerDelegation && orgIndivDelegation) {
         
                             // Use the signer directly from signatory
           const walletSigner = signatory.signer;
@@ -68,6 +69,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,
             vciss: privateIssuerDid,
+            vcid: vcId,
             proof: proof
           };
 
