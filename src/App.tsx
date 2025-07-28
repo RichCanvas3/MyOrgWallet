@@ -16,8 +16,7 @@ import ExploreCustomChats from "./components/ExploreCustomChats";
 import CustomChatEditor from './components/CustomChatEditor';
 
 import { WalletConnectContextProvider } from "./context/walletConnectContext"
-import { ProgressProvider } from "./context/ProgressContext"
-import ProgressModal from "./components/ProgressModal"
+
 import AttestationService from "./service/AttestationService"
 
 import ReadmeViewer from './components/ReadmeViewer';
@@ -448,7 +447,6 @@ const App = () => {
     <WagmiProvider config={wagmiAdapter.wagmiConfig}>
   <QueryClientProvider client={queryClient}>
     <WalletConnectContextProvider>
-      <ProgressProvider>
         <BrowserRouter>
           <I18nextProvider i18n={i18n}>
             <div
@@ -456,7 +454,6 @@ const App = () => {
             >
               <HeaderWithProps />
               <ToastContainer />
-              <ProgressModal />
               <div className="flex w-full h-full relative z-0">
 
                 <LinkedinModal
@@ -505,7 +502,6 @@ const App = () => {
             </div>
           </I18nextProvider>
         </BrowserRouter>
-      </ProgressProvider>
     </WalletConnectContextProvider>
   </QueryClientProvider>
 </WagmiProvider>
