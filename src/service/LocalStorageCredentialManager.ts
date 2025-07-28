@@ -85,10 +85,11 @@ export class LocalStorageCredentialManager {
   }
 
   async getCredentialWithVcid(vcId: string): Promise<VerifiableCredential | undefined> {
-    try {
+
       const credentials = this.getAllCredentials();
       console.log('******************** getCredentialWithVcid', credentials);
-    }
+
+    return undefined
   }
 
   /**
