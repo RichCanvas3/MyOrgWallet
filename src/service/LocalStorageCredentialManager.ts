@@ -85,11 +85,23 @@ export class LocalStorageCredentialManager {
   }
 
   async getCredentialWithVcid(vcId: string): Promise<VerifiableCredential | undefined> {
-
-      const credentials = this.getAllCredentials();
-      console.log('******************** getCredentialWithVcid', credentials);
-
-    return undefined
+    try {
+      console.log('🔍 Getting credential from localStorage with vcId:', vcId);
+      
+      // Parse vcId to get provider and displayName
+      const parts = vcId.split('-');
+      if (parts.length >= 3) {
+        const provider = parts[0];
+        const displayName = parts[1];
+        return await this.getCredential(provider, displayName);
+      }
+      
+      console.log('❌ Invalid vcId format:', vcId);
+      return undefined;
+    } catch (error) {
+      console.error('Error getting credential from localStorage with vcId:', error);
+      return undefined;
+    }
   }
 
   /**
@@ -184,6 +196,22 @@ export class LocalStorageCredentialManager {
       totalCredentials: credentials.length,
       storageSize
     };
+  }
+
+  /**
+   * Get current hash (not applicable for localStorage)
+   */
+  async getCurrentHash(): Promise<string | null> {
+    // localStorage doesn't use hashes
+    return null;
+  }
+
+  /**
+   * Clear the credentials cache
+   */
+  clearCache(): void {
+    // localStorage doesn't have a cache to clear
+    console.log('🔄 Cache cleared for localStorage');
   }
 }
 

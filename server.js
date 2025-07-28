@@ -619,6 +619,7 @@ app.get('/api/web3storage/download/:cid', async (req, res) => {
       return res.status(400).json({ error: 'CID is required' });
     }
 
+    console.log('Downloading from Web3.Storage:', cid);
     const url = `https://${cid}.ipfs.w3s.link`;
     const response = await fetch(url);
     

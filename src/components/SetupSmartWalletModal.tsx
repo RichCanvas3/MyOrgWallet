@@ -15,6 +15,7 @@ import {
 import { Check, ArrowBack } from '@mui/icons-material';
 
 import { useWallectConnectContext } from "../context/walletConnectContext";
+import { useProgress } from "../context/ProgressContext";
 
 import '../custom_styles.css'
 
@@ -79,8 +80,13 @@ const SetupSmartWalletModal: React.FC = () => {
     console.info("owner: ", owner)
     console.info("signatory: ", signatory)
     if (owner && signatory) {
-      await buildSmartWallet(owner, signatory);
-      handleToast('Smart wallet built', 'success');
+      try {
+        await buildSmartWallet(owner, signatory);
+        handleToast('Smart wallet built', 'success');
+      } catch (error) {
+        console.error('Error building smart wallet:', error);
+        handleToast('Failed to build smart wallet', 'error');
+      }
     }
     
     advanceStep();

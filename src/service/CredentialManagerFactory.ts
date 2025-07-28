@@ -1,6 +1,7 @@
 import { LocalStorageCredentialManager, createLocalStorageCredentialManager } from './LocalStorageCredentialManager';
 import { InfuraIPFSCredentialManager, createInfuraIPFSCredentialManager } from './InfuraIPFSCredentialManager';
 import { ServerWeb3StorageCredentialManager, createServerWeb3StorageCredentialManager } from './ServerWeb3StorageCredentialManager';
+import { MascaCredentialManager, createMascaCredentialManager } from './MascaCredentialManager';
 
 export type CredentialManagerType = 'masca' | 'localStorage' | 'infuraIPFS' | 'serverWeb3Storage';
 
@@ -12,8 +13,16 @@ export interface CredentialManagerConfig {
 
 export interface CredentialManager {
   getDID(): Promise<{ data: string; did: string }>;
-  saveCredential(credential: any): Promise<{ success: boolean }>;
+  setDID(did: string): void;
+  saveCredential(credential: any): Promise<string>;
   queryCredentials(): Promise<{ data: any[] }>;
+  getCredential(entityId: string, displayName: string): Promise<any | undefined>;
+  getCredentialWithVcid(vcId: string): Promise<any | undefined>;
+  deleteCredential(credentialId: string): Promise<{ success: boolean }>;
+  clearAllCredentials(): Promise<{ success: boolean }>;
+  getStorageStats(): { totalCredentials: number; storageSize: number };
+  getCurrentHash(): Promise<string | null>;
+  clearCache(): void;
 }
 
 /**
@@ -32,7 +41,7 @@ export class CredentialManagerFactory {
         if (!mascaApi) {
           throw new Error('MascaApi is required for masca credential manager type');
         }
-        return mascaApi;
+        return createMascaCredentialManager(mascaApi, config.did, config);
         
       case 'localStorage':
         const localStorageManager = createLocalStorageCredentialManager(config.did);

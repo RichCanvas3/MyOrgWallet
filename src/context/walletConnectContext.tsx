@@ -537,11 +537,18 @@ export const useWalletConnect = () => {
             supportedMethods: ['did:ethr', 'did:key', 'did:pkh'],
           });
 
-          const api = await (mascaRslt as any).data.getMascaApi();
-          setCredentialManager(api);
+          const mascaApi = await (mascaRslt as any).data.getMascaApi();
+          
+          // Use the factory to create the Masca credential manager
+          const credentialManager = await CredentialManagerFactory.createDefaultCredentialManager(
+            credentialManagerType,
+            did,
+            mascaApi
+          );
+          setCredentialManager(credentialManager);
 
           if (provider) {
-            const res = await api.getSnapSettings();
+            const res = await mascaApi.getSnapSettings();
             const disablePopups = res.data?.dApp?.disablePopups;
             if (!disablePopups || disablePopups == false) {
               await provider.request({
@@ -556,7 +563,7 @@ export const useWalletConnect = () => {
             }
           }
           
-          return api;
+          return credentialManager;
         } else {
           // Use the factory to create the appropriate credential manager
           const credentialManager = await CredentialManagerFactory.createDefaultCredentialManager(

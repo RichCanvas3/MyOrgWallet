@@ -22,6 +22,7 @@ export class ServerWeb3StorageCredentialManager {
   private did: string;
   private config: ServerWeb3StorageConfig;
   private serverUrl: string;
+  private credentialsCache: CredentialInfo[] | null = null;
 
   constructor(did?: string, config?: ServerWeb3StorageConfig) {
     this.did = did || 'local-did';
@@ -278,6 +279,34 @@ export class ServerWeb3StorageCredentialManager {
     } catch (error) {
       return { available: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
+  }
+
+  /**
+   * Get storage statistics
+   */
+  getStorageStats(): { totalCredentials: number; storageSize: number } {
+    const credentials = this.credentialsCache || [];
+    const storageSize = JSON.stringify(credentials).length;
+    
+    return {
+      totalCredentials: credentials.length,
+      storageSize
+    };
+  }
+
+  /**
+   * Get current hash (not applicable for server Web3Storage)
+   */
+  async getCurrentHash(): Promise<string | null> {
+    // Server Web3Storage doesn't use hashes in the same way
+    return null;
+  }
+
+  /**
+   * Clear the credentials cache
+   */
+  clearCache(): void {
+    this.credentialsCache = null;
   }
 }
 
