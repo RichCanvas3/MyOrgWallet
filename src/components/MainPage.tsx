@@ -267,19 +267,66 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   
   async function init() {
     let orgname;
+    let domain;
+    let state_registration;
+    let linkedin;
+    let x;
+    let ens_registration;
+    let insurance;
+    let website;
+    let shopify;
+    let email_org;
+    let email_indiv;
+    let indiv;
+    let account_indiv;
+    let accountOrg_org;
+    let account_org;
+    let orgIndiv_org;
+
+
     if (orgAccountClient && chain && orgDid && indivDid) {
 
       await AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
-
+        
         if (ents != undefined) {
-
+          console.log("ents: ", ents)
           setEntities(ents)
           for (const entity of ents) {
             if (entity.name == "org(org)" && entity.attestation) {
               setOrgNameValue((entity.attestation as OrgAttestation).name)
-              orgname = (entity.attestation as OrgAttestation).name
-            } else if (entity.name == "") {
-            }
+              orgname = JSON.stringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == "domain(org)") {
+              console.log('domain here!!!!!')
+              domain = JSON.stringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == "ens(org)") {
+              ens_registration = JSON.stringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == "indiv(indiv)") {
+              indiv = JSON.stringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'linkedin(indiv)') {
+              linkedin = JSON.stringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'x(indiv)') {
+              x = JSON.stringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'account(indiv)') {
+              account_indiv = JSON.stringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'insurance(org)') {
+              insurance = JSON.stringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'website(org)') {
+              website = JSON.stringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'shopify(org)') {
+              shopify = JSON.stringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'email(org)') {
+             email_org = JSON.stringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'email(indiv)') {
+             email_indiv = JSON.stringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'state-registration(org)') {
+              state_registration = JSON.stringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'account-org(org)') {
+             accountOrg_org = JSON.stringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'account(org)') {
+             account_org = JSON.stringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'org-indiv(org)') {
+              orgIndiv_org = JSON.stringify(entity.attestation as OrgAttestation)
+            }    
           }
 
           if (!conversation) {
@@ -299,8 +346,25 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     else {
       navigate("/")
     }
-
-    return {"name": orgname, "state": 'undefined', "linkedin": 'undefined', "x": 'undefined', "state_registration": 'undefined', "ens_registration": 'undefined', "domain": 'undefined'};
+    //return ents_array
+    return {
+      "name": orgname,
+      "linkedin": linkedin,
+      "x": x,
+      "state_registration": state_registration,
+      "ens_registration": ens_registration,
+      "domain": domain,
+      "shopify": shopify,
+      "insurance": insurance,
+      "website": website,
+      "email_org": email_org,
+      "email_indiv": email_indiv,
+      "indiv": indiv,
+      "account_indiv": account_indiv,
+      "account-org(org)": accountOrg_org,
+      "account_org": account_org,
+      "orgIndiv_org": orgIndiv_org
+    };
   }
 
   
@@ -374,7 +438,20 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         if (isMounted) {
           setThreadID(threadIDResult);
           const company_config = await init();
-          getArgfromUserMessage(threadIDResult, `lets get started: Name: ${company_config["name"]}, State: ${company_config["state"]}, Domain: ${company_config["domain"]}, Linkedin: ${company_config["linkedin"]}, Twitter: ${company_config["x"]}, State Registration: ${company_config["state_registration"]}, ENS Registration: ${company_config["ens_registration"]}`).then(str => {
+          //getArgfromUserMessage(threadIDResult, `lets get started: ${company_config}`).then(str => {
+          getArgfromUserMessage(threadIDResult,
+             `Lets get started: Name: ${company_config["name"]},
+              Domain: ${company_config["domain"]}, 
+              Linkedin: ${company_config["linkedin"]}, 
+              Twitter: ${company_config["x"]}, 
+              State Registration: ${company_config["state_registration"]}, 
+              ENS Registration: ${company_config["ens_registration"]}, 
+              Linkedin: ${company_config["linkedin"]},
+              Shopify: ${company_config["shopify"]},
+              Insurance: ${company_config["insurance"]},
+              Website: ${company_config["website"]},
+              Org Email: ${company_config["email_org"]},
+              Individual Email: ${company_config["email_indiv"]},`).then(str => {
             if (str) {
               addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
             }
@@ -676,8 +753,18 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         var address = (split[5].split('** '))[1];
         console.log(id, formDate, address)
         */
-      } else {
-        addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
+      } else if (str.includes('linkedin_verification')) {
+        //call linkedin modal here
+        addMessage(Role.Assistant, MessageType.Normal, 'Linkedin being verified...', '', fileDataRef, sendMessage);
+      } else if (str.includes('shopify_verification')) {
+        //call shopify modal here
+        addMessage(Role.Assistant, MessageType.Normal, 'Shopify being verified...', '', fileDataRef, sendMessage);
+      } else if (str.includes('x_verification')) {
+        //call x modal
+        addMessage(Role.Assistant, MessageType.Normal, 'Twitter being verified...', '', fileDataRef, sendMessage);
+      } else if (str.includes('insurance_verification')) {
+        //insurance modal here
+        addMessage(Role.Assistant, MessageType.Normal, 'Insurance being verified...', '', fileDataRef, sendMessage);
       }
       console.log('Data From Stream: ', str);
 
