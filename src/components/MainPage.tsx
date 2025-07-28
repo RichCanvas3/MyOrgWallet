@@ -162,6 +162,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const [isOrgModalVisible, setOrgModalVisible] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
 
+  const BASE_URL = import.meta.env.VITE_ORGSERVICE_API_URL || 'http://localhost:8501';
+
 
   const [threadID, setThreadID] = useState<string | null>(null);
 
@@ -606,7 +608,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     console.log(company_name, state)
     try {
       const response = await fetch(
-        `${ngrok_url}/creds/good-standing/company?company=${company_name}&state=${state}`
+        `${BASE_URL}/creds/good-standing/company?company=${company_name}&state=${state}`
       );
 
       if (!response.ok) {
