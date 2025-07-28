@@ -44,6 +44,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
     console.info("************* isIndividualConnected: ", isIndividualConnected)
     console.info("************* orgDid: ", orgDid)
     console.info("************* indivDid: ", indivDid)
+    console.info("************* signatory: ", signatory)
     console.info("************* hasAttemptedConnection: ", hasAttemptedConnection)
     console.info("************* location.pathname: ", location.pathname)
 
@@ -58,6 +59,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
       navigate('/chat/')
     } else if (isConnectionComplete && !isIndividualConnected && hasAttemptedConnection) {
       // Connection process is complete but no accounts found, and user attempted connection
+      console.info("************* connection failed 1")
       setIsLoading(false);
       setConnectionFailed(true); // Set connection failed state
     }
