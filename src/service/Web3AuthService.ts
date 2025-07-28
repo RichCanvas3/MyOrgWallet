@@ -31,9 +31,9 @@ class Web3AuthService {
         throw new Error(`Invalid Web3Auth network: ${WEB3_AUTH_NETWORK}. Valid options are: ${validNetworks.join(', ')}`);
       }
 
-      // Show warning for devnet in production
+      // Network validation (warning removed for development)
       if (WEB3_AUTH_NETWORK === 'sapphire_devnet') {
-        console.warn('⚠️ WARNING: You are using sapphire_devnet. For production, please set network to "mainnet" or "sapphire_mainnet"');
+        // Warning suppressed for development environment
       }
 
       // Log the chain configuration for Sepolia

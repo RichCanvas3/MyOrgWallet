@@ -247,8 +247,6 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
           //console.info("go get shopify attestation: ", did)
           if (did && chain) {
             AttestationService.getAttestationByDidAndSchemaId(chain, did, schemaUid, entityId, displayName).then(async (att) => {
-
-              console.info("att: ", att)
               if (att) {
 
                 if (att.entityId == "account(indiv)") {
@@ -302,14 +300,15 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                 }
                 */
 
-                if (credentialManager) {
+                if (credentialManager && att.vcid) {
                   setHasInfo(true)
 
                   setHasCredential(false)
                   setCredential(undefined)
 
-                  console.info("------> get credential: ", att.entityId, att.displayName)
-                  VerifiableCredentialsService.getCredential(credentialManager, att.entityId, att.displayName || "").then((cred) => {
+                  console.info("------> get credential using vcid: ", att)
+
+                  VerifiableCredentialsService.getCredentialByVcid(credentialManager, att.vcid).then((cred) => {
                     if (cred) {
                       setHasCredential(true)
                       console.info(",,,,,,,,,, credential: ", cred)

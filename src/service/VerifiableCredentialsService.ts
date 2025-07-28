@@ -1,27 +1,16 @@
 import { VerifiableCredential } from "../models/VerifiableCredential"
-import { WalletClient, verifyMessage, hexToBytes, bytesToHex } from "viem";
-import { ethers, hashMessage } from 'ethers'
-import { recoverPublicKey } from "@ethersproject/signing-key";
-import { privateKeyToAccount, PrivateKeyAccount, generatePrivateKey } from "viem/accounts";
 
-import { vs } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import { hashMessage } from 'ethers'
+
+import { PrivateKeyAccount } from "viem/accounts";
+
+
 import { Buffer } from 'buffer';
 
-import { Resolver } from 'did-resolver';
-import { createAgent,  } from '@veramo/core';
+
 import type {
   W3CVerifiableCredential,
 } from '@veramo/core';
-
-import { CredentialPlugin } from '@veramo/credential-w3c';
-
-import { KeyManagementSystem } from '@veramo/kms-local';
-import { getResolver as ethrDidResolver } from 'ethr-did-resolver';
-
-import { CredentialStatusPlugin } from '@veramo/credential-status';
-import { DIDResolverPlugin } from '@veramo/did-resolver';
-import { CircleDeveloperControlledWalletsClient } from "@circle-fin/developer-controlled-wallets";
-
 
 // @ts-ignore
 window.Buffer = Buffer;
@@ -425,10 +414,8 @@ class VerifiableCredentialsService {
         const did = await credentialManager.getDID() 
         const key = entityId + "-" + displayName + "-" + did.data
 
-        console.log('******************** saveCredential did: ', did)
-        console.log('******************** saveCredential key: ', key)
-
         const credentialJSON = JSON.stringify(cred);
+        localStorage.setItem(vcId, credentialJSON)
         localStorage.setItem(key, credentialJSON)
 
         return vcId;
@@ -436,19 +423,55 @@ class VerifiableCredentialsService {
 
     }
 
+
+    static async getCredentialByVcid(credentialManager: any, vcId: string): Promise<VerifiableCredential | undefined> {
+
+
+      const did = await credentialManager.getDID() 
+
+      console.log("******************** getCredential from localStorage cache using vcid", vcId)
+      /*
+      const existingCredentialJSON = localStorage.getItem(vc)
+      if (existingCredentialJSON) {
+        const existingCredential = JSON.parse(existingCredentialJSON)
+        console.info("found existing credential: ", existingCredential)
+        return existingCredential
+      }
+      */
+
+
+      console.log("getCredential from credentialManager")
+      const vc = await credentialManager.getCredentialWithVcid(vcId);
+      if (vc) { 
+        console.info("vc 10: ", vc)
+        const credentialJSON = JSON.stringify(vc);
+        localStorage.setItem(vcId, credentialJSON)
+        return vc
+      }
+      
+
+      console.info("************** no credential found")
+      return undefined
+
+    }
+
+
+
     static async getCredential(credentialManager: any, entityId: string, displayName: string): Promise<VerifiableCredential | undefined> {
 
 
       const did = await credentialManager.getDID() 
       const key = entityId + "-" + displayName + "-" + did.data
 
-      console.log("******************** getCredential from localStorage using key", key)
+      console.log("******************** getCredential from localStorage cache using key", key)
+      /*
       const existingCredentialJSON = localStorage.getItem(key)
       if (existingCredentialJSON) {
         const existingCredential = JSON.parse(existingCredentialJSON)
         console.info("found existing credential: ", existingCredential)
         return existingCredential
       }
+      */
 
 
       console.log("getCredential from credentialManager")

@@ -10,8 +10,11 @@ import './i18n'; // sideEffects: true
 // Suppress Lit dev mode warnings from WalletConnect/Web3Modal
 const originalWarn = console.warn;
 console.warn = function(msg, ...args) {
-  if (typeof msg === 'string' && msg.includes('Lit is in dev mode')) {
-    return; // Suppress Lit dev mode warnings
+  if (typeof msg === 'string' && (
+    msg.includes('Lit is in dev mode') ||
+    msg.includes('Discarding cache for addres')
+  )) {
+    return; // Suppress specific warnings
   }
   originalWarn.apply(console, [msg, ...args]);
 };

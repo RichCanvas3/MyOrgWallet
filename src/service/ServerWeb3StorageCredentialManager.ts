@@ -21,7 +21,6 @@ export interface ServerWeb3StorageConfig {
 export class ServerWeb3StorageCredentialManager {
   private did: string;
   private config: ServerWeb3StorageConfig;
-  private credentialsCache: CredentialInfo[] | null = null;
   private serverUrl: string;
 
   constructor(did?: string, config?: ServerWeb3StorageConfig) {
@@ -96,40 +95,15 @@ export class ServerWeb3StorageCredentialManager {
     }
   }
 
-  /**
-   * Get the Web3.Storage hash for this DID's credentials
-   */
-  private async getCredentialsHash(): Promise<string | null> {
-    try {
-      console.log('******************** web3storage getCredentialsHash did: ', this.did);
-      // Store a mapping of DID to Web3.Storage hash in localStorage as a fallback
-      const hashKey = `web3storage_hash_${this.did}`;
-      const hash = localStorage.getItem(hashKey);
-      return hash || null;
-    } catch (error) {
-      console.error('Error getting credentials hash:', error);
-      return null;
-    }
-  }
 
-  /**
-   * Store the Web3.Storage hash for this DID's credentials
-   */
-  private async storeCredentialsHash(hash: string): Promise<void> {
-    try {
-      const hashKey = `web3storage_hash_${this.did}`;
-      localStorage.setItem(hashKey, hash);
-    } catch (error) {
-      console.error('Error storing credentials hash:', error);
-    }
-  }
+
 
   /**
    * Save a credential to Web3.Storage via server
    */
   async saveCredential(credential: VerifiableCredential): Promise<string> {
     try {
-      const credentials = await this.getAllCredentials();
+      const credentials = []
       const newCredential: CredentialInfo = {
         data: credential,
         id: `cred_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -195,6 +169,23 @@ export class ServerWeb3StorageCredentialManager {
     }
   }
 
+  async getCredentialWithVcid(vcId: string): Promise<VerifiableCredential | undefined> {
+    try {
+      console.log('******************** getCredential via server vcid', vcId);
+      
+      const result = await this.downloadFromServer(vcId);
+      if (result && result.length > 0) {
+        const cred = result[0].data
+        return cred
+      }
+      
+      return undefined;
+    } catch (error) {
+      console.error('Error getting credential via server:', error);
+      return undefined;
+    }
+  }
+
   /**
    * Delete a credential by ID
    */
@@ -228,28 +219,7 @@ export class ServerWeb3StorageCredentialManager {
    * Get all credentials from Web3.Storage via server
    */
   private async getAllCredentials(): Promise<CredentialInfo[]> {
-    // Return cached credentials if available
-    if (this.credentialsCache !== null) {
-      return this.credentialsCache;
-    }
-
-    try {
-      const hash = await this.getCredentialsHash();
-      console.log('******************** web3storage getAllCredentials hash: ', hash);
-      if (!hash) {
-        this.credentialsCache = [];
-        return [];
-      }
-
-      const data = await this.downloadFromServer(hash);
-      console.log('******************** web3storage getAllCredentials data: ', data);
-      this.credentialsCache = Array.isArray(data) ? data : [];
-      return this.credentialsCache;
-    } catch (error) {
-      console.error('Error getting credentials via server:', error);
-      this.credentialsCache = [];
-      return [];
-    }
+    return []
   }
 
   /**
@@ -274,41 +244,12 @@ export class ServerWeb3StorageCredentialManager {
       }
 
       const result = await response.json();
-      await this.storeCredentialsHash(result.cid);
-      this.credentialsCache = credentials; // Update cache
-      console.log('Credentials saved via server with hash:', result.cid); 
+      console.log('Credentials saved via server with cid:', result.cid); 
       return result.cid;
     } catch (error) {
       console.error('Error saving credentials via server:', error);
       throw error;
     }
-  }
-
-  /**
-   * Get storage statistics
-   */
-  getStorageStats(): { totalCredentials: number; storageSize: number } {
-    const credentials = this.credentialsCache || [];
-    const storageSize = JSON.stringify(credentials).length;
-    
-    return {
-      totalCredentials: credentials.length,
-      storageSize
-    };
-  }
-
-  /**
-   * Get the current Web3.Storage hash
-   */
-  async getCurrentHash(): Promise<string | null> {
-    return await this.getCredentialsHash();
-  }
-
-  /**
-   * Clear the credentials cache
-   */
-  clearCache(): void {
-    this.credentialsCache = null;
   }
 
   /**
