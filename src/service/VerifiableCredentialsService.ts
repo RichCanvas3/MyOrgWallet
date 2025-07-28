@@ -430,14 +430,12 @@ class VerifiableCredentialsService {
       const did = await credentialManager.getDID() 
 
       console.log("******************** getCredential from localStorage cache using vcid", vcId)
-      /*
-      const existingCredentialJSON = localStorage.getItem(vc)
+      const existingCredentialJSON = localStorage.getItem(vcId)
       if (existingCredentialJSON) {
         const existingCredential = JSON.parse(existingCredentialJSON)
         console.info("found existing credential: ", existingCredential)
         return existingCredential
       }
-      */
 
 
       console.log("getCredential from credentialManager")

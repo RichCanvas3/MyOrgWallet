@@ -296,7 +296,6 @@ const WelcomeModal: React.FC = () => {
 
   const handleNextStep = async () => {
 
-    console.info("************** handleNextStep ***************")
 
     function getDomainFromEmail(email: string): string | null {
       const atIndex = email.lastIndexOf('@');
@@ -307,7 +306,6 @@ const WelcomeModal: React.FC = () => {
       return email.slice(atIndex + 1);
     }
 
-    console.info("************** handleNextStep 2 ***************")
 
     // Step 1: Connect wallet (handled by handleConnectWallet)
     if (currentStep === 1) {

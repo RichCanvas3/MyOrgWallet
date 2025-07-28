@@ -300,7 +300,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                 }
                 */
 
-                if (credentialManager && att.vcid) {
+                if (credentialManager && att.entityId && att.displayName) {
                   setHasInfo(true)
 
                   setHasCredential(false)
@@ -308,7 +308,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
 
                   console.info("------> get credential using vcid: ", att)
 
-                  VerifiableCredentialsService.getCredentialByVcid(credentialManager, att.vcid).then((cred) => {
+                  VerifiableCredentialsService.getCredential(credentialManager, att.entityId, att.displayName).then((cred) => {
                     if (cred) {
                       setHasCredential(true)
                       console.info(",,,,,,,,,, credential: ", cred)
@@ -319,6 +319,18 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
                     }
                   })
 
+                  /*
+                  VerifiableCredentialsService.getCredentialByVcid(credentialManager, att.vcid).then((cred) => {
+                    if (cred) {
+                      setHasCredential(true)
+                      console.info(",,,,,,,,,, credential: ", cred)
+                      setCredential(cred)
+                    }
+                    else {
+                      setHasCredential(false)
+                    }
+                  })
+                  */
 
 
                 }
