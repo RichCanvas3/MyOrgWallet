@@ -40,26 +40,17 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
   }, []);
 
   useEffect(() => {
-    console.info("************* isConnectionComplete: ", isConnectionComplete)
-    console.info("************* isIndividualConnected: ", isIndividualConnected)
-    console.info("************* orgDid: ", orgDid)
-    console.info("************* indivDid: ", indivDid)
-    console.info("************* signatory: ", signatory)
-    console.info("************* hasAttemptedConnection: ", hasAttemptedConnection)
-    console.info("************* location.pathname: ", location.pathname)
+
 
     // if wallet is defined and we have not defined smart wallet
     //if (isConnected && isIndividualConnected && orgDid && indivDid && !location.pathname.startsWith('/readme')) {
     if (isIndividualConnected && orgDid && indivDid && signatory) {
-      console.info("************* navigate .............")
       setIsLoading(false); // Clear loading state when navigation happens
       setConnectionFailed(false); // Reset connection failed state
       setHasAttemptedConnection(false); // Reset connection attempt state
-      console.info("************* navigating to chat 1")
       navigate('/chat/')
     } else if (isConnectionComplete && !isIndividualConnected && hasAttemptedConnection) {
       // Connection process is complete but no accounts found, and user attempted connection
-      console.info("************* connection failed 1")
       setIsLoading(false);
       setConnectionFailed(true); // Set connection failed state
     }
@@ -100,7 +91,6 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
       if (signatoryToUse) {
         const loginResp = await signatoryToUse.login()
         if (loginResp && loginResp.signatory && loginResp.owner) {
-          console.info("***** connect to login 1: ", loginResp.owner, loginResp.signatory)
           await connect(loginResp.owner, loginResp.signatory, "", "", "")
         }
       }

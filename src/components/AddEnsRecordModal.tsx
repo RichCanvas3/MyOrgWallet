@@ -483,11 +483,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
 
   // Handle ENS name updates after modal opens
   useEffect(() => {
-    console.log("Modal received existingEnsName:", existingEnsName);
-    console.log("Modal current ensName:", ensName);
-
     if (existingEnsName && existingEnsName !== ensName) {
-      console.log("Updating modal ENS name from", ensName, "to", existingEnsName);
       setEnsName(existingEnsName);
       setIsExistingEns(true);
       if (activeStep === 0) {

@@ -101,23 +101,10 @@ import { chainIdNetworkParamsMapping } from '@blockchain-lab-um/masca-connector'
 import { COA_OPTIONS } from '../constants/chartOfAccounts';
 import InfoIcon from '@mui/icons-material/Info';
 
-// Debug: Check if COA_OPTIONS is imported correctly
-console.log('COA_OPTIONS imported:', COA_OPTIONS?.length, 'items');
-
-const optimismProvider = new ethers.JsonRpcProvider(OPTIMISM_RPC_URL);
-
-
-
-// Create Wagmi config
-console.info("*********** create wagmiConfig ****************")
-
-
-
 const wagmiConfig = createWagmiConfig({
   //connectors: [metaMask({  [mainnet, optimism, linea, sepolia, base, baseSepolia, optimismSepolia] })],
    chains: [mainnet, optimism, linea, sepolia, base, baseSepolia, optimismSepolia],
     client({ chain }) {
-      console.info("*********** create client ****************: ", chain.id);
       return createClient({ chain, transport: http() })
     },
   })

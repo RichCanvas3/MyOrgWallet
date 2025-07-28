@@ -45,7 +45,6 @@ export const createWeb3AuthSignatoryFactory: SignatoryFactoryConfigurator = (
       throw new Error("Failed to connect web3auth");
     }
 
-    console.info("************* web3auth.connected: ", web3auth.connected);
     const provider = web3auth.provider!;
 
     // Get the private key from Web3Auth provider

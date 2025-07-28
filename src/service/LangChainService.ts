@@ -53,7 +53,6 @@ export async function invokeLangGraphAgent({
     })
   });
 
-  console.log('Response: ', response);
   const text = await response.text();
   return text;
 }
@@ -69,7 +68,7 @@ export async function sendMessageToLangGraphAssistant(
   linkedInAuthRef?: React.RefObject<LinkedInAuthRef>,
   XAuthRef?: React.RefObject<XAuthRef>
 ) {
-  console.log('*************** send message with config set to RichCanvas')
+
   const data = await fetch('https://myorgagentrichcanvas-fda39097be375d0f9756d03ee4c93846.us.langgraph.app/threads/'+ thread_id +'/runs/stream', {
     method: 'POST',
     headers: {
@@ -129,7 +128,7 @@ export async function sendMessageToLangGraphAssistant(
 
     var completedMessage = dataList[dataList.length - 2];
 
-    console.log('Raw completed message:', completedMessage);
+    //console.log('Raw completed message:', completedMessage);
 
     if (!completedMessage) {
       console.error("No completed message found in response");
@@ -154,10 +153,8 @@ export async function sendMessageToLangGraphAssistant(
     var further3Split = furtherFurtherSplit.split('\\n');
 
     var finalMessage = further3Split.join(' ');
-    console.log('Processed message:', finalMessage);
 
     if (tool == 'state_register') {
-      console.log('Processing state registration data...');
       var split = finalMessage.split('-');
       if (split.length < 6) {
         console.error("Invalid state registration data format");
@@ -173,7 +170,6 @@ export async function sendMessageToLangGraphAssistant(
       var formDate = (split[4].split('** '))[1];
       var address = (split[5].split('** '))[1];
 
-      console.log('Processed state data:', { id, formDate, address });
       return { message: finalMessage, id, name, formDate, address };
     } else if (tool == 'linkedin_verification') {
       console.log('Initiating LinkedIn OAuth...');

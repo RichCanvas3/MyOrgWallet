@@ -20,7 +20,6 @@ export const createInjectedProviderSignatoryFactory: SignatoryFactoryConfigurato
     }
 
     const login = async () => {
-      console.info("*********** login ****************");
       const selectedNetwork = await provider.request({ method: "eth_chainId" });
       if (chain && parseInt(selectedNetwork) !== chain.id) {
         console.info("wrong chain selected, switching to: ", chain.id);
@@ -90,8 +89,6 @@ export const createInjectedProviderSignatoryFactory: SignatoryFactoryConfigurato
       // Create ethers signer from MetaMask provider
       const ethersProvider = new ethers.BrowserProvider(provider);
       const signer = await ethersProvider.getSigner();
-
-      console.info("***************** injectedProviderSignatoryFactory login done: ", owner, signer)
 
       return {
         owner,

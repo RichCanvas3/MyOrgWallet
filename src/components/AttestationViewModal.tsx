@@ -102,21 +102,15 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
     if (did && chain) {
       // Extract address from DID instead of using signatory
       const address = did.replace("did:pkh:eip155:" + chain?.id + ":", "") as `0x${string}`;
-      console.info("DID address: ", address);
-      console.info("DID: ", did);
 
-      console.info("call handle init operations");
       const cacheKey = address;
       const cached = await getCachedResponse(cacheKey);
       
       if (!cached && address) {
         try {
           // Get comprehensive ENS data using EnsService
-          console.info("Fetching ENS data for DID address:", address);
           const ensDataResult = await EnsService.getEnsComprehensiveData(address, chain);
-          
-          console.info("ENS data result 1:", ensDataResult);
-          
+
           // Update state with ENS data
           setEnsData(ensDataResult);
           
@@ -142,7 +136,6 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
         try {
           const ensDataResult = await EnsService.getEnsData(address, chain);
 
-          console.info("ENS data result 2: ", ensDataResult)
           setEnsData({
             name: ensDataResult.name,
             avatar: ensDataResult.avatar,
@@ -167,7 +160,6 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
   }
 
   useEffect(() => {
-    console.info("handleInitOperations 123")
     handleInitOperations();
   }, [did, entityId, displayName]);
 

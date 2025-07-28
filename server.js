@@ -48,7 +48,7 @@ const validateEnvVars = () => {
     if (!process.env[varName]) {
       console.error(`Missing environment variable: ${varName}`);
     } else {
-      console.log(`Environment variable ${varName}: ${varName.includes('SECRET') || varName.includes('KEY') ? '[REDACTED]' : process.env[varName]}`);
+      //console.log(`Environment variable ${varName}: ${varName.includes('SECRET') || varName.includes('KEY') ? '[REDACTED]' : process.env[varName]}`);
     }
   });
 };
@@ -60,7 +60,7 @@ const app = express();
 // Set SendGrid API key
 try {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  console.log('SendGrid API key set successfully');
+  //console.log('SendGrid API key set successfully');
 } catch (error) {
   console.error('Error setting SendGrid API key:', error.message, error.stack);
 }
@@ -72,7 +72,7 @@ const allowedOrigins = [
 ];
 app.use(cors({
   origin: (origin, callback) => {
-    console.log(`CORS check for origin: ${origin}`);
+    //console.log(`CORS check for origin: ${origin}`);
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {

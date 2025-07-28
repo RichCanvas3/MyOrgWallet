@@ -269,27 +269,20 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     let orgname;
     if (orgAccountClient && chain && orgDid && indivDid) {
 
-      console.info("************* orgDid: ", orgDid)
-
       await AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
 
         if (ents != undefined) {
 
           setEntities(ents)
-          console.log(ents)
           for (const entity of ents) {
             if (entity.name == "org(org)" && entity.attestation) {
-              console.info("&&&&&&&&&&&&&&&&&&&&&&&&&&&& entity.attestation 2: ", entity)
               setOrgNameValue((entity.attestation as OrgAttestation).name)
               orgname = (entity.attestation as OrgAttestation).name
-              console.log('orgname: ', orgname)
             } else if (entity.name == "") {
-
             }
           }
 
           if (!conversation) {
-
             if (location.pathname.startsWith("/chat/c/")) {
               let conversationId = location.pathname.replace("/chat/c/", "")
               handleSelectedConversation(conversationId)
@@ -304,8 +297,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     }
     else {
-
-      console.info("------------> org is not defined")
       navigate("/")
     }
 
@@ -375,21 +366,14 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         return;
       }
 
-      console.log('fetching thread ID.....................')
       try {
         const threadID_text = await invokeLangGraphAgent({});
-        console.log(threadID_text);
         const threadID_Array = threadID_text.split("'");
         const threadIDResult = threadID_Array[1];
-        console.log("Thread ID:", threadIDResult);
 
         if (isMounted) {
           setThreadID(threadIDResult);
-
-          console.log('call langchain.....................')
           const company_config = await init();
-          console.log('cc name: ', company_config['name'])
-          console.log(company_config)
           getArgfromUserMessage(threadIDResult, `lets get started: Name: ${company_config["name"]}, State: ${company_config["state"]}, Domain: ${company_config["domain"]}, Linkedin: ${company_config["linkedin"]}, Twitter: ${company_config["x"]}, State Registration: ${company_config["state_registration"]}, ENS Registration: ${company_config["ens_registration"]}`).then(str => {
             if (str) {
               addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
@@ -471,7 +455,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const newConversation = (entities: Entity[]) => {
 
-    console.info("------------> newConversation: ", conversation )
     if (conversation == undefined) {
 
       if (location.pathname.startsWith("/chat/c/")) {
@@ -534,9 +517,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       setConversation(newConversation);
 
       ConversationService.storeConversation(newConversation, messages);
-
-      console.info("------------> newConversation: ", newConversation )
-      console.info("------------> navigate to: ", `/chat/c/${newConversation.id}`)
       
       navigate(`/chat/c/${newConversation.id}`);
 
@@ -1439,12 +1419,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     let args = ""
     const stateList = ['colorado', 'delaware']
-    console.log(content)
 
     var lastUserResponse = content.toLowerCase()
     var introduction = userSettings.assistantIntroductions ? userSettings.assistantIntroductions : OPENAI_DEFAULT_ASSISTANT_PROMPT
 
-    console.info("*************** threadID: ", threadID)
     if (currentThreadID) {
 
       // Check if user wants to skip the current entity
@@ -1482,7 +1460,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       } else {
 
         var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'none', entities || [], {}, linkedInAuthRef, xAuthRef);
-        console.log('LangChain Response final: ', response.message)
         return response.message;
       }
     }

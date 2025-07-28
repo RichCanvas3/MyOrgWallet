@@ -268,7 +268,6 @@ class AttestationService {
 
             if (att != undefined) {
               entity.attestation = att
-              console.info(`Set attestation for entity ${entityId}:`, att.displayName || att.entityId)
             } else {
               console.info(`Constructor returned undefined for entity ${entityId}, skipping`)
             }
@@ -887,8 +886,6 @@ class AttestationService {
           proof: proof,
           name: name
         }
-
-        console.info("&&&&&&&&&&&&&&&&&&&&&&&&&&&& OrgAttestation: ", att)
 
         return att
       }
@@ -2643,7 +2640,6 @@ class AttestationService {
 
 
       const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
-      console.info("************** attestations data: ", data)
 
       const attestations : Attestation[] = []
       for (const item of data.attestations) {
@@ -3161,7 +3157,6 @@ class AttestationService {
       }
 
       if (rtnAttestation && rtnAttestation.displayName == displayName) {
-        console.info("@@@@@@@@@@@@@ rtnAttestation found: ", rtnAttestation.displayName)
         break
       }
       else if (rtnAttestation && displayName && displayName != "") {

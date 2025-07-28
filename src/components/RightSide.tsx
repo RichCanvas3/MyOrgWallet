@@ -38,7 +38,6 @@ const RightSide: React.FC<RightSideProps> = ({className, appCommand, onRefreshAt
   });
 
   const handleSelectAttestation = (att: Attestation) => {
-    console.log("************ att: ", att)
     let displayName = att.displayName
     if (displayName === undefined || displayName === null || displayName === "") {
       displayName = "none"

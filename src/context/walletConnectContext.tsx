@@ -519,8 +519,7 @@ export const useWalletConnect = () => {
     const initializeCredentialManager = async (ownerAddress: string, did?: string) => {
       try {
         const credentialManagerType = CredentialManagerFactory.getDefaultCredentialManagerType();
-        console.info(`Initializing credential manager with type: ${credentialManagerType}`);
-        
+
         if (credentialManagerType === 'masca') {
           // Setup MetaMask snaps for masca
           const provider = window.ethereum;
@@ -605,8 +604,6 @@ export const useWalletConnect = () => {
           let localOrgAddress = undefined
           let localOrgDid = undefined
 
-          console.info("------------> getConnected 1a: ", signatory, owner, chain)
-          console.info("------------> getConnected 2a: ", publicClient, privateIssuerDid)
           if (publicClient && privateIssuerDid) {
 
             const privateKey = ISSUER_PRIVATE_KEY;
@@ -654,9 +651,6 @@ export const useWalletConnect = () => {
 
             const orgIndivAttestation = await AttestationService.getOrgIndivAttestation(chain, localIndivDid, AttestationService.OrgIndivSchemaUID, "org-indiv(org)");
             const indivAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, localIndivDid, AttestationService.IndivSchemaUID, "indiv(indiv)", "")
-
-            console.info("------------> indivAttestation: ", indivAttestation)
-            console.info("------------> orgIndivAttestation: ", orgIndivAttestation)
 
             if (indivAttestation) {
               // Only set name from attestation if we don't already have a manually set name
@@ -839,11 +833,8 @@ export const useWalletConnect = () => {
             }
 
             // cycle through savings accounts and add burner account abstraction to each
-            console.info("************* save account burner del: ", signatory.walletClient.account.address)
-            console.info("************* vals: ", localOrgDid, localIndivDid, indivAccountClient)
             if (localOrgDid && localIndivDid && indivAccountClient) {
               const accounts = await AttestationService.loadIndivAccounts(chain, localOrgDid, localIndivDid, "1110");
-              console.info("************* accounts: ", accounts)
               for (const account of accounts) {
 
                 const accType = "account-" + account.did
@@ -879,7 +870,6 @@ export const useWalletConnect = () => {
 
               }
 
-              console.info("************* configured properly so set connection complete  ")
               setIsIndividualConnected(true)
               setIsConnectionComplete(true);
             }
@@ -890,14 +880,9 @@ export const useWalletConnect = () => {
             }
 
           }
-          console.info("************* getConnected return")
         }
 
-
-
-        console.info("************* getConnected")
         getConnected().then(() => {
-          console.info("************* getConnected done")
         })
 
       }
@@ -943,12 +928,7 @@ export const useWalletConnect = () => {
         return undefined
       }
 
-      console.info("findValidIndivAccount - owner:", owner);
-      console.info("findValidIndivAccount - signatory:", signatory);
-      console.info("findValidIndivAccount - signatory.walletClient:", signatory.walletClient);
-
       for (let i = 0; i < tryCount; i++) {
-        console.info(`Attempt ${i + 1}/${tryCount} to create smart account...`);
 
         try {
           // build individuals AA for EOA Connected Wallet
@@ -961,10 +941,7 @@ export const useWalletConnect = () => {
           });
 
           const address = await accountClient.getAddress()
-          console.info("Created smart account with address:", address);
-
           if (isBlacklisted(address) == false) {
-            console.info("Smart account is not blacklisted, returning...");
             return accountClient
           } else {
             console.info("Smart account is blacklisted, trying next...");
@@ -2021,7 +1998,6 @@ export const useWalletConnect = () => {
     }
 
     const connect = async (owner: any, signatory: any, organizationName: string, fullName: string, email: string) => {
-      console.info("*********** set signatory: ", signatory)
       setSignatory(signatory)
       setOwner(owner)
     }

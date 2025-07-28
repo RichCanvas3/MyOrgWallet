@@ -136,8 +136,6 @@ const App = () => {
 
 
   const appCommand = (cmd: Command) => {
-    console.log("appCommand: ", cmd)
-
     if (cmd.action == "edit" && cmd.entityId == "indiv(indiv)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("indiv(indiv)")
       setSelectedDid(cmd.did)
