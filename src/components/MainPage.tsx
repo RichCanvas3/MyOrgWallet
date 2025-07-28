@@ -753,8 +753,18 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         var address = (split[5].split('** '))[1];
         console.log(id, formDate, address)
         */
-      } else {
-        addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
+      } else if (str.includes('linkedin_verification')) {
+        //call linkedin modal here
+        addMessage(Role.Assistant, MessageType.Normal, 'Linkedin being verified...', '', fileDataRef, sendMessage);
+      } else if (str.includes('shopify_verification')) {
+        //call shopify modal here
+        addMessage(Role.Assistant, MessageType.Normal, 'Shopify being verified...', '', fileDataRef, sendMessage);
+      } else if (str.includes('x_verification')) {
+        //call x modal
+        addMessage(Role.Assistant, MessageType.Normal, 'Twitter being verified...', '', fileDataRef, sendMessage);
+      } else if (str.includes('insurance_verification')) {
+        //insurance modal here
+        addMessage(Role.Assistant, MessageType.Normal, 'Insurance being verified...', '', fileDataRef, sendMessage);
       }
       console.log('Data From Stream: ', str);
 
