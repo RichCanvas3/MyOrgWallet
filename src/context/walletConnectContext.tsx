@@ -147,7 +147,7 @@ export type WalletConnectContextState = {
 
     setIndivAndOrgInfo: (indivName: string, orgName: string, indivEmail: string) => Promise<void>;
     buildSmartWallet: (owner: string, signatory: any, ) => Promise<void>;
-    setupSmartWallet: (owner: string, signatory: any, ) => Promise<void>;
+    setupSmartWallet: (owner: string, signatory: any, progressCallback?: (message: string) => void) => Promise<void>;
 
     chain?: Chain;
 
@@ -1330,15 +1330,17 @@ export const useWalletConnect = () => {
       }
     }
 
-    const setupSmartWallet = async (owner: string, signatory: any, ) => {
+    const setupSmartWallet = async (owner: string, signatory: any, progressCallback?: (message: string) => void) => {
 
       console.info("setup smart wallet")
 
       if (owner && signatory && chain) {
 
         console.info("owner and signatory are defined")
+        progressCallback?.("Starting smart wallet setup...")
 
         // --------------------  setup burner account for session --------------------
+        progressCallback?.("Setting up burner account...")
 
         const publicClient = createPublicClient({
           chain: chain,
@@ -1371,6 +1373,7 @@ export const useWalletConnect = () => {
         console.info("******is burnerAccountClient deployed: ", isDeployed)
         if (isDeployed == false) {
 
+          progressCallback?.("Deploying burner account...")
           console.info("burner account is getting deployed: ", burnerAccountClient.address)
 
           const pimlicoClient = createPimlicoClient({
@@ -1417,18 +1420,21 @@ export const useWalletConnect = () => {
               ...fee,
             });
 
-            console.info("burnerAccountClient account is deployed - done")
-            const { receipt } = await bundlerClient!.waitForUserOperationReceipt({
-              hash: userOperationHash,
-            });
-          }
-          catch (error) {
-            console.info("error deploying burnerAccountClient: ", error)
-          }
-        }
+                         progressCallback?.("Burner account deployed successfully")
+             console.info("burnerAccountClient account is deployed - done")
+             const { receipt } = await bundlerClient!.waitForUserOperationReceipt({
+               hash: userOperationHash,
+             });
+           }
+           catch (error) {
+             console.info("error deploying burnerAccountClient: ", error)
+             progressCallback?.("Error deploying burner account")
+           }
+         }
 
 
         // -------------------- setup private issuer account --------------------
+        progressCallback?.("Setting up private issuer account...")
 
         console.info("********* ISSUER_PRIVATE_KEY: ", ISSUER_PRIVATE_KEY)
         const privateIssuerOwner = privateKeyToAccount(ISSUER_PRIVATE_KEY as `0x${string}`);
@@ -1441,6 +1447,7 @@ export const useWalletConnect = () => {
 
 
         // ----------------------- setup veramo agent and masca snap ----------------------
+        progressCallback?.("Setting up Veramo agent...")
 
         // setup veramo agent and masca api
         console.info("setup veramo for issuer aa did: ", privateIssuerDid)
@@ -1448,6 +1455,7 @@ export const useWalletConnect = () => {
         setVeramoAgent(veramoAgent)
 
         console.info("setup snap for owner: ", owner)
+        progressCallback?.("Setting up credential manager...")
         const credentialManager = await setupSnap(owner)
 
         console.info("credentialManager 2: ", credentialManager)
@@ -1455,6 +1463,7 @@ export const useWalletConnect = () => {
         console.info("orgAccountClient 2: ", orgAccountClient)
 
         if (orgIndivDelegation && orgAccountClient && burnerAccountClient) {
+          progressCallback?.("Setting up organization delegations...")
 
           // setup delegation for org to issuer -> redelegation of orgIndivDel
           let orgBurnerDel  = null
@@ -1474,6 +1483,7 @@ export const useWalletConnect = () => {
             });
 
 
+            progressCallback?.("Signing organization delegation...")
             console.info("sign delegation")
             const signature = await indivAccountClient.signDelegation({
               delegation: orgBurnerDel,
@@ -1493,6 +1503,7 @@ export const useWalletConnect = () => {
               signature,
             }
 
+            progressCallback?.("Saving organization delegation...")
             console.info("save delegation to storage")
             await DelegationService.saveDelegationToStorage("relationship", owner, orgAccountClient.address, burnerAccountClient.address, orgBurnerDel)
           }
@@ -1505,6 +1516,7 @@ export const useWalletConnect = () => {
           // add new org attestation
           console.info("add new org attestation")
           const addOrgAttestation = async (credentialManager: any) => {
+            progressCallback?.("Creating organization attestation...")
 
             console.info("*********** ADD ORG ATTESTATION 2 ****************")
             console.info("selectedSignatoryFactoryName: ", selectedSignatoryFactoryName);
@@ -1581,6 +1593,7 @@ export const useWalletConnect = () => {
           }
 
           const addDomainAttestation = async (credentialManager: any) => {
+            progressCallback?.("Creating domain attestation...")
 
             function getDomainFromEmail(email: string): string | null {
               const atIndex = email.lastIndexOf('@');
@@ -1673,7 +1686,7 @@ export const useWalletConnect = () => {
 
           // add new org indiv attestation
           const addOrgIndivAttestation = async (credentialManager: any) => {
-
+            progressCallback?.("Creating organization-individual attestation...")
 
             // Use the signer directly from signatory
             const walletSigner = signatory.signer;
@@ -1756,12 +1769,14 @@ export const useWalletConnect = () => {
 
 
         if (indivAccountClient && burnerAccountClient) {
+          progressCallback?.("Setting up individual delegations...")
 
           // setup delegation for individual to issuer delegation
           let indivBurnerDel = null
           indivBurnerDel = await DelegationService.getDelegationFromStorage("relationship", owner, indivAccountClient.address, burnerAccountClient.address)
           if (indivBurnerDel == null && indivDid) {
 
+            progressCallback?.("Creating individual delegation...")
             console.info("delegation does not exist for indiv-issuer so create one")
             console.info("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX3")
             indivBurnerDel = createDelegation({
@@ -1770,6 +1785,7 @@ export const useWalletConnect = () => {
               caveats: [] }
             );
 
+            progressCallback?.("Signing individual delegation...")
             const signature = await indivAccountClient.signDelegation({
               delegation: indivBurnerDel,
             });
@@ -1780,6 +1796,7 @@ export const useWalletConnect = () => {
               signature,
             }
 
+            progressCallback?.("Saving individual delegation...")
             await DelegationService.saveDelegationToStorage("relationship", owner, indivAccountClient.address, burnerAccountClient.address, indivBurnerDel)
           }
 
@@ -1790,6 +1807,7 @@ export const useWalletConnect = () => {
 
           // add indiv  attestation
           const addIndivAttestation = async (credentialManager: any) => {
+            progressCallback?.("Creating individual attestation...")
 
             console.info("*********** ADD INDIV ATTESTATION 1 ****************")
 
@@ -1842,6 +1860,7 @@ export const useWalletConnect = () => {
 
           // add indiv email attestation
           const addIndivEmailAttestation = async (credentialManager: any) => {
+            progressCallback?.("Creating individual email attestation...")
 
             console.info("*********** ADD INDIV EMAIL ATTESTATION ****************")
 
@@ -1913,8 +1932,9 @@ export const useWalletConnect = () => {
 
       }
 
-      console.info("setup smart wallet - done")
-    }
+              progressCallback?.("Smart wallet setup completed successfully!")
+        console.info("setup smart wallet - done")
+      }
 
     const disconnect = async () => {
       console.info("*********** disconnect")

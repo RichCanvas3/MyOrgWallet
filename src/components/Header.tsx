@@ -24,7 +24,7 @@ const Header: React.FC<HeaderProps> = ({className}) => {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const {showConfirmDialog, ConfirmDialog, isOpen} = useConfirmDialog();
 
-  const { orgName, indivName, signatory, selectedSignatoryFactoryName, disconnect, orgDid, indivDid, chain, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, burnerAccountClient } = useWallectConnectContext();
+  const { orgName, indivName, signatory, selectedSignatoryFactoryName, disconnect, orgDid, indivDid, chain, orgIndivDelegation, orgBurnerDelegation, indivBurnerDelegation, burnerAccountClient } = useWallectConnectContext();
 
 
   const navigate = useNavigate();
@@ -86,27 +86,28 @@ const Header: React.FC<HeaderProps> = ({className}) => {
           console.info("orgDid: ", orgDid)
           console.info("indivDid: ", indivDid)
           console.info("chain: ", chain)
+          console.info("burnerAccountClient: ", burnerAccountClient)
 
           // Delete organization attestations
-          if (orgDid && chain && orgIndivDelegation && orgIssuerDelegation && indivIssuerDelegation && burnerAccountClient) {
+          if (orgDid && chain && orgIndivDelegation && orgBurnerDelegation && indivBurnerDelegation && burnerAccountClient) {
             console.info("delete org attestations")
             const orgAttestations = await AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, "")
             if (orgAttestations && orgAttestations.length > 0) {
               console.info("signer a: ", signatory)
               const walletSigner = signatory.signer
-              const rslt = await AttestationService.deleteAttestations(chain, orgAttestations, walletSigner, [orgIssuerDelegation, orgIndivDelegation], burnerAccountClient)
+              const rslt = await AttestationService.deleteAttestations(chain, orgAttestations, walletSigner, [orgBurnerDelegation, orgIndivDelegation], burnerAccountClient)
               console.info("delete organization attestations is done ", rslt)
             }
           }
 
           // Delete individual attestations
-          if (chain && indivDid && indivIssuerDelegation && burnerAccountClient) {
+          if (chain && indivDid && indivBurnerDelegation && burnerAccountClient) {
             console.info("delete indiv attestations")
             const indivAttestations = await AttestationService.loadRecentAttestationsTitleOnly(chain, "", indivDid)
             if (indivAttestations && indivAttestations.length > 0) {
               console.info("signer b: ", signatory)
               const walletSigner = signatory.signer
-              const rsl = await AttestationService.deleteAttestations(chain, indivAttestations, walletSigner, [indivIssuerDelegation], burnerAccountClient)
+              const rsl = await AttestationService.deleteAttestations(chain, indivAttestations, walletSigner, [indivBurnerDelegation], burnerAccountClient)
               console.info("delete all individual attestations is done ")
             }
           }

@@ -76,7 +76,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
   });
 
   const [activeTab, setActiveTab] = useState<'info' | 'vc' | 'vc-raw' | 'zk' | 'rzk' | 'at' >('vc');
-  const { chain, veramoAgent, credentialManager, signatory, indivIssuerDelegation, orgIssuerDelegation, orgIndivDelegation, burnerAccountClient } = useWallectConnectContext();
+  const { chain, veramoAgent, credentialManager, signatory, indivBurnerDelegation, orgBurnerDelegation, orgIndivDelegation, burnerAccountClient } = useWallectConnectContext();
 
   // Helper function to get the correct ENS URL based on chain
   const getEnsUrl = (ensName: string) => {
@@ -436,7 +436,7 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
   }
 
   const handleDeleteAttestation = async () => {
-    if (!attestation || !chain || !orgIssuerDelegation || !orgIndivDelegation || !indivIssuerDelegation || !burnerAccountClient) return;
+    if (!attestation || !chain || !orgBurnerDelegation || !orgIndivDelegation || !indivBurnerDelegation || !burnerAccountClient) return;
     
     setIsDeleting(true);
     try {
@@ -446,12 +446,12 @@ const AttestationViewModal: React.FC<AttestationViewModalProps> = ({did, entityI
 
       if (attestation.class == "organization") {
         const attestations = [attestation]
-        const rslt = await AttestationService.deleteAttestations(chain, attestations, walletSigner, [orgIssuerDelegation, orgIndivDelegation], burnerAccountClient)
+        const rslt = await AttestationService.deleteAttestations(chain, attestations, walletSigner, [orgBurnerDelegation, orgIndivDelegation], burnerAccountClient)
         console.info("delete organization attestations is done ")
       }
       if (attestation.class == "individual") {
         const attestations = [attestation]
-        const rslt = await AttestationService.deleteAttestations(chain, attestations, walletSigner, [indivIssuerDelegation], burnerAccountClient)
+        const rslt = await AttestationService.deleteAttestations(chain, attestations, walletSigner, [indivBurnerDelegation], burnerAccountClient)
         console.info("delete individual attestations is done ")
       }
       

@@ -82,7 +82,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
 
 
   // Update the context usage
-  const { chain, signatory, privateIssuerDid, veramoAgent,orgIssuerDelegation, orgIndivDelegation, credentialManager, privateIssuerAccount, orgAccountClient, burnerAccountClient, orgDid } = useWallectConnectContext();
+  const { chain, signatory, privateIssuerDid, veramoAgent,orgBurnerDelegation, orgIndivDelegation, credentialManager, privateIssuerAccount, orgAccountClient, burnerAccountClient, orgDid } = useWallectConnectContext();
 
 
   const handleNext = () => {
@@ -406,7 +406,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
           const fullVc = result.vc
           const proof = result.proof
           const vcId = result.vcId
-          if (proof && fullVc && chain && burnerAccountClient && orgAccountClient && orgIssuerDelegation && orgIndivDelegation ) {
+          if (proof && fullVc && chain && burnerAccountClient && orgAccountClient && orgBurnerDelegation && orgIndivDelegation ) {
     
             // now create attestation
             const hash = keccak256(toUtf8Bytes("hash value"));
@@ -433,7 +433,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
               return;
             }
     
-            const uid = await AttestationService.addRegisteredENSAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+            const uid = await AttestationService.addRegisteredENSAttestation(chain, attestation, walletSigner, [orgBurnerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
             console.info("add org ens attestation complete")
     
           }

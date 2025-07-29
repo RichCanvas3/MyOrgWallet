@@ -47,7 +47,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
 
 
   const { } = props;
-  const { chain, signatory, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
+  const { chain, signatory, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, indivBurnerDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
 
   
 
@@ -111,7 +111,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
         const proof = result.proof
         const vcId = result.vcId
 
-        if (proof && fullVc && vcId && chain && orgAccountClient && indivIssuerDelegation) {
+        if (proof && fullVc && vcId && chain && orgAccountClient && indivBurnerDelegation) {
         
           // add attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
@@ -132,7 +132,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
 
           const walletSigner = signatory.signer
 
-          const uid = AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivIssuerDelegation], orgAccountClient, burnerAccountClient)
+          const uid = AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivBurnerDelegation], orgAccountClient, burnerAccountClient)
           console.info("add social attestation complete")
 
           if (location.pathname.startsWith("/chat/c/")) {

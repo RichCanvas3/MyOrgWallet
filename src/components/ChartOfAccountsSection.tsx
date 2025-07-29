@@ -48,7 +48,7 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
 }) => {
 
   const { getUSDCBalance } = useCrossChainAccount();
-  const { chain, veramoAgent, credentialManager, signatory, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, burnerAccountClient } = useWallectConnectContext();
+  const { chain, veramoAgent, credentialManager, signatory, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgBurnerDelegation, indivBurnerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, burnerAccountClient } = useWallectConnectContext();
   
   // Add state for view type
   const [viewType, setViewType] = useState<'chart' | 'list'>('chart');
@@ -686,7 +686,7 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
   // Handle attestation revocation
   const handleRevoke = async (attestationUid: string) => {
     try {
-      if (!orgAccountClient || !orgAccountClient || !orgIssuerDelegation) {
+      if (!orgAccountClient || !orgAccountClient || !orgBurnerDelegation) {
         console.error("Missing required clients for revocation");
         return;
       }
@@ -695,7 +695,7 @@ const ChartOfAccountsSection: React.FC<ChartOfAccountsSectionProps> = ({
         attestationUid,
         orgAccountClient,
         orgAccountClient,
-        [orgIssuerDelegation]
+        [orgBurnerDelegation]
       );
 
       // Remove from list view

@@ -29,7 +29,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
 
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { chain, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, signatory, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, setOrgNameValue } = useWallectConnectContext();
+  const { chain, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, signatory, orgBurnerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, setOrgNameValue } = useWallectConnectContext();
 
 
   const [name, setName] = useState("");
@@ -46,9 +46,9 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
 
     const entityId = "org(org)"
 
-    //console.info("fields: ", orgDid, privateIssuerDid, walletClient, signatory, orgAccountClient, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation)
-    console.info("fields: ", orgIssuerDelegation, orgIndivDelegation)
-            if (orgDid && privateIssuerDid && credentialManager && walletClient && privateIssuerAccount && signatory && orgAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation) {
+    //console.info("fields: ", orgDid, privateIssuerDid, walletClient, signatory, orgAccountClient, burnerAccountClient, orgBurnerDelegation, orgIndivDelegation)
+    console.info("fields: ", orgBurnerDelegation, orgIndivDelegation)
+            if (orgDid && privateIssuerDid && credentialManager && walletClient && privateIssuerAccount && signatory && orgAccountClient && burnerAccountClient && orgBurnerDelegation && orgIndivDelegation) {
 
       // set the org name locally and in profile
       //console.info("set org name: ", orgName)
@@ -87,7 +87,7 @@ const OrgModal: React.FC<OrgModalProps> = ({orgName, isVisible, onClose}) => {
         }
 
         console.info("AttestationService add org attestation")
-        const uid = await AttestationService.addOrgAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+        const uid = await AttestationService.addOrgAttestation(chain, attestation, walletSigner, [orgBurnerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         setOrgNameValue(orgName)
 
         if (location.pathname.startsWith("/chat/c/")) {

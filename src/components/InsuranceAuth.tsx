@@ -24,7 +24,7 @@ const entityId = "insurance(org)"
 const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, ref) => {
 
   const { } = props;
-  const { chain, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, signatory } = useWallectConnectContext();
+  const { chain, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, orgBurnerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, signatory } = useWallectConnectContext();
 
 
 
@@ -44,7 +44,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
         const fullVc = result.vc
         const proof = result.proof
         const vcId = result.vcId
-        if (proof && fullVc && vcId && chain && orgAccountClient && orgIssuerDelegation && orgIndivDelegation) {
+        if (proof && fullVc && vcId && chain && orgAccountClient && orgBurnerDelegation && orgIndivDelegation) {
         
                             // Use the signer directly from signatory
           const walletSigner = signatory.signer;
@@ -73,7 +73,7 @@ const InsuranceAuth = forwardRef<InsuranceAuthRef, InsuranceAuthProps>((props, r
             proof: proof
           };
 
-          const uid = await AttestationService.addInsuranceAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+          const uid = await AttestationService.addInsuranceAttestation(chain, attestation, walletSigner, [orgBurnerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
           console.info("add insurance attestation complete")
 
 

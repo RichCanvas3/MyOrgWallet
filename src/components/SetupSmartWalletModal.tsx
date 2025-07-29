@@ -15,7 +15,6 @@ import {
 import { Check, ArrowBack } from '@mui/icons-material';
 
 import { useWallectConnectContext } from "../context/walletConnectContext";
-import { useProgress } from "../context/ProgressContext";
 
 import '../custom_styles.css'
 
@@ -44,6 +43,7 @@ const SetupSmartWalletModal: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [progressMessage, setProgressMessage] = useState<string>("");
   const [toast, setToast] = useState({ open: false, message: '', severity: 'info' as 'info' | 'success' | 'error' });
 
   // Note: signatory and owner are now obtained from context during each step
@@ -149,10 +149,16 @@ const SetupSmartWalletModal: React.FC = () => {
       */
 
       if (owner && signatory) {
-        await setupSmartWallet(owner, signatory);
+        const progressCallback = (message: string) => {
+          setProgressMessage(message);
+          console.log("Progress:", message);
+        };
+
+        await setupSmartWallet(owner, signatory, progressCallback);
         console.info("start sleep")
         await sleep(13000);
         console.info("end sleep")
+        setProgressMessage(""); // Clear progress message
         handleToast('Permissions granted', 'success');
 
         console.info("************* navigating to chat 2")
@@ -160,6 +166,7 @@ const SetupSmartWalletModal: React.FC = () => {
       }
       
     } catch (err: any) {
+      setProgressMessage(""); // Clear progress message on error
       handleToast(err.message || 'Permission denied', 'error');
     } finally {
       setIsSubmitting(false);
@@ -282,6 +289,23 @@ const SetupSmartWalletModal: React.FC = () => {
               {isSubmitting ? 'Processing...' : stepAction?.label}
             </Button>
           </Box>
+
+          {/* Progress Message */}
+          {progressMessage && (
+            <Box sx={{ 
+              mt: 2, 
+              p: 2, 
+              bgcolor: 'primary.light', 
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'primary.main'
+            }}>
+              <Typography variant="body2" sx={{ color: 'primary.contrastText' }}>
+                {progressMessage}
+              </Typography>
+            </Box>
+          )}
+
           <Box>
             {/* description */}
             {parse(stepAction.description)}
