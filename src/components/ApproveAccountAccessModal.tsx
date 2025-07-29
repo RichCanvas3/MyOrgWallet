@@ -41,7 +41,7 @@ interface ApproveAccountAccessModalProps {
 
 const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ isVisible, onClose }) => {
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { chain, orgDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, orgAccountClient, privateIssuerAccount, burnerAccountClient, credentialManager, veramoAgent, indivDid,  signatory } = useWallectConnectContext();
+  const { chain, orgDid, privateIssuerDid, orgIndivDelegation, orgBurnerDelegation, orgAccountClient, privateIssuerAccount, burnerAccountClient, credentialManager, veramoAgent, indivDid,  signatory } = useWallectConnectContext();
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [individuals, setIndividuals] = useState<IndivAttestation[]>([]);
@@ -178,7 +178,7 @@ const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ i
         console.info("***********  fullVc ****************", fullVc);
 
 
-        if (fullVc && leaderIndivDid && chain && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient) {
+        if (fullVc && leaderIndivDid && chain && burnerAccountClient && orgBurnerDelegation && orgIndivDelegation && orgAccountClient) {
 
           // now create attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
@@ -210,7 +210,7 @@ const ApproveAccountAccessModal: React.FC<ApproveAccountAccessModalProps> = ({ i
           }
 
           console.info("***********  attestation ****************", attestation);
-          const uid = await AttestationService.addAccountIndivDelAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+          const uid = await AttestationService.addAccountIndivDelAttestation(chain, attestation, walletSigner, [orgBurnerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
 
         }
 

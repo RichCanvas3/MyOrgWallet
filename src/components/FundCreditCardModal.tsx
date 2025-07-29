@@ -151,7 +151,7 @@ const FundCreditCardModal: React.FC<FundCreditCardModalProps> = ({ isVisible, on
   const [availableTokens, setAvailableTokens] = useState<{ symbol: string; name: string; address: string }[]>([]);
   const [isLoadingTokens, setIsLoadingTokens] = useState(false);
 
-  const { signatory, chain, indivDid, orgDid, indivAccountClient, orgAccountClient, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation } = useWallectConnectContext();
+  const { signatory, chain, indivDid, orgDid, indivAccountClient, orgAccountClient, burnerAccountClient, orgBurnerDelegation, orgIndivDelegation } = useWallectConnectContext();
 
   const { getUSDCChainTokenInfo, getUSDCBalance } = useCrossChainAccount();
 

@@ -33,7 +33,7 @@ const entityId = "shopify(org)"
 const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) => {
 
   const { } = props;
-  const { chain, signatory, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
+  const { chain, signatory, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, orgBurnerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
 
 
 
@@ -70,7 +70,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
       var shopifyUrl = res.data.shop.domain
       var websiteType = "commerce"
 
-              if (orgDid && chain && shopifyUrl && credentialManager && privateIssuerAccount && orgAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && privateIssuerDid) {
+              if (orgDid && chain && shopifyUrl && credentialManager && privateIssuerAccount && orgAccountClient && burnerAccountClient && orgBurnerDelegation && orgIndivDelegation && privateIssuerDid) {
 
         const walletSigner = signatory.signer
 
@@ -99,7 +99,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
             proof: proof
           };
 
-          const uid = await AttestationService.addWebsiteAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+          const uid = await AttestationService.addWebsiteAttestation(chain, attestation, walletSigner, [orgBurnerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
           console.info("add shopify attestation complete")
 
         }

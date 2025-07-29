@@ -60,7 +60,7 @@ const steps = ['Select Leader', 'Confirm'];
 const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClose}) => {
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { chain, veramoAgent, credentialManager, signatory, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, burnerAccountClient } = useWallectConnectContext();
+  const { chain, veramoAgent, credentialManager, signatory, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgBurnerDelegation, indivBurnerDelegation, orgAccountClient, indivAccountClient, privateIssuerAccount, burnerAccountClient } = useWallectConnectContext();
 
   const [attestations, setAttestations] = useState<IndivAttestation[]>([]);
   const [activeStep, setActiveStep] = useState(0);
@@ -130,7 +130,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
       const proof = result.proof
       const vcId = result.vcId
 
-      if (proof && fullVc && chain && orgIssuerDelegation && orgIndivDelegation && burnerAccountClient) {
+      if (proof && fullVc && chain && orgBurnerDelegation && orgIndivDelegation && burnerAccountClient) {
 
         console.info("&&&&&&&&&&&&&&&&&&&&&&& AttestationService add indiv attestation")
 
@@ -160,7 +160,7 @@ const ApproveLeaderModal: React.FC<ApproveLeaderModalProps> = ({isVisible, onClo
           return;
         }
         
-        const uid = await AttestationService.addOrgIndivAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+        const uid = await AttestationService.addOrgIndivAttestation(chain, attestation, walletSigner, [orgBurnerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
       }
     }
     else {

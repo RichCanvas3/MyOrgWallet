@@ -168,7 +168,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
   const [usdcBalance, setUsdcBalance] = useState<string>('0');
   const [isLoadingBalances, setIsLoadingBalances] = useState(false);
 
-  const { chain, orgDid, orgIndivDelegation, orgIssuerDelegation, orgAccountClient, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, indivAccountClient, indivDid, privateIssuerDid, signatory } = useWallectConnectContext();
+  const { chain, orgDid, orgIndivDelegation, orgBurnerDelegation, orgAccountClient, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, indivBurnerDelegation, indivAccountClient, indivDid, privateIssuerDid, signatory } = useWallectConnectContext();
 
   const { getUSDCChainTokenInfo, getUSDCBalance, getEthBalance } = useCrossChainAccount();
 
@@ -598,7 +598,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
       const proof = result.proof
       const vcId = result.vcId
 
-      if (fullVc && chain && indivDid && indivAccountClient && burnerAccountClient && indivIssuerDelegation && indivAccountClient) {
+      if (fullVc && chain && indivDid && indivAccountClient && burnerAccountClient && indivBurnerDelegation && indivAccountClient) {
       
 
         // now create attestation
@@ -619,7 +619,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
             proof: proof
         };
 
-        const uid = await AttestationService.addIndivAccountAttestation(chain, attestation, walletSigner, [indivIssuerDelegation], indivAccountClient, burnerAccountClient)
+        const uid = await AttestationService.addIndivAccountAttestation(chain, attestation, walletSigner, [indivBurnerDelegation], indivAccountClient, burnerAccountClient)
       }
   }
 
@@ -664,7 +664,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
         const vcId = result.vcId
 
 
-        if (fullVc && chain && indivAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient) {
+        if (fullVc && chain && indivAccountClient && burnerAccountClient && orgBurnerDelegation && orgIndivDelegation && orgAccountClient) {
 
           // now create attestation
           console.info("********** add org account attestation ****************")
@@ -687,7 +687,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({ isVisible, onClose, o
               proof: proof
           };
 
-          const uid = await AttestationService.addAccountOrgDelAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+          const uid = await AttestationService.addAccountOrgDelAttestation(chain, attestation, walletSigner, [orgBurnerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
         }
     }
 

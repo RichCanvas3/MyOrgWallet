@@ -41,7 +41,7 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
 
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { chain, veramoAgent, credentialManager, signatory, privateIssuerAccount, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgIssuerDelegation, indivIssuerDelegation, orgAccountClient, indivAccountClient, burnerAccountClient } = useWallectConnectContext();
+  const { chain, veramoAgent, credentialManager, signatory, privateIssuerAccount, orgDid, indivDid, privateIssuerDid, orgIndivDelegation, orgBurnerDelegation, indivBurnerDelegation, orgAccountClient, indivAccountClient, burnerAccountClient } = useWallectConnectContext();
 
 
 
@@ -56,17 +56,17 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
     console.info("orgDid: ", orgDid)
     console.info("chain: ", chain)
     console.info("orgIndivDelegation 2: ", orgIndivDelegation)
-    console.info("orgIssuerDelegation 2: ", orgIssuerDelegation)
-    console.info("indivIssuerDelegation 2: ", indivIssuerDelegation)
+    console.info("orgBurnerDelegation 2: ", orgBurnerDelegation)
+    console.info("indivBurnerDelegation 2: ", indivBurnerDelegation)
     console.info("burnerAccountClient 2: ", burnerAccountClient)
 
-    if (orgDid && chain && orgIndivDelegation && orgIssuerDelegation && indivIssuerDelegation && burnerAccountClient) {
+    if (orgDid && chain && orgIndivDelegation && orgBurnerDelegation && indivBurnerDelegation && burnerAccountClient) {
       console.info("delete org attestations 1")
       const attestations = await AttestationService.loadRecentAttestationsTitleOnly(chain,orgDid, "")
       if (attestations && attestations.length > 0) {
         console.info("signer a: ", signatory)
         const walletSigner = signatory.signer
-        const rslt = await AttestationService.deleteAttestations(chain, attestations, walletSigner, [orgIssuerDelegation, orgIndivDelegation], burnerAccountClient)
+        const rslt = await AttestationService.deleteAttestations(chain, attestations, walletSigner, [orgBurnerDelegation, orgIndivDelegation], burnerAccountClient)
         console.info("delete organization attestations is done ", rslt)
       }
     }
@@ -76,17 +76,17 @@ const DeleteAttestationsModal: React.FC<DeleteAttestationsModalProps> = ({isVisi
     console.info("inside delete attestations 2")
     console.info("indivDid: ", indivDid)
     console.info("chain: ", chain)
-    console.info("indivIssuerDelegation 4: ", indivIssuerDelegation)
+    console.info("indivBurnerDelegation 4: ", indivBurnerDelegation)
     console.info("burnerAccountClient 4: ", burnerAccountClient)
 
-    if (chain && indivDid && indivIssuerDelegation && burnerAccountClient) {
+    if (chain && indivDid && indivBurnerDelegation && burnerAccountClient) {
       console.info("delete indiv attestations 4")
       const attestations = await AttestationService.loadRecentAttestationsTitleOnly(chain,"", indivDid)
       if (attestations && attestations.length > 0) {
         console.info("signer b: ", signatory)
         const walletSigner = signatory.signer
 
-        const rsl = await AttestationService.deleteAttestations(chain, attestations, walletSigner, [indivIssuerDelegation], burnerAccountClient)
+        const rsl = await AttestationService.deleteAttestations(chain, attestations, walletSigner, [indivBurnerDelegation], burnerAccountClient)
         console.info("delete all individual attestations is done ")
 
       }

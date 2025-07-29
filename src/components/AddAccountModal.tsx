@@ -72,7 +72,7 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose, o
 
   const BASE_URL_PROVER = import.meta.env.VITE_PROVER_API_URL  || 'http://localhost:3051';
 
-  const { chain, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, signatory, indivDid, indivName, indivAccountClient } = useWallectConnectContext();
+  const { chain, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, orgBurnerDelegation, orgIndivDelegation, orgAccountClient, orgDid, privateIssuerDid, signatory, indivDid, indivName, indivAccountClient } = useWallectConnectContext();
 
 
   const findValidOrgAccount = async(owner: any, signatory: any, publicClient: any) : Promise<ToMetaMaskSmartAccountReturnType<Implementation.Hybrid> | undefined> => {
@@ -183,7 +183,7 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose, o
       const fullVc = result.vc
       const proof = result.proof
 
-      if (fullVc && chain && indivAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient) {
+      if (fullVc && chain && indivAccountClient && burnerAccountClient && orgBurnerDelegation && orgIndivDelegation && orgAccountClient) {
       
         // now create attestation
         const hash = keccak256(toUtf8Bytes("hash value"));
@@ -203,7 +203,7 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose, o
             proof: proof
         };
 
-        const uid = await AttestationService.addOrgAccountAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+        const uid = await AttestationService.addOrgAccountAttestation(chain, attestation, walletSigner, [orgBurnerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
       }
     }
 
@@ -245,9 +245,9 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose, o
       console.info("chain: ", chain)
       console.info("indivAccountClient 1: ", indivAccountClient)
       console.info("burnerAccountClient 1: ", burnerAccountClient)
-      console.info("orgIssuerDelegation 1: ", orgIssuerDelegation)
+      console.info("orgBurnerDelegation 1: ", orgBurnerDelegation)
       console.info("orgIndivDelegation 1: ", orgAccountClient)
-      if (fullVc && chain && indivAccountClient && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && orgAccountClient) {
+      if (fullVc && chain && indivAccountClient && burnerAccountClient && orgBurnerDelegation && orgIndivDelegation && orgAccountClient) {
 
         // now create attestation
         console.info("********** add org account delegation attestation ****************")
@@ -269,7 +269,7 @@ const AddSavingsModal: React.FC<AddSavingsModalProps> = ({ isVisible, onClose, o
             proof: proof
         };
 
-        const uid = await AttestationService.addAccountOrgDelAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+        const uid = await AttestationService.addAccountOrgDelAttestation(chain, attestation, walletSigner, [orgBurnerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
       }
     }
 

@@ -148,7 +148,7 @@ export class InfuraIPFSCredentialManager {
   /**
    * Save a credential to IPFS
    */
-  async saveCredential(credential: VerifiableCredential): Promise<{ success: boolean }> {
+  async saveCredential(credential: VerifiableCredential): Promise<string> {
     try {
       const credentials = await this.getAllCredentials();
       const newCredential: CredentialInfo = {
@@ -163,10 +163,16 @@ export class InfuraIPFSCredentialManager {
       credentials.push(newCredential);
       await this.saveCredentialsToIPFS(credentials);
       
-      return { success: true };
+      // Generate a consistent vcId like other managers
+      const vcId = (credential.credentialSubject as any).provider + "-" + 
+                   (credential.credentialSubject as any).displayName + "-" + 
+                   this.did;
+      
+      console.log('✅ Credential saved to IPFS with vcId:', vcId);
+      return vcId;
     } catch (error) {
       console.error('Error saving credential to IPFS:', error);
-      return { success: false };
+      return '';
     }
   }
 
@@ -184,6 +190,29 @@ export class InfuraIPFSCredentialManager {
     } catch (error) {
       console.error('Error querying credentials from IPFS:', error);
       return { data: [] };
+    }
+  }
+
+  /**
+   * Get a specific credential by vcId
+   */
+  async getCredentialWithVcid(vcId: string): Promise<VerifiableCredential | undefined> {
+    try {
+      console.log('🔍 Getting credential via IPFS with vcId:', vcId);
+      
+      // Parse vcId to get provider and displayName
+      const parts = vcId.split('-');
+      if (parts.length >= 3) {
+        const provider = parts[0];
+        const displayName = parts[1];
+        return await this.getCredential(provider, displayName);
+      }
+      
+      console.log('❌ Invalid vcId format:', vcId);
+      return undefined;
+    } catch (error) {
+      console.error('Error getting credential via IPFS with vcId:', error);
+      return undefined;
     }
   }
 

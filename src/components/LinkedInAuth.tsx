@@ -51,7 +51,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
 
   
   const { } = props;
-  const { chain, signatory, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, indivAccountClient, indivDid, privateIssuerDid } = useWallectConnectContext();
+  const { chain, signatory, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, indivBurnerDelegation, indivAccountClient, indivDid, privateIssuerDid } = useWallectConnectContext();
 
 
   const openLinkedInPopup = () => {
@@ -90,9 +90,9 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
         console.info(res.data.email)
         console.info(res.data.picture)
 
-        console.info("indivIssuerDelegation: ", indivIssuerDelegation)
-        console.info("add social: ", indivDid,privateIssuerDid,credentialManager,indivAccountClient,burnerAccountClient,indivIssuerDelegation)
-        if (indivDid && privateIssuerDid && credentialManager && privateIssuerAccount && indivAccountClient && burnerAccountClient && indivIssuerDelegation) {
+        console.info("indivBurnerDelegation: ", indivBurnerDelegation)
+        console.info("add social: ", indivDid,privateIssuerDid,credentialManager,indivAccountClient,burnerAccountClient,indivBurnerDelegation)
+        if (indivDid && privateIssuerDid && credentialManager && privateIssuerAccount && indivAccountClient && burnerAccountClient && indivBurnerDelegation) {
   
           const vc = await VerifiableCredentialsService.createSocialVC(entityId, indivDid, privateIssuerDid, res.data.sub, "");
                       const result = await VerifiableCredentialsService.createCredential(vc, entityId, "linkedin", indivDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
@@ -100,7 +100,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
           const proof = result.proof
           const vcId = result.vcId
 
-          if (proof && fullVc && vcId && chain && indivAccountClient && indivIssuerDelegation) {
+          if (proof && fullVc && vcId && chain && indivAccountClient && indivBurnerDelegation) {
           
             // add attestation
             const hash = keccak256(toUtf8Bytes("hash value"));
@@ -122,7 +122,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
 
 
             const walletSigner = signatory.signer
-            const uid = await AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivIssuerDelegation], indivAccountClient, burnerAccountClient)
+            const uid = await AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivBurnerDelegation], indivAccountClient, burnerAccountClient)
           
             console.info(">>>>>>>>>>>>>>>>>  added attestation complete: ", uid)
 

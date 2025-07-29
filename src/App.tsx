@@ -16,6 +16,7 @@ import ExploreCustomChats from "./components/ExploreCustomChats";
 import CustomChatEditor from './components/CustomChatEditor';
 
 import { WalletConnectContextProvider } from "./context/walletConnectContext"
+
 import AttestationService from "./service/AttestationService"
 
 import ReadmeViewer from './components/ReadmeViewer';
@@ -446,61 +447,61 @@ const App = () => {
     <WagmiProvider config={wagmiAdapter.wagmiConfig}>
   <QueryClientProvider client={queryClient}>
     <WalletConnectContextProvider>
-      <BrowserRouter>
-        <I18nextProvider i18n={i18n}>
-          <div
-            className="App h-screen flex flex-col"
-          >
-            <HeaderWithProps />
-            <ToastContainer />
-            <div className="flex w-full h-full relative z-0">
+        <BrowserRouter>
+          <I18nextProvider i18n={i18n}>
+            <div
+              className="App h-screen flex flex-col"
+            >
+              <HeaderWithProps />
+              <ToastContainer />
+              <div className="flex w-full h-full relative z-0">
 
-              <LinkedinModal
-                isVisible={isLinkedinModalVisible}
-                onClose={handleOnLinkedinModalClose}
-              />
-              <AttestationViewModal
-                did={selectedDid}
-                entityId={selectedEntityId}
-                displayName={selectedDisplayName}
-                isVisible={isAttestationViewModalVisible}
-                onClose={handleOnAttestationViewModalClose}
-                onDelete={handleAttestationDelete}
-              />
-              <XModal isVisible={isXModalVisible} onClose={handleOnXModalClose} />
+                <LinkedinModal
+                  isVisible={isLinkedinModalVisible}
+                  onClose={handleOnLinkedinModalClose}
+                />
+                <AttestationViewModal
+                  did={selectedDid}
+                  entityId={selectedEntityId}
+                  displayName={selectedDisplayName}
+                  isVisible={isAttestationViewModalVisible}
+                  onClose={handleOnAttestationViewModalClose}
+                  onDelete={handleAttestationDelete}
+                />
+                <XModal isVisible={isXModalVisible} onClose={handleOnXModalClose} />
 
-              <div className="grow">
-                <Routes>
-                  <Route path="/" element={<HomePageWithProps />} />
-                  <Route path="/welcome" element={<WelcomePageWithProps />} />
-                  <Route path="/setup" element={<SetupWalletPageWithProps />} />
-                  <Route path="/organizations" element={<OrganizationsPageWithProps />} />
+                <div className="grow">
+                  <Routes>
+                    <Route path="/" element={<HomePageWithProps />} />
+                    <Route path="/welcome" element={<WelcomePageWithProps />} />
+                    <Route path="/setup" element={<SetupWalletPageWithProps />} />
+                    <Route path="/organizations" element={<OrganizationsPageWithProps />} />
 
-                  <Route path="/readme" element={<ReadmeViewer />} />
-                  <Route path="/aboutus" element={<AboutUs />} />
+                    <Route path="/readme" element={<ReadmeViewer />} />
+                    <Route path="/aboutus" element={<AboutUs />} />
 
-                  <Route path="linkedincallback" element={<LinkedinCallback />} />
-                  <Route path="xcallback" element={<XCallback />} />
-                  <Route path="shopifycallback" element={<ShopifyCallback />} />
+                    <Route path="linkedincallback" element={<LinkedinCallback />} />
+                    <Route path="xcallback" element={<XCallback />} />
+                    <Route path="shopifycallback" element={<ShopifyCallback />} />
 
-                  <Route
-                    path="/chat/*"
-                    element={
-                      <div className="flex h-full w-full" >
-                        <Routes>
-                          <Route path="/" element={<MainPageWithProps />} />
-                          <Route path="c/:id" element={<MainPageWithProps />} />
-                        </Routes>
-                      </div>
-                    }
-                  />
-                  <Route path="*" element={<Navigate to="/chat/" replace />} />
-                </Routes>
+                    <Route
+                      path="/chat/*"
+                      element={
+                        <div className="flex h-full w-full" >
+                          <Routes>
+                            <Route path="/" element={<MainPageWithProps />} />
+                            <Route path="c/:id" element={<MainPageWithProps />} />
+                          </Routes>
+                        </div>
+                      }
+                    />
+                    <Route path="*" element={<Navigate to="/chat/" replace />} />
+                  </Routes>
+                </div>
               </div>
             </div>
-          </div>
-        </I18nextProvider>
-      </BrowserRouter>
+          </I18nextProvider>
+        </BrowserRouter>
     </WalletConnectContextProvider>
   </QueryClientProvider>
 </WagmiProvider>
