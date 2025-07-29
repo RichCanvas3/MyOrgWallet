@@ -144,7 +144,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
         const proof = result.proof
         const vcId = result.vcId
 
-        if (proof && fullVc && vcId && chain && orgAccountClient && indivIssuerDelegation) {
+        if (proof && fullVc && vcId && chain && orgAccountClient && indivBurnerDelegation) {
           // add attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
           const attestation: SocialAttestation = {

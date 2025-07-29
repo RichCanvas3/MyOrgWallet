@@ -26,7 +26,7 @@ interface ShopifyModalProps {
 
 const ShopifyModal: React.FC<ShopifyModalProps> = ({isVisible, onClose, onOAuthTrigger}) => {
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { chain, orgDid, orgAccountClient, privateIssuerDid, credentialManager, privateIssuerAccount, burnerAccountClient, orgIssuerDelegation, orgIndivDelegation, veramoAgent, signatory } = useWallectConnectContext();
+  const { chain, orgDid, orgAccountClient, privateIssuerDid, credentialManager, privateIssuerAccount, burnerAccountClient, orgBurnerDelegation, orgIndivDelegation, veramoAgent, signatory } = useWallectConnectContext();
 
   const [attestation, setAttestation] = useState<Attestation | null>(null);
   const [name, setName] = useState("");
@@ -37,7 +37,7 @@ const ShopifyModal: React.FC<ShopifyModalProps> = ({isVisible, onClose, onOAuthT
   };
 
   const handleSave = async () => {
-    if (orgAccountClient && chain && orgDid && privateIssuerDid && credentialManager && privateIssuerAccount && burnerAccountClient && orgIssuerDelegation && orgIndivDelegation && veramoAgent && signatory) {
+    if (orgAccountClient && chain && orgDid && privateIssuerDid && credentialManager && privateIssuerAccount && burnerAccountClient && orgBurnerDelegation && orgIndivDelegation && veramoAgent && signatory) {
       try {
         console.info("Creating Shopify attestation with manual data...");
 
@@ -72,7 +72,7 @@ const ShopifyModal: React.FC<ShopifyModalProps> = ({isVisible, onClose, onOAuthT
           };
 
           const walletSigner = signatory.signer;
-          const uid = await AttestationService.addWebsiteAttestation(chain, attestation, walletSigner, [orgIssuerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient);
+          const uid = await AttestationService.addWebsiteAttestation(chain, attestation, walletSigner, [orgBurnerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient);
 
           console.info("Shopify attestation created successfully: ", uid);
 

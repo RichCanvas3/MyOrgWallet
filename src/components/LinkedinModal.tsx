@@ -32,7 +32,7 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { chain, indivDid, indivAccountClient, privateIssuerDid, credentialManager, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, veramoAgent, signatory } = useWallectConnectContext();
+  const { chain, indivDid, indivAccountClient, privateIssuerDid, credentialManager, privateIssuerAccount, burnerAccountClient, indivBurnerDelegation, veramoAgent, signatory } = useWallectConnectContext();
 
 
   const [attestation, setAttestation] = useState<Attestation | null>(null);
@@ -47,7 +47,7 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
 
 
   const handleSave = async () => {
-    if (indivAccountClient && chain && indivDid && privateIssuerDid && credentialManager && privateIssuerAccount && burnerAccountClient && indivIssuerDelegation && veramoAgent && signatory) {
+    if (indivAccountClient && chain && indivDid && privateIssuerDid && credentialManager && privateIssuerAccount && burnerAccountClient && indivBurnerDelegation && veramoAgent && signatory) {
       try {
         console.info("Creating LinkedIn attestation with manual data...");
 
@@ -63,7 +63,7 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
         const proof = result.proof;
         const vcId = result.vcId;
 
-        if (proof && fullVc && vcId && chain && indivAccountClient && indivIssuerDelegation) {
+        if (proof && fullVc && vcId && chain && indivAccountClient && indivBurnerDelegation) {
           // Create attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
           const attestation: SocialAttestation = {
@@ -83,7 +83,7 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
           };
 
           const walletSigner = signatory.signer;
-          const uid = await AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivIssuerDelegation], indivAccountClient, burnerAccountClient);
+          const uid = await AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivBurnerDelegation], indivAccountClient, burnerAccountClient);
 
           console.info("LinkedIn attestation created successfully: ", uid);
 

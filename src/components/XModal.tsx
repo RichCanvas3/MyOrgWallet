@@ -30,7 +30,7 @@ const XModal: React.FC<XModalProps> = ({isVisible, onClose, onOAuthTrigger}) => 
 
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { chain, indivDid, indivAccountClient, privateIssuerDid, credentialManager, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, veramoAgent, signatory } = useWallectConnectContext();
+  const { chain, indivDid, indivAccountClient, privateIssuerDid, credentialManager, privateIssuerAccount, burnerAccountClient, indivBurnerDelegation, veramoAgent, signatory } = useWallectConnectContext();
 
   const [attestation, setAttestation] = useState<Attestation | null>(null);
   const [name, setName] = useState("");
@@ -45,7 +45,7 @@ const XModal: React.FC<XModalProps> = ({isVisible, onClose, onOAuthTrigger}) => 
 
 
   const handleSave = async () => {
-    if (indivAccountClient && chain && indivDid && privateIssuerDid && credentialManager && privateIssuerAccount && burnerAccountClient && indivIssuerDelegation && veramoAgent && signatory) {
+    if (indivAccountClient && chain && indivDid && privateIssuerDid && credentialManager && privateIssuerAccount && burnerAccountClient && indivBurnerDelegation && veramoAgent && signatory) {
       try {
         console.info("Creating X/Twitter attestation with manual data...");
 
@@ -61,7 +61,7 @@ const XModal: React.FC<XModalProps> = ({isVisible, onClose, onOAuthTrigger}) => 
         const proof = result.proof;
         const vcId = result.vcId;
 
-        if (proof && fullVc && vcId && chain && indivAccountClient && indivIssuerDelegation) {
+        if (proof && fullVc && vcId && chain && indivAccountClient && indivBurnerDelegation) {
           // Create attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
           const attestation: SocialAttestation = {
@@ -81,7 +81,7 @@ const XModal: React.FC<XModalProps> = ({isVisible, onClose, onOAuthTrigger}) => 
           };
 
           const walletSigner = signatory.signer;
-          const uid = await AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivIssuerDelegation], indivAccountClient, burnerAccountClient);
+          const uid = await AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivBurnerDelegation], indivAccountClient, burnerAccountClient);
 
           console.info("X/Twitter attestation created successfully: ", uid);
 
