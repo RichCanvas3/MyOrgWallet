@@ -754,18 +754,22 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         console.log(id, formDate, address)
         */
       } else if (str.includes('linkedin_verification')) {
-        //call linkedin modal here
+        linkedInAuthRef.current?.openLinkedInPopup();
         addMessage(Role.Assistant, MessageType.Normal, 'Linkedin being verified...', '', fileDataRef, sendMessage);
       } else if (str.includes('shopify_verification')) {
         //call shopify modal here
         addMessage(Role.Assistant, MessageType.Normal, 'Shopify being verified...', '', fileDataRef, sendMessage);
       } else if (str.includes('x_verification')) {
-        //call x modal
+        xAuthRef.current?.openXPopup();
         addMessage(Role.Assistant, MessageType.Normal, 'Twitter being verified...', '', fileDataRef, sendMessage);
       } else if (str.includes('insurance_verification')) {
         //insurance modal here
         addMessage(Role.Assistant, MessageType.Normal, 'Insurance being verified...', '', fileDataRef, sendMessage);
+      } else {
+        addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
       }
+
+
       console.log('Data From Stream: ', str);
 
       // Force scroll to bottom after response
