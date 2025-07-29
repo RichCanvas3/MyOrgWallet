@@ -936,7 +936,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       } else if (str.includes('linkedin_verification')) {
         //call linkedin modal here
         console.log('LinkedIn verification command detected from AI response');
-        setLinkedinModalVisible(true);
+        linkedInAuthRef.current?.openLinkedInPopup();
         addMessage(Role.Assistant, MessageType.Normal, 'Opening LinkedIn verification modal...', '', fileDataRef, sendMessage);
       } else if (str.includes('shopify_verification')) {
         //call shopify modal here
@@ -946,7 +946,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       } else if (str.includes('x_verification')) {
         //call x modal
         console.log('X verification command detected from AI response');
-        setXModalVisible(true);
+        xAuthRef.current?.openXPopup();
         addMessage(Role.Assistant, MessageType.Normal, 'Opening X verification modal...', '', fileDataRef, sendMessage);
       } else if (str.includes('state_verification')) {
         //call state registration modal
