@@ -1454,7 +1454,7 @@ export const useWalletConnect = () => {
         console.info("orgIndivDelegation 2: ", orgIndivDelegation)
         console.info("orgAccountClient 2: ", orgAccountClient)
 
-        if (orgIndivDelegation && orgAccountClient) {
+        if (orgIndivDelegation && orgAccountClient && burnerAccountClient) {
 
           // setup delegation for org to issuer -> redelegation of orgIndivDel
           let orgBurnerDel  = null
@@ -1543,11 +1543,11 @@ export const useWalletConnect = () => {
 
             const entityId = "org(org)"
 
-            console.info("fields: ", orgName, orgDid, privateIssuerDid, orgIssuerDel, indivDid, credentialManager, walletSigner, walletClient)
+            console.info("fields: ", orgName, orgDid, privateIssuerDid, orgBurnerDel, indivDid, credentialManager, walletSigner, walletClient)
             console.info("credentialManager: ", credentialManager)
             console.info("walletSigner: ", walletSigner)
             console.info("walletClient: ", walletClient)
-            if (walletSigner && walletClient && credentialManager && chain && privateIssuerAccount && orgName && orgDid && orgIssuerDel && credentialManager) {
+            if (walletSigner && walletClient && credentialManager && chain && privateIssuerAccount && orgName && orgDid && orgBurnerDel && credentialManager) {
 
 
               console.info("create credential for org attestation")
@@ -1575,7 +1575,7 @@ export const useWalletConnect = () => {
                   proof: proof
                 };
 
-                const uid = await AttestationService.addOrgAttestation(chain, attestation, walletSigner, [orgIssuerDel as Delegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+                const uid = await AttestationService.addOrgAttestation(chain, attestation, walletSigner, [orgBurnerDel as Delegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
               }
             }
           }
@@ -1604,7 +1604,7 @@ export const useWalletConnect = () => {
         
             const entityId = "domain(org)"
         
-            if (walletSigner && walletClient && orgName && orgDid && orgIssuerDel && indivEmail && credentialManager) {
+            if (walletSigner && walletClient && orgName && orgDid && orgBurnerDel && indivEmail && credentialManager) {
 
 
 
@@ -1653,7 +1653,7 @@ export const useWalletConnect = () => {
                     proof: proof
                   };
 
-                  const uid = await AttestationService.addRegisteredDomainAttestation(chain, attestation, walletSigner, [orgIssuerDel as Delegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+                  const uid = await AttestationService.addRegisteredDomainAttestation(chain, attestation, walletSigner, [orgBurnerDel as Delegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
                 }
 
               }
@@ -1687,7 +1687,7 @@ export const useWalletConnect = () => {
         
             const entityId = "org-indiv(org)"
         
-            if (credentialManager && walletSigner && walletClient && privateIssuerAccount && indivDid && orgDid && orgIssuerDel) {
+            if (credentialManager && walletSigner && walletClient && privateIssuerAccount && indivDid && orgDid && orgBurnerDel) {
 
 
               console.info("*********** ADD ORG INDIV ATTESTATION 2 ****************")
@@ -1727,19 +1727,19 @@ export const useWalletConnect = () => {
                 };
 
                 console.info("AttestationService add org indiv attestation")
-                const uid = await AttestationService.addOrgIndivAttestation(chain, attestation, walletSigner, [orgIssuerDel as Delegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+                const uid = await AttestationService.addOrgIndivAttestation(chain, attestation, walletSigner, [orgBurnerDel as Delegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
               }
             }
             else {
 
-              console.info("*********** no wallet signer or client or indivDid or orgDid or orgIssuerDel")  
+              console.info("*********** no wallet signer or client or indivDid or orgDid or orgBurnerDel")  
               console.info("credentialManager: ", credentialManager)
               console.info("walletSigner: ", walletSigner)
               console.info("walletClient: ", walletClient)
               console.info("privateIssuerAccount: ", privateIssuerAccount)
               console.info("indivDid: ", indivDid)
               console.info("orgDid: ", orgDid)
-              console.info("orgIssuerDel: ", orgIssuerDel)
+              console.info("orgBurnerDel: ", orgBurnerDel)
             }
           }
 
@@ -1758,32 +1758,32 @@ export const useWalletConnect = () => {
         if (indivAccountClient && burnerAccountClient) {
 
           // setup delegation for individual to issuer delegation
-          let indivIssuerDel = null
-          indivIssuerDel = await DelegationService.getDelegationFromStorage("relationship", owner, indivAccountClient.address, burnerAccountClient.address)
-          if (indivIssuerDel == null && indivDid) {
+          let indivBurnerDel = null
+          indivBurnerDel = await DelegationService.getDelegationFromStorage("relationship", owner, indivAccountClient.address, burnerAccountClient.address)
+          if (indivBurnerDel == null && indivDid) {
 
             console.info("delegation does not exist for indiv-issuer so create one")
             console.info("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX3")
-            indivIssuerDel = createDelegation({
+            indivBurnerDel = createDelegation({
               from: indivAccountClient.address,
               to: burnerAccountClient.address,
               caveats: [] }
             );
 
             const signature = await indivAccountClient.signDelegation({
-              delegation: indivIssuerDel,
+              delegation: indivBurnerDel,
             });
 
 
-            indivIssuerDel = {
-              ...indivIssuerDel,
+            indivBurnerDel = {
+              ...indivBurnerDel,
               signature,
             }
 
             await DelegationService.saveDelegationToStorage("relationship", owner, indivAccountClient.address, burnerAccountClient.address, indivBurnerDel)
           }
 
-          setIndivBurnerDelegation(indivIssuerDel as Delegation)
+          setIndivBurnerDelegation(indivBurnerDel as Delegation)
 
 
 
@@ -1835,7 +1835,7 @@ export const useWalletConnect = () => {
                   proof: proof
                 };
 
-                const uid = await AttestationService.addIndivAttestation(chain, attestation, walletSigner, [indivIssuerDel as Delegation], indivAccountClient, burnerAccountClient)
+                const uid = await AttestationService.addIndivAttestation(chain, attestation, walletSigner, [indivBurnerDel as Delegation], indivAccountClient, burnerAccountClient)
               }
             }
           }
@@ -1887,17 +1887,17 @@ export const useWalletConnect = () => {
 
                 //console.info("+++++++++++++ AttestationService add indiv attestation")
                 //console.info("+++++++++++++ att: ", attestation)
-                //console.info("+++++++++++++ del: ", indivIssuerDel)
+                //console.info("+++++++++++++ del: ", indivBurnerDel)
                 //console.info("+++++++++++++ indivAccountClient: ", indivAccountClient)
                 //console.info("+++++++++++++ burnerAccountClient: ", burnerAccountClient)
 
 
-                const uid = await AttestationService.addIndivEmailAttestation(chain, attestation, walletSigner, [indivIssuerDel as Delegation], indivAccountClient, burnerAccountClient)
+                const uid = await AttestationService.addIndivEmailAttestation(chain, attestation, walletSigner, [indivBurnerDel as Delegation], indivAccountClient, burnerAccountClient)
               }
             }
           }
 
-          if (indivDid && orgDid && indivIssuerDel) {
+          if (indivDid && orgDid && indivBurnerDel) {
             const indivAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, indivDid, AttestationService.IndivSchemaUID, "indiv(indiv)", "")
             if (!indivAttestation) {
               addIndivAttestation(credentialManager)
