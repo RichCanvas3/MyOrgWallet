@@ -1340,7 +1340,6 @@ export const useWalletConnect = () => {
         progressCallback?.("Starting smart wallet setup...")
 
         // --------------------  setup burner account for session --------------------
-        progressCallback?.("Setting up burner account...")
 
         const publicClient = createPublicClient({
           chain: chain,
@@ -1373,7 +1372,6 @@ export const useWalletConnect = () => {
         console.info("******is burnerAccountClient deployed: ", isDeployed)
         if (isDeployed == false) {
 
-          progressCallback?.("Deploying burner account...")
           console.info("burner account is getting deployed: ", burnerAccountClient.address)
 
           const pimlicoClient = createPimlicoClient({
@@ -1420,7 +1418,6 @@ export const useWalletConnect = () => {
               ...fee,
             });
 
-                         progressCallback?.("Burner account deployed successfully")
              console.info("burnerAccountClient account is deployed - done")
              const { receipt } = await bundlerClient!.waitForUserOperationReceipt({
                hash: userOperationHash,
@@ -1428,13 +1425,11 @@ export const useWalletConnect = () => {
            }
            catch (error) {
              console.info("error deploying burnerAccountClient: ", error)
-             progressCallback?.("Error deploying burner account")
            }
          }
 
 
         // -------------------- setup private issuer account --------------------
-        progressCallback?.("Setting up private issuer account...")
 
         console.info("********* ISSUER_PRIVATE_KEY: ", ISSUER_PRIVATE_KEY)
         const privateIssuerOwner = privateKeyToAccount(ISSUER_PRIVATE_KEY as `0x${string}`);
@@ -1447,7 +1442,6 @@ export const useWalletConnect = () => {
 
 
         // ----------------------- setup veramo agent and masca snap ----------------------
-        progressCallback?.("Setting up Veramo agent...")
 
         // setup veramo agent and masca api
         console.info("setup veramo for issuer aa did: ", privateIssuerDid)
@@ -1455,7 +1449,6 @@ export const useWalletConnect = () => {
         setVeramoAgent(veramoAgent)
 
         console.info("setup snap for owner: ", owner)
-        progressCallback?.("Setting up credential manager...")
         const credentialManager = await setupSnap(owner)
 
         console.info("credentialManager 2: ", credentialManager)
