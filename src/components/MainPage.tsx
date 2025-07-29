@@ -113,8 +113,8 @@ function extractJsonFromString(input: string): string | null {
   return lastValidSegment;
 }
 
-// Helper function to safely stringify objects that may contain BigInt values
-function safeStringify(obj: any): string {
+
+function safeJsonStringify(obj: any): string {
   return JSON.stringify(obj, (key, value) => {
     if (typeof value === 'bigint') {
       return value.toString();
@@ -230,6 +230,12 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const handleOnAddEnsRecordModalClose = () => {
     setIsAddEnsRecordModalVisible(false);
     setExistingEnsNameForUpdate('');
+    addMessage(Role.Assistant, MessageType.Normal, 'Closing ENS registration modal...', '', [], sendMessage);
+
+    // Ask follow-up question after a short delay
+    setTimeout(() => {
+      addMessage(Role.Assistant, MessageType.Normal, 'What other verification would you like to complete?', '', [], sendMessage);
+    }, 1000);
   };
 
   // Verification modal close handlers
@@ -417,38 +423,71 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           for (const entity of ents) {
             if (entity.name == "org(org)" && entity.attestation) {
               setOrgNameValue((entity.attestation as OrgAttestation).name)
-              orgname = safeStringify(entity.attestation as OrgAttestation)
+
+              orgname = safeJsonStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == "domain(org)") {
               console.log('domain here!!!!!')
-              domain = safeStringify(entity.attestation as OrgAttestation)
+              domain = safeJsonStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == "ens(org)") {
-              ens_registration = safeStringify(entity.attestation as OrgAttestation)
+              ens_registration = safeJsonStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == "indiv(indiv)") {
-              indiv = safeStringify(entity.attestation as OrgAttestation)
+              indiv = safeJsonStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'linkedin(indiv)') {
-              linkedin = safeStringify(entity.attestation as OrgAttestation)
+              linkedin = safeJsonStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'x(indiv)') {
-              x = safeStringify(entity.attestation as OrgAttestation)
+              x = safeJsonStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'account(indiv)') {
-              account_indiv = safeStringify(entity.attestation as OrgAttestation)
+              account_indiv = safeJsonStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'insurance(org)') {
-              insurance = safeStringify(entity.attestation as OrgAttestation)
+              insurance = safeJsonStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'website(org)') {
-              website = safeStringify(entity.attestation as OrgAttestation)
+              website = safeJsonStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'shopify(org)') {
-              shopify = safeStringify(entity.attestation as OrgAttestation)
+              shopify = safeJsonStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'email(org)') {
-             email_org = safeStringify(entity.attestation as OrgAttestation)
+             email_org = safeJsonStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'email(indiv)') {
-             email_indiv = safeStringify(entity.attestation as OrgAttestation)
+             email_indiv = safeJsonStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'state-registration(org)') {
-              state_registration = safeStringify(entity.attestation)
+              state_registration = safeJsonStringify(entity.attestation)
             } else if (entity.name == 'account-org(org)') {
-             accountOrg_org = safeStringify(entity.attestation as OrgAttestation)
+             accountOrg_org = safeJsonStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'account(org)') {
-             account_org = safeStringify(entity.attestation as OrgAttestation)
+             account_org = safeJsonStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'org-indiv(org)') {
-              orgIndiv_org = safeStringify(entity.attestation as OrgAttestation)
+              orgIndiv_org = safeJsonStringify(entity.attestation as OrgAttestation)
+              orgname = safeJsonStringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == "domain(org)") {
+              console.log('domain here!!!!!')
+              domain = safeJsonStringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == "ens(org)") {
+              ens_registration = safeJsonStringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == "indiv(indiv)") {
+              indiv = safeJsonStringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'linkedin(indiv)') {
+              linkedin = safeJsonStringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'x(indiv)') {
+              x = safeJsonStringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'account(indiv)') {
+              account_indiv = safeJsonStringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'insurance(org)') {
+              insurance = safeJsonStringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'website(org)') {
+              website = safeJsonStringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'shopify(org)') {
+              shopify = safeJsonStringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'email(org)') {
+             email_org = safeJsonStringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'email(indiv)') {
+             email_indiv = safeJsonStringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'state-registration(org)') {
+              state_registration = safeJsonStringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'account-org(org)') {
+             accountOrg_org = safeJsonStringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'account(org)') {
+             account_org = safeJsonStringify(entity.attestation as OrgAttestation)
+            } else if (entity.name == 'org-indiv(org)') {
+              orgIndiv_org = safeJsonStringify(entity.attestation as OrgAttestation)
             }
           }
 
@@ -968,12 +1007,49 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         addMessage(Role.Assistant, MessageType.Normal, 'Insurance being verified...', '', fileDataRef, sendMessage);
       } else if (str.includes('website_verification')) {
         //website modal
-        addMessage(Role.Assistant, MessageType.Normal, 'Website being verified...', '', fileDataRef, sendMessage);
+        console.log('Website verification command detected from AI response');
+        setWebsiteModalVisible(true);
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening Website verification modal...', '', fileDataRef, sendMessage);
+      } else if (str.includes('email_verification')) {
+        //email modal
+        console.log('Email verification command detected from AI response');
+        setEmailVerificationModalVisible(true);
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening Email verification modal...', '', fileDataRef, sendMessage);
       } else if (str.includes('insurance_verification')) {
         //insurance modal
         console.log('Insurance verification command detected from AI response');
         setInsuranceModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Insurance verification modal...', '', fileDataRef, sendMessage);
+      } else if (str.includes('{"validate": "website(org)"}')) {
+        //website modal from yes response
+        console.log('Website verification triggered from yes response');
+        setWebsiteModalVisible(true);
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening Website verification modal...', '', fileDataRef, sendMessage);
+      } else if (str.includes('{"validate": "linkedin(indiv)"}')) {
+        //linkedin modal from yes response
+        console.log('LinkedIn verification triggered from yes response');
+        setLinkedinModalVisible(true);
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening LinkedIn verification modal...', '', fileDataRef, sendMessage);
+      } else if (str.includes('{"validate": "x(indiv)"}')) {
+        //x modal from yes response
+        console.log('X verification triggered from yes response');
+        setXModalVisible(true);
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening X verification modal...', '', fileDataRef, sendMessage);
+      } else if (str.includes('{"validate": "shopify(org)"}')) {
+        //shopify modal from yes response
+        console.log('Shopify verification triggered from yes response');
+        setShopifyModalVisible(true);
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening Shopify verification modal...', '', fileDataRef, sendMessage);
+      } else if (str.includes('{"validate": "insurance(org)"}')) {
+        //insurance modal from yes response
+        console.log('Insurance verification triggered from yes response');
+        setInsuranceModalVisible(true);
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening Insurance verification modal...', '', fileDataRef, sendMessage);
+      } else if (str.includes('{"validate": "email(org)"}')) {
+        //email modal from yes response
+        console.log('Email verification triggered from yes response');
+        setEmailVerificationModalVisible(true);
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening Email verification modal...', '', fileDataRef, sendMessage);
       } else {
         addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
       }
@@ -1584,29 +1660,19 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   function checkLinkedinAttestation(lastAssistantResponse: string, lastUserResponse: string) {
 
+    console.log('checkLinkedinAttestation called with:', { lastAssistantResponse, lastUserResponse });
     var intent = null;
     if (lastAssistantResponse?.includes("linkedin")) {
       if (lastUserResponse.includes("yes")) {
         intent = "createLinkedinAttestation"
+        console.log('LinkedIn yes detected, setting intent to:', intent);
       }
     }
 
     if (intent == "createLinkedinAttestation") {
 
-      // set attestation
-      if (entities != undefined) {
-        for (const entity of entities) {
-          if (entity.name == "linkedin(indiv)" && entity.attestation == undefined) {
-            let att : Attestation = {
-              entityId: "linkedin(indiv)",
-              attester: "",
-              hash: "",
-            }
-            entity.attestation = att
-            break
-          }
-        }
-      }
+      // Don't create attestation here - it should only be created after successful verification
+      // Just return the validation string to trigger the modal
 
       return `{"validate": "linkedin(indiv)"}`
     }
@@ -1626,20 +1692,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     if (intent == "createXAttestation") {
 
-      // set attestation
-      if (entities != undefined) {
-        for (const entity of entities) {
-          if (entity.name == "x(indiv)" && entity.attestation == undefined) {
-            let att : Attestation = {
-              entityId: "x(indiv)",
-              attester: "",
-              hash: "",
-            }
-            entity.attestation = att
-            break
-          }
-        }
-      }
+      // Don't create attestation here - it should only be created after successful verification
+      // Just return the validation string to trigger the modal
 
       return `{"validate": "x(indiv)"}`
     }
@@ -1659,20 +1713,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     if (intent == "createShopifyAttestation") {
 
-      // set attestation
-      if (entities != undefined) {
-        for (const entity of entities) {
-          if (entity.name == "shopify(org)" && entity.attestation == undefined) {
-            let att : Attestation = {
-              entityId: "",
-              attester: "",
-              hash: "",
-            }
-            entity.attestation = att
-            break
-          }
-        }
-      }
+      // Don't create attestation here - it should only be created after successful verification
+      // Just return the validation string to trigger the modal
 
       return `{"validate": "shopify(org)"}`
     }
@@ -1692,22 +1734,56 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     if (intent == "createInsuranceAttestation") {
 
-      // set attestation
-      if (entities != undefined) {
-        for (const entity of entities) {
-          if (entity.name == "insurance(org)" && entity.attestation == undefined) {
-            let att : Attestation = {
-              entityId: "",
-              attester: "",
-              hash: "",
-            }
-            entity.attestation = att
-            break
-          }
-        }
-      }
+      // Don't create attestation here - it should only be created after successful verification
+      // Just return the validation string to trigger the modal
 
       return `{"validate": "insurance(org)"}`
+    }
+
+    return ""
+
+  }
+
+  function checkWebsiteAttestation(lastAssistantResponse: string, lastUserResponse: string) {
+
+    console.log('checkWebsiteAttestation called with:', { lastAssistantResponse, lastUserResponse });
+    var intent = null;
+    if (lastAssistantResponse?.includes("website")) {
+      if (lastUserResponse.includes("yes")) {
+        intent = "createWebsiteAttestation"
+        console.log('Website yes detected, setting intent to:', intent);
+      }
+    }
+
+    if (intent == "createWebsiteAttestation") {
+
+      // Don't create attestation here - it should only be created after successful verification
+      // Just return the validation string to trigger the modal
+
+      return `{"validate": "website(org)"}`
+    }
+
+    return ""
+
+  }
+
+  function checkEmailAttestation(lastAssistantResponse: string, lastUserResponse: string) {
+
+    console.log('checkEmailAttestation called with:', { lastAssistantResponse, lastUserResponse });
+    var intent = null;
+    if (lastAssistantResponse?.includes("email")) {
+      if (lastUserResponse.includes("yes")) {
+        intent = "createEmailAttestation"
+        console.log('Email yes detected, setting intent to:', intent);
+      }
+    }
+
+    if (intent == "createEmailAttestation") {
+
+      // Don't create attestation here - it should only be created after successful verification
+      // Just return the validation string to trigger the modal
+
+      return `{"validate": "email(org)"}`
     }
 
     return ""
@@ -1741,6 +1817,52 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           }
         }
         return "I understand you'd like to skip that for now. What would you like to do next?";
+      }
+
+      // Check for "yes" responses to verification questions before sending to LangChain
+      if (conversation) {
+        var messages: ChatMessage[] = JSON.parse(conversation.messages);
+        if (messages.length > 0) {
+          const lastAssistantMessage = messages[messages.length - 1].content.toLowerCase();
+          console.log('Checking yes response with last assistant message:', lastAssistantMessage);
+
+          // Check for yes responses to verification questions
+          let args = checkLinkedinAttestation(lastAssistantMessage, lastUserResponse);
+          if (args != "") {
+            console.log('LinkedIn yes detected, returning:', args);
+            return args;
+          }
+
+          args = checkXAttestation(lastAssistantMessage, lastUserResponse);
+          if (args != "") {
+            console.log('X yes detected, returning:', args);
+            return args;
+          }
+
+          args = checkShopifyAttestation(lastAssistantMessage, lastUserResponse);
+          if (args != "") {
+            console.log('Shopify yes detected, returning:', args);
+            return args;
+          }
+
+          args = checkInsuranceAttestation(lastAssistantMessage, lastUserResponse);
+          if (args != "") {
+            console.log('Insurance yes detected, returning:', args);
+            return args;
+          }
+
+          args = checkWebsiteAttestation(lastAssistantMessage, lastUserResponse);
+          if (args != "") {
+            console.log('Website yes detected, returning:', args);
+            return args;
+          }
+
+          args = checkEmailAttestation(lastAssistantMessage, lastUserResponse);
+          if (args != "") {
+            console.log('Email yes detected, returning:', args);
+            return args;
+          }
+        }
       }
 
       if (content.toLowerCase() == 'colorado') {
@@ -1791,40 +1913,56 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       }
     }
 
-    /*
     //console.info(" >>>>>>>>>>>  introduction: ", introduction)
     // check if the user put in direct action like "delete all"
     const actionMessage = checkAllDirectActions(introduction, lastUserResponse)
-    if (actionMessage != "") {
+    if (actionMessage && actionMessage !== "") {
       args = actionMessage
       return args
     }
 
 
     // let inject args if the user said "yes" to actions
+    console.log('Checking attestation responses with:', { introduction, lastUserResponse });
+
     args = checkLinkedinAttestation(introduction, lastUserResponse);
+    console.log('LinkedIn check result:', args);
     if (args != "") {
       return args
     }
 
     args = checkXAttestation(introduction, lastUserResponse);
+    console.log('X check result:', args);
     if (args != "") {
       return args
     }
 
-
     args = checkShopifyAttestation(introduction, lastUserResponse)
+    console.log('Shopify check result:', args);
     if (args != "") {
       return args
     }
 
     args = checkInsuranceAttestation(introduction, lastUserResponse)
+    console.log('Insurance check result:', args);
     if (args != "") {
       console.info("############## return insurance args")
       return args
     }
-    */
-   return "something went wrong"
+
+    args = checkWebsiteAttestation(introduction, lastUserResponse)
+    console.log('Website check result:', args);
+    if (args != "") {
+      return args
+    }
+
+    args = checkEmailAttestation(introduction, lastUserResponse)
+    console.log('Email check result:', args);
+    if (args != "") {
+      return args
+    }
+
+    return "something went wrong"
   }
 
 
@@ -2275,7 +2413,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         }
       } catch (e) {
         console.error('Error getting the role');
-        console.error('prevMessages = ' + safeStringify(prevMessages));
+        console.error('prevMessages = ' + safeJsonStringify(prevMessages));
         console.error(e);
       }
 

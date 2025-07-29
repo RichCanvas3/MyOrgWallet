@@ -90,7 +90,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
     const handleEvent = async (event: MessageEvent) => {
 
       if (event.data.type != "shopify_auth") {
-          console.info("Skipping message: ", event.data.type)
+          // console.info("Skipping message: ", event.data.type)
           return; // Skip this message
       }
 

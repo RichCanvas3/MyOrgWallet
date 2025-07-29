@@ -122,7 +122,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
     const handleEvent = async (event: MessageEvent) => {
 
       if (event.data.type != "x_auth") {
-        console.info("Skipping message: ", event.data.type)
+        // console.info("Skipping message: ", event.data.type)
         return; // Skip this message
       }
 

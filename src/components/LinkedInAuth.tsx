@@ -108,7 +108,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
     const handleEvent = async (event: MessageEvent) => {
 
         if (event.data.type != "linkedin_auth") {
-          console.info("Skipping message: ", event.data.type)
+          // console.info("Skipping message: ", event.data.type)
           return; // Skip this message
         }
 

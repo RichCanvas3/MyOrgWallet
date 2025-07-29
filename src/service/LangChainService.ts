@@ -119,6 +119,11 @@ export async function sendMessageToLangGraphAssistant(
       if_not_exists: 'reject',
       after_seconds: 1,
       checkpoint_during: false
+    }, (key, value) => {
+      if (typeof value === 'bigint') {
+        return value.toString();
+      }
+      return value;
     })
   })
 
@@ -179,7 +184,7 @@ export async function sendMessageToLangGraphAssistant(
       var address = (split[5].split('** '))[1];
 
       return { message: finalMessage, id, name, formDate, address };
-    } else 
+    } else
     */
     if (tool == 'linkedin_verification') {
       console.log('Initiating LinkedIn OAuth...');
