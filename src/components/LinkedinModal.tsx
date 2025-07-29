@@ -13,21 +13,26 @@ import AttestationService from '../service/AttestationService';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import { useWalletClient } from "wagmi"
 import { TextField, Button, Typography, Box, Paper } from "@mui/material";
+import { keccak256, toUtf8Bytes } from 'ethers';
+import VerifiableCredentialsService from '../service/VerifiableCredentialsService';
+import ConversationService from '../service/ConversationService';
+import { ChatMessage, Role, MessageType } from '../models/ChatCompletion';
 
 
 
 interface LinkedinModalProps {
   isVisible: boolean;
   onClose: () => void;
+  onOAuthTrigger?: () => void;
 }
 
 
-const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose}) => {
+const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAuthTrigger}) => {
 
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { chain, indivDid, indivAccountClient } = useWallectConnectContext();
+  const { chain, indivDid, indivAccountClient, privateIssuerDid, credentialManager, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, veramoAgent, signatory } = useWallectConnectContext();
 
 
   const [attestation, setAttestation] = useState<Attestation | null>(null);
@@ -41,19 +46,83 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose}) => {
 
 
 
-  const handleSave = () => {
-    if (indivAccountClient) {
+  const handleSave = async () => {
+    if (indivAccountClient && chain && indivDid && privateIssuerDid && credentialManager && privateIssuerAccount && burnerAccountClient && indivIssuerDelegation && veramoAgent && signatory) {
+      try {
+        console.info("Creating LinkedIn attestation with manual data...");
 
-      let att = attestation as SocialAttestation
-      att.name = name
-      att.url = url
+        // Use default values since form fields are removed
+        const defaultName = "LinkedIn Profile";
+        const defaultUrl = "https://www.linkedin.com/in/profile";
 
-      console.info("update social attestation: ", att)
+        // Create verifiable credential
+        const vc = await VerifiableCredentialsService.createSocialVC("linkedin(indiv)", indivDid, privateIssuerDid, defaultName, defaultUrl);
+        const result = await VerifiableCredentialsService.createCredential(vc, "linkedin(indiv)", "linkedin", indivDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent);
 
+        const fullVc = result.vc;
+        const proof = result.proof;
+        const vcId = result.vcId;
 
-    };
+        if (proof && fullVc && vcId && chain && indivAccountClient && indivIssuerDelegation) {
+          // Create attestation
+          const hash = keccak256(toUtf8Bytes("hash value"));
+          const attestation: SocialAttestation = {
+            attester: indivDid,
+            entityId: "linkedin(indiv)",
+            class: "individual",
+            category: "identity",
+            hash: hash,
+            vccomm: (fullVc.credentialSubject as any).commitment.toString(),
+            vcsig: (fullVc.credentialSubject as any).commitmentSignature,
+            vciss: privateIssuerDid,
+            vcid: vcId,
+            proof: proof,
+            name: defaultName,
+            url: defaultUrl,
+            displayName: "linkedin"
+          };
 
-    onClose()
+          const walletSigner = signatory.signer;
+          const uid = await AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivIssuerDelegation], indivAccountClient, burnerAccountClient);
+
+          console.info("LinkedIn attestation created successfully: ", uid);
+
+          // Add success message to conversation
+          if (location.pathname.startsWith("/chat/c/")) {
+            let conversationId = location.pathname.replace("/chat/c/", "");
+            let id = parseInt(conversationId);
+            ConversationService.getConversationById(id).then((conversation) => {
+              if (conversation) {
+                var currentMsgs: ChatMessage[] = JSON.parse(conversation.messages);
+
+                const newMsg: ChatMessage = {
+                  id: currentMsgs.length + 1,
+                  args: "",
+                  role: Role.Developer,
+                  messageType: MessageType.Normal,
+                  content: "I've updated your wallet with a verifiable credential and published your LinkedIn attestation.",
+                };
+
+                const msgs: ChatMessage[] = [...currentMsgs.slice(0, -1), newMsg];
+                const msgs2: ChatMessage[] = [...msgs, currentMsgs[currentMsgs.length - 1]];
+
+                console.info("Updating conversation with attestation success message");
+                ConversationService.updateConversation(conversation, msgs2);
+              }
+            });
+          }
+
+          // Close modal after successful creation
+          onClose();
+        } else {
+          console.error("Missing required data for attestation creation");
+        }
+      } catch (error) {
+        console.error("Error creating LinkedIn attestation:", error);
+      }
+    } else {
+      console.error("Missing required context for attestation creation");
+    }
   }
 
 
@@ -66,7 +135,7 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose}) => {
           if (att) {
             setAttestation(att)
           }
-          
+
           let socialAtt = att as SocialAttestation
 
           if (socialAtt?.name) {
@@ -80,7 +149,7 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose}) => {
 
       }
     }
-    
+
 
 
   }, [isVisible]);
@@ -89,91 +158,63 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose}) => {
 
 
   useEffect(() => {
-    
+
   }, []);
 
 
 
   return (
-      <Transition show={isVisible} as={React.Fragment}>
-        <div className="fixed inset-0 bg-gray-600/50 flex items-center justify-center z-50 px-4">
-          <Transition.Child
-              as={React.Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-          >
-            <div ref={dialogRef}
-                 className="modal-overlay flex flex-col bg-white rounded-lg w-full max-w-md mx-auto overflow-hidden"
-                 style={{minHeight: "640px", minWidth: "43em"}}>
-              <div id='user-settings-header'
-                   className="flex justify-between items-center border-b border-gray-200 p-4">
-                <h1 className="text-lg font-semibold">{('Linkedin')}</h1>
-                <button onClick={handleClose}
-                        className="text-gray-700 hover:text-gray-900">
-                  <XMarkIcon className="h-8 w-8" aria-hidden="true"/>
-                </button>
-              </div>
-              <div id='linkedin-content' className="flex flex-1">
-                <div className="flex flex-col flex-1">
+    <Transition show={isVisible} as={React.Fragment}>
+      <div className="modal-overlay">
+        <Transition.Child
+          as={React.Fragment}
+          enter="modal-enter"
+          enterFrom="modal-enter-from"
+          enterTo="modal-enter-to"
+          leave="modal-leave"
+          leaveFrom="modal-leave-from"
+          leaveTo="modal-leave-to"
+        >
+          <div className="modal-dialog">
+            {/* Header */}
+            <div className="modal-header">
+              <h1 className="modal-title">
+                LinkedIn Verification
+              </h1>
+              <button onClick={handleClose} className="close-button">
+                <XMarkIcon className="close-icon" aria-hidden="true" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="modal-content">
 
                 <Paper
                   elevation={4}
                   sx={{
                     width: "100%",
-                    height: "100%",
+                    minHeight: "100%",
                     p: 4,
+                    overflowY: "auto",
                   }}
                 >
-                  <Box sx={{ mb: 3, p: 2, border: "1px solid #ddd", borderRadius: 2 }}>
-                    <Typography variant="subtitle1" fontWeight="medium" mb={1}>
-                      company name
-                    </Typography>
-
-                    <TextField
-                      label="name"
-                      variant="outlined"
-                      fullWidth
-                      value={name}
-                      placeholder="richcanvas"
-                      onChange={(e) => setName(e.target.value)}
-                    />
-                  </Box>
-                  <Box sx={{ mb: 3, p: 2, border: "1px solid #ddd", borderRadius: 2 }}>
-                    <Typography variant="subtitle1" fontWeight="medium" mb={1}>
-                      company url
-                    </Typography>
-                    <TextField
-                      label="url"
-                      variant="outlined"
-                      fullWidth
-                      value={url}
-                      placeholder="https://www.linkedin.com/company/richcanvas"
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUrl(e.target.value)} 
-                    />
-                  </Box>
                   <Button
                     variant="contained"
                     color="primary"
                     size="large"
                     fullWidth
-                    onClick={handleSave}
-                    sx={{ mb: 3, p: 2, py: 1.5 }}
+                    onClick={onOAuthTrigger}
+                    sx={{ mb: 2, p: 2, py: 1.5 }}
                   >
-                    Save
+                    Create LinkedIn Attestation
                   </Button>
-      
+
                   </Paper>
-             
-              </div>
             </div>
-            </div>
-          </Transition.Child>
-        </div>
-      </Transition>
+          </div>
+        </Transition.Child>
+      </div>
+    </Transition>
   );
 };
 

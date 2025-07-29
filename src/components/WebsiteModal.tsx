@@ -7,9 +7,8 @@ import './UserSettingsModal.css';
 import {useTranslation} from 'react-i18next';
 import {Transition} from '@headlessui/react';
 
-import {Attestation, SocialAttestation} from '../models/Attestation';
+import {Attestation, WebsiteAttestation} from '../models/Attestation';
 import AttestationService from '../service/AttestationService';
-import { addressResolverAbi } from 'viem/_types/constants/abis';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 
 import { TextField, Button, Typography, Box, Paper } from "@mui/material";
@@ -19,71 +18,71 @@ import VerifiableCredentialsService from '../service/VerifiableCredentialsServic
 import ConversationService from '../service/ConversationService';
 import { ChatMessage, Role, MessageType } from '../models/ChatCompletion';
 
-interface XModalProps {
+interface WebsiteModalProps {
   isVisible: boolean;
   onClose: () => void;
-  onOAuthTrigger?: () => void;
 }
 
-
-const XModal: React.FC<XModalProps> = ({isVisible, onClose, onOAuthTrigger}) => {
-
-
+const WebsiteModal: React.FC<WebsiteModalProps> = ({isVisible, onClose}) => {
   const dialogRef = useRef<HTMLDivElement>(null);
-  const { chain, indivDid, indivAccountClient, privateIssuerDid, credentialManager, privateIssuerAccount, burnerAccountClient, indivIssuerDelegation, veramoAgent, signatory } = useWallectConnectContext();
+  const { chain, orgDid, orgAccountClient, privateIssuerDid, credentialManager, privateIssuerAccount, burnerAccountClient, orgBurnerDelegation, orgIndivDelegation, veramoAgent, signatory } = useWallectConnectContext();
 
   const [attestation, setAttestation] = useState<Attestation | null>(null);
-  const [name, setName] = useState("");
   const [url, setUrl] = useState("");
-
-
+  const [isCreating, setIsCreating] = useState(false);
+  const [progressMessage, setProgressMessage] = useState("");
 
   const handleClose = () => {
     onClose();
   };
 
-
-
   const handleSave = async () => {
-    if (indivAccountClient && chain && indivDid && privateIssuerDid && credentialManager && privateIssuerAccount && burnerAccountClient && indivIssuerDelegation && veramoAgent && signatory) {
+    if (orgAccountClient && chain && orgDid && privateIssuerDid && credentialManager && privateIssuerAccount && burnerAccountClient && orgBurnerDelegation && orgIndivDelegation && veramoAgent && signatory) {
       try {
-        console.info("Creating X/Twitter attestation with manual data...");
+        setIsCreating(true);
+        setProgressMessage("Creating verifiable credential...");
+        console.info("Creating website attestation...");
 
-        // Use default values since form fields are removed
-        const defaultName = "X Profile";
-        const defaultUrl = "https://x.com/profile";
+        // Validate URL
+        if (!url.trim()) {
+          console.error("Website URL is required");
+          return;
+        }
 
-        // Create verifiable credential
-        const vc = await VerifiableCredentialsService.createSocialVC("x(indiv)", indivDid, privateIssuerDid, defaultName, defaultUrl);
-        const result = await VerifiableCredentialsService.createCredential(vc, "x(indiv)", "x", indivDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent);
+        // Create verifiable credential for website ownership
+        setProgressMessage("Creating verifiable credential...");
+        const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC("website(org)", orgDid, privateIssuerDid, "public", url);
+        setProgressMessage("Saving credential to blockchain...");
+        const result = await VerifiableCredentialsService.createCredential(vc, "website(org)", url, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent);
 
         const fullVc = result.vc;
         const proof = result.proof;
         const vcId = result.vcId;
 
-        if (proof && fullVc && vcId && chain && indivAccountClient && indivIssuerDelegation) {
+        if (fullVc && vcId && chain && orgAccountClient) {
           // Create attestation
+          setProgressMessage("Creating attestation on blockchain...");
           const hash = keccak256(toUtf8Bytes("hash value"));
-          const attestation: SocialAttestation = {
-            attester: indivDid,
-            entityId: "x(indiv)",
-            class: "individual",
+          const attestation: WebsiteAttestation = {
+            type: "public",
+            url: url,
+            attester: orgDid,
+            entityId: "website(org)",
+            class: "organization",
             category: "identity",
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,
             vciss: privateIssuerDid,
             vcid: vcId,
-            proof: proof,
-            name: defaultName,
-            url: defaultUrl,
-            displayName: "x"
+            proof: proof
           };
 
           const walletSigner = signatory.signer;
-          const uid = await AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivIssuerDelegation], indivAccountClient, burnerAccountClient);
+          setProgressMessage("Publishing attestation to blockchain...");
+          const uid = await AttestationService.addWebsiteAttestation(chain, attestation, walletSigner, [orgBurnerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient);
 
-          console.info("X/Twitter attestation created successfully: ", uid);
+          console.info("Website attestation created successfully: ", uid);
 
           // Add success message to conversation
           if (location.pathname.startsWith("/chat/c/")) {
@@ -98,7 +97,7 @@ const XModal: React.FC<XModalProps> = ({isVisible, onClose, onOAuthTrigger}) => 
                   args: "",
                   role: Role.Developer,
                   messageType: MessageType.Normal,
-                  content: "I've updated your wallet with a verifiable credential and published your X (Twitter) attestation.",
+                  content: "I've updated your wallet with a verifiable credential and published your website attestation.",
                 };
 
                 const msgs: ChatMessage[] = [...currentMsgs.slice(0, -1), newMsg];
@@ -116,51 +115,34 @@ const XModal: React.FC<XModalProps> = ({isVisible, onClose, onOAuthTrigger}) => 
           console.error("Missing required data for attestation creation");
         }
       } catch (error) {
-        console.error("Error creating X/Twitter attestation:", error);
+        console.error("Error creating website attestation:", error);
+      } finally {
+        setIsCreating(false);
+        setProgressMessage("");
       }
     } else {
       console.error("Missing required context for attestation creation");
     }
-  }
-
+  };
 
   useEffect(() => {
-
     if (isVisible) {
-      // get x attestation
-      if (indivDid && chain) {
-
-        AttestationService.getAttestationByDidAndSchemaId(chain, indivDid, AttestationService.SocialSchemaUID, "x(indiv)", "").then((att) => {
+      // get website attestation
+      if (orgDid && chain) {
+        AttestationService.getAttestationByDidAndSchemaId(chain, orgDid, AttestationService.WebsiteSchemaUID, "website(org)", "").then((att) => {
           if (att) {
             setAttestation(att)
           }
 
-          let socialAtt = att as SocialAttestation
+          let websiteAtt = att as WebsiteAttestation
 
-          if (socialAtt?.name) {
-            setName(socialAtt?.name)
+          if (websiteAtt?.url) {
+            setUrl(websiteAtt?.url)
           }
-          if (socialAtt?.url) {
-            setUrl(socialAtt?.url)
-          }
-
         })
-
       }
     }
-
-
-
   }, [isVisible]);
-
-
-
-
-  useEffect(() => {
-
-  }, []);
-
-
 
   return (
     <Transition show={isVisible} as={React.Fragment}>
@@ -178,7 +160,7 @@ const XModal: React.FC<XModalProps> = ({isVisible, onClose, onOAuthTrigger}) => 
             {/* Header */}
             <div className="modal-header">
               <h1 className="modal-title">
-                X (Twitter) Verification
+                Website Verification
               </h1>
               <button onClick={handleClose} className="close-button">
                 <XMarkIcon className="close-icon" aria-hidden="true" />
@@ -187,28 +169,42 @@ const XModal: React.FC<XModalProps> = ({isVisible, onClose, onOAuthTrigger}) => 
 
             {/* Content */}
             <div className="modal-content">
+              <Paper
+                elevation={4}
+                sx={{
+                  width: "100%",
+                  minHeight: "100%",
+                  p: 4,
+                  overflowY: "auto",
+                }}
+              >
+                <Typography variant="h6" gutterBottom>
+                  Verify Your Organization's Website
+                </Typography>
 
-                <Paper
-                  elevation={4}
-                  sx={{
-                    width: "100%",
-                    minHeight: "100%",
-                    p: 4,
-                    overflowY: "auto",
-                  }}
+                <TextField
+                  fullWidth
+                  label="Website URL"
+                  variant="outlined"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="https://example.com"
+                  sx={{ mb: 3 }}
+                  disabled={isCreating}
+                />
+
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                  fullWidth
+                  onClick={handleSave}
+                  disabled={isCreating || !url.trim()}
+                  sx={{ mb: 2, p: 2, py: 1.5 }}
                 >
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    size="large"
-                    fullWidth
-                    onClick={onOAuthTrigger}
-                    sx={{ mb: 2, p: 2, py: 1.5 }}
-                  >
-                    Create X Attestation
-                  </Button>
-
-                                    </Paper>
+                  {isCreating ? progressMessage || "Creating Website Attestation..." : "Create Website Attestation"}
+                </Button>
+              </Paper>
             </div>
           </div>
         </Transition.Child>
@@ -217,4 +213,4 @@ const XModal: React.FC<XModalProps> = ({isVisible, onClose, onOAuthTrigger}) => 
   );
 };
 
-export default XModal;
+export default WebsiteModal;

@@ -49,14 +49,14 @@ export interface LinkedInAuthRef {
 const entityId = "linkedin(indiv)";
 const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref) => {
 
-  
+
   const { } = props;
   const { chain, signatory, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, indivBurnerDelegation, indivAccountClient, indivDid, privateIssuerDid } = useWallectConnectContext();
 
 
   const openLinkedInPopup = () => {
 
-  
+
     const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}`;
     const width = 600;
     const height = 600;
@@ -73,14 +73,47 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
       return;
     }
 
+    // Check if popup is closed and add chat message
+    const checkPopupClosed = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(checkPopupClosed);
+
+        // Add chat message about closing OAuth popup
+        if (location.pathname.startsWith("/chat/c/")) {
+          let conversationId = location.pathname.replace("/chat/c/", "");
+          let id = parseInt(conversationId);
+          ConversationService.getConversationById(id).then((conversation) => {
+            if (conversation) {
+              var currentMsgs: ChatMessage[] = JSON.parse(conversation.messages);
+
+              const newMsg: ChatMessage = {
+                id: currentMsgs.length + 1,
+                args: "",
+                role: Role.Assistant,
+                messageType: MessageType.Normal,
+                content: "Closing LinkedIn verification popup...",
+              };
+
+              const msgs: ChatMessage[] = [...currentMsgs.slice(0, -1), newMsg];
+              const msgs2: ChatMessage[] = [...msgs, currentMsgs[currentMsgs.length - 1]];
+
+              console.info("Adding LinkedIn popup close message");
+              ConversationService.updateConversation(conversation, msgs2);
+            }
+          });
+        }
+      }
+    }, 1000); // Check every second
+
     const handleEvent = async (event: MessageEvent) => {
-        
+
         if (event.data.type != "linkedin_auth") {
-          console.info("skip this message: ", event.data.type)
+          console.info("Skipping message: ", event.data.type)
           return; // Skip this message
         }
 
         window.removeEventListener('message', handleEvent)
+        clearInterval(checkPopupClosed); // Clean up the interval since OAuth completed
 
         const res = await axios.get(CALLBACK_URI + '?code='+ event.data.code);
 
@@ -90,24 +123,22 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
         console.info(res.data.email)
         console.info(res.data.picture)
 
-        console.info("indivBurnerDelegation: ", indivBurnerDelegation)
-        console.info("add social: ", indivDid,privateIssuerDid,credentialManager,indivAccountClient,burnerAccountClient,indivBurnerDelegation)
-        if (indivDid && privateIssuerDid && credentialManager && privateIssuerAccount && indivAccountClient && burnerAccountClient && indivBurnerDelegation) {
-  
+        console.info("indivIssuerDelegation: ", indivIssuerDelegation)
+        console.info("add social: ", indivDid,privateIssuerDid,credentialManager,indivAccountClient,burnerAccountClient,indivIssuerDelegation)
+        if (indivDid && privateIssuerDid && credentialManager && privateIssuerAccount && indivAccountClient && burnerAccountClient && indivIssuerDelegation) {
           const vc = await VerifiableCredentialsService.createSocialVC(entityId, indivDid, privateIssuerDid, res.data.sub, "");
                       const result = await VerifiableCredentialsService.createCredential(vc, entityId, "linkedin", indivDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
           const fullVc = result.vc
           const proof = result.proof
           const vcId = result.vcId
 
-          if (proof && fullVc && vcId && chain && indivAccountClient && indivBurnerDelegation) {
-          
+          if (proof && fullVc && vcId && chain && indivAccountClient && indivIssuerDelegation) {
             // add attestation
             const hash = keccak256(toUtf8Bytes("hash value"));
             const attestation: SocialAttestation = {
               attester: indivDid,
               entityId: entityId,
-              class: "individual", 
+              class: "individual",
               category: "identity",
               hash: hash,
               vccomm: (fullVc.credentialSubject as any).commitment.toString(),
@@ -122,8 +153,7 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
 
 
             const walletSigner = signatory.signer
-            const uid = await AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivBurnerDelegation], indivAccountClient, burnerAccountClient)
-          
+            const uid = await AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivIssuerDelegation], indivAccountClient, burnerAccountClient)
             console.info(">>>>>>>>>>>>>>>>>  added attestation complete: ", uid)
 
             if (location.pathname.startsWith("/chat/c/")) {
@@ -131,9 +161,9 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
               let id = parseInt(conversationId)
               ConversationService.getConversationById(id).then((conversation) => {
                 if (conversation) {
-  
+
                   var currentMsgs: ChatMessage[] = JSON.parse(conversation.messages);
-    
+
                   const newMsg: ChatMessage = {
                     id: currentMsgs.length + 1,
                     args: "",
@@ -141,15 +171,15 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
                     messageType: MessageType.Normal,
                     content: "I've updated your wallet with a verifiable credential and published your linkedin attestation.",
                   };
-    
+
                   const msgs: ChatMessage[] = [...currentMsgs.slice(0, -1), newMsg]
                   const msgs2: ChatMessage[] = [...msgs, currentMsgs[currentMsgs.length - 1]]
-    
+
                   console.info("update conversation message ")
                   ConversationService.updateConversation(conversation, msgs2)
                 }
               })
-              
+
             }
 
           }

@@ -71,6 +71,12 @@ import AddSavingsModal from './AddAccountModal';
 import AddAccountModal from './AddEOACrossChainAccountModal';
 import AddEnsRecordModal from './AddEnsRecordModal';
 import OrgModal from './OrgModal';
+import LinkedinModal from './LinkedinModal';
+import XModal from './XModal';
+import ShopifyModal from './ShopifyModal';
+import StateRegistrationModal from './StateRegistrationModal';
+import EmailVerificationModal from './EmailVerificationModal';
+import WebsiteModal from './WebsiteModal';
 import { invokeLangGraphAgent, sendMessageToLangGraphAssistant } from '../service/LangChainService';
 
 
@@ -159,6 +165,14 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const [isAddEnsRecordModalVisible, setIsAddEnsRecordModalVisible] = useState(false);
   const [existingEnsNameForUpdate, setExistingEnsNameForUpdate] = useState<string>('');
 
+  // Verification modal states
+  const [isLinkedinModalVisible, setLinkedinModalVisible] = useState(false);
+  const [isXModalVisible, setXModalVisible] = useState(false);
+  const [isShopifyModalVisible, setShopifyModalVisible] = useState(false);
+  const [isStateRegistrationModalVisible, setStateRegistrationModalVisible] = useState(false);
+  const [isEmailVerificationModalVisible, setEmailVerificationModalVisible] = useState(false);
+  const [isWebsiteModalVisible, setWebsiteModalVisible] = useState(false);
+
   const [isOrgModalVisible, setOrgModalVisible] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
 
@@ -205,6 +219,92 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     setIsAddEnsRecordModalVisible(false);
     setExistingEnsNameForUpdate('');
   };
+
+  // Verification modal close handlers
+  const handleOnLinkedinModalClose = () => {
+    setLinkedinModalVisible(false);
+    addMessage(Role.Assistant, MessageType.Normal, 'Closing LinkedIn verification modal...', '', [], sendMessage);
+
+    // Ask follow-up question after a short delay
+    setTimeout(() => {
+      addMessage(Role.Assistant, MessageType.Normal, 'Would you like to verify your X (Twitter) account next, or would you prefer to verify your Shopify store?', '', [], sendMessage);
+    }, 1000);
+  };
+
+  const handleOnXModalClose = () => {
+    setXModalVisible(false);
+    addMessage(Role.Assistant, MessageType.Normal, 'Closing X (Twitter) verification modal...', '', [], sendMessage);
+
+    // Ask follow-up question after a short delay
+    setTimeout(() => {
+      addMessage(Role.Assistant, MessageType.Normal, 'Would you like to verify your LinkedIn profile next, or would you prefer to verify your Shopify store?', '', [], sendMessage);
+    }, 1000);
+  };
+
+  const handleOnShopifyModalClose = () => {
+    setShopifyModalVisible(false);
+    addMessage(Role.Assistant, MessageType.Normal, 'Closing Shopify verification modal...', '', [], sendMessage);
+
+    // Ask follow-up question after a short delay
+    setTimeout(() => {
+      addMessage(Role.Assistant, MessageType.Normal, 'Would you like to verify your LinkedIn profile next, or would you prefer to verify your X (Twitter) account?', '', [], sendMessage);
+    }, 1000);
+  };
+
+  const handleOnStateRegistrationModalClose = () => {
+    setStateRegistrationModalVisible(false);
+    addMessage(Role.Assistant, MessageType.Normal, 'Closing State Registration verification modal...', '', [], sendMessage);
+
+    // Ask follow-up question after a short delay
+    setTimeout(() => {
+      addMessage(Role.Assistant, MessageType.Normal, 'Great! Now that we have your state registration verified, would you like to verify your LinkedIn profile, X (Twitter) account, or Shopify store?', '', [], sendMessage);
+    }, 1000);
+  };
+
+  const handleOnEmailVerificationModalClose = () => {
+    setEmailVerificationModalVisible(false);
+    addMessage(Role.Assistant, MessageType.Normal, 'Closing Email verification modal...', '', [], sendMessage);
+
+    // Ask follow-up question after a short delay
+    setTimeout(() => {
+      addMessage(Role.Assistant, MessageType.Normal, 'What other verification would you like to complete?', '', [], sendMessage);
+    }, 1000);
+  };
+
+  const handleOnWebsiteModalClose = () => {
+    setWebsiteModalVisible(false);
+    addMessage(Role.Assistant, MessageType.Normal, 'Closing Website verification modal...', '', [], sendMessage);
+
+    // Ask follow-up question after a short delay
+    setTimeout(() => {
+      addMessage(Role.Assistant, MessageType.Normal, 'What other verification would you like to complete?', '', [], sendMessage);
+    }, 1000);
+  };
+
+  // OAuth trigger functions
+  const handleLinkedinOAuthTrigger = () => {
+    linkedInAuthRef.current?.openLinkedInPopup();
+  };
+
+  const handleXOAuthTrigger = () => {
+    xAuthRef.current?.openXPopup();
+  };
+
+  const handleShopifyOAuthTrigger = () => {
+    shopifyAuthRef.current?.openShopifyPopup();
+  };
+
+  // Debug modal states
+  useEffect(() => {
+    console.log('Modal states changed:', {
+      linkedin: isLinkedinModalVisible,
+      x: isXModalVisible,
+      shopify: isShopifyModalVisible,
+      stateRegistration: isStateRegistrationModalVisible,
+      emailVerification: isEmailVerificationModalVisible,
+      website: isWebsiteModalVisible
+    });
+  }, [isLinkedinModalVisible, isXModalVisible, isShopifyModalVisible, isStateRegistrationModalVisible, isEmailVerificationModalVisible, isWebsiteModalVisible]);
 
   // Refresh callbacks for sections
   const handleRefreshAttestations = () => {
@@ -264,7 +364,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
 
 
-  
+
   async function init() {
     let orgname;
     let domain;
@@ -287,7 +387,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     if (orgAccountClient && chain && orgDid && indivDid) {
 
       await AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
-        
+
         if (ents != undefined) {
           console.log("ents: ", ents)
           setEntities(ents)
@@ -326,7 +426,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
              account_org = JSON.stringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'org-indiv(org)') {
               orgIndiv_org = JSON.stringify(entity.attestation as OrgAttestation)
-            }    
+            }
           }
 
           if (!conversation) {
@@ -367,7 +467,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     };
   }
 
-  
+
   //const company_config = ''
 
   //console.log('company config: ', company_config)
@@ -441,11 +541,11 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           //getArgfromUserMessage(threadIDResult, `lets get started: ${company_config}`).then(str => {
           getArgfromUserMessage(threadIDResult,
              `Lets get started: Name: ${company_config["name"]},
-              Domain: ${company_config["domain"]}, 
-              Linkedin: ${company_config["linkedin"]}, 
-              Twitter: ${company_config["x"]}, 
-              State Registration: ${company_config["state_registration"]}, 
-              ENS Registration: ${company_config["ens_registration"]}, 
+              Domain: ${company_config["domain"]},
+              Linkedin: ${company_config["linkedin"]},
+              Twitter: ${company_config["x"]},
+              State Registration: ${company_config["state_registration"]},
+              ENS Registration: ${company_config["ens_registration"]},
               Linkedin: ${company_config["linkedin"]},
               Shopify: ${company_config["shopify"]},
               Insurance: ${company_config["insurance"]},
@@ -594,7 +694,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       setConversation(newConversation);
 
       ConversationService.storeConversation(newConversation, messages);
-      
+
       navigate(`/chat/c/${newConversation.id}`);
 
     }
@@ -701,6 +801,73 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     checkAllDirectActions("", message);
 
+    // Handle verification commands before AI processing
+    const lowerMessage = message.toLowerCase();
+    if (lowerMessage.includes('verify linkedin')) {
+      console.log('LinkedIn verification command detected in callApp');
+      setLinkedinModalVisible(true);
+      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
+      addMessage(Role.Assistant, MessageType.Normal, 'Opening LinkedIn verification modal...', '', fileDataRef, sendMessage);
+      return;
+    } else if (lowerMessage.includes('verify shopify')) {
+      console.log('Shopify verification command detected in callApp');
+      setShopifyModalVisible(true);
+      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
+      addMessage(Role.Assistant, MessageType.Normal, 'Opening Shopify verification modal...', '', fileDataRef, sendMessage);
+      return;
+    } else if (lowerMessage.includes('verify x') || lowerMessage.includes('verify twitter')) {
+      console.log('X verification command detected in callApp');
+      setXModalVisible(true);
+      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
+      addMessage(Role.Assistant, MessageType.Normal, 'Opening X verification modal...', '', fileDataRef, sendMessage);
+      return;
+    } else if (lowerMessage.includes('verify state') || lowerMessage.includes('register state')) {
+      console.log('State verification command detected in callApp');
+      setStateRegistrationModalVisible(true);
+      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
+      addMessage(Role.Assistant, MessageType.Normal, 'Opening State Registration verification modal...', '', fileDataRef, sendMessage);
+      return;
+    } else if (lowerMessage.includes('verify org email') || lowerMessage.includes('verify email')) {
+      console.log('Email verification command detected in callApp');
+      setEmailVerificationModalVisible(true);
+      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
+      addMessage(Role.Assistant, MessageType.Normal, 'Opening Email verification modal...', '', fileDataRef, sendMessage);
+      return;
+    } else if (lowerMessage.includes('verify website') || lowerMessage.includes('verify org website')) {
+      console.log('Website verification command detected in callApp');
+      setWebsiteModalVisible(true);
+      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
+      addMessage(Role.Assistant, MessageType.Normal, 'Opening Website verification modal...', '', fileDataRef, sendMessage);
+      return;
+    }
+
+    // Handle simple word triggers
+    if (lowerMessage === 'linkedin') {
+      console.log('LinkedIn simple command detected in callApp');
+      setLinkedinModalVisible(true);
+      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
+      addMessage(Role.Assistant, MessageType.Normal, 'Opening LinkedIn verification modal...', '', fileDataRef, sendMessage);
+      return;
+    } else if (lowerMessage === 'shopify') {
+      console.log('Shopify simple command detected in callApp');
+      setShopifyModalVisible(true);
+      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
+      addMessage(Role.Assistant, MessageType.Normal, 'Opening Shopify verification modal...', '', fileDataRef, sendMessage);
+      return;
+    } else if (lowerMessage === 'twitter') {
+      console.log('Twitter simple command detected in callApp');
+      setXModalVisible(true);
+      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
+      addMessage(Role.Assistant, MessageType.Normal, 'Opening X verification modal...', '', fileDataRef, sendMessage);
+      return;
+    } else if (lowerMessage === 'website') {
+      console.log('Website simple command detected in callApp');
+      setWebsiteModalVisible(true);
+      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
+      addMessage(Role.Assistant, MessageType.Normal, 'Opening Website verification modal...', '', fileDataRef, sendMessage);
+      return;
+    }
+
     // Ensure auto-scroll is enabled when sending new messages
     setAllowAutoScroll(true);
 
@@ -732,6 +899,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       }
       setIsThinking(false);
 
+      console.log('Processing message:', message);
+      console.log('Processed string:', str);
+
       if (str.includes("ens_verification") && orgAccountClient && chain) {
         console.log('process ens verification')
         setIsAddEnsRecordModalVisible(true)
@@ -754,14 +924,25 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         console.log(id, formDate, address)
         */
       } else if (str.includes('linkedin_verification')) {
-        linkedInAuthRef.current?.openLinkedInPopup();
-        addMessage(Role.Assistant, MessageType.Normal, 'Linkedin being verified...', '', fileDataRef, sendMessage);
+        //call linkedin modal here
+        console.log('LinkedIn verification command detected from AI response');
+        setLinkedinModalVisible(true);
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening LinkedIn verification modal...', '', fileDataRef, sendMessage);
       } else if (str.includes('shopify_verification')) {
         //call shopify modal here
-        addMessage(Role.Assistant, MessageType.Normal, 'Shopify being verified...', '', fileDataRef, sendMessage);
+        console.log('Shopify verification command detected from AI response');
+        setShopifyModalVisible(true);
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening Shopify verification modal...', '', fileDataRef, sendMessage);
       } else if (str.includes('x_verification')) {
-        xAuthRef.current?.openXPopup();
-        addMessage(Role.Assistant, MessageType.Normal, 'Twitter being verified...', '', fileDataRef, sendMessage);
+        //call x modal
+        console.log('X verification command detected from AI response');
+        setXModalVisible(true);
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening X verification modal...', '', fileDataRef, sendMessage);
+      } else if (str.includes('state_verification')) {
+        //call state registration modal
+        console.log('State verification command detected from AI response');
+        setStateRegistrationModalVisible(true);
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening State Registration verification modal...', '', fileDataRef, sendMessage);
       } else if (str.includes('insurance_verification')) {
         //insurance modal here
         addMessage(Role.Assistant, MessageType.Normal, 'Insurance being verified...', '', fileDataRef, sendMessage);
@@ -1173,7 +1354,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
             // Use the signer directly from signatory
             const walletSigner = signatory.signer;
-            
+
             if (!walletSigner) {
               console.error("Failed to get wallet signer");
               return;
@@ -1240,7 +1421,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
         // Use the signer directly from signatory
         const walletSigner = signatory.signer;
-        
+
         if (!walletSigner) {
           console.error("Failed to get wallet signer");
           return;
@@ -1295,7 +1476,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
         // Use the signer directly from signatory
         const walletSigner = signatory.signer;
-        
+
         if (!walletSigner) {
           console.error("Failed to get wallet signer");
           return;
@@ -1352,7 +1533,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
         // Use the standardized signer access
         const walletSigner = await getSignerFromSignatory(signatory);
-        
+
         if (!walletSigner) {
           console.error("Failed to get wallet signer");
           return;
@@ -1706,6 +1887,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   function processAssistantMessage(isFirstCall: boolean, content: string, args: string, prevMessages: ChatMessage[], updatedMessage: ChatMessage, fileDataRef: FileDataRef[]) {
 
+    console.log("processAssistantMessage called with args:", args);
+    console.log("processAssistantMessage content:", content);
+
     const result = {
       isToolFunction: false,
       messages: [] as ChatMessage[]
@@ -1825,9 +2009,31 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             }
 
             clearInputArea();
-            //messageBoxRef.current?.reset();
+          }
+          if (socialCommand.toLowerCase() == "stateRegistration(org)") {
 
+            if (isFirstCall) {
+              const cmd: Command = {
+                action: "edit",
+                did: orgDid,
+                entityId: "stateRegistration(org)",
+                displayName: "State Registration Verification"
+              }
+              appCommand(cmd)
+            }
 
+            entities?.forEach((ent) => {
+              if (ent.name == "stateRegistration(org)") {
+                ent.attestation = { entityId: "stateRegistration(org)", hash: "", attester: ""}
+              }
+            })
+            setEntities(entities)
+
+            if (orgName && entities) {
+              result.messages = postToolCmdSendMessages(prevMessages, orgName, entities)
+            }
+
+            clearInputArea();
           }
 
         }
@@ -2029,13 +2235,15 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       let isNew: boolean = false;
       try {
         if (prevMessages.length === 0) {
-          //console.error('prevMessages should not be empty in handleStreamedResponse.');
-          //console.info("~~~~~~~~~~~~~~~~~~~~~~~~ return empty")
+          console.log("prevMessages is empty, returning empty array");
           return [];
         }
+        console.log("Last message role:", prevMessages[prevMessages.length - 1].role);
         if (prevMessages[prevMessages.length - 1].role === Role.User) {
-          //console.info("last message was a user message")
+          console.log("Last message was a user message, setting isNew = true");
           isNew = true;
+        } else {
+          console.log("Last message was not a user message, isNew = false");
         }
       } catch (e) {
         console.error('Error getting the role');
@@ -2064,6 +2272,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       }
 
       if (isNew) {
+        console.log("isNew is true, creating new assistant message");
         const message: ChatMessage = {
           id: prevMessages.length + 1,
           role: Role.Assistant,
@@ -2076,8 +2285,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         //console.info("return ...prevMessages, message ")
 
         const msgs = [...prevMessages, message]
+        console.log("Returning messages with new assistant message:", msgs.length);
         return msgs;
       } else {
+        console.log("isNew is false, updating existing assistant message");
 
         let updatedContent = prevMessages[prevMessages.length - 1].content
         if (updatedContent != content) {
@@ -2093,14 +2304,24 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         if (done == true) {
           // received message from AI Assitant => updatedMessage
           // go do what the AI assistant message told us to do  =>  appCommand
+          console.log("Processing assistant message:", updatedMessage.content);
+          console.log("Args:", updatedMessage.args);
           const response = processAssistantMessage(isFirstCall == 1, updatedMessage.content, updatedMessage.args, prevMessages, updatedMessage, fileDataRef);
+          console.log("ProcessAssistantMessage response:", response);
           if (response.isToolFunction && response.messages) {
+            console.log("Returning tool function messages");
             return response.messages
           }
-          return [...prevMessages.slice(0, -1), updatedMessage];
+          console.log("Returning regular assistant message");
+          const finalMessages = [...prevMessages.slice(0, -1), updatedMessage];
+          console.log("Final messages count:", finalMessages.length);
+          return finalMessages;
         }
         else {
-          return [...prevMessages.slice(0, -1), updatedMessage];
+          console.log("Streaming update, returning updated message");
+          const finalMessages = [...prevMessages.slice(0, -1), updatedMessage];
+          console.log("Final messages count:", finalMessages.length);
+          return finalMessages;
         }
 
         return [...prevMessages];
@@ -2346,6 +2567,33 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           onClose={handleOnAddEnsRecordModalClose}
           onRefresh={handleRefreshAttestations}
           existingEnsName={existingEnsNameForUpdate}
+        />
+        <LinkedinModal
+          isVisible={isLinkedinModalVisible}
+          onClose={handleOnLinkedinModalClose}
+          onOAuthTrigger={handleLinkedinOAuthTrigger}
+        />
+        <XModal
+          isVisible={isXModalVisible}
+          onClose={handleOnXModalClose}
+          onOAuthTrigger={handleXOAuthTrigger}
+        />
+        <ShopifyModal
+          isVisible={isShopifyModalVisible}
+          onClose={handleOnShopifyModalClose}
+          onOAuthTrigger={handleShopifyOAuthTrigger}
+        />
+        <StateRegistrationModal
+          isVisible={isStateRegistrationModalVisible}
+          onClose={handleOnStateRegistrationModalClose}
+        />
+        <EmailVerificationModal
+          isVisible={isEmailVerificationModalVisible}
+          onClose={handleOnEmailVerificationModalClose}
+        />
+        <WebsiteModal
+          isVisible={isWebsiteModalVisible}
+          onClose={handleOnWebsiteModalClose}
         />
         <LinkedInAuth ref={linkedInAuthRef} />
         <XAuth ref={xAuthRef} />

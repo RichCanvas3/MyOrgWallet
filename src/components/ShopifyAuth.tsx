@@ -55,14 +55,47 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
       return;
     }
 
+    // Check if popup is closed and add chat message
+    const checkPopupClosed = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(checkPopupClosed);
+
+        // Add chat message about closing OAuth popup
+        if (location.pathname.startsWith("/chat/c/")) {
+          let conversationId = location.pathname.replace("/chat/c/", "");
+          let id = parseInt(conversationId);
+          ConversationService.getConversationById(id).then((conversation) => {
+            if (conversation) {
+              var currentMsgs: ChatMessage[] = JSON.parse(conversation.messages);
+
+              const newMsg: ChatMessage = {
+                id: currentMsgs.length + 1,
+                args: "",
+                role: Role.Assistant,
+                messageType: MessageType.Normal,
+                content: "Closing Shopify verification popup...",
+              };
+
+              const msgs: ChatMessage[] = [...currentMsgs.slice(0, -1), newMsg];
+              const msgs2: ChatMessage[] = [...msgs, currentMsgs[currentMsgs.length - 1]];
+
+              console.info("Adding Shopify popup close message");
+              ConversationService.updateConversation(conversation, msgs2);
+            }
+          });
+        }
+      }
+    }, 1000); // Check every second
+
     const handleEvent = async (event: MessageEvent) => {
 
       if (event.data.type != "shopify_auth") {
-          console.info("skip this message: ", event.data.type)
+          console.info("Skipping message: ", event.data.type)
           return; // Skip this message
       }
 
       window.removeEventListener('message', handleEvent)
+      clearInterval(checkPopupClosed); // Clean up the interval since OAuth completed
 
 
       // get shopify data from server given code
@@ -81,7 +114,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
         const vcId = result.vcId
 
         if (fullVc && vcId && walletSigner && orgAccountClient) {
-        
+
           // now create attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
           const attestation: WebsiteAttestation = {
@@ -89,7 +122,7 @@ const ShopifyAuth = forwardRef<ShopifyAuthRef, ShopifyAuthProps>((props, ref) =>
             url: res.data.shop.domain,
             attester: orgDid,
             entityId: entityId,
-            class: "organization", 
+            class: "organization",
             category: "identity",
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),

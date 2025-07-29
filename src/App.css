@@ -147,6 +147,7 @@
   justify-content: center;
   padding: var(--padding-2);
   z-index: 100000000;
+  overflow-y: auto;
 }
 
 .modal-dialog {
@@ -159,6 +160,7 @@
   max-width: 448px;
   min-height: 640px;
   min-width: 800px;
+  max-height: 90vh;
   margin: 0 auto;
   overflow: hidden;
 }
@@ -172,8 +174,9 @@
   max-width: 448px;
   min-height: 640px;
   min-width: 800px;
+  max-height: 90vh;
   margin: 0 auto;
-  overflow: hidden;
+  overflow-y: auto;
   padding: var(--padding-2);
 }
 
@@ -1086,7 +1089,7 @@ pre[class*="language-"] {
   .main-panel {
     padding-bottom: 60px; /* Reduce padding for smaller screens */
   }
-  
+
   .message-input-container {
     padding-top: calc(var(--padding-1) / 2); /* Reduce padding for smaller screens */
   }

@@ -18,7 +18,7 @@ import { chainConfig } from 'viem/zksync';
 import { SigningApiFactory } from '@circle-fin/developer-controlled-wallets/dist/types/clients/developer-controlled-wallets';
 
 interface XProfile {
-  sub: string; 
+  sub: string;
   name: string;
   given_name: string;
   family_name: string;
@@ -49,7 +49,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
   const { } = props;
   const { chain, signatory, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, indivBurnerDelegation, orgAccountClient, orgDid, privateIssuerDid } = useWallectConnectContext();
 
-  
+
 
   function generateRandomString(length: number) {
     const array = new Uint8Array(length);
@@ -66,17 +66,17 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
 
   const openXPopup = () => {
 
-    
+
     const codeChallenge = codeVerifier; // For plain method, they’re the same
 
-    
+
     const authUrl = 'https://x.com/i/oauth2/authorize?response_type=code&client_id=' + X_CLIENT_ID + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) + '&scope=tweet.read%20users.read%20follows.read%20offline.access&state=state&code_challenge=' + codeChallenge + '&code_challenge_method=plain'
     const width = 600;
     const height = 600;
     const left = window.screenX + (window.outerWidth - width) / 2;
     const top = window.screenY + (window.outerHeight - height) / 2;
 
-    
+
     const popup = window.open(
       authUrl,
       "_blank",
@@ -87,14 +87,47 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
       return;
     }
 
+    // Check if popup is closed and add chat message
+    const checkPopupClosed = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(checkPopupClosed);
+
+        // Add chat message about closing OAuth popup
+        if (location.pathname.startsWith("/chat/c/")) {
+          let conversationId = location.pathname.replace("/chat/c/", "");
+          let id = parseInt(conversationId);
+          ConversationService.getConversationById(id).then((conversation) => {
+            if (conversation) {
+              var currentMsgs: ChatMessage[] = JSON.parse(conversation.messages);
+
+              const newMsg: ChatMessage = {
+                id: currentMsgs.length + 1,
+                args: "",
+                role: Role.Assistant,
+                messageType: MessageType.Normal,
+                content: "Closing X verification popup...",
+              };
+
+              const msgs: ChatMessage[] = [...currentMsgs.slice(0, -1), newMsg];
+              const msgs2: ChatMessage[] = [...msgs, currentMsgs[currentMsgs.length - 1]];
+
+              console.info("Adding X popup close message");
+              ConversationService.updateConversation(conversation, msgs2);
+            }
+          });
+        }
+      }
+    }, 1000); // Check every second
+
     const handleEvent = async (event: MessageEvent) => {
 
       if (event.data.type != "x_auth") {
-        console.info("skip this message: ", event.data.type)
+        console.info("Skipping message: ", event.data.type)
         return; // Skip this message
       }
 
       window.removeEventListener('message', handleEvent)
+      clearInterval(checkPopupClosed); // Clean up the interval since OAuth completed
 
       const res = await axios.get(CALLBACK_URI + '?code='+ event.data.code + '&verifier=' + codeVerifier);
 
@@ -104,21 +137,20 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
 
 
       if (orgDid && privateIssuerDid && credentialManager && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
-  
+
         const vc = await VerifiableCredentialsService.createSocialVC(entityId, orgDid, privateIssuerDid, name, url);
         const result = await VerifiableCredentialsService.createCredential(vc, entityId, entityId, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
         const fullVc = result.vc
         const proof = result.proof
         const vcId = result.vcId
 
-        if (proof && fullVc && vcId && chain && orgAccountClient && indivBurnerDelegation) {
-        
+        if (proof && fullVc && vcId && chain && orgAccountClient && indivIssuerDelegation) {
           // add attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
           const attestation: SocialAttestation = {
             attester: orgDid,
             entityId: entityId,
-            class: "individual", 
+            class: "individual",
             category: "identity",
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
@@ -142,7 +174,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
               if (conversation) {
 
                 var currentMsgs: ChatMessage[] = JSON.parse(conversation.messages);
-  
+
                 const newMsg: ChatMessage = {
                   id: currentMsgs.length + 1,
                   args: "",
@@ -150,17 +182,17 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
                   messageType: MessageType.Normal,
                   content: "I've updated your wallet with a verifiable credential and published your x attestation.",
                 };
-  
+
                 const msgs: ChatMessage[] = [...currentMsgs.slice(0, -1), newMsg]
                 const msgs2: ChatMessage[] = [...msgs, currentMsgs[currentMsgs.length - 1]]
-  
+
                 console.info("update conversation message ")
                 ConversationService.updateConversation(conversation, msgs2)
               }
             })
-            
+
           }
-          
+
 
         }
       }

@@ -32,6 +32,8 @@ import XCallback from './components/XCallback';
 import XModal from './components/XModal';
 
 import ShopifyCallback from './components/ShopifyCallback';
+import ShopifyModal from './components/ShopifyModal';
+import StateRegistrationModal from './components/StateRegistrationModal';
 
 import Header from "./components/Header";
 
@@ -132,11 +134,14 @@ const App = () => {
 
   const [isLinkedinModalVisible, setLinkedinModalVisible] = useState(false);
   const [isXModalVisible, setXModalVisible] = useState(false);
+  const [isShopifyModalVisible, setShopifyModalVisible] = useState(false);
+  const [isStateRegistrationModalVisible, setStateRegistrationModalVisible] = useState(false);
   const [isAttestationViewModalVisible, setAttestationViewModalVisible] = useState(false);
 
 
 
   const appCommand = (cmd: Command) => {
+    console.info("app command received: ", cmd)
     if (cmd.action == "edit" && cmd.entityId == "indiv(indiv)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("indiv(indiv)")
       setSelectedDid(cmd.did)
@@ -222,7 +227,7 @@ const App = () => {
       setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "show" && cmd.entityId == "ens(org)" && cmd.did && cmd.displayName) { 
+    if (cmd.action == "show" && cmd.entityId == "ens(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("ens(org)")
       setSelectedDid(cmd.did)
       setSelectedDisplayName(cmd.displayName)
@@ -242,41 +247,18 @@ const App = () => {
     }
 
     if (cmd.action == "edit" && cmd.entityId == "linkedin(indiv)" && cmd.did && cmd.displayName) {
-      setSelectedEntityId("linkedin(indiv)")
-      setSelectedDid(cmd.did)
-      setSelectedDisplayName(cmd.displayName)
-      setAttestationViewModalVisible(true)
+      setLinkedinModalVisible(true)
     }
     if (cmd.action == "show" && cmd.entityId == "linkedin(indiv)" && cmd.did && cmd.displayName) {
-      setSelectedEntityId("linkedin(indiv)")
-      setSelectedDid(cmd.did)
-      setSelectedDisplayName(cmd.displayName)
-      setAttestationViewModalVisible(true)
+      setLinkedinModalVisible(true)
     }
     if (cmd.action == "edit" && cmd.entityId == "x(indiv)" && cmd.did && cmd.displayName) {
-      setSelectedEntityId("x(indiv)")
-      setSelectedDid(cmd.did)
-      setSelectedDisplayName(cmd.displayName)
-      setAttestationViewModalVisible(true)
+      setXModalVisible(true)
     }
     if (cmd.action == "show" && cmd.entityId == "x(indiv)" && cmd.did && cmd.displayName) {
-      setSelectedEntityId("x(indiv)")
-      setSelectedDid(cmd.did)
-      setSelectedDisplayName(cmd.displayName)
-      setAttestationViewModalVisible(true)
+      setXModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "shopify(org)" && cmd.did && cmd.displayName) {
-      setSelectedEntityId("shopify(org)")
-      setSelectedDid(cmd.did)
-      setSelectedDisplayName(cmd.displayName)
-      setAttestationViewModalVisible(true)
-    }
-    if (cmd.action == "show" && cmd.entityId == "shopify(org)" && cmd.did && cmd.displayName) {
-      setSelectedEntityId(cmd.entityId)
-      setSelectedDid(cmd.did)
-      setSelectedDisplayName(cmd.displayName)
-      setAttestationViewModalVisible(true)
-    }
+
     if (cmd.action == "edit" && cmd.entityId == "insurance(org)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("insurance(org)")
       setSelectedDid(cmd.did)
@@ -325,6 +307,18 @@ const App = () => {
       setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
+    if (cmd.action == "edit" && cmd.entityId == "shopify(org)" && cmd.did && cmd.displayName) {
+      setShopifyModalVisible(true)
+    }
+    if (cmd.action == "show" && cmd.entityId == "shopify(org)" && cmd.did && cmd.displayName) {
+      setShopifyModalVisible(true)
+    }
+    if (cmd.action == "edit" && cmd.entityId == "state-registration(org)" && cmd.did && cmd.displayName) {
+      setStateRegistrationModalVisible(true)
+    }
+    if (cmd.action == "show" && cmd.entityId == "state-registration(org)" && cmd.did && cmd.displayName) {
+      setStateRegistrationModalVisible(true)
+    }
 
 
     //console.info("app command: ", cmd)
@@ -338,6 +332,14 @@ const App = () => {
 
   const handleOnXModalClose = () => {
     setXModalVisible(false);
+  }
+
+  const handleOnShopifyModalClose = () => {
+    setShopifyModalVisible(false);
+  }
+
+  const handleOnStateRegistrationModalClose = () => {
+    setStateRegistrationModalVisible(false);
   }
 
   const handleOnAttestationViewModalClose = () => {
@@ -469,6 +471,8 @@ const App = () => {
                   onDelete={handleAttestationDelete}
                 />
                 <XModal isVisible={isXModalVisible} onClose={handleOnXModalClose} />
+                <ShopifyModal isVisible={isShopifyModalVisible} onClose={handleOnShopifyModalClose} />
+                <StateRegistrationModal isVisible={isStateRegistrationModalVisible} onClose={handleOnStateRegistrationModalClose} />
 
                 <div className="grow">
                   <Routes>
