@@ -77,6 +77,7 @@ import ShopifyModal from './ShopifyModal';
 import StateRegistrationModal from './StateRegistrationModal';
 import EmailVerificationModal from './EmailVerificationModal';
 import WebsiteModal from './WebsiteModal';
+import InsuranceModal from './InsuranceModal';
 import { invokeLangGraphAgent, sendMessageToLangGraphAssistant } from '../service/LangChainService';
 
 
@@ -172,6 +173,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const [isStateRegistrationModalVisible, setStateRegistrationModalVisible] = useState(false);
   const [isEmailVerificationModalVisible, setEmailVerificationModalVisible] = useState(false);
   const [isWebsiteModalVisible, setWebsiteModalVisible] = useState(false);
+  const [isInsuranceModalVisible, setInsuranceModalVisible] = useState(false);
 
   const [isOrgModalVisible, setOrgModalVisible] = useState(false);
   const [newOrgName, setNewOrgName] = useState("");
@@ -281,6 +283,16 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     }, 1000);
   };
 
+  const handleOnInsuranceModalClose = () => {
+    setInsuranceModalVisible(false);
+    addMessage(Role.Assistant, MessageType.Normal, 'Closing Insurance verification modal...', '', [], sendMessage);
+
+    // Ask follow-up question after a short delay
+    setTimeout(() => {
+      addMessage(Role.Assistant, MessageType.Normal, 'What other verification would you like to complete?', '', [], sendMessage);
+    }, 1000);
+  };
+
   // OAuth trigger functions
   const handleLinkedinOAuthTrigger = () => {
     linkedInAuthRef.current?.openLinkedInPopup();
@@ -302,9 +314,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       shopify: isShopifyModalVisible,
       stateRegistration: isStateRegistrationModalVisible,
       emailVerification: isEmailVerificationModalVisible,
-      website: isWebsiteModalVisible
+      website: isWebsiteModalVisible,
+      insurance: isInsuranceModalVisible
     });
-  }, [isLinkedinModalVisible, isXModalVisible, isShopifyModalVisible, isStateRegistrationModalVisible, isEmailVerificationModalVisible, isWebsiteModalVisible]);
+  }, [isLinkedinModalVisible, isXModalVisible, isShopifyModalVisible, isStateRegistrationModalVisible, isEmailVerificationModalVisible, isWebsiteModalVisible, isInsuranceModalVisible]);
 
   // Refresh callbacks for sections
   const handleRefreshAttestations = () => {
@@ -839,6 +852,12 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
       addMessage(Role.Assistant, MessageType.Normal, 'Opening Website verification modal...', '', fileDataRef, sendMessage);
       return;
+    } else if (lowerMessage.includes('verify insurance') || lowerMessage.includes('verify org insurance')) {
+      console.log('Insurance verification command detected in callApp');
+      setInsuranceModalVisible(true);
+      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
+      addMessage(Role.Assistant, MessageType.Normal, 'Opening Insurance verification modal...', '', fileDataRef, sendMessage);
+      return;
     }
 
     // Handle simple word triggers
@@ -949,6 +968,11 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       } else if (str.includes('website_verification')) {
         //website modal
         addMessage(Role.Assistant, MessageType.Normal, 'Website being verified...', '', fileDataRef, sendMessage);
+      } else if (str.includes('insurance_verification')) {
+        //insurance modal
+        console.log('Insurance verification command detected from AI response');
+        setInsuranceModalVisible(true);
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening Insurance verification modal...', '', fileDataRef, sendMessage);
       } else {
         addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
       }
@@ -2597,6 +2621,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         <WebsiteModal
           isVisible={isWebsiteModalVisible}
           onClose={handleOnWebsiteModalClose}
+        />
+        <InsuranceModal
+          isVisible={isInsuranceModalVisible}
+          onClose={handleOnInsuranceModalClose}
         />
         <LinkedInAuth ref={linkedInAuthRef} />
         <XAuth ref={xAuthRef} />

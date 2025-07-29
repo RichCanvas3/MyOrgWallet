@@ -1,6 +1,5 @@
-import {useEffect, useRef, useState} from 'react';
 import * as React from 'react';
-
+import {useEffect, useRef, useState} from 'react';
 import {
   XMarkIcon
 } from "@heroicons/react/24/outline";
@@ -8,38 +7,47 @@ import './UserSettingsModal.css';
 import {useTranslation} from 'react-i18next';
 import {Transition} from '@headlessui/react';
 
-import {Attestation, EmailAttestation} from '../models/Attestation';
+import {Attestation, InsuranceAttestation} from '../models/Attestation';
 import AttestationService from '../service/AttestationService';
 import { useWallectConnectContext } from "../context/walletConnectContext";
-import { useWalletClient } from "wagmi"
-import { TextField, Button, Typography, Box, Paper } from "@mui/material";
+import { TextField, Button, Typography, Box, Paper, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import { keccak256, toUtf8Bytes } from 'ethers';
 import VerifiableCredentialsService from '../service/VerifiableCredentialsService';
 import ConversationService from '../service/ConversationService';
 import { ChatMessage, Role, MessageType } from '../models/ChatCompletion';
 
-interface EmailVerificationModalProps {
+interface InsuranceModalProps {
   isVisible: boolean;
   onClose: () => void;
 }
 
-const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({isVisible, onClose}) => {
+const InsuranceModal: React.FC<InsuranceModalProps> = ({isVisible, onClose}) => {
   const {t} = useTranslation();
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const { chain, orgDid, orgAccountClient, privateIssuerDid, credentialManager, privateIssuerAccount, burnerAccountClient, orgBurnerDelegation, orgIndivDelegation, veramoAgent, signatory } = useWallectConnectContext();
 
   const [attestation, setAttestation] = useState<Attestation | null>(null);
-  const [email, setEmail] = useState("");
+  const [policyNumber, setPolicyNumber] = useState("");
+  const [insuranceType, setInsuranceType] = useState("ecommerce");
   const [isCreating, setIsCreating] = useState(false);
   const [progressMessage, setProgressMessage] = useState("");
+
+  const insuranceTypes = [
+    { value: "ecommerce", label: "E-commerce Insurance" },
+    { value: "general", label: "General Liability" },
+    { value: "professional", label: "Professional Liability" },
+    { value: "cyber", label: "Cyber Liability" },
+    { value: "property", label: "Property Insurance" },
+    { value: "workers", label: "Workers Compensation" }
+  ];
 
   const handleClose = () => {
     onClose();
   };
 
   const handleSave = async () => {
-    if (!email.trim()) {
+    if (!policyNumber.trim()) {
       return;
     }
 
@@ -47,16 +55,15 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({isVisibl
       try {
         setIsCreating(true);
         setProgressMessage("Creating verifiable credential...");
-        console.info("Creating email attestation...");
+        console.info("Creating insurance attestation...");
 
-        const emailType = "info";
-        const entityId = "email(org)";
+        const entityId = "insurance(org)";
 
         // Create verifiable credential
         setProgressMessage("Creating verifiable credential...");
-        const vc = await VerifiableCredentialsService.createEmailVC(entityId, orgDid, privateIssuerDid, emailType, email);
+        const vc = await VerifiableCredentialsService.createInsuranceVC(entityId, orgDid, privateIssuerDid, policyNumber);
         setProgressMessage("Creating credential on blockchain...");
-        const result = await VerifiableCredentialsService.createCredential(vc, entityId, email, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent);
+        const result = await VerifiableCredentialsService.createCredential(vc, entityId, policyNumber, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent);
 
         const fullVc = result.vc;
         const proof = result.proof;
@@ -65,13 +72,13 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({isVisibl
         if (proof && fullVc && vcId && chain && orgAccountClient && orgBurnerDelegation && orgIndivDelegation) {
           // Create attestation
           const hash = keccak256(toUtf8Bytes("hash value"));
-          const attestation: EmailAttestation = {
-            type: emailType,
-            email: email,
+          const attestation: InsuranceAttestation = {
+            policy: policyNumber,
+            type: insuranceType,
             attester: orgDid,
             entityId: entityId,
             class: "organization",
-            category: "identity",
+            category: "compliance",
             hash: hash,
             vccomm: (fullVc.credentialSubject as any).commitment.toString(),
             vcsig: (fullVc.credentialSubject as any).commitmentSignature,
@@ -82,9 +89,9 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({isVisibl
 
           setProgressMessage("Creating attestation on blockchain...");
           const walletSigner = signatory.signer;
-          const uid = await AttestationService.addEmailAttestation(chain, attestation, walletSigner, [orgBurnerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient);
+          const uid = await AttestationService.addInsuranceAttestation(chain, attestation, walletSigner, [orgBurnerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient);
 
-          console.info("Email attestation created successfully: ", uid);
+          console.info("Insurance attestation created successfully: ", uid);
 
           // Add success message to conversation
           if (location.pathname.startsWith("/chat/c/")) {
@@ -99,7 +106,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({isVisibl
                   args: "",
                   role: Role.Assistant,
                   messageType: MessageType.Normal,
-                  content: `✅ Email attestation created successfully for ${email}!`
+                  content: `✅ Insurance attestation created successfully for policy ${policyNumber}!`
                 };
 
                 currentMsgs.push(newMsg);
@@ -113,9 +120,9 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({isVisibl
           onClose();
         }
       } catch (error) {
-        console.error("Error creating email attestation:", error);
+        console.error("Error creating insurance attestation:", error);
 
-        let errorMessage = `❌ Failed to create email attestation for ${email}.`;
+        let errorMessage = `❌ Failed to create insurance attestation for policy ${policyNumber}.`;
 
         // Provide more specific error messages
         if (error instanceof Error) {
@@ -159,6 +166,28 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({isVisibl
     }
   };
 
+  useEffect(() => {
+    if (isVisible) {
+      // get insurance attestation
+      if (orgDid && chain) {
+        AttestationService.getAttestationByDidAndSchemaId(chain, orgDid, AttestationService.InsuranceSchemaUID, "insurance(org)", "").then((att) => {
+          if (att) {
+            setAttestation(att)
+          }
+
+          let insuranceAtt = att as InsuranceAttestation
+
+          if (insuranceAtt?.policy) {
+            setPolicyNumber(insuranceAtt?.policy)
+          }
+          if (insuranceAtt?.type) {
+            setInsuranceType(insuranceAtt?.type)
+          }
+        })
+      }
+    }
+  }, [isVisible]);
+
   return (
     <Transition show={isVisible} as={React.Fragment}>
       <div className="modal-overlay">
@@ -175,7 +204,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({isVisibl
             {/* Header */}
             <div className="modal-header">
               <h1 className="modal-title">
-                Email Verification
+                Insurance Verification
               </h1>
               <button onClick={handleClose} className="close-button">
                 <XMarkIcon className="close-icon" aria-hidden="true" />
@@ -194,20 +223,35 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({isVisibl
                 }}
               >
                 <Typography variant="h6" gutterBottom>
-                  Verify Your Organization's Email
+                  Verify Your Organization's Insurance
                 </Typography>
 
                 <TextField
                   fullWidth
-                  label="Organization Email"
+                  label="Policy Number"
                   variant="outlined"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="info@company.com"
+                  value={policyNumber}
+                  onChange={(e) => setPolicyNumber(e.target.value)}
+                  placeholder="POL-123456789"
                   sx={{ mb: 3 }}
                   disabled={isCreating}
-                  type="email"
                 />
+
+                <FormControl fullWidth sx={{ mb: 3 }}>
+                  <InputLabel>Insurance Type</InputLabel>
+                  <Select
+                    value={insuranceType}
+                    label="Insurance Type"
+                    onChange={(e) => setInsuranceType(e.target.value)}
+                    disabled={isCreating}
+                  >
+                    {insuranceTypes.map((type) => (
+                      <MenuItem key={type.value} value={type.value}>
+                        {type.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
 
                 <Button
                   variant="contained"
@@ -215,10 +259,10 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({isVisibl
                   size="large"
                   fullWidth
                   onClick={handleSave}
-                  disabled={isCreating || !email.trim()}
+                  disabled={isCreating || !policyNumber.trim()}
                   sx={{ mb: 2, p: 2, py: 1.5 }}
                 >
-                  {isCreating ? (progressMessage || "Creating Email Attestation...") : "Create Email Attestation"}
+                  {isCreating ? (progressMessage || "Creating Insurance Attestation...") : "Create Insurance Attestation"}
                 </Button>
               </Paper>
             </div>
@@ -229,4 +273,4 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({isVisibl
   );
 };
 
-export default EmailVerificationModal;
+export default InsuranceModal;

@@ -28,7 +28,6 @@ const StateRegistrationModal: React.FC<StateRegistrationModalProps> = ({isVisibl
   const { chain, indivDid, indivAccountClient, orgDid, orgAccountClient, privateIssuerDid, credentialManager, privateIssuerAccount, burnerAccountClient, orgBurnerDelegation, orgIndivDelegation, veramoAgent, signatory, orgName } = useWallectConnectContext();
 
   const [attestation, setAttestation] = useState<Attestation | null>(null);
-  const [name, setName] = useState("");
   const [state, setState] = useState("delaware");
   const [isVerifying, setIsVerifying] = useState(false);
 
@@ -91,11 +90,6 @@ const StateRegistrationModal: React.FC<StateRegistrationModalProps> = ({isVisibl
   };
 
   const handleSave = async () => {
-    if (!name.trim()) {
-      console.error("Company name is required");
-      return;
-    }
-
     setIsVerifying(true);
 
     try {
@@ -104,7 +98,7 @@ const StateRegistrationModal: React.FC<StateRegistrationModalProps> = ({isVisibl
       // Send to LangChain for verification
       const BASE_URL = import.meta.env.VITE_ORGSERVICE_API_URL || 'http://localhost:8501';
       const response = await fetch(
-        `${BASE_URL}/creds/good-standing/company?company=${encodeURIComponent(name)}&state=${state}`
+        `${BASE_URL}/creds/good-standing/company?company=${encodeURIComponent(orgName || "verified")}&state=${state}`
       );
 
       if (!response.ok) {
@@ -126,7 +120,7 @@ const StateRegistrationModal: React.FC<StateRegistrationModalProps> = ({isVisibl
           orgDid,
           privateIssuerDid,
           verificationData.id || "verified",
-          name,
+          orgName || "verified",
           verificationData.status || "active",
           verificationData.formationDate || new Date().toISOString().split('T')[0],
           state,
@@ -162,7 +156,7 @@ const StateRegistrationModal: React.FC<StateRegistrationModalProps> = ({isVisibl
           vciss: privateIssuerDid,
           vcid: vcId,
           proof: proof,
-          name: name,
+          name: orgName || "verified",
           idnumber: verificationData.id || "verified",
           status: verificationData.status || "active",
           formationdate: new Date(verificationData.formationDate || new Date()).getTime() / 1000,
@@ -188,7 +182,7 @@ const StateRegistrationModal: React.FC<StateRegistrationModalProps> = ({isVisibl
                 args: "",
                 role: Role.Developer,
                 messageType: MessageType.Normal,
-                content: `I've verified ${name} with LangChain and updated your wallet with a verifiable credential and published your State Registration attestation.`,
+                content: `I've verified your organization with LangChain and updated your wallet with a verifiable credential and published your State Registration attestation.`,
               };
 
               const msgs: ChatMessage[] = [...currentMsgs.slice(0, -1), newMsg];
@@ -247,9 +241,7 @@ const StateRegistrationModal: React.FC<StateRegistrationModalProps> = ({isVisibl
 
           let stateRegAtt = att as StateRegistrationAttestation
 
-          if (stateRegAtt?.name) {
-            setName(stateRegAtt?.name)
-          }
+          // Company name is now derived from orgName context
         })
       }
     }
@@ -290,21 +282,7 @@ const StateRegistrationModal: React.FC<StateRegistrationModalProps> = ({isVisibl
                     overflowY: "auto",
                   }}
                 >
-                  <Box sx={{ mb: 3, p: 2, border: "1px solid #ddd", borderRadius: 2 }}>
-                    <Typography variant="subtitle1" fontWeight="medium" mb={1}>
-                      Company Name
-                    </Typography>
 
-                    <TextField
-                      label="Company Name"
-                      variant="outlined"
-                      fullWidth
-                      value={name}
-                      placeholder="Rich Canvas Inc."
-                      onChange={(e) => setName(e.target.value)}
-                      disabled={isVerifying}
-                    />
-                  </Box>
                   <Box sx={{ mb: 3, p: 2, border: "1px solid #ddd", borderRadius: 2 }}>
                     <Typography variant="subtitle1" fontWeight="medium" mb={1}>
                       State
@@ -332,7 +310,7 @@ const StateRegistrationModal: React.FC<StateRegistrationModalProps> = ({isVisibl
                     size="large"
                     fullWidth
                     onClick={handleSave}
-                    disabled={isVerifying || !name.trim()}
+                    disabled={isVerifying}
                     sx={{ mb: 3, p: 2, py: 1.5 }}
                   >
                     {isVerifying ? "Verifying with LangChain..." : "Verify & Create Attestation"}
