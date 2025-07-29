@@ -761,7 +761,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     return args;
   }
 
-  async function stateRegister(company_name: string, state: string, ngrok_url: string) {
+  async function stateRegister(company_name: string, state: string) {
     console.log(company_name, state)
     try {
       const response = await fetch(
@@ -911,7 +911,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       } else if (str.includes('state_register') && orgAccountClient && chain) {
         const listMessage = str.split(' ')
         console.log(listMessage)
-        const data = stateRegister(orgName || '', message, ngrok_url);
+        const data = stateRegister(orgName || '', message);
         console.log('state data being jsoned', data);
         addMessage(Role.Assistant, MessageType.Normal, `${orgName} Registeration Verified!`, '', fileDataRef, sendMessage)
         /*
@@ -946,6 +946,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       } else if (str.includes('insurance_verification')) {
         //insurance modal here
         addMessage(Role.Assistant, MessageType.Normal, 'Insurance being verified...', '', fileDataRef, sendMessage);
+      } else if (str.includes('website_verification')) {
+        //website modal
+        addMessage(Role.Assistant, MessageType.Normal, 'Website being verified...', '', fileDataRef, sendMessage);
       } else {
         addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
       }

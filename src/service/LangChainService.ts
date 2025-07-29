@@ -153,7 +153,7 @@ export async function sendMessageToLangGraphAssistant(
     var further3Split = furtherFurtherSplit.split('\\n');
 
     var finalMessage = further3Split.join(' ');
-
+    /*
     if (tool == 'state_register') {
       var split = finalMessage.split('-');
       if (split.length < 6) {
@@ -171,7 +171,9 @@ export async function sendMessageToLangGraphAssistant(
       var address = (split[5].split('** '))[1];
 
       return { message: finalMessage, id, name, formDate, address };
-    } else if (tool == 'linkedin_verification') {
+    } else 
+    */
+    if (tool == 'linkedin_verification') {
       console.log('Initiating LinkedIn OAuth...');
 
       if (linkedInAuthRef?.current) {
