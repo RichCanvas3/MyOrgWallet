@@ -53,6 +53,8 @@ jobs:
           echo "VITE_X_CLIENT_ID=${{ secrets.VITE_X_CLIENT_ID }}" >> .env
           echo "VITE_LINKEDIN_CLIENT_ID=${{ secrets.VITE_LINKEDIN_CLIENT_ID }}" >> .env
           echo "VITE_SHOPIFY_CLIENT_ID=${{ secrets.VITE_SHOPIFY_CLIENT_ID }}" >> .env
+          echo "VITE_LANGCHAIN_API_KEY=${{ secrets.VITE_LANGCHAIN_API_KEY }}" >> .env
+          echo "VITE_CREDENTIAL_MANAGER_TYPE=${{ secrets.VITE_CREDENTIAL_MANAGER_TYPE }}" >> .env
 
       - name: Build the app
         run: npm run build
