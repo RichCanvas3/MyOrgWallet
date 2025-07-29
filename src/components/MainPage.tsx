@@ -16,7 +16,7 @@ import {ChatCompletion, ChatMessage, MessageType, Role} from "../models/ChatComp
 import {ScrollToBottomButton} from "./ScrollToBottomButton";
 import {OPENAI_DEFAULT_SYSTEM_PROMPT, OPENAI_DEFAULT_ASSISTANT_PROMPT} from "../config";
 import {CustomError} from "../service/CustomError";
-import {useLocation, useNavigate, useParams} from "react-router-dom";
+import {data, useLocation, useNavigate, useParams} from "react-router-dom";
 import {useTranslation} from 'react-i18next';
 import { createRoot } from 'react-dom/client';
 import MessageBox, {MessageBoxHandles} from "./MessageBox";
@@ -776,7 +776,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   async function stateRegister(company_name: string, state: string) {
     console.log(company_name, state)
-    try {
       const response = await fetch(
         `${BASE_URL}/creds/good-standing/company?company=${company_name}&state=${state}`
       );
@@ -786,16 +785,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         console.error("Fetch failed:", response.status, text);
         return `Fetch failed: ${response.status} - ${text}`;
       }
-      console.log(response);
+      console.log("Response: ", response);
       const data = await response.json();
+      console.log(data)
       return data;
-    } catch (error) {
-      console.error("Error during fetch:", error);
-      if (error instanceof Error) {
-        return `Error during fetch: ${error.message}`;
-      }
-      return "An unknown error occurred during fetch.";
-    }
   }
 
   const callApp = (message: string, fileDataRef: FileDataRef[]) => {
@@ -930,18 +923,16 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       } else if (str.includes('state_register') && orgAccountClient && chain) {
         const listMessage = str.split(' ')
         console.log(listMessage)
-        const data = stateRegister(orgName || '', message);
-        console.log('state data being jsoned', data);
-        addMessage(Role.Assistant, MessageType.Normal, `${orgName} Registeration Verified!`, '', fileDataRef, sendMessage)
-        /*
-        var split = data.split('-');
-        console.log(split)
-        var id = (split[1].split('** '))[1];
-        var name = 'test';
-        var formDate = (split[4].split('** '))[1];
-        var address = (split[5].split('** '))[1];
-        console.log(id, formDate, address)
-        */
+        stateRegister(orgName || '', message).then(any => {
+          var id = any.idNumber;
+          var state = any.state
+          var formDate = any.formationDate;
+          var address = any.address;
+          var status = any.status;
+          console.log("id: ", id, "formDate: ", formDate, "address: ", address);
+          addOrgRegistrationAttestation(state, id, status, address, formDate);
+          addMessage(Role.Assistant, MessageType.Normal, `${orgName} Registeration Verified!`, '', fileDataRef, sendMessage);
+        });
       } else if (str.includes('linkedin_verification')) {
         //call linkedin modal here
         console.log('LinkedIn verification command detected from AI response');
