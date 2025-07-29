@@ -113,6 +113,16 @@ function extractJsonFromString(input: string): string | null {
   return lastValidSegment;
 }
 
+// Helper function to safely stringify objects that may contain BigInt values
+function safeStringify(obj: any): string {
+  return JSON.stringify(obj, (key, value) => {
+    if (typeof value === 'bigint') {
+      return value.toString();
+    }
+    return value;
+  });
+}
+
 
 interface MainPageProps {
   className: string;
@@ -407,38 +417,38 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           for (const entity of ents) {
             if (entity.name == "org(org)" && entity.attestation) {
               setOrgNameValue((entity.attestation as OrgAttestation).name)
-              orgname = JSON.stringify(entity.attestation as OrgAttestation)
+              orgname = safeStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == "domain(org)") {
               console.log('domain here!!!!!')
-              domain = JSON.stringify(entity.attestation as OrgAttestation)
+              domain = safeStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == "ens(org)") {
-              ens_registration = JSON.stringify(entity.attestation as OrgAttestation)
+              ens_registration = safeStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == "indiv(indiv)") {
-              indiv = JSON.stringify(entity.attestation as OrgAttestation)
+              indiv = safeStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'linkedin(indiv)') {
-              linkedin = JSON.stringify(entity.attestation as OrgAttestation)
+              linkedin = safeStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'x(indiv)') {
-              x = JSON.stringify(entity.attestation as OrgAttestation)
+              x = safeStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'account(indiv)') {
-              account_indiv = JSON.stringify(entity.attestation as OrgAttestation)
+              account_indiv = safeStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'insurance(org)') {
-              insurance = JSON.stringify(entity.attestation as OrgAttestation)
+              insurance = safeStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'website(org)') {
-              website = JSON.stringify(entity.attestation as OrgAttestation)
+              website = safeStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'shopify(org)') {
-              shopify = JSON.stringify(entity.attestation as OrgAttestation)
+              shopify = safeStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'email(org)') {
-             email_org = JSON.stringify(entity.attestation as OrgAttestation)
+             email_org = safeStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'email(indiv)') {
-             email_indiv = JSON.stringify(entity.attestation as OrgAttestation)
+             email_indiv = safeStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'state-registration(org)') {
-              state_registration = JSON.stringify(entity.attestation as OrgAttestation)
+              state_registration = safeStringify(entity.attestation)
             } else if (entity.name == 'account-org(org)') {
-             accountOrg_org = JSON.stringify(entity.attestation as OrgAttestation)
+             accountOrg_org = safeStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'account(org)') {
-             account_org = JSON.stringify(entity.attestation as OrgAttestation)
+             account_org = safeStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == 'org-indiv(org)') {
-              orgIndiv_org = JSON.stringify(entity.attestation as OrgAttestation)
+              orgIndiv_org = safeStringify(entity.attestation as OrgAttestation)
             }
           }
 
@@ -2265,7 +2275,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         }
       } catch (e) {
         console.error('Error getting the role');
-        console.error('prevMessages = ' + JSON.stringify(prevMessages));
+        console.error('prevMessages = ' + safeStringify(prevMessages));
         console.error(e);
       }
 

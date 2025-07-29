@@ -57,7 +57,15 @@ export async function invokeLangGraphAgent({
   return text;
 }
 
-
+// Helper function to safely stringify objects that may contain BigInt values
+function safeStringify(obj: any): string {
+  return JSON.stringify(obj, (key, value) => {
+    if (typeof value === 'bigint') {
+      return value.toString();
+    }
+    return value;
+  });
+}
 
 export async function sendMessageToLangGraphAssistant(
   message: string,
@@ -75,7 +83,7 @@ export async function sendMessageToLangGraphAssistant(
       'Content-Type': 'application/json',
       'x-api-key': LANGCHAIN_API_KEY
     },
-    body: JSON.stringify({
+    body: safeStringify({
       assistant_id: 'fe096781-5601-53d2-b2f6-0d3403f7e9ca',
       checkpoint: {
         thread_id: thread_id,

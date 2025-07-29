@@ -84,6 +84,16 @@ import {
 } from "../signers/useSelectedSignatory";
 import { getSignerFromSignatory } from "../signers/SignatoryTypes";
 
+// Helper function to safely stringify objects that may contain BigInt values
+function safeStringify(obj: any): string {
+  return JSON.stringify(obj, (key, value) => {
+    if (typeof value === 'bigint') {
+      return value.toString();
+    }
+    return value;
+  });
+}
+
 import {
   Implementation,
   toMetaMaskSmartAccount,
@@ -1703,7 +1713,7 @@ export const useWalletConnect = () => {
                 indName = indivName
               }
 
-              const delegationJsonStr = JSON.stringify(orgIndivDelegation)
+              const delegationJsonStr = safeStringify(orgIndivDelegation)
 
               const vc = await VerifiableCredentialsService.createOrgIndivVC(entityId, orgDid, indivDid, indName, delegationJsonStr, privateIssuerDid);
               const result = await VerifiableCredentialsService.createCredential(vc, entityId, indName, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
