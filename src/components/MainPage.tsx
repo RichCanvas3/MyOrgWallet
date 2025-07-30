@@ -1052,7 +1052,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Email verification modal...', '', fileDataRef, sendMessage);
       } else if (str.includes("delete_all")) {
         setDeleteAttestationsModalVisible(true)
-        addMessage(Role.Assistant, MessageType.Normal, str, 'Opening Deletion Modal.....', fileDataRef, sendMessage);
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening Deletion Modal.....', '', fileDataRef, sendMessage);
       } else {
         addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage); 
       }
