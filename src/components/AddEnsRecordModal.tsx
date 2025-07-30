@@ -75,6 +75,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const [isCreatingSubdomain, setIsCreatingSubdomain] = useState(false);
   const [isWrapping, setIsWrapping] = useState(false);
+  const [subdomainName, setSubdomainName] = useState<string>('');
 
   const inputRef = useRef<HTMLInputElement>(null);
   const availabilityTimeoutRef = useRef<NodeJS.Timeout>();
@@ -106,6 +107,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
     setShouldSkipFirstStep(!!existingEnsName);
     setIsFetchingAvatar(false);
     setUseBasicAvatar(false);
+    setSubdomainName('');
     onClose();
   };
 
@@ -128,6 +130,11 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
   // Simplified input handler - just update the value
   const handleEnsNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setEnsName(event.target.value);
+  };
+
+  // Subdomain input handler
+  const handleSubdomainChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSubdomainName(event.target.value);
   };
 
   // Update availability check function
@@ -397,17 +404,17 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
         // now create attestation
         const enscreationdate = new Date("2023-03-10")
         const enscreationdateSeconds = Math.floor(enscreationdate.getTime() / 1000); // Convert to seconds
-    
+
         const entityId = "ens(org)"
         if (orgDid && privateIssuerDid && credentialManager && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
-    
+
           const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, privateIssuerDid, cleanName, enscreationdate.toDateString());
           const result = await VerifiableCredentialsService.createCredential(vc, entityId, cleanName, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
           const fullVc = result.vc
           const proof = result.proof
           const vcId = result.vcId
           if (proof && fullVc && chain && burnerAccountClient && orgAccountClient && orgBurnerDelegation && orgIndivDelegation ) {
-    
+
             // now create attestation
             const hash = keccak256(toUtf8Bytes("hash value"));
             const attestation: RegisteredENSAttestation = {
@@ -424,18 +431,18 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
               vcid: vcId,
               proof: proof
             };
-    
+
             // Use the signer directly from signatory
             const walletSigner = signatory.signer;
-            
+
             if (!walletSigner) {
               console.error("Failed to get wallet signer");
               return;
             }
-    
+
             const uid = await AttestationService.addRegisteredENSAttestation(chain, attestation, walletSigner, [orgBurnerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
             console.info("add org ens attestation complete")
-    
+
           }
         }
       }
@@ -453,8 +460,8 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
   };
 
   const createSubdomain = async () => {
-    if (!ensName || !chain || !orgAccountClient) {
-      setError('Missing required information');
+    if (!ensName || !chain || !orgAccountClient || !subdomainName.trim()) {
+      setError('Missing required information - please enter a subdomain name');
       return;
     }
 
@@ -463,8 +470,44 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
 
     try {
       const cleanParentName = cleanEnsName(ensName);
-      const result = await EnsService.createSubdomain(orgAccountClient, cleanParentName, 'bob', chain);
-      setSuccess(`Subdomain "${result}" created successfully!`);
+      const cleanSubdomainName = subdomainName.trim().toLowerCase().replace(/[^a-zA-Z0-9-]/g, '');
+
+      // Create the subdomain
+      const result = await EnsService.createSubdomain(orgAccountClient, cleanParentName, cleanSubdomainName, chain);
+
+      // Show initial success
+      setSuccess(`Subdomain "${result}" created! Verifying on blockchain...`);
+
+      // Poll for verification
+      let verified = false;
+      let attempts = 0;
+      const maxAttempts = 15; // 30 seconds total (15 * 2 seconds)
+
+      const pollInterval = setInterval(async () => {
+        attempts++;
+
+        try {
+          const owner = await EnsService.getSubdomainOwner(cleanParentName, cleanSubdomainName, chain);
+          if (owner && owner !== '0x0000000000000000000000000000000000000000') {
+            verified = true;
+            setSuccess(`Subdomain "${result}" created and verified successfully!`);
+            clearInterval(pollInterval);
+          } else if (attempts >= maxAttempts) {
+            setSuccess(`Subdomain "${result}" created! Verification pending - check back in a few minutes.`);
+            clearInterval(pollInterval);
+          } else {
+            // Update progress
+            setSuccess(`Subdomain "${result}" created! Verifying on blockchain... (${attempts}/${maxAttempts})`);
+          }
+        } catch (error) {
+          console.log(`Verification attempt ${attempts} failed`);
+          if (attempts >= maxAttempts) {
+            setSuccess(`Subdomain "${result}" created! Verification pending - check back in a few minutes.`);
+            clearInterval(pollInterval);
+          }
+        }
+      }, 2000); // Check every 2 seconds
+
     } catch (error) {
       console.error('Error creating subdomain:', error);
       setError(error instanceof Error ? error.message : 'Failed to create subdomain');
@@ -571,6 +614,28 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
                   : 'Choose a unique ENS name for your organization. This will be used as your organization\'s identity on the blockchain.'
                 }
               </Typography>
+
+              {!isExistingEns && (
+                <Alert severity="info" sx={{ mb: 3 }}>
+                  <AlertTitle>Why ENS Names Matter for Business Identity</AlertTitle>
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    <strong>Onchain Identity Verification:</strong> ENS names serve as verifiable digital identities on the blockchain,
+                    allowing businesses to prove their authenticity and establish trust with partners, customers, and regulators.
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    <strong>Professional Credibility:</strong> A registered ENS name demonstrates your organization's commitment to
+                    blockchain technology and digital innovation, enhancing your reputation in the Web3 ecosystem.
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    <strong>Decentralized Identity:</strong> Unlike traditional domain names, ENS names are stored on the blockchain,
+                    making them censorship-resistant and providing true ownership that can't be revoked by third parties.
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    <strong>Compliance & Transparency:</strong> ENS registration creates an immutable record of your business identity,
+                    supporting regulatory compliance and audit requirements in the digital economy.
+                  </Typography>
+                </Alert>
+              )}
 
                           <TextField
                 fullWidth
@@ -804,12 +869,22 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
                 <Button onClick={handleBack}>
                   Back
                 </Button>
-                <Button
-                  variant="contained"
-                  onClick={handleNext}
-                >
-                  {isExistingEns ? 'Update' : 'Register'}
-                </Button>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  {isExistingEns && (
+                    <Button
+                      variant="outlined"
+                      onClick={() => setActiveStep(2)}
+                    >
+                      Manage ENS (Wrap & Subdomains)
+                    </Button>
+                  )}
+                  <Button
+                    variant="contained"
+                    onClick={handleNext}
+                  >
+                    {isExistingEns ? 'Update Logo' : 'Register'}
+                  </Button>
+                </Box>
               </Box>
             </Box>
           );
@@ -818,11 +893,11 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
           return (
     <Box sx={{ mt: 3 }}>
       <Typography variant="h6" gutterBottom>
-        {isExistingEns ? 'Confirm Logo Update' : 'Confirm ENS Registration'}
+        {isExistingEns ? 'Manage ENS Name' : 'Confirm ENS Registration'}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         {isExistingEns
-          ? 'Review your logo update details before proceeding.'
+          ? 'Wrap your ENS name and create subdomains to enhance your organization\'s digital identity.'
           : 'Review your ENS registration details before proceeding.'
         }
       </Typography>
@@ -859,12 +934,14 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
         </Alert>
       )}
 
-      {success ? (
+      {(success || isExistingEns) ? (
         // Show success message, ENS link, and close button
         <Box sx={{ mt: 3 }}>
-          <Alert severity="success" sx={{ mb: 3 }}>
-            {success}
-          </Alert>
+          {success && (
+            <Alert severity="success" sx={{ mb: 3 }}>
+              {success}
+            </Alert>
+          )}
           <Box sx={{ mb: 3, textAlign: 'center' }}>
             <Typography variant="body1" sx={{ mb: 1 }}>
               <a
@@ -885,6 +962,18 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
               </a>
             </Typography>
           </Box>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <AlertTitle>ENS Wrapping</AlertTitle>
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              <strong>What is ENS Wrapping?</strong> Wrapping converts your ENS name into an ERC-1155 NFT,
+              enabling advanced features like subdomain management and delegation. This is required before you can create subdomains.
+            </Typography>
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              <strong>Benefits:</strong> Wrapped ENS names can be used as collateral, transferred more easily,
+              and support complex permission structures for your organization's digital identity.
+            </Typography>
+          </Alert>
+
           <Button
             variant="contained"
             onClick={() => wrapEnsName(ensName)}
@@ -901,10 +990,36 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
               'Wrap ENS Name'
             )}
           </Button>
+
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <AlertTitle>ENS Subdomains</AlertTitle>
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              <strong>What are Subdomains?</strong> Subdomains are additional names under your main ENS domain
+              (e.g., "bob.yourcompany.eth"). They allow you to create multiple digital identities for different
+              departments, services, or team members.
+            </Typography>
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              <strong>Business Use Cases:</strong> Use subdomains for different departments (hr.yourcompany.eth),
+              services (api.yourcompany.eth), or team members (john.yourcompany.eth) to organize your
+              organization's digital presence.
+            </Typography>
+          </Alert>
+
+          <TextField
+            fullWidth
+            label="Subdomain Name"
+            placeholder="Enter subdomain name (e.g., hr, api, john)"
+            value={subdomainName}
+            onChange={handleSubdomainChange}
+            helperText={`Your subdomain will be: ${subdomainName ? subdomainName.toLowerCase() + '.' + cleanEnsName(ensName) + '.eth' : 'example.yourcompany.eth'}`}
+            sx={{ mb: 2 }}
+            disabled={isCreatingSubdomain}
+          />
+
           <Button
             variant="contained"
             onClick={createSubdomain}
-            disabled={isCreatingSubdomain}
+            disabled={isCreatingSubdomain || !subdomainName.trim()}
             fullWidth
             sx={{ mb: 2 }}
           >
@@ -914,7 +1029,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
                 Creating Subdomain...
               </>
             ) : (
-              'Create "bob" Subdomain'
+              `Create "${subdomainName || 'subdomain'}" Subdomain`
             )}
           </Button>
           <Button

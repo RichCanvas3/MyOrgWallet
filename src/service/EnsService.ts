@@ -1113,35 +1113,50 @@ class EnsService {
 
         console.log('Subdomain creation transaction confirmed');
 
-        // Wait and verify
-        await new Promise(resolve => setTimeout(resolve, 5000));
-
-        // Verify subdomain creation
-        let subdomainOwner;
-        if (isWrapped) {
-          subdomainOwner = await nameWrapper.ownerOf(subnode);
-        } else {
-          subdomainOwner = await ensRegistry.owner(subnode);
-        }
-
-        console.log('New subdomain owner:', subdomainOwner);
-
-        if (subdomainOwner.toLowerCase() === smartAccountAddress.toLowerCase()) {
-          console.log(`✅ Subdomain "${label}.${parentName}.eth" created successfully!`);
-          return label + '.' + parentName + '.eth';
-        } else {
-          throw new Error(
-            `Subdomain creation verification failed. ` +
-            `Expected owner: ${smartAccountAddress}, ` +
-            `Actual owner: ${subdomainOwner}`
-          );
-        }
+        // Return the subdomain name without immediate verification
+        // Verification will be handled by the calling code with polling
+        console.log(`✅ Subdomain "${label}.${parentName}.eth" creation transaction submitted successfully!`);
+        return label + '.' + parentName + '.eth';
       } catch (error) {
         console.error('Error creating subdomain:', error);
         throw error;
       }
     }
 
+
+    /**
+     * Get the owner of a subdomain
+     */
+    static async getSubdomainOwner(parentName: string, subdomainName: string, chain: Chain): Promise<string> {
+      if (chain.id !== 11155111) {
+        throw new Error('ENS operations are only supported on Sepolia testnet');
+      }
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+
+      // Check if parent is wrapped
+      const nameStatus = await this.checkEnsNameStatus(parentName, chain);
+      const isWrapped = nameStatus.isWrapped;
+
+      const subnode = namehash(subdomainName + '.' + parentName + '.eth');
+
+      if (isWrapped) {
+        const nameWrapper = new ethers.Contract(
+          '0x0635513f179D50A207757E05759CbD106d7dFcE8',
+          NameWrapperABI.abi,
+          provider
+        );
+        return await nameWrapper.ownerOf(subnode);
+      } else {
+        const ENS_REGISTRY_ADDRESS = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
+        const ensRegistry = new ethers.Contract(
+          ENS_REGISTRY_ADDRESS,
+          ['function owner(bytes32 node) view returns (address)'],
+          provider
+        );
+        return await ensRegistry.owner(subnode);
+      }
+    }
 
     /**
      * Get ENS name for an address (reverse resolution)

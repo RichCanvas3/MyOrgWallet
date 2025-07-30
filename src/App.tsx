@@ -313,12 +313,7 @@ const App = () => {
     if (cmd.action == "show" && cmd.entityId == "shopify(org)" && cmd.did && cmd.displayName) {
       setShopifyModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "state-registration(org)" && cmd.did && cmd.displayName) {
-      setStateRegistrationModalVisible(true)
-    }
-    if (cmd.action == "show" && cmd.entityId == "state-registration(org)" && cmd.did && cmd.displayName) {
-      setStateRegistrationModalVisible(true)
-    }
+
 
 
     //console.info("app command: ", cmd)
