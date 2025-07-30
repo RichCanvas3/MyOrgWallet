@@ -10,7 +10,7 @@ import { Entity } from "../models/Entity";
 export async function invokeLangGraphAgent({
   // parameters can be added here if needed
 } = {}) {
-  const response = await fetch('hhttps://myorgwalletlang-7ced710fbd1a5b698d578945dc0f68bd.us.langgraph.app/threads', {
+  const response = await fetch('https://myorgwalletlang-7ced710fbd1a5b698d578945dc0f68bd.us.langgraph.app/threads', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
