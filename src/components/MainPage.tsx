@@ -1050,8 +1050,11 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         console.log('Email verification triggered from yes response');
         setEmailVerificationModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Email verification modal...', '', fileDataRef, sendMessage);
+      } else if (str.includes("delete_all")) {
+        setDeleteAttestationsModalVisible(true)
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening Deletion Modal.....', '', fileDataRef, sendMessage);
       } else {
-        addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
+        addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage); 
       }
 
 
