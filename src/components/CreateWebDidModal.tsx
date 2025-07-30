@@ -96,6 +96,8 @@ const CreateWebDidModal: React.FC<CreateWebDidModalProps> = ({isVisible, onClose
           const yBase64url = toBase64url(y);
           */
 
+          // working example:  did:web:wallet.myorgwallet.io
+
           const domain = domainAttestation.domain
           const webDidJson = {
             "@context": "https://www.w3.org/ns/did/v1, https://w3id.org/security/suites/jws-2020/v1",
