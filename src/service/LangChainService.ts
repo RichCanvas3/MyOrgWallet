@@ -10,7 +10,7 @@ import { Entity } from "../models/Entity";
 export async function invokeLangGraphAgent({
   // parameters can be added here if needed
 } = {}) {
-  const response = await fetch('https://myorgagentrichcanvas-fda39097be375d0f9756d03ee4c93846.us.langgraph.app/threads', {
+  const response = await fetch('https://myorgwalletlang-7ced710fbd1a5b698d578945dc0f68bd.us.langgraph.app/threads', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -23,7 +23,7 @@ export async function invokeLangGraphAgent({
         user_id: "f67be9df-f865-4e95-a8b5-e272ac95bc48",
         session_type: "test",
         custom_note: "Created via API",
-        LANGGRAPH_API_URL: 'https://myorgagentrichcanvas-fda39097be375d0f9756d03ee4c93846.us.langgraph.app'
+        LANGGRAPH_API_URL: 'https://myorgwalletlang-7ced710fbd1a5b698d578945dc0f68bd.us.langgraph.app'
       },
       if_exists: 'do_nothing',
       ttl: {
@@ -77,7 +77,7 @@ export async function sendMessageToLangGraphAssistant(
   XAuthRef?: React.RefObject<XAuthRef>
 ) {
 
-  const data = await fetch('https://myorgagentrichcanvas-fda39097be375d0f9756d03ee4c93846.us.langgraph.app/threads/'+ thread_id +'/runs/stream', {
+  const data = await fetch('https://myorgwalletlang-7ced710fbd1a5b698d578945dc0f68bd.us.langgraph.app/threads/'+ thread_id +'/runs/stream', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ export async function sendMessageToLangGraphAssistant(
       metadata: {
         langgraph_auth_user_id: "f67be9df-f865-4e95-a8b5-e272ac95bc48",
         user_id: "f67be9df-f865-4e95-a8b5-e272ac95bc48",
-        LANGGRAPH_API_URL: 'https://myorgagentrichcanvas-fda39097be375d0f9756d03ee4c93846.us.langgraph.app'
+        LANGGRAPH_API_URL: 'https://myorgwalletlang-7ced710fbd1a5b698d578945dc0f68bd.us.langgraph.app'
       },
       config: {
         tags: [''],
