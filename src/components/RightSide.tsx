@@ -21,9 +21,10 @@ interface RightSideProps {
   onRefreshAccounts?: () => void;
   entities?: Entity[];
   onUnSkipEntity?: (entityName: string) => void;
+  isAttestationDiscoveryLoading?: boolean;
 }
 
-const RightSide: React.FC<RightSideProps> = ({className, appCommand, onRefreshAttestations, onRefreshAccounts, entities, onUnSkipEntity}) => {
+const RightSide: React.FC<RightSideProps> = ({className, appCommand, onRefreshAttestations, onRefreshAccounts, entities, onUnSkipEntity, isAttestationDiscoveryLoading}) => {
   const {t} = useTranslation();
   const navigate = useNavigate();
 
@@ -81,6 +82,7 @@ const RightSide: React.FC<RightSideProps> = ({className, appCommand, onRefreshAt
             onRefreshAccounts={onRefreshAccounts}
             entities={entities}
             onUnSkipEntity={handleUnSkipEntity}
+            isAttestationDiscoveryLoading={isAttestationDiscoveryLoading}
           />
         </nav>
       </div>

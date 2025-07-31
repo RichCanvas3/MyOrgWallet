@@ -78,7 +78,7 @@ import StateRegistrationModal from './StateRegistrationModal';
 import EmailVerificationModal from './EmailVerificationModal';
 import WebsiteModal from './WebsiteModal';
 import InsuranceModal from './InsuranceModal';
-import { invokeLangGraphAgent, sendMessageToLangGraphAssistant } from '../service/LangChainService';
+import { invokeLangGraphAgent, sendMessageToLangGraphAssistant, updateLangChainContext } from '../service/LangChainService';
 
 
 function getFirstValidString(...args: (string | undefined | null)[]): string {
@@ -159,7 +159,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const entitiesRef = useRef(entities);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
 
-
+  // Add loading state for attestation discovery
+  const [isAttestationDiscoveryLoading, setIsAttestationDiscoveryLoading] = useState(true);
 
   const { chain, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, orgAccountClient, orgBurnerDelegation, orgIndivDelegation, orgDid, indivDid, privateIssuerDid, orgName, indivName, indivAccountClient, setOrgNameValue, signatory } = useWallectConnectContext();
 
@@ -232,6 +233,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     setExistingEnsNameForUpdate('');
     addMessage(Role.Assistant, MessageType.Normal, 'Closing ENS registration modal...', '', [], sendMessage);
 
+    // Update LangChain context with current attestations
+    updateLangChainContextWithCurrentAttestations();
+
     // Ask follow-up question after a short delay
     setTimeout(() => {
       addMessage(Role.Assistant, MessageType.Normal, 'What other verification would you like to complete?', '', [], sendMessage);
@@ -242,6 +246,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const handleOnLinkedinModalClose = () => {
     setLinkedinModalVisible(false);
     addMessage(Role.Assistant, MessageType.Normal, 'Closing LinkedIn verification modal...', '', [], sendMessage);
+
+    // Update LangChain context with current attestations
+    updateLangChainContextWithCurrentAttestations();
 
     // Ask follow-up question after a short delay
     setTimeout(() => {
@@ -272,6 +279,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const handleOnStateRegistrationModalClose = () => {
     setStateRegistrationModalVisible(false);
     addMessage(Role.Assistant, MessageType.Normal, 'Closing State Registration verification modal...', '', [], sendMessage);
+
+    // Update LangChain context with current attestations
+    updateLangChainContextWithCurrentAttestations();
 
     // Ask follow-up question after a short delay
     setTimeout(() => {
@@ -412,10 +422,13 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     let account_org;
     let orgIndiv_org;
 
+    // Set loading state for attestation discovery
+    setIsAttestationDiscoveryLoading(true);
 
     if (orgAccountClient && chain && orgDid && indivDid) {
 
-      await AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
+      try {
+        const ents = await AttestationService.setEntityAttestations(chain, orgDid, indivDid);
 
         if (ents != undefined) {
           console.log("ents: ", ents)
@@ -501,11 +514,15 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             }
           }
         }
-      })
-
-
-    }
-    else {
+      } catch (error) {
+        console.error('Error loading attestations:', error);
+      } finally {
+        // Always set loading to false after attestation discovery completes
+        setIsAttestationDiscoveryLoading(false);
+      }
+    } else {
+      // If no required context, still set loading to false
+      setIsAttestationDiscoveryLoading(false);
       navigate("/")
     }
     //return ents_array
@@ -964,11 +981,19 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       console.log('Processed string:', str);
 
       if (str.includes("ens_verification") && orgAccountClient && chain) {
-        console.log('process ens verification')
-        setIsAddEnsRecordModalVisible(true)
-        setExistingEnsNameForUpdate('')
-        // Remove the immediate ENS registration call - it will be handled by the modal
-        addMessage(Role.Assistant, MessageType.Normal, `Opening ENS registration modal...`, '', fileDataRef, sendMessage)
+        // Check if this is a "yes" response to ENS registration
+        if (message.toLowerCase().includes('yes')) {
+          console.log('ENS registration yes response detected, opening modal');
+          setIsAddEnsRecordModalVisible(true);
+          setExistingEnsNameForUpdate('');
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening ENS registration modal...', '', fileDataRef, sendMessage);
+        } else {
+          // Handle direct ENS registration (not from "yes" response)
+          console.log('Direct ENS registration detected');
+          setIsAddEnsRecordModalVisible(true);
+          setExistingEnsNameForUpdate('');
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening ENS registration modal...', '', fileDataRef, sendMessage);
+        }
       } else if (str.includes('state_register') && orgAccountClient && chain) {
         // Check if this is a "yes" response to state registration
         if (message.toLowerCase().includes('yes')) {
@@ -991,43 +1016,101 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           });
         }
       } else if (str.includes('linkedin_verification')) {
-        //call linkedin modal here
-        console.log('LinkedIn verification command detected from AI response');
-        setLinkedinModalVisible(true);
-        addMessage(Role.Assistant, MessageType.Normal, 'Opening LinkedIn verification modal...', '', fileDataRef, sendMessage);
+        // Check if this is a "yes" response to LinkedIn verification
+        if (message.toLowerCase().includes('yes')) {
+          console.log('LinkedIn verification yes response detected, opening modal');
+          setLinkedinModalVisible(true);
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening LinkedIn verification modal...', '', fileDataRef, sendMessage);
+        } else {
+          // Handle direct LinkedIn verification (not from "yes" response)
+          console.log('Direct LinkedIn verification detected');
+          setLinkedinModalVisible(true);
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening LinkedIn verification modal...', '', fileDataRef, sendMessage);
+        }
       } else if (str.includes('shopify_verification')) {
-        //call shopify modal here
-        console.log('Shopify verification command detected from AI response');
-        setShopifyModalVisible(true);
-        addMessage(Role.Assistant, MessageType.Normal, 'Opening Shopify verification modal...', '', fileDataRef, sendMessage);
+        // Check if this is a "yes" response to Shopify verification
+        if (message.toLowerCase().includes('yes')) {
+          console.log('Shopify verification yes response detected, opening modal');
+          setShopifyModalVisible(true);
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening Shopify verification modal...', '', fileDataRef, sendMessage);
+        } else {
+          // Handle direct Shopify verification (not from "yes" response)
+          console.log('Direct Shopify verification detected');
+          setShopifyModalVisible(true);
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening Shopify verification modal...', '', fileDataRef, sendMessage);
+        }
       } else if (str.includes('x_verification')) {
-        //call x modal
-        console.log('X verification command detected from AI response');
-        setXModalVisible(true);
-        addMessage(Role.Assistant, MessageType.Normal, 'Opening X verification modal...', '', fileDataRef, sendMessage);
+        // Check if this is a "yes" response to X verification
+        if (message.toLowerCase().includes('yes')) {
+          console.log('X verification yes response detected, opening modal');
+          setXModalVisible(true);
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening X verification modal...', '', fileDataRef, sendMessage);
+        } else {
+          // Handle direct X verification (not from "yes" response)
+          console.log('Direct X verification detected');
+          setXModalVisible(true);
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening X verification modal...', '', fileDataRef, sendMessage);
+        }
       } else if (str.includes('state_verification')) {
-        //call state registration modal
-        console.log('State verification command detected from AI response');
-        setStateRegistrationModalVisible(true);
-        addMessage(Role.Assistant, MessageType.Normal, 'Opening State Registration verification modal...', '', fileDataRef, sendMessage);
+        // Check if this is a "yes" response to state verification
+        if (message.toLowerCase().includes('yes')) {
+          console.log('State verification yes response detected, opening modal');
+          setStateRegistrationModalVisible(true);
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening State Registration verification modal...', '', fileDataRef, sendMessage);
+        } else {
+          // Handle direct state verification (not from "yes" response)
+          console.log('Direct state verification detected');
+          setStateRegistrationModalVisible(true);
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening State Registration verification modal...', '', fileDataRef, sendMessage);
+        }
       } else if (str.includes('insurance_verification')) {
-        //insurance modal here
-        addMessage(Role.Assistant, MessageType.Normal, 'Insurance being verified...', '', fileDataRef, sendMessage);
+        // Check if this is a "yes" response to insurance verification
+        if (message.toLowerCase().includes('yes')) {
+          console.log('Insurance verification yes response detected, opening modal');
+          setInsuranceModalVisible(true);
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening Insurance verification modal...', '', fileDataRef, sendMessage);
+        } else {
+          // Handle direct insurance verification (not from "yes" response)
+          console.log('Direct insurance verification detected');
+          setInsuranceModalVisible(true);
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening Insurance verification modal...', '', fileDataRef, sendMessage);
+        }
       } else if (str.includes('website_verification')) {
-        //website modal
-        console.log('Website verification command detected from AI response');
-        setWebsiteModalVisible(true);
-        addMessage(Role.Assistant, MessageType.Normal, 'Opening Website verification modal...', '', fileDataRef, sendMessage);
+        // Check if this is a "yes" response to website verification
+        if (message.toLowerCase().includes('yes')) {
+          console.log('Website verification yes response detected, opening modal');
+          setWebsiteModalVisible(true);
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening Website verification modal...', '', fileDataRef, sendMessage);
+        } else {
+          // Handle direct website verification (not from "yes" response)
+          console.log('Direct website verification detected');
+          setWebsiteModalVisible(true);
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening Website verification modal...', '', fileDataRef, sendMessage);
+        }
       } else if (str.includes('email_verification')) {
-        //email modal
-        console.log('Email verification command detected from AI response');
-        setEmailVerificationModalVisible(true);
-        addMessage(Role.Assistant, MessageType.Normal, 'Opening Email verification modal...', '', fileDataRef, sendMessage);
+        // Check if this is a "yes" response to email verification
+        if (message.toLowerCase().includes('yes')) {
+          console.log('Email verification yes response detected, opening modal');
+          setEmailVerificationModalVisible(true);
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening Email verification modal...', '', fileDataRef, sendMessage);
+        } else {
+          // Handle direct email verification (not from "yes" response)
+          console.log('Direct email verification detected');
+          setEmailVerificationModalVisible(true);
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening Email verification modal...', '', fileDataRef, sendMessage);
+        }
       } else if (str.includes('insurance_verification')) {
-        //insurance modal
-        console.log('Insurance verification command detected from AI response');
-        setInsuranceModalVisible(true);
-        addMessage(Role.Assistant, MessageType.Normal, 'Opening Insurance verification modal...', '', fileDataRef, sendMessage);
+        // Check if this is a "yes" response to insurance verification (duplicate pattern)
+        if (message.toLowerCase().includes('yes')) {
+          console.log('Insurance verification yes response detected, opening modal');
+          setInsuranceModalVisible(true);
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening Insurance verification modal...', '', fileDataRef, sendMessage);
+        } else {
+          // Handle direct insurance verification (not from "yes" response)
+          console.log('Direct insurance verification detected');
+          setInsuranceModalVisible(true);
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening Insurance verification modal...', '', fileDataRef, sendMessage);
+        }
       } else if (str.includes('{"validate": "website(org)"}')) {
         //website modal from yes response
         console.log('Website verification triggered from yes response');
@@ -1063,6 +1146,20 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         console.log('State registration verification triggered from yes response');
         setStateRegistrationModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening State Registration verification modal...', '', fileDataRef, sendMessage);
+      } else if (str.includes('ens_register') || str.includes('ens_registration')) {
+        // Check if this is a "yes" response to ENS registration
+        if (message.toLowerCase().includes('yes')) {
+          console.log('ENS registration yes response detected, opening modal');
+          setIsAddEnsRecordModalVisible(true);
+          setExistingEnsNameForUpdate('');
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening ENS registration modal...', '', fileDataRef, sendMessage);
+        } else {
+          // Handle direct ENS registration (not from "yes" response)
+          console.log('Direct ENS registration detected');
+          setIsAddEnsRecordModalVisible(true);
+          setExistingEnsNameForUpdate('');
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening ENS registration modal...', '', fileDataRef, sendMessage);
+        }
       } else if (str.includes('{"validate": "ens(org)"}')) {
         //ens modal from yes response
         console.log('ENS verification triggered from yes response');
@@ -1492,6 +1589,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
               }
             })
 
+            // Update LangChain context with new attestation
+            await updateLangChainContextWithCurrentAttestations();
+
           }
         }
 
@@ -1558,6 +1658,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           }
         })
 
+        // Update LangChain context with new attestation
+        await updateLangChainContextWithCurrentAttestations();
+
       }
     }
 
@@ -1612,6 +1715,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             ent.attestation = attestation
           }
         })
+
+        // Update LangChain context with new attestation
+        await updateLangChainContextWithCurrentAttestations();
 
       }
     }
@@ -1669,6 +1775,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             ent.attestation = attestation
           }
         })
+
+        // Update LangChain context with new attestation
+        await updateLangChainContextWithCurrentAttestations();
 
       }
     }
@@ -2699,6 +2808,86 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     }
   };
 
+  // Helper function to build current attestation context
+  const buildCurrentAttestationContext = () => {
+    const context: any = {};
+
+    if (entities) {
+      for (const entity of entities) {
+        if (entity.attestation) {
+          const attestationData = safeJsonStringify(entity.attestation);
+
+          switch (entity.name) {
+            case 'org(org)':
+              context.name = attestationData;
+              break;
+            case 'domain(org)':
+              context.domain = attestationData;
+              break;
+            case 'linkedin(indiv)':
+              context.linkedin = attestationData;
+              break;
+            case 'x(indiv)':
+              context.x = attestationData;
+              break;
+            case 'state-registration(org)':
+              context.state_registration = attestationData;
+              break;
+            case 'ens(org)':
+              context.ens_registration = attestationData;
+              break;
+            case 'shopify(org)':
+              context.shopify = attestationData;
+              break;
+            case 'insurance(org)':
+              context.insurance = attestationData;
+              break;
+            case 'website(org)':
+              context.website = attestationData;
+              break;
+            case 'email(org)':
+              context.email_org = attestationData;
+              break;
+            case 'email(indiv)':
+              context.email_indiv = attestationData;
+              break;
+            case 'indiv(indiv)':
+              context.indiv = attestationData;
+              break;
+            case 'account(indiv)':
+              context.account_indiv = attestationData;
+              break;
+            case 'account-org(org)':
+              context.accountOrg_org = attestationData;
+              break;
+            case 'account(org)':
+              context.account_org = attestationData;
+              break;
+            case 'org-indiv(org)':
+              context.orgIndiv_org = attestationData;
+              break;
+          }
+        }
+      }
+    }
+
+    return context;
+  };
+
+  // Function to update LangChain context
+  const updateLangChainContextWithCurrentAttestations = async () => {
+    if (threadID) {
+      try {
+        const currentContext = buildCurrentAttestationContext();
+        console.log('Sending context update to LangChain:', currentContext);
+        await updateLangChainContext(threadID, currentContext);
+        console.log('LangChain context updated with current attestations');
+      } catch (error) {
+        console.error('Failed to update LangChain context:', error);
+      }
+    }
+  };
+
   return (
       <div className="flex  w-full">
         <DeleteAttestationsModal
@@ -2877,6 +3066,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             onRefreshAccounts={handleRefreshAccounts}
             entities={entities}
             onUnSkipEntity={handleUnSkipEntity}
+            isAttestationDiscoveryLoading={isAttestationDiscoveryLoading}
           />
         </div>
       </div>

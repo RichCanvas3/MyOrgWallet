@@ -20,6 +20,7 @@ interface MainSectionProps {
   onRefreshAccounts?: () => void;
   entities?: Entity[];
   onUnSkipEntity?: (entityName: string) => void;
+  isAttestationDiscoveryLoading?: boolean;
 }
 
 const MainSection: React.FC<MainSectionProps> = ({
@@ -30,7 +31,8 @@ const MainSection: React.FC<MainSectionProps> = ({
   onRefreshAttestations,
   onRefreshAccounts,
   entities,
-  onUnSkipEntity
+  onUnSkipEntity,
+  isAttestationDiscoveryLoading
 }) => {
   const [currentView, setCurrentView] = useState<'attestations' | 'accounts' | 'trustscore'>('attestations');
 
@@ -80,6 +82,7 @@ const MainSection: React.FC<MainSectionProps> = ({
             onSelectAttestation={onSelectAttestation}
             entities={entities}
             onUnSkipEntity={onUnSkipEntity}
+            isAttestationDiscoveryLoading={isAttestationDiscoveryLoading}
           />
         )}
       </Box>

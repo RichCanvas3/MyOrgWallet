@@ -47,15 +47,38 @@ interface AttestationSectionProps {
   onSelectAttestation: (attestation: Attestation) => void;
   entities?: Entity[];
   onUnSkipEntity?: (entityName: string) => void;
+  isAttestationDiscoveryLoading?: boolean;
 }
 
 // Attestation Statistics Component
 const AttestationStats: React.FC<{
   entities?: Entity[];
   onUnSkip?: (entityName: string) => void;
-}> = ({ entities, onUnSkip }) => {
+  isAttestationDiscoveryLoading?: boolean;
+}> = ({ entities, onUnSkip, isAttestationDiscoveryLoading }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<'completed' | 'missing' | 'skipped'>('completed');
+
+  // Show loading state if attestation discovery is in progress
+  if (isAttestationDiscoveryLoading) {
+    return (
+      <Paper
+        elevation={1}
+        sx={{
+          p: 2,
+          mb: 2,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: 'background.paper'
+        }}
+      >
+        <Typography variant="body2" color="text.secondary">
+          Loading attestations...
+        </Typography>
+      </Paper>
+    );
+  }
 
   if (!entities) return null;
 
@@ -247,7 +270,8 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
   indivDid,
   onSelectAttestation,
   entities,
-  onUnSkipEntity
+  onUnSkipEntity,
+  isAttestationDiscoveryLoading
 }) => {
     const [tabValue, setTabValue] = useState<'individual' | 'organization'>('individual');
     const [categories, setCategories] = useState<AttestationCategory[]>([]);
@@ -434,7 +458,11 @@ return (
     </Box>
 
     {/* ── STATISTICS: Attestation completion stats ───────────────────── */}
-            <AttestationStats entities={entities} onUnSkip={onUnSkipEntity} />
+            <AttestationStats
+              entities={entities}
+              onUnSkip={onUnSkipEntity}
+              isAttestationDiscoveryLoading={isAttestationDiscoveryLoading}
+            />
 
     {/* ── PANEL: Results only, scrollable ───────────────────── */}
     <TabPanel
