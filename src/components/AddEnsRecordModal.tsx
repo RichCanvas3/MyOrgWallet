@@ -75,6 +75,8 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const [isCreatingSubdomain, setIsCreatingSubdomain] = useState(false);
   const [isWrapping, setIsWrapping] = useState(false);
+  const [subdomainName, setSubdomainName] = useState('bob');
+  const [showSubdomainInput, setShowSubdomainInput] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const availabilityTimeoutRef = useRef<NodeJS.Timeout>();
@@ -397,17 +399,17 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
         // now create attestation
         const enscreationdate = new Date("2023-03-10")
         const enscreationdateSeconds = Math.floor(enscreationdate.getTime() / 1000); // Convert to seconds
-    
+
         const entityId = "ens(org)"
         if (orgDid && privateIssuerDid && credentialManager && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
-    
+
           const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, privateIssuerDid, cleanName, enscreationdate.toDateString());
           const result = await VerifiableCredentialsService.createCredential(vc, entityId, cleanName, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
           const fullVc = result.vc
           const proof = result.proof
           const vcId = result.vcId
           if (proof && fullVc && chain && burnerAccountClient && orgAccountClient && orgBurnerDelegation && orgIndivDelegation ) {
-    
+
             // now create attestation
             const hash = keccak256(toUtf8Bytes("hash value"));
             const attestation: RegisteredENSAttestation = {
@@ -424,18 +426,18 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
               vcid: vcId,
               proof: proof
             };
-    
+
             // Use the signer directly from signatory
             const walletSigner = signatory.signer;
-            
+
             if (!walletSigner) {
               console.error("Failed to get wallet signer");
               return;
             }
-    
+
             const uid = await AttestationService.addRegisteredENSAttestation(chain, attestation, walletSigner, [orgBurnerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
             console.info("add org ens attestation complete")
-    
+
           }
         }
       }
@@ -458,12 +460,17 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
       return;
     }
 
+    if (!subdomainName.trim()) {
+      setError('Please enter a subdomain name');
+      return;
+    }
+
     setIsCreatingSubdomain(true);
     setError(null);
 
     try {
       const cleanParentName = cleanEnsName(ensName);
-      const result = await EnsService.createSubdomain(orgAccountClient, cleanParentName, 'bob', chain);
+      const result = await EnsService.createSubdomain(orgAccountClient, cleanParentName, subdomainName.trim(), chain);
       setSuccess(`Subdomain "${result}" created successfully!`);
     } catch (error) {
       console.error('Error creating subdomain:', error);
@@ -885,6 +892,28 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
               </a>
             </Typography>
           </Box>
+
+          {/* ENS Wrapping and Subdomain Information */}
+          <Box sx={{ mb: 3, p: 3, backgroundColor: '#e8f4fd', borderRadius: 2, border: '1px solid #b3d9ff' }}>
+            <Typography variant="h6" fontWeight="bold" color="primary" mb={2}>
+              Next Steps: Wrapping & Subdomains
+            </Typography>
+            <Typography variant="body2" color="text.secondary" paragraph>
+              After registering your ENS name, you can enhance its functionality:
+            </Typography>
+            <Box component="ul" sx={{ pl: 2, mb: 2 }}>
+              <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                <strong>Wrapping:</strong> Converts your ENS name to an NFT, enabling advanced features like subdomain management and transfer capabilities
+              </Typography>
+              <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                <strong>Subdomains:</strong> Create custom addresses (e.g., app.yourname.eth) for different services, team members, or departments
+              </Typography>
+              <Typography component="li" variant="body2" color="text.secondary">
+                <strong>Benefits:</strong> Enhanced security, better organization, and more control over your digital identity
+              </Typography>
+            </Box>
+          </Box>
+
           <Button
             variant="contained"
             onClick={() => wrapEnsName(ensName)}
@@ -901,22 +930,63 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
               'Wrap ENS Name'
             )}
           </Button>
-          <Button
-            variant="contained"
-            onClick={createSubdomain}
-            disabled={isCreatingSubdomain}
-            fullWidth
-            sx={{ mb: 2 }}
-          >
-            {isCreatingSubdomain ? (
-              <>
-                <CircularProgress size={20} sx={{ mr: 1 }} />
-                Creating Subdomain...
-              </>
+
+          {/* Subdomain Creation Section */}
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle1" fontWeight="medium" mb={1}>
+              Create Subdomain
+            </Typography>
+            {!showSubdomainInput ? (
+              <Button
+                variant="outlined"
+                onClick={() => setShowSubdomainInput(true)}
+                fullWidth
+                sx={{ mb: 2 }}
+              >
+                Create Custom Subdomain
+              </Button>
             ) : (
-              'Create "bob" Subdomain'
+              <Box sx={{ mb: 2 }}>
+                <TextField
+                  fullWidth
+                  label="Subdomain Name"
+                  placeholder="Enter subdomain (e.g., app, team, support)"
+                  value={subdomainName}
+                  onChange={(e) => setSubdomainName(e.target.value)}
+                  helperText={`Will create: ${subdomainName}.${cleanEnsName(ensName)}.eth`}
+                  sx={{ mb: 2 }}
+                />
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button
+                    variant="contained"
+                    onClick={createSubdomain}
+                    disabled={isCreatingSubdomain || !subdomainName.trim()}
+                    sx={{ flex: 1 }}
+                  >
+                    {isCreatingSubdomain ? (
+                      <>
+                        <CircularProgress size={20} sx={{ mr: 1 }} />
+                        Creating...
+                      </>
+                    ) : (
+                      'Create Subdomain'
+                    )}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      setShowSubdomainInput(false);
+                      setSubdomainName('bob');
+                    }}
+                    sx={{ flex: 1 }}
+                  >
+                    Cancel
+                  </Button>
+                </Box>
+              </Box>
             )}
-          </Button>
+          </Box>
+
           <Button
             variant="outlined"
             onClick={handleClose}
@@ -977,6 +1047,39 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
 
             {/* Content */}
             <div className="modal-content">
+
+              {/* Why ENS Registration is Important Section */}
+              {!isExistingEns && (
+                <Box sx={{ mb: 3, p: 3, backgroundColor: '#f8f9fa', borderRadius: 2, border: '1px solid #e9ecef' }}>
+                  <Typography variant="h6" fontWeight="bold" color="primary" mb={2}>
+                    Why ENS Registration Matters
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" paragraph>
+                    ENS (Ethereum Name Service) registration provides your organization with a unique digital identity on the blockchain:
+                  </Typography>
+                  <Box component="ul" sx={{ pl: 2, mb: 2 }}>
+                    <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Digital Identity:</strong> Creates a human-readable address (yourname.eth) that represents your organization
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Brand Recognition:</strong> Establishes your organization's presence in the Web3 ecosystem
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Trust & Credibility:</strong> Provides verifiable proof of your organization's blockchain identity
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Interoperability:</strong> Works across all Ethereum-based applications and services
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary">
+                      <strong>Future-Proof:</strong> Ensures your organization is ready for the decentralized web
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                    Your ENS name will serve as your organization's primary identifier across the blockchain ecosystem, making it easier for partners, customers, and services to find and trust your organization.
+                  </Typography>
+                </Box>
+              )}
+
               <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
                 {getSteps(isExistingEns).map((label: string) => (
                   <Step key={label}>

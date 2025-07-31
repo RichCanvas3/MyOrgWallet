@@ -250,13 +250,19 @@ const App = () => {
       setLinkedinModalVisible(true)
     }
     if (cmd.action == "show" && cmd.entityId == "linkedin(indiv)" && cmd.did && cmd.displayName) {
-      setLinkedinModalVisible(true)
+      setSelectedEntityId("linkedin(indiv)")
+      setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
+      setAttestationViewModalVisible(true)
     }
     if (cmd.action == "edit" && cmd.entityId == "x(indiv)" && cmd.did && cmd.displayName) {
       setXModalVisible(true)
     }
     if (cmd.action == "show" && cmd.entityId == "x(indiv)" && cmd.did && cmd.displayName) {
-      setXModalVisible(true)
+      setSelectedEntityId("x(indiv)")
+      setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
+      setAttestationViewModalVisible(true)
     }
 
     if (cmd.action == "edit" && cmd.entityId == "insurance(org)" && cmd.did && cmd.displayName) {
@@ -311,12 +317,12 @@ const App = () => {
       setShopifyModalVisible(true)
     }
     if (cmd.action == "show" && cmd.entityId == "shopify(org)" && cmd.did && cmd.displayName) {
-      setShopifyModalVisible(true)
+      setSelectedEntityId("shopify(org)")
+      setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
+      setAttestationViewModalVisible(true)
     }
     if (cmd.action == "edit" && cmd.entityId == "state-registration(org)" && cmd.did && cmd.displayName) {
-      setStateRegistrationModalVisible(true)
-    }
-    if (cmd.action == "show" && cmd.entityId == "state-registration(org)" && cmd.did && cmd.displayName) {
       setStateRegistrationModalVisible(true)
     }
 

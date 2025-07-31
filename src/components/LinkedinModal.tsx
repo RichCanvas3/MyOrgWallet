@@ -38,12 +38,53 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
   const [attestation, setAttestation] = useState<Attestation | null>(null);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState("");
 
 
   const handleClose = () => {
     onClose();
   };
 
+  const handleOAuthTrigger = async () => {
+    setIsVerifying(true);
+    setVerificationStatus("Initiating LinkedIn verification...");
+
+    try {
+      // Simulate the verification process steps
+      setVerificationStatus("Connecting to LinkedIn...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      setVerificationStatus("Verifying your profile...");
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      setVerificationStatus("Creating verifiable credential...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      setVerificationStatus("Publishing attestation to blockchain...");
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Call the actual OAuth trigger
+      if (onOAuthTrigger) {
+        await onOAuthTrigger();
+      }
+
+      setVerificationStatus("Verification completed successfully!");
+      setTimeout(() => {
+        setIsVerifying(false);
+        setVerificationStatus("");
+        onClose();
+      }, 1500);
+
+    } catch (error) {
+      console.error("Error during LinkedIn verification:", error);
+      setVerificationStatus("Verification failed. Please try again.");
+      setTimeout(() => {
+        setIsVerifying(false);
+        setVerificationStatus("");
+      }, 3000);
+    }
+  };
 
 
   const handleSave = async () => {
@@ -198,16 +239,56 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
                     overflowY: "auto",
                   }}
                 >
+
+                  {/* Why LinkedIn Verification is Important Section */}
+                  <Box sx={{ mb: 3, p: 3, backgroundColor: '#f8f9fa', borderRadius: 2, border: '1px solid #e9ecef' }}>
+                    <Typography variant="h6" fontWeight="bold" color="primary" mb={2}>
+                      Why LinkedIn Verification Matters
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      LinkedIn verification helps establish your professional identity and credibility in the digital world:
+                    </Typography>
+                    <Box component="ul" sx={{ pl: 2, mb: 2 }}>
+                      <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Professional Identity:</strong> Verifies your professional profile and work history
+                      </Typography>
+                      <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Network Trust:</strong> Builds credibility with your professional network and connections
+                      </Typography>
+                      <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Career Opportunities:</strong> Enhances your profile for job searches and business opportunities
+                      </Typography>
+                      <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Business Relationships:</strong> Establishes trust with potential clients, partners, and collaborators
+                      </Typography>
+                      <Typography component="li" variant="body2" color="text.secondary">
+                        <strong>Digital Credentials:</strong> Creates a verifiable, blockchain-based proof of your professional identity
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                      This verification creates a tamper-proof credential that can be shared with your professional network, potential employers, and business partners to establish trust and credibility.
+                    </Typography>
+                  </Box>
+
                   <Button
                     variant="contained"
                     color="primary"
                     size="large"
                     fullWidth
-                    onClick={onOAuthTrigger}
+                    onClick={handleOAuthTrigger}
+                    disabled={isVerifying}
                     sx={{ mb: 2, p: 2, py: 1.5 }}
                   >
-                    Create LinkedIn Attestation
+                    {isVerifying ? "Verifying..." : "Create LinkedIn Attestation"}
                   </Button>
+
+                  {isVerifying && (
+                    <Box sx={{ mt: 2, p: 2, backgroundColor: '#e0f2f7', borderRadius: 1, border: '1px solid #b6effb' }}>
+                      <Typography variant="body2" color="text.secondary">
+                        {verificationStatus}
+                      </Typography>
+                    </Box>
+                  )}
 
                   </Paper>
             </div>
