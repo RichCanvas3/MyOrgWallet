@@ -214,7 +214,7 @@ const StateRegistrationModal: React.FC<StateRegistrationModalProps> = ({isVisibl
               args: "",
               role: Role.Developer,
               messageType: MessageType.Normal,
-              content: `Failed to verify ${name} with LangChain. Please check the company name and try again.`,
+              content: `Failed to verify ${name} with our State Registration Services. Please check the state/company name and try again.`,
             };
 
             const msgs: ChatMessage[] = [...currentMsgs.slice(0, -1), newMsg];
