@@ -52,30 +52,30 @@ interface AttestationCardProps {
 const getEntityIcon = (entityId: string, category?: string): React.ElementType => {
   const lowerEntityId = entityId.toLowerCase();
   const lowerCategory = category?.toLowerCase() || '';
-  
 
-  
+
+
   // Specific entityId pattern matching based on actual attestation data
   if (lowerEntityId === 'indiv(indiv)') {
     return PersonIcon;
   }
-  
+
   if (lowerEntityId === 'account(indiv)') {
     return AccountBalanceIcon;
   }
-  
+
   if (lowerEntityId === 'account-org(org)') {
     return AccountBalanceIcon;
   }
-  
+
   if (lowerEntityId === 'account-indiv(org)') {
     return AccountBalanceIcon;
   }
-  
+
   if (lowerEntityId === 'org(org)') {
     return BusinessIcon;
   }
-  
+
   if (lowerEntityId === 'domain(org)') {
     return LanguageIcon;
   }
@@ -83,27 +83,27 @@ const getEntityIcon = (entityId: string, category?: string): React.ElementType =
   if (lowerEntityId === 'ens(org)') {
     return LanguageIcon;
   }
-  
+
   if (lowerEntityId === 'website(org)') {
     return PublicIcon;
   }
-  
+
   if (lowerEntityId === 'email(org)') {
     return EmailIcon;
   }
-  
+
   if (lowerEntityId === 'email(indiv)') {
     return EmailIcon;
   }
-  
+
   if (lowerEntityId === 'social(indiv)') {
     return ShareIcon;
   }
-  
+
   // Fallback to category-based mapping if no specific entityId match
-  
+
   // Default fallback - try category-based mapping
-  
+
   // Category-based fallback mapping
   const categoryIconMap: Record<string, React.ElementType> = {
     leadership: PersonIcon,
@@ -131,7 +131,7 @@ const getEntityIcon = (entityId: string, category?: string): React.ElementType =
     testimonial: StarIcon,
     accreditation: AssignmentIcon,
   };
-  
+
   const categoryIcon = categoryIconMap[lowerCategory] || UserIcon;
   return categoryIcon;
 };
@@ -245,10 +245,10 @@ export function AttestationCard({
       }}
     >
       <CardActionArea onClick={onSelect} sx={{ p: 0, height: '100%' }}>
-        <CardContent sx={{ 
-          display: "flex", 
-          flexDirection: "column", 
-          p: 0, 
+        <CardContent sx={{
+          display: "flex",
+          flexDirection: "column",
+          p: 0,
           height: '100%',
           position: 'relative',
           zIndex: 1,
@@ -261,7 +261,7 @@ export function AttestationCard({
               borderRadius: '2px 2px 0 0',
             }}
           />
-          
+
           {/* Main content */}
           <Box sx={{ p: 1.5, flex: 1, display: 'flex', flexDirection: 'column' }}>
             {/* Header with icon and badge */}
@@ -274,9 +274,9 @@ export function AttestationCard({
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", minWidth: 0, flex: 1 }}>
-                <Avatar 
-                  sx={{ 
-                    bgcolor: isMetaMaskCard ? 'rgba(0, 0, 0, 0.1)' : `${categoryColor}20`, 
+                <Avatar
+                  sx={{
+                    bgcolor: isMetaMaskCard ? 'rgba(0, 0, 0, 0.1)' : `${categoryColor}20`,
                     color: isMetaMaskCard ? '#333' : categoryColor,
                     width: 32,
                     height: 32,
@@ -288,8 +288,8 @@ export function AttestationCard({
                 <Typography
                   variant="subtitle2"
                   noWrap
-                  sx={{ 
-                    ml: 1, 
+                  sx={{
+                    ml: 1,
                     fontWeight: 600,
                     fontSize: '0.75rem',
                     color: isMetaMaskCard ? '#333' : 'text.primary',
@@ -308,7 +308,7 @@ export function AttestationCard({
               <Typography
                 variant="body2"
                 color={isMetaMaskCard ? '#333' : 'text.secondary'}
-                sx={{ 
+                sx={{
                   lineHeight: 1.3,
                   fontSize: '0.75rem',
                   display: '-webkit-box',
@@ -325,7 +325,7 @@ export function AttestationCard({
 
           </Box>
         </CardContent>
-            </CardActionArea>
+      </CardActionArea>
     </Card>
   );
 }
