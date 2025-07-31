@@ -478,7 +478,24 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     let isMounted = true;
 
     async function fetchThreadID() {
-      if (threadID || !isMounted) {
+      if (!isMounted) {
+        return;
+      } else if (threadID) {
+        const company_config = await init();
+        //getArgfromUserMessage(threadIDResult, `lets get started: ${company_config}`).then(str => {
+        getArgfromUserMessage(threadID,
+         `Lets get started: Name: ${company_config["name"]},
+          Domain: ${company_config["domain"]},
+          Linkedin: ${company_config["linkedin"]},
+          Twitter: ${company_config["x"]},
+          State Registration: ${company_config["state_registration"]},
+          ENS Registration: ${company_config["ens_registration"]},
+          Linkedin: ${company_config["linkedin"]},
+          Shopify: ${company_config["shopify"]},
+          Insurance: ${company_config["insurance"]},
+          Website: ${company_config["website"]},              
+          Org Email: ${company_config["email_org"]},
+          Individual Email: ${company_config["email_indiv"]},`);
         return;
       }
 
@@ -656,6 +673,25 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     messageBoxRef.current?.focusTextarea();
   };
 
+  async function resendConfig(threadID: any) {
+    const company_config = await init();
+    //getArgfromUserMessage(threadIDResult, `lets get started: ${company_config}`).then(str => {
+    getArgfromUserMessage(threadID,
+      `Here's the updated data: Name: ${company_config["name"]},
+      Domain: ${company_config["domain"]},
+      Linkedin: ${company_config["linkedin"]},
+      Twitter: ${company_config["x"]},
+      State Registration: ${company_config["state_registration"]},
+      ENS Registration: ${company_config["ens_registration"]},
+      Linkedin: ${company_config["linkedin"]},
+      Shopify: ${company_config["shopify"]},
+      Insurance: ${company_config["insurance"]},  
+      Website: ${company_config["website"]},              
+      Org Email: ${company_config["email_org"]},
+      Individual Email: ${company_config["email_indiv"]},`);
+    return;
+  }
+
   const handleOnDeleteAttestationsModalClose = () => {
     setDeleteAttestationsModalVisible(false);
   };
@@ -695,6 +731,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     setTimeout(() => {
       getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+      }).then(any => {
+        resendConfig(threadID)
       });
     }, 1000);
   };
@@ -708,6 +746,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     setTimeout(() => {
       getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+      }).then(any => {
+        resendConfig(threadID)
       });
     }, 1000);
   };
@@ -720,6 +760,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     setTimeout(() => {
       getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+      }).then(any => {
+        resendConfig(threadID)
       });
     }, 1000);
   };
@@ -732,6 +774,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     setTimeout(() => {
       getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+      }).then(any => {
+        resendConfig(threadID)
       });
     }, 1000);
   };
@@ -744,6 +788,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     setTimeout(() => {
       getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+      }).then(any => {
+        resendConfig(threadID)
       });
     }, 1000);
   };
@@ -756,6 +802,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     setTimeout(() => {
       getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+      }).then(any => {
+        resendConfig(threadID)
       });
     }, 1000);
   };
@@ -768,6 +816,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     setTimeout(() => {
       getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+      }).then(any => {
+        resendConfig(threadID)
       });
     }, 1000);
   };
@@ -780,6 +830,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     setTimeout(() => {
       getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+      }).then(any => {
+        resendConfig(threadID)
       });
     }, 1000);
   };
