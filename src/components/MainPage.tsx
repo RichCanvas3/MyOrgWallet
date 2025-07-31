@@ -1053,10 +1053,12 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       } else if (str.includes("delete_all")) {
         setDeleteAttestationsModalVisible(true)
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Deletion Modal.....', '', fileDataRef, sendMessage);
+      } else if (str.includes('create_did')) {
+        setCreateWebDidModalVisible(true)
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening Web DID Modal....', '', fileDataRef, sendMessage); 
       } else {
         addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage); 
       }
-
 
       console.log('Data From Stream: ', str);
 
