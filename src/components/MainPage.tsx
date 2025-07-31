@@ -970,8 +970,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         // Remove the immediate ENS registration call - it will be handled by the modal
         addMessage(Role.Assistant, MessageType.Normal, `Opening ENS registration modal...`, '', fileDataRef, sendMessage)
       } else if (str.includes('state_register') && orgAccountClient && chain) {
-        const listMessage = str.split(' ')
-        console.log(listMessage)
+        setStateRegistrationModalVisible(true);
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening State Registration verification modal...', '', fileDataRef, sendMessage);
+        /*
         stateRegister(orgName || '', message).then(any => {
           var id = any.idNumber;
           var state = any.state
@@ -980,8 +981,10 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           var status = any.status;
           console.log("id: ", id, "formDate: ", formDate, "address: ", address);
           addOrgRegistrationAttestation(state, id, status, address, formDate);
+        
           addMessage(Role.Assistant, MessageType.Normal, `${orgName} Registeration Verified!`, '', fileDataRef, sendMessage);
         });
+        */
       } else if (str.includes('linkedin_verification')) {
         //call linkedin modal here
         console.log('LinkedIn verification command detected from AI response');
@@ -997,11 +1000,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         console.log('X verification command detected from AI response');
         setXModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening X verification modal...', '', fileDataRef, sendMessage);
-      } else if (str.includes('state_verification')) {
-        //call state registration modal
-        console.log('State verification command detected from AI response');
-        setStateRegistrationModalVisible(true);
-        addMessage(Role.Assistant, MessageType.Normal, 'Opening State Registration verification modal...', '', fileDataRef, sendMessage);
       } else if (str.includes('insurance_verification')) {
         //insurance modal here
         addMessage(Role.Assistant, MessageType.Normal, 'Insurance being verified...', '', fileDataRef, sendMessage);
