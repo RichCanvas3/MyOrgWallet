@@ -47,42 +47,13 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
   };
 
   const handleOAuthTrigger = async () => {
-    setIsVerifying(true);
-    setVerificationStatus("Initiating LinkedIn verification...");
-
     try {
-      // Simulate the verification process steps
-      setVerificationStatus("Connecting to LinkedIn...");
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      setVerificationStatus("Verifying your profile...");
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      setVerificationStatus("Creating verifiable credential...");
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      setVerificationStatus("Publishing attestation to blockchain...");
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Call the actual OAuth trigger
+      // Call the OAuth trigger immediately
       if (onOAuthTrigger) {
-        await onOAuthTrigger();
+        onOAuthTrigger();
       }
-
-      setVerificationStatus("Verification completed successfully!");
-      setTimeout(() => {
-        setIsVerifying(false);
-        setVerificationStatus("");
-        onClose();
-      }, 1500);
-
     } catch (error) {
-      console.error("Error during LinkedIn verification:", error);
-      setVerificationStatus("Verification failed. Please try again.");
-      setTimeout(() => {
-        setIsVerifying(false);
-        setVerificationStatus("");
-      }, 3000);
+      console.error("Error triggering LinkedIn OAuth:", error);
     }
   };
 

@@ -25,7 +25,7 @@ import AboutUs from './components/AboutUs';
 
 
 import LinkedinCallback from './components/LinkedinCallback';
-import LinkedinModal from './components/LinkedinModal';
+
 import AttestationViewModal from './components/AttestationViewModal';
 
 import XCallback from './components/XCallback';
@@ -132,7 +132,7 @@ const App = () => {
   const [selectedEntityId, setSelectedEntityId] = useState("");
   const [selectedDisplayName, setSelectedDisplayName] = useState("");
 
-  const [isLinkedinModalVisible, setLinkedinModalVisible] = useState(false);
+
   const [isXModalVisible, setXModalVisible] = useState(false);
   const [isShopifyModalVisible, setShopifyModalVisible] = useState(false);
   const [isStateRegistrationModalVisible, setStateRegistrationModalVisible] = useState(false);
@@ -246,9 +246,7 @@ const App = () => {
       setAttestationViewModalVisible(true)
     }
 
-    if (cmd.action == "edit" && cmd.entityId == "linkedin(indiv)" && cmd.did && cmd.displayName) {
-      setLinkedinModalVisible(true)
-    }
+
     if (cmd.action == "show" && cmd.entityId == "linkedin(indiv)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("linkedin(indiv)")
       setSelectedDid(cmd.did)
@@ -332,9 +330,7 @@ const App = () => {
 
 
 
-  const handleOnLinkedinModalClose = () => {
-    setLinkedinModalVisible(false);
-  }
+
 
   const handleOnXModalClose = () => {
     setXModalVisible(false);
@@ -464,10 +460,7 @@ const App = () => {
               <ToastContainer />
               <div className="flex w-full h-full relative z-0">
 
-                <LinkedinModal
-                  isVisible={isLinkedinModalVisible}
-                  onClose={handleOnLinkedinModalClose}
-                />
+
                 <AttestationViewModal
                   did={selectedDid}
                   entityId={selectedEntityId}
