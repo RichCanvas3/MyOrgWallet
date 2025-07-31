@@ -1660,7 +1660,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   }
 
-
+  /*
   function checkLinkedinAttestation(lastAssistantResponse: string, lastUserResponse: string) {
 
     console.log('checkLinkedinAttestation called with:', { lastAssistantResponse, lastUserResponse });
@@ -1792,7 +1792,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     return ""
 
   }
-
+  */
 
   async function processUserMessage(currentThreadID: string, content: string) {
 
@@ -1827,6 +1827,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         var messages: ChatMessage[] = JSON.parse(conversation.messages);
         if (messages.length > 0) {
           const lastAssistantMessage = messages[messages.length - 1].content.toLowerCase();
+          /*
           console.log('Checking yes response with last assistant message:', lastAssistantMessage);
 
           // Check for yes responses to verification questions
@@ -1865,6 +1866,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
             console.log('Email yes detected, returning:', args);
             return args;
           }
+          */
         }
       }
 
