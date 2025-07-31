@@ -963,7 +963,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       console.log('Processing message:', message);
       console.log('Processed string:', str);
 
-      if (str.includes("ens_verification") && orgAccountClient && chain) {
+      if (str.includes("ens_registration") && orgAccountClient && chain) {
         console.log('process ens verification')
         setIsAddEnsRecordModalVisible(true)
         setExistingEnsNameForUpdate('')
