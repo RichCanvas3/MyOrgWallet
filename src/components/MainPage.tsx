@@ -197,117 +197,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const [isThinking, setIsThinking] = useState(false);
   const thinkingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleOnDeleteAttestationsModalClose = () => {
-    setDeleteAttestationsModalVisible(false);
-  };
-  const handleOnApproveLeaderModalClose = () => {
-    setApproveLeaderModalVisible(false);
-  };
-  const handleOnApproveAccountAccessModalClose = () => {
-    setApproveAccountAccessModalVisible(false);
-  };
-  const handleOnCreateWebDidModalClose = () => {
-    setCreateWebDidModalVisible(false);
-  };
-  const handleOnImportDriversLicenseModalClose = () => {
-    setImportDriversLicenseModalVisible(false);
-  };
-  const handleOnAddCreditCardModalClose = () => {
-    setAddCreditCardModalVisible(false);
-  };
-  const handleOnFundCreditCardModalClose = () => {
-    setFundCreditCardModalVisible(false);
-  };
-  const handleOnAddSavingsModalClose = () => {
-    setAddSavingsModalVisible(false);
-  };
-  const handleOnAddAccountModalClose = () => {
-    setAddAccountModalVisible(false);
-  };
-  const handleOnOrgModalClose = () => {
-    setOrgModalVisible(false);
-  };
-  const handleOnAddEnsRecordModalClose = () => {
-    setIsAddEnsRecordModalVisible(false);
-    setExistingEnsNameForUpdate('');
-    addMessage(Role.Assistant, MessageType.Normal, 'Closing ENS registration modal...', '', [], sendMessage);
-
-    // Ask follow-up question after a short delay
-    setTimeout(() => {
-      addMessage(Role.Assistant, MessageType.Normal, 'What other verification would you like to complete?', '', [], sendMessage);
-    }, 1000);
-  };
-
-  // Verification modal close handlers
-  const handleOnLinkedinModalClose = () => {
-    setLinkedinModalVisible(false);
-    addMessage(Role.Assistant, MessageType.Normal, 'Closing LinkedIn verification modal...', '', [], sendMessage);
-
-    // Ask follow-up question after a short delay
-    setTimeout(() => {
-      addMessage(Role.Assistant, MessageType.Normal, 'Would you like to verify your X (Twitter) account next, or would you prefer to verify your Shopify store?', '', [], sendMessage);
-    }, 1000);
-  };
-
-  const handleOnXModalClose = () => {
-    setXModalVisible(false);
-    addMessage(Role.Assistant, MessageType.Normal, 'Closing X (Twitter) verification modal...', '', [], sendMessage);
-
-    // Ask follow-up question after a short delay
-    setTimeout(() => {
-      addMessage(Role.Assistant, MessageType.Normal, 'Would you like to verify your LinkedIn profile next, or would you prefer to verify your Shopify store?', '', [], sendMessage);
-    }, 1000);
-  };
-
-  const handleOnShopifyModalClose = () => {
-    setShopifyModalVisible(false);
-    addMessage(Role.Assistant, MessageType.Normal, 'Closing Shopify verification modal...', '', [], sendMessage);
-
-    // Ask follow-up question after a short delay
-    setTimeout(() => {
-      addMessage(Role.Assistant, MessageType.Normal, 'Would you like to verify your LinkedIn profile next, or would you prefer to verify your X (Twitter) account?', '', [], sendMessage);
-    }, 1000);
-  };
-
-  const handleOnStateRegistrationModalClose = () => {
-    setStateRegistrationModalVisible(false);
-    addMessage(Role.Assistant, MessageType.Normal, 'Closing State Registration verification modal...', '', [], sendMessage);
-
-    // Ask follow-up question after a short delay
-    setTimeout(() => {
-      addMessage(Role.Assistant, MessageType.Normal, 'Great! Now that we have your state registration verified, would you like to verify your LinkedIn profile, X (Twitter) account, or Shopify store?', '', [], sendMessage);
-    }, 1000);
-  };
-
-  const handleOnEmailVerificationModalClose = () => {
-    setEmailVerificationModalVisible(false);
-    addMessage(Role.Assistant, MessageType.Normal, 'Closing Email verification modal...', '', [], sendMessage);
-
-    // Ask follow-up question after a short delay
-    setTimeout(() => {
-      addMessage(Role.Assistant, MessageType.Normal, 'What other verification would you like to complete?', '', [], sendMessage);
-    }, 1000);
-  };
-
-  const handleOnWebsiteModalClose = () => {
-    setWebsiteModalVisible(false);
-    addMessage(Role.Assistant, MessageType.Normal, 'Closing Website verification modal...', '', [], sendMessage);
-
-    // Ask follow-up question after a short delay
-    setTimeout(() => {
-      addMessage(Role.Assistant, MessageType.Normal, 'What other verification would you like to complete?', '', [], sendMessage);
-    }, 1000);
-  };
-
-  const handleOnInsuranceModalClose = () => {
-    setInsuranceModalVisible(false);
-    addMessage(Role.Assistant, MessageType.Normal, 'Closing Insurance verification modal...', '', [], sendMessage);
-
-    // Ask follow-up question after a short delay
-    setTimeout(() => {
-      addMessage(Role.Assistant, MessageType.Normal, 'What other verification would you like to complete?', '', [], sendMessage);
-    }, 1000);
-  };
+  
 
   // OAuth trigger functions
   const handleLinkedinOAuthTrigger = () => {
@@ -766,6 +656,133 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     messageBoxRef.current?.focusTextarea();
   };
 
+  const handleOnDeleteAttestationsModalClose = () => {
+    setDeleteAttestationsModalVisible(false);
+  };
+  const handleOnApproveLeaderModalClose = () => {
+    setApproveLeaderModalVisible(false);
+  };
+  const handleOnApproveAccountAccessModalClose = () => {
+    setApproveAccountAccessModalVisible(false);
+  };
+  const handleOnCreateWebDidModalClose = () => {
+    setCreateWebDidModalVisible(false);
+  };
+  const handleOnImportDriversLicenseModalClose = () => {
+    setImportDriversLicenseModalVisible(false);
+  };
+  const handleOnAddCreditCardModalClose = () => {
+    setAddCreditCardModalVisible(false);
+  };
+  const handleOnFundCreditCardModalClose = () => {
+    setFundCreditCardModalVisible(false);
+  };
+  const handleOnAddSavingsModalClose = () => {
+    setAddSavingsModalVisible(false);
+  };
+  const handleOnAddAccountModalClose = () => {
+    setAddAccountModalVisible(false);
+  };
+  const handleOnOrgModalClose = () => {
+    setOrgModalVisible(false);
+  };
+  const handleOnAddEnsRecordModalClose = () => {
+    setIsAddEnsRecordModalVisible(false);
+    setExistingEnsNameForUpdate('');
+    addMessage(Role.Assistant, MessageType.Normal, 'Closing ENS registration modal...', '', [], sendMessage);
+
+    // Ask follow-up question after a short delay
+    setTimeout(() => {
+      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+        addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+      });
+    }, 1000);
+  };
+
+  // Verification modal close handlers
+  const handleOnLinkedinModalClose = () => {
+    setLinkedinModalVisible(false);
+    addMessage(Role.Assistant, MessageType.Normal, 'Closing LinkedIn verification modal...', '', [], sendMessage);
+
+    // Ask follow-up question after a short delay
+    setTimeout(() => {
+      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+        addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+      });
+    }, 1000);
+  };
+
+  const handleOnXModalClose = () => {
+    setXModalVisible(false);
+    addMessage(Role.Assistant, MessageType.Normal, 'Closing X (Twitter) verification modal...', '', [], sendMessage);
+
+    // Ask follow-up question after a short delay
+    setTimeout(() => {
+      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+        addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+      });
+    }, 1000);
+  };
+
+  const handleOnShopifyModalClose = () => {
+    setShopifyModalVisible(false);
+    addMessage(Role.Assistant, MessageType.Normal, 'Closing Shopify verification modal...', '', [], sendMessage);
+
+    // Ask follow-up question after a short delay
+    setTimeout(() => {
+      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+        addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+      });
+    }, 1000);
+  };
+
+  const handleOnStateRegistrationModalClose = () => {
+    setStateRegistrationModalVisible(false);
+    addMessage(Role.Assistant, MessageType.Normal, 'Closing State Registration verification modal...', '', [], sendMessage);
+
+    // Ask follow-up question after a short delay
+    setTimeout(() => {
+      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+        addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+      });
+    }, 1000);
+  };
+
+  const handleOnEmailVerificationModalClose = () => {
+    setEmailVerificationModalVisible(false);
+    addMessage(Role.Assistant, MessageType.Normal, 'Closing Email verification modal...', '', [], sendMessage);
+
+    // Ask follow-up question after a short delay
+    setTimeout(() => {
+      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+        addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+      });
+    }, 1000);
+  };
+
+  const handleOnWebsiteModalClose = () => {
+    setWebsiteModalVisible(false);
+    addMessage(Role.Assistant, MessageType.Normal, 'Closing Website verification modal...', '', [], sendMessage);
+
+    // Ask follow-up question after a short delay
+    setTimeout(() => {
+      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+        addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+      });
+    }, 1000);
+  };
+
+  const handleOnInsuranceModalClose = () => {
+    setInsuranceModalVisible(false);
+    addMessage(Role.Assistant, MessageType.Normal, 'Closing Insurance verification modal...', '', [], sendMessage);
+
+    // Ask follow-up question after a short delay
+    setTimeout(() => {
+      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+        addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+      });
+    }, 1000);
+  };
 
 
   const handleSelectedConversation = (id: string | null) => {
@@ -846,88 +863,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       return
     }
 
-    const brokenMessage = message.split(' ')
-
-    // Command must be: Register ENS: <domain_name>
-    if (brokenMessage[0] == 'Register' && brokenMessage[1] == 'ENS:') {
-      console.log('Correct input, and name = ', brokenMessage[2] )
-      console.log('ENS Name: ', brokenMessage[2])
-    }
-
     checkAllDirectActions("", message);
-
-    // Handle verification commands before AI processing
-    const lowerMessage = message.toLowerCase();
-    if (lowerMessage.includes('verify linkedin')) {
-      console.log('LinkedIn verification command detected in callApp');
-      setLinkedinModalVisible(true);
-      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
-      addMessage(Role.Assistant, MessageType.Normal, 'Opening LinkedIn verification modal...', '', fileDataRef, sendMessage);
-      return;
-    } else if (lowerMessage.includes('verify shopify')) {
-      console.log('Shopify verification command detected in callApp');
-      setShopifyModalVisible(true);
-      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
-      addMessage(Role.Assistant, MessageType.Normal, 'Opening Shopify verification modal...', '', fileDataRef, sendMessage);
-      return;
-    } else if (lowerMessage.includes('verify x') || lowerMessage.includes('verify twitter')) {
-      console.log('X verification command detected in callApp');
-      setXModalVisible(true);
-      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
-      addMessage(Role.Assistant, MessageType.Normal, 'Opening X verification modal...', '', fileDataRef, sendMessage);
-      return;
-    } else if (lowerMessage.includes('verify state') || lowerMessage.includes('register state')) {
-      console.log('State verification command detected in callApp');
-      setStateRegistrationModalVisible(true);
-      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
-      addMessage(Role.Assistant, MessageType.Normal, 'Opening State Registration verification modal...', '', fileDataRef, sendMessage);
-      return;
-    } else if (lowerMessage.includes('verify org email') || lowerMessage.includes('verify email')) {
-      console.log('Email verification command detected in callApp');
-      setEmailVerificationModalVisible(true);
-      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
-      addMessage(Role.Assistant, MessageType.Normal, 'Opening Email verification modal...', '', fileDataRef, sendMessage);
-      return;
-    } else if (lowerMessage.includes('verify website') || lowerMessage.includes('verify org website')) {
-      console.log('Website verification command detected in callApp');
-      setWebsiteModalVisible(true);
-      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
-      addMessage(Role.Assistant, MessageType.Normal, 'Opening Website verification modal...', '', fileDataRef, sendMessage);
-      return;
-    } else if (lowerMessage.includes('verify insurance') || lowerMessage.includes('verify org insurance')) {
-      console.log('Insurance verification command detected in callApp');
-      setInsuranceModalVisible(true);
-      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
-      addMessage(Role.Assistant, MessageType.Normal, 'Opening Insurance verification modal...', '', fileDataRef, sendMessage);
-      return;
-    }
-
-    // Handle simple word triggers
-    if (lowerMessage === 'linkedin') {
-      console.log('LinkedIn simple command detected in callApp');
-      setLinkedinModalVisible(true);
-      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
-      addMessage(Role.Assistant, MessageType.Normal, 'Opening LinkedIn verification modal...', '', fileDataRef, sendMessage);
-      return;
-    } else if (lowerMessage === 'shopify') {
-      console.log('Shopify simple command detected in callApp');
-      setShopifyModalVisible(true);
-      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
-      addMessage(Role.Assistant, MessageType.Normal, 'Opening Shopify verification modal...', '', fileDataRef, sendMessage);
-      return;
-    } else if (lowerMessage === 'twitter') {
-      console.log('Twitter simple command detected in callApp');
-      setXModalVisible(true);
-      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
-      addMessage(Role.Assistant, MessageType.Normal, 'Opening X verification modal...', '', fileDataRef, sendMessage);
-      return;
-    } else if (lowerMessage === 'website') {
-      console.log('Website simple command detected in callApp');
-      setWebsiteModalVisible(true);
-      addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
-      addMessage(Role.Assistant, MessageType.Normal, 'Opening Website verification modal...', '', fileDataRef, sendMessage);
-      return;
-    }
 
     // Ensure auto-scroll is enabled when sending new messages
     setAllowAutoScroll(true);
@@ -963,7 +899,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       console.log('Processing message:', message);
       console.log('Processed string:', str);
 
-      if (str.includes("ens_registration") && orgAccountClient && chain) {
+      if (str.includes("ens_registration") || str.includes("ens_verification") && orgAccountClient && chain) {
         console.log('process ens verification')
         setIsAddEnsRecordModalVisible(true)
         setExistingEnsNameForUpdate('')
