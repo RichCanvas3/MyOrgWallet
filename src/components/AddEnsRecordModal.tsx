@@ -76,6 +76,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
   const [isCreatingSubdomain, setIsCreatingSubdomain] = useState(false);
   const [isWrapping, setIsWrapping] = useState(false);
   const [subdomainName, setSubdomainName] = useState<string>('');
+  const [registrationStatus, setRegistrationStatus] = useState("");
 
   const inputRef = useRef<HTMLInputElement>(null);
   const availabilityTimeoutRef = useRef<NodeJS.Timeout>();
@@ -379,6 +380,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
     setIsLoading(true);
     setError(null);
     setSuccess(null);
+    setRegistrationStatus("Initializing ENS registration...");
 
     try {
       const cleanName = cleanEnsName(ensName);
@@ -386,22 +388,28 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
       if (isExistingEns) {
         // Update existing ENS name with new logo
         if (imageUrl) {
+          setRegistrationStatus("Updating ENS avatar...");
           let success = await EnsService.updateEnsAvatar(orgAccountClient, cleanName + '.eth', imageUrl, chain);
 
           if (success) {
+            setRegistrationStatus("ENS avatar updated successfully!");
             setSuccess(`ENS avatar for "${cleanName}.eth" updated successfully!`);
           } else {
+            setRegistrationStatus("Error: Failed to update ENS avatar");
             setError(`Failed to update ENS avatar. Please try again.`);
             return;
           }
         }
       } else {
         // Register new ENS name
+        setRegistrationStatus("Checking ENS domain availability...");
         console.log('Registering new ENS name:', cleanName);
         const result = await EnsService.createEnsDomainName(orgAccountClient, cleanName, chain);
+        setRegistrationStatus("ENS domain registered successfully! Creating attestation...");
         setSuccess(`ENS name "${result}" registered successfully!`);
 
         // now create attestation
+        setRegistrationStatus("Creating verifiable credential...");
         const enscreationdate = new Date("2023-03-10")
         const enscreationdateSeconds = Math.floor(enscreationdate.getTime() / 1000); // Convert to seconds
 
@@ -409,6 +417,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
         if (orgDid && privateIssuerDid && credentialManager && privateIssuerAccount && orgAccountClient && burnerAccountClient) {
 
           const vc = await VerifiableCredentialsService.createRegisteredDomainVC(entityId, orgDid, privateIssuerDid, cleanName, enscreationdate.toDateString());
+          setRegistrationStatus("Generating credential proof...");
           const result = await VerifiableCredentialsService.createCredential(vc, entityId, cleanName, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
           const fullVc = result.vc
           const proof = result.proof
@@ -440,7 +449,9 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
               return;
             }
 
+            setRegistrationStatus("Publishing attestation to blockchain...");
             const uid = await AttestationService.addRegisteredENSAttestation(chain, attestation, walletSigner, [orgBurnerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+            setRegistrationStatus("ENS registration completed successfully!");
             console.info("add org ens attestation complete")
 
           }
@@ -453,9 +464,14 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
 
     } catch (error) {
       console.error('Error registering/updating ENS name:', error);
+      setRegistrationStatus("Error: Failed to register/update ENS name");
       setError(error instanceof Error ? error.message : 'Failed to register/update ENS name. Please try again.');
     } finally {
       setIsLoading(false);
+      // Clear status after a delay to show final message
+      setTimeout(() => {
+        setRegistrationStatus("");
+      }, 3000);
     }
   };
 
@@ -1042,22 +1058,32 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
         </Box>
       ) : (
         // Show action buttons for confirmation
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
-          <Button onClick={handleBack}>
-            Back
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleRegister}
-            disabled={isLoading}
-            startIcon={isLoading ? <CircularProgress size={20} /> : null}
-          >
-            {isLoading
-              ? (isExistingEns ? 'Updating...' : 'Registering...')
-              : (isExistingEns ? 'Update Logo' : 'Register ENS Name')
-            }
-          </Button>
-        </Box>
+        <>
+          {registrationStatus && (
+            <Box sx={{ mb: 2, p: 2, backgroundColor: registrationStatus.includes("Error") ? "#ffebee" : "#e3f2fd", borderRadius: 2, border: "1px solid #e0e0e0" }}>
+              <Typography variant="body2" color="text.secondary" align="center">
+                {registrationStatus}
+              </Typography>
+            </Box>
+          )}
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
+            <Button onClick={handleBack}>
+              Back
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleRegister}
+              disabled={isLoading}
+              startIcon={isLoading ? <CircularProgress size={20} /> : null}
+            >
+              {isLoading
+                ? (isExistingEns ? 'Updating...' : 'Registering...')
+                : (isExistingEns ? 'Update Logo' : 'Register ENS Name')
+              }
+            </Button>
+          </Box>
+        </>
       )}
     </Box>
   );

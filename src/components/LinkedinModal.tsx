@@ -38,6 +38,8 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
   const [attestation, setAttestation] = useState<Attestation | null>(null);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState("");
 
 
   const handleClose = () => {
@@ -49,14 +51,18 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
   const handleSave = async () => {
     if (indivAccountClient && chain && indivDid && privateIssuerDid && credentialManager && privateIssuerAccount && burnerAccountClient && indivBurnerDelegation && veramoAgent && signatory) {
       try {
+        setIsVerifying(true);
+        setVerificationStatus("Initializing LinkedIn verification...");
         console.info("Creating LinkedIn attestation with manual data...");
 
         // Use default values since form fields are removed
         const defaultName = "LinkedIn Profile";
         const defaultUrl = "https://www.linkedin.com/in/profile";
 
+        setVerificationStatus("Creating verifiable credential...");
         // Create verifiable credential
         const vc = await VerifiableCredentialsService.createSocialVC("linkedin(indiv)", indivDid, privateIssuerDid, defaultName, defaultUrl);
+        setVerificationStatus("Generating credential proof...");
         const result = await VerifiableCredentialsService.createCredential(vc, "linkedin(indiv)", "linkedin", indivDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent);
 
         const fullVc = result.vc;
@@ -82,10 +88,12 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
             displayName: "linkedin"
           };
 
+          setVerificationStatus("Publishing attestation to blockchain...");
           const walletSigner = signatory.signer;
           const uid = await AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivBurnerDelegation], indivAccountClient, burnerAccountClient);
 
           console.info("LinkedIn attestation created successfully: ", uid);
+          setVerificationStatus("LinkedIn verification completed successfully!");
 
           // Add success message to conversation
           if (location.pathname.startsWith("/chat/c/")) {
@@ -116,12 +124,18 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
           onClose();
         } else {
           console.error("Missing required data for attestation creation");
+          setVerificationStatus("Error: Missing required data for attestation creation");
         }
       } catch (error) {
         console.error("Error creating LinkedIn attestation:", error);
+        setVerificationStatus("Error: Failed to create LinkedIn attestation");
+      } finally {
+        setIsVerifying(false);
       }
     } else {
       console.error("Missing required context for attestation creation");
+      setVerificationStatus("Error: Missing required context for attestation creation");
+      setIsVerifying(false);
     }
   }
 
@@ -198,15 +212,52 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
                     overflowY: "auto",
                   }}
                 >
+
+                  {/* Information Section */}
+                  <Box sx={{ mb: 3, p: 3, backgroundColor: "#f8f9fa", borderRadius: 2, border: "1px solid #e9ecef" }}>
+                    <Typography variant="h6" fontWeight="bold" color="primary" mb={2}>
+                      Why LinkedIn Verification?
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      LinkedIn verification is a powerful way to establish your professional identity and credibility in the digital world. Here's why it matters:
+                    </Typography>
+                    <Box component="ul" sx={{ pl: 2, mb: 2 }}>
+                      <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Professional Identity:</strong> Validates your professional background and work experience
+                      </Typography>
+                      <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Network Trust:</strong> Demonstrates your connections and professional relationships
+                      </Typography>
+                      <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Credibility:</strong> Provides verifiable proof of your professional qualifications and endorsements
+                      </Typography>
+                      <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Digital Reputation:</strong> Creates an immutable record of your professional achievements
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
+                      This verification will create a permanent, tamper-proof record of your LinkedIn profile on the blockchain, enhancing your digital identity and professional reputation.
+                    </Typography>
+                  </Box>
+
+                  {verificationStatus && (
+                    <Box sx={{ mb: 2, p: 2, backgroundColor: isVerifying ? "#e3f2fd" : "#f3e5f5", borderRadius: 2, border: "1px solid #e0e0e0" }}>
+                      <Typography variant="body2" color="text.secondary" align="center">
+                        {verificationStatus}
+                      </Typography>
+                    </Box>
+                  )}
+
                   <Button
                     variant="contained"
                     color="primary"
                     size="large"
                     fullWidth
                     onClick={onOAuthTrigger}
+                    disabled={isVerifying}
                     sx={{ mb: 2, p: 2, py: 1.5 }}
                   >
-                    Create LinkedIn Attestation
+                    {isVerifying ? "Verifying..." : "Create LinkedIn Attestation"}
                   </Button>
 
                   </Paper>

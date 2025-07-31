@@ -283,6 +283,33 @@ const StateRegistrationModal: React.FC<StateRegistrationModalProps> = ({isVisibl
                   }}
                 >
 
+                  {/* Information Section */}
+                  <Box sx={{ mb: 3, p: 3, backgroundColor: "#f8f9fa", borderRadius: 2, border: "1px solid #e9ecef" }}>
+                    <Typography variant="h6" fontWeight="bold" color="primary" mb={2}>
+                      Why State Registration Verification?
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      State registration verification is a crucial step in establishing your organization's legitimacy and trustworthiness. Here's why it matters:
+                    </Typography>
+                    <Box component="ul" sx={{ pl: 2, mb: 2 }}>
+                      <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Legal Compliance:</strong> Confirms your business is properly registered with state authorities
+                      </Typography>
+                      <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Trust Building:</strong> Demonstrates to partners and customers that your organization operates legally
+                      </Typography>
+                      <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Credibility:</strong> Provides verifiable proof of your business's official status and formation date
+                      </Typography>
+                      <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Blockchain Verification:</strong> Creates an immutable attestation that can be verified by anyone
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
+                      This verification will create a permanent, tamper-proof record of your state registration on the blockchain, enhancing your organization's digital identity and reputation.
+                    </Typography>
+                  </Box>
+
                   <Box sx={{ mb: 3, p: 2, border: "1px solid #ddd", borderRadius: 2 }}>
                     <Typography variant="subtitle1" fontWeight="medium" mb={1}>
                       State
@@ -313,7 +340,7 @@ const StateRegistrationModal: React.FC<StateRegistrationModalProps> = ({isVisibl
                     disabled={isVerifying}
                     sx={{ mb: 3, p: 2, py: 1.5 }}
                   >
-                    {isVerifying ? "Verifying with LangChain..." : "Verify & Create Attestation"}
+                    {isVerifying ? "Verifying..." : "Verify & Create Attestation"}
                   </Button>
 
                   </Paper>

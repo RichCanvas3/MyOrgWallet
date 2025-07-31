@@ -970,18 +970,26 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         // Remove the immediate ENS registration call - it will be handled by the modal
         addMessage(Role.Assistant, MessageType.Normal, `Opening ENS registration modal...`, '', fileDataRef, sendMessage)
       } else if (str.includes('state_register') && orgAccountClient && chain) {
-        const listMessage = str.split(' ')
-        console.log(listMessage)
-        stateRegister(orgName || '', message).then(any => {
-          var id = any.idNumber;
-          var state = any.state
-          var formDate = any.formationDate;
-          var address = any.address;
-          var status = any.status;
-          console.log("id: ", id, "formDate: ", formDate, "address: ", address);
-          addOrgRegistrationAttestation(state, id, status, address, formDate);
-          addMessage(Role.Assistant, MessageType.Normal, `${orgName} Registeration Verified!`, '', fileDataRef, sendMessage);
-        });
+        // Check if this is a "yes" response to state registration
+        if (message.toLowerCase().includes('yes')) {
+          console.log('State registration yes response detected, opening modal');
+          setStateRegistrationModalVisible(true);
+          addMessage(Role.Assistant, MessageType.Normal, 'Opening State Registration verification modal...', '', fileDataRef, sendMessage);
+        } else {
+          // Handle direct state registration (not from "yes" response)
+          const listMessage = str.split(' ')
+          console.log(listMessage)
+          stateRegister(orgName || '', message).then(any => {
+            var id = any.idNumber;
+            var state = any.state
+            var formDate = any.formationDate;
+            var address = any.address;
+            var status = any.status;
+            console.log("id: ", id, "formDate: ", formDate, "address: ", address);
+            addOrgRegistrationAttestation(state, id, status, address, formDate);
+            addMessage(Role.Assistant, MessageType.Normal, `${orgName} Registeration Verified!`, '', fileDataRef, sendMessage);
+          });
+        }
       } else if (str.includes('linkedin_verification')) {
         //call linkedin modal here
         console.log('LinkedIn verification command detected from AI response');
@@ -1050,6 +1058,16 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         console.log('Email verification triggered from yes response');
         setEmailVerificationModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Email verification modal...', '', fileDataRef, sendMessage);
+      } else if (str.includes('{"validate": "state-registration(org)"}')) {
+        //state registration modal from yes response
+        console.log('State registration verification triggered from yes response');
+        setStateRegistrationModalVisible(true);
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening State Registration verification modal...', '', fileDataRef, sendMessage);
+      } else if (str.includes('{"validate": "ens(org)"}')) {
+        //ens modal from yes response
+        console.log('ENS verification triggered from yes response');
+        setIsAddEnsRecordModalVisible(true);
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening ENS registration modal...', '', fileDataRef, sendMessage);
       } else {
         addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
       }
@@ -2043,11 +2061,15 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   function getCurrentEntity(entities: Entity[]): Entity | undefined {
     if (!entities) return undefined;
 
+    console.log('Checking entities for current entity:');
     for (const entity of entities) {
+      console.log(`Entity: ${entity.name}, Attestation: ${entity.attestation ? 'exists' : 'undefined'}, Skipped: ${entity.skipped}, Introduction: ${entity.introduction}`);
       if (entity.attestation == undefined && !entity.skipped && entity.introduction != "") {
+        console.log(`Found current entity: ${entity.name}`);
         return entity;
       }
     }
+    console.log('No current entity found - all entities appear to be completed or skipped');
     return undefined;
   }
 

@@ -248,6 +248,7 @@ class AttestationService {
               att = this.constructInsuranceAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "state-registration(org)") {
+              console.info(`Found state registration attestation: ${item.id}`);
               att = this.constructStateRegistrationAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "domain(org)") {
@@ -440,7 +441,7 @@ class AttestationService {
       const easToUse = easInstance || eas;
       console.info("eas connect: ", easToUse)
       console.info("delegator: ", delegator)
-      
+
       let tx = await easToUse.attest({
         schema: schema,
         data: {
@@ -451,7 +452,7 @@ class AttestationService {
         }
       })
 
-      
+
       console.info("eas attest tx: ", tx)
       const executions = [
         {
@@ -487,7 +488,7 @@ class AttestationService {
         executions: [executions]
       });
 
-      
+
       const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
       let userOpHash: Hex;
 
@@ -506,7 +507,7 @@ class AttestationService {
       });
 
       console.info("done sending user operation")
-    
+
 
       const userOperationReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
       console.info("......... add attestation receipt ................: ", userOperationReceipt)
@@ -770,13 +771,13 @@ class AttestationService {
     console.info("....... signer type: ", typeof signer)
     console.info("....... signer address: ", await signer.getAddress())
     console.info("....... signer provider: ", signer.provider)
-    
+
     // Create a new EAS instance for this specific chain
     const easContractAddress = EAS_CONTRACT_ADDRESS || "0x4200000000000000000000000000000000000021";
     console.info("....... EAS contract address: ", easContractAddress)
     const chainEas = new EAS(easContractAddress);
     console.info("....... EAS instance created: ", chainEas)
-    
+
     try {
       chainEas.connect(signer)
       console.info("....... EAS connected successfully")
@@ -785,7 +786,7 @@ class AttestationService {
       throw error
     }
 
-    
+
 
     console.info("eas is connected so add org attestation: ", attestation)
 
@@ -2749,15 +2750,14 @@ class AttestationService {
                 hash: hash,
               }
             }
-            else {
-              //console.info("att: ", att.displayName, item.id)
-              att.uid = item.id,
-              att.attester = "did:pkh:eip155:" + chain?.id + ":" + item.attester,
-              att.schemaId = item.schemaId,
-              entityId = entityId
 
-              attestations.push(att)
-            }
+            //console.info("att: ", att.displayName, item.id)
+            att.uid = item.id,
+            att.attester = "did:pkh:eip155:" + chain?.id + ":" + item.attester,
+            att.schemaId = item.schemaId,
+            entityId = entityId
+
+            attestations.push(att)
 
             //console.info("push att on list: ", att)
 
