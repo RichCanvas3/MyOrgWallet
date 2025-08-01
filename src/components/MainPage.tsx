@@ -331,7 +331,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
     if (orgAccountClient && chain && orgDid && indivDid) {
 
-      await AttestationService.setEntityAttestations(chain, orgDid, indivDid).then((ents) => {
+      // Get the current wallet address for additional filtering
+      const currentWalletAddress = signatory?.walletClient?.account?.address;
+      await AttestationService.setEntityAttestations(chain, orgDid, indivDid, currentWalletAddress).then((ents) => {
 
         if (ents != undefined) {
           console.log("ents: ", ents)
@@ -762,14 +764,25 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   // Verification modal close handlers
   const handleOnLinkedinModalClose = () => {
+    console.log('LinkedIn modal closing, threadID:', threadID);
     setLinkedinModalVisible(false);
     addMessage(Role.Assistant, MessageType.Normal, 'Closing LinkedIn verification modal...', '', [], sendMessage);
 
     // Ask follow-up question after a short delay
     setTimeout(() => {
+      console.log('Timeout triggered, threadID:', threadID);
+      if (!threadID) {
+        console.error('threadID is null, cannot proceed');
+        return;
+      }
+
       getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+        console.log('Got response from getArgfromUserMessage:', str);
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+      }).catch(error => {
+        console.error('Error in getArgfromUserMessage:', error);
       }).then(any => {
+        console.log('Calling resendConfig with threadID:', threadID);
         resendConfig(threadID)
       });
     }, 1000);
@@ -980,7 +993,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         setExistingEnsNameForUpdate('')
         // Remove the immediate ENS registration call - it will be handled by the modal
         addMessage(Role.Assistant, MessageType.Normal, `Opening ENS registration modal...`, '', fileDataRef, sendMessage)
-      } else if (str.includes('state_register') && orgAccountClient && chain) {
+      } else if ((str.includes('state_register') || str.includes('State Registration verification')) && orgAccountClient && chain) {
         setStateRegistrationModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening State Registration verification modal...', '', fileDataRef, sendMessage);
         /*
@@ -1042,6 +1055,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       }
 
       console.log('Data From Stream: ', str);
+      console.log('Checking for state registration triggers in response...');
 
       // Force scroll to bottom after response
       setTimeout(() => {

@@ -162,8 +162,8 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
               vciss: privateIssuerDid,
               vcid: vcId,
               proof: proof,
-              name: "",
-              url: "",
+              name: `${res.data.given_name} ${res.data.family_name}`,
+              url: `https://www.linkedin.com/in/${res.data.sub}`,
               displayName: "linkedin"
             };
 

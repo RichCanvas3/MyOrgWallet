@@ -249,6 +249,8 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
   entities,
   onUnSkipEntity
 }) => {
+  const { signatory } = useWallectConnectContext();
+  const currentWalletAddress = signatory?.walletClient?.account?.address;
     const [tabValue, setTabValue] = useState<'individual' | 'organization'>('individual');
     const [categories, setCategories] = useState<AttestationCategory[]>([]);
     const [attestations, setAttestations] = useState<Attestation[]>([]);
@@ -294,7 +296,7 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
     } else if (event.action === 'delete-all') {
       // Refresh the attestations list from the server
       if (orgDid && indivDid && chain) {
-        AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, indivDid).then((atts) => {
+        AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, indivDid, currentWalletAddress).then((atts) => {
           setAttestations(atts);
           setSelectedId(null);
         });
@@ -308,7 +310,7 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
   // Load data on orgDid change
   useEffect(() => {
     if (orgDid && indivDid && chain && tabValue) {
-      AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, indivDid).then((atts) => {
+      AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, indivDid, currentWalletAddress).then((atts) => {
         setAttestations(atts)
       })
 
@@ -335,7 +337,7 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
   useEffect(() => {
     (window as any).refreshAttestations = () => {
       if (orgDid && indivDid && chain && tabValue) {
-        AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, indivDid).then((atts) => {
+        AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, indivDid, currentWalletAddress).then((atts) => {
           setAttestations(atts)
         })
 

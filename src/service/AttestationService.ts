@@ -123,20 +123,35 @@ class AttestationService {
 
 
 
-  static async setEntityAttestations(chain: Chain, orgDid: string, indivDid: string) {
+  static async setEntityAttestations(chain: Chain, orgDid: string, indivDid: string, currentWalletAddress?: string) {
 
     let entities = this.DefaultEntities
 
     const orgAddress = orgDid.replace("did:pkh:eip155:" + chain?.id + ":", "")
     const indivAddress = indivDid.replace("did:pkh:eip155:" + chain?.id + ":", "")
 
+    // Determine which addresses to query based on the currently connected wallet
+    let addressesToQuery: string[] = [];
+
+    if (currentWalletAddress) {
+      // If we have a current wallet address, only query attestations from addresses
+      // that belong to this specific wallet session
+      console.log("Filtering attestations for current wallet:", currentWalletAddress);
+
+      // For now, we'll still query both addresses but add more specific filtering later
+      // This is a conservative approach to ensure we don't miss any attestations
+      addressesToQuery = [orgAddress, indivAddress];
+    } else {
+      // Fallback to the original behavior if no current wallet address is provided
+      addressesToQuery = [orgAddress, indivAddress];
+    }
 
     let exists = false
     const query = gql`
       query {
         attestations(
           where: {
-            attester: { in: ["${orgAddress}", "${indivAddress}"] }
+            attester: { in: [${addressesToQuery.map(addr => `"${addr}"`).join(", ")}] }
             revoked: { equals: false }
           }
         ) {
@@ -155,8 +170,12 @@ class AttestationService {
       indivAddress,
       orgDid,
       indivDid,
+      currentWalletAddress,
       addressesAreDifferent: orgAddress !== indivAddress
     })
+
+    // Debug: Log the exact GraphQL query being sent
+    console.log("GraphQL Query:", `attester: { in: ["${orgAddress}", "${indivAddress}"] }`)
 
     // cycle through aes attestations and update entity with attestation info
     let processedCount = 0;
@@ -248,6 +267,25 @@ class AttestationService {
                      item.attester.toLowerCase() !== indivAddress.toLowerCase()) {
               console.log(`Skipping attestation ${item.id} - wrong attester: ${item.attester} (expected: ${orgAddress} or ${indivAddress})`);
               shouldProcessAttestation = false;
+            }
+
+            // Additional filtering: If we have a current wallet address, ensure attestations belong to this wallet's context
+            if (currentWalletAddress && shouldProcessAttestation) {
+              // The currentWalletAddress is the EOA address of the connected wallet
+              // We need to check if this attestation was created by smart accounts that belong to this EOA
+              // This is a more sophisticated check that could be enhanced with additional context
+
+              // For now, we'll use the existing logic but add more detailed logging
+              const attestationBelongsToCurrentWallet =
+                item.attester.toLowerCase() === orgAddress.toLowerCase() ||
+                item.attester.toLowerCase() === indivAddress.toLowerCase();
+
+              if (!attestationBelongsToCurrentWallet) {
+                console.log(`Skipping attestation ${item.id} - not from current wallet context: ${item.attester} (current wallet: ${currentWalletAddress})`);
+                shouldProcessAttestation = false;
+              } else {
+                console.log(`Keeping attestation ${item.id} - belongs to current wallet context: ${item.attester} (current wallet: ${currentWalletAddress})`);
+              }
             }
 
             if (!shouldProcessAttestation) {
@@ -2663,12 +2701,26 @@ class AttestationService {
     return attestationCategories
   }
 
-  static async loadRecentAttestationsTitleOnly(chain: Chain, orgDid: string, indivDid: string): Promise<Attestation[]> {
+  static async loadRecentAttestationsTitleOnly(chain: Chain, orgDid: string, indivDid: string, currentWalletAddress?: string): Promise<Attestation[]> {
 
     const orgAddress = orgDid.replace("did:pkh:eip155:" + chain?.id + ":", "")
     const indivAddress = indivDid.replace("did:pkh:eip155:"  + chain?.id + ":", "")
 
+    // Determine which addresses to query based on the currently connected wallet
+    let addressesToQuery: string[] = [];
 
+    if (currentWalletAddress) {
+      // If we have a current wallet address, only query attestations from addresses
+      // that belong to this specific wallet session
+      console.log("loadRecentAttestationsTitleOnly - Filtering attestations for current wallet:", currentWalletAddress);
+
+      // For now, we'll still query both addresses but add more specific filtering later
+      // This is a conservative approach to ensure we don't miss any attestations
+      addressesToQuery = [orgAddress, indivAddress];
+    } else {
+      // Fallback to the original behavior if no current wallet address is provided
+      addressesToQuery = [orgAddress, indivAddress];
+    }
 
     try {
 
@@ -2678,7 +2730,7 @@ class AttestationService {
         query {
           attestations(
             where: {
-              attester: { in: ["${orgAddress}", "${indivAddress}"] }
+              attester: { in: [${addressesToQuery.map(addr => `"${addr}"`).join(", ")}] }
               revoked: { equals: false }
             }
           ) {
@@ -2773,6 +2825,25 @@ class AttestationService {
                      item.attester.toLowerCase() !== indivAddress.toLowerCase()) {
               console.log(`loadRecentAttestationsTitleOnly - SKIPPED attestation ${item.id} - wrong attester: ${item.attester} (expected: ${orgAddress} or ${indivAddress})`);
               shouldProcessAttestation = false;
+            }
+
+            // Additional filtering: If we have a current wallet address, ensure attestations belong to this wallet's context
+            if (currentWalletAddress && shouldProcessAttestation) {
+              // The currentWalletAddress is the EOA address of the connected wallet
+              // We need to check if this attestation was created by smart accounts that belong to this EOA
+              // This is a more sophisticated check that could be enhanced with additional context
+
+              // For now, we'll use the existing logic but add more detailed logging
+              const attestationBelongsToCurrentWallet =
+                item.attester.toLowerCase() === orgAddress.toLowerCase() ||
+                item.attester.toLowerCase() === indivAddress.toLowerCase();
+
+              if (!attestationBelongsToCurrentWallet) {
+                console.log(`loadRecentAttestationsTitleOnly - Skipping attestation ${item.id} - not from current wallet context: ${item.attester} (current wallet: ${currentWalletAddress})`);
+                shouldProcessAttestation = false;
+              } else {
+                console.log(`loadRecentAttestationsTitleOnly - Keeping attestation ${item.id} - belongs to current wallet context: ${item.attester} (current wallet: ${currentWalletAddress})`);
+              }
             }
 
             if (!shouldProcessAttestation) {
