@@ -1005,31 +1005,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         console.log('Website verification triggered from yes response');
         setWebsiteModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Website verification modal...', '', fileDataRef, sendMessage);
-      } else if (str.includes('{"validate": "linkedin(indiv)"}')) {
-        //linkedin modal from yes response
-        console.log('LinkedIn verification triggered from yes response');
-        setLinkedinModalVisible(true);
-        addMessage(Role.Assistant, MessageType.Normal, 'Opening LinkedIn verification modal...', '', fileDataRef, sendMessage);
-      } else if (str.includes('{"validate": "x(indiv)"}')) {
-        //x modal from yes response
-        console.log('X verification triggered from yes response');
-        setXModalVisible(true);
-        addMessage(Role.Assistant, MessageType.Normal, 'Opening X verification modal...', '', fileDataRef, sendMessage);
-      } else if (str.includes('{"validate": "shopify(org)"}')) {
-        //shopify modal from yes response
-        console.log('Shopify verification triggered from yes response');
-        setShopifyModalVisible(true);
-        addMessage(Role.Assistant, MessageType.Normal, 'Opening Shopify verification modal...', '', fileDataRef, sendMessage);
-      } else if (str.includes('{"validate": "insurance(org)"}')) {
-        //insurance modal from yes response
-        console.log('Insurance verification triggered from yes response');
-        setInsuranceModalVisible(true);
-        addMessage(Role.Assistant, MessageType.Normal, 'Opening Insurance verification modal...', '', fileDataRef, sendMessage);
-      } else if (str.includes('{"validate": "email(org)"}')) {
-        //email modal from yes response
-        console.log('Email verification triggered from yes response');
-        setEmailVerificationModalVisible(true);
-        addMessage(Role.Assistant, MessageType.Normal, 'Opening Email verification modal...', '', fileDataRef, sendMessage);
       } else if (str.includes("delete_all")) {
         setDeleteAttestationsModalVisible(true)
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Deletion Modal.....', '', fileDataRef, sendMessage);
