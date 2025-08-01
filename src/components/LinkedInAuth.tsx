@@ -40,6 +40,8 @@ const SCOPES = 'profile email openid';
 const CALLBACK_URI = `${import.meta.env.VITE_API_URL}/linkedin-callback` || 'http://localhost:4000/linkedin-callback';
 
 interface LinkedInAuthProps {
+  onProgressUpdate?: (step: number, message: string, status?: string) => void;
+  onVerificationComplete?: () => void;
 }
 
 export interface LinkedInAuthRef {
@@ -50,12 +52,15 @@ const entityId = "linkedin(indiv)";
 const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref) => {
 
 
-  const { } = props;
+  const { onProgressUpdate, onVerificationComplete } = props;
   const { chain, signatory, veramoAgent, credentialManager, privateIssuerAccount, burnerAccountClient, indivBurnerDelegation, indivAccountClient, indivDid, privateIssuerDid } = useWallectConnectContext();
 
 
   const openLinkedInPopup = () => {
-
+    // Update progress to step 2 - Opening popup
+    if (onProgressUpdate) {
+      onProgressUpdate(2, "Opening LinkedIn authentication popup...");
+    }
 
     const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}`;
     const width = 600;
@@ -115,6 +120,11 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
         window.removeEventListener('message', handleEvent)
         clearInterval(checkPopupClosed); // Clean up the interval since OAuth completed
 
+        // Update progress to step 3 - Processing authentication
+        if (onProgressUpdate) {
+          onProgressUpdate(3, "Processing LinkedIn authentication...");
+        }
+
         const res = await axios.get(CALLBACK_URI + '?code='+ event.data.code);
 
         console.info("linkedin response: ", res.data)
@@ -125,6 +135,12 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
 
         console.info("indivBurnerDelegation: ", indivBurnerDelegation)
         console.info("add social: ", indivDid,privateIssuerDid,credentialManager,indivAccountClient,burnerAccountClient,indivBurnerDelegation)
+
+        // Update progress to step 4 - Creating attestation
+        if (onProgressUpdate) {
+          onProgressUpdate(4, "Creating LinkedIn attestation...");
+        }
+
         if (indivDid && privateIssuerDid && credentialManager && privateIssuerAccount && indivAccountClient && burnerAccountClient && indivBurnerDelegation) {
           const vc = await VerifiableCredentialsService.createSocialVC(entityId, indivDid, privateIssuerDid, res.data.sub, "");
                       const result = await VerifiableCredentialsService.createCredential(vc, entityId, "linkedin", indivDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent)
@@ -155,6 +171,11 @@ const LinkedInAuth = forwardRef<LinkedInAuthRef, LinkedInAuthProps>((props, ref)
             const walletSigner = signatory.signer
             const uid = await AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivBurnerDelegation], indivAccountClient, burnerAccountClient)
             console.info(">>>>>>>>>>>>>>>>>  added attestation complete: ", uid)
+
+            // Call completion callback
+            if (onVerificationComplete) {
+              onVerificationComplete();
+            }
 
             if (location.pathname.startsWith("/chat/c/")) {
               let conversationId = location.pathname.replace("/chat/c/", "")
