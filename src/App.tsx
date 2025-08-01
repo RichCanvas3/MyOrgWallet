@@ -326,9 +326,7 @@ const App = () => {
       setSelectedDisplayName(cmd.displayName)
       setAttestationViewModalVisible(true)
     }
-    if (cmd.action == "edit" && cmd.entityId == "state-registration(org)" && cmd.did && cmd.displayName) {
-      setStateRegistrationModalVisible(true)
-    }
+
 
 
     //console.info("app command: ", cmd)

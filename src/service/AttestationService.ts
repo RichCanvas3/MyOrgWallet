@@ -2691,8 +2691,19 @@ class AttestationService {
 
 
       const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
+      console.info("loadRecentAttestationsTitleOnly - Returned attestations count: ", data.attestations.length)
+      console.info("loadRecentAttestationsTitleOnly - Loading attestations for addresses:", {
+        orgAddress,
+        indivAddress,
+        orgDid,
+        indivDid,
+        addressesAreDifferent: orgAddress !== indivAddress
+      })
 
       const attestations : Attestation[] = []
+      let processedCount = 0;
+      let skippedCount = 0;
+
       for (const item of data.attestations) {
 
           let schema
@@ -2732,6 +2743,44 @@ class AttestationService {
               console.info("error uid: ", item.id)
               console.info("error schemaId: ", item.schemaId)
             }
+
+            // Additional filtering: Only process attestations that belong to the current user's context
+            let shouldProcessAttestation = true;
+
+            console.log(`loadRecentAttestationsTitleOnly - Processing attestation ${item.id}:`, {
+              entityId,
+              attester: item.attester,
+              orgAddress,
+              indivAddress,
+              isOrgEntity: entityId.includes("(org)"),
+              isIndivEntity: entityId.includes("(indiv)"),
+              attesterMatchesOrg: item.attester.toLowerCase() === orgAddress.toLowerCase(),
+              attesterMatchesIndiv: item.attester.toLowerCase() === indivAddress.toLowerCase()
+            });
+
+            // For organization-related attestations, check if they belong to the current org
+            if (entityId.includes("(org)") && item.attester.toLowerCase() === orgAddress.toLowerCase()) {
+              // This is an org attestation, verify it belongs to current org
+              shouldProcessAttestation = true;
+            }
+            // For individual-related attestations, check if they belong to the current individual
+            else if (entityId.includes("(indiv)") && item.attester.toLowerCase() === indivAddress.toLowerCase()) {
+              // This is an individual attestation, verify it belongs to current individual
+              shouldProcessAttestation = true;
+            }
+            // If attestation is from a different address than expected, skip it
+            else if (item.attester.toLowerCase() !== orgAddress.toLowerCase() &&
+                     item.attester.toLowerCase() !== indivAddress.toLowerCase()) {
+              console.log(`loadRecentAttestationsTitleOnly - SKIPPED attestation ${item.id} - wrong attester: ${item.attester} (expected: ${orgAddress} or ${indivAddress})`);
+              shouldProcessAttestation = false;
+            }
+
+            if (!shouldProcessAttestation) {
+              skippedCount++;
+              continue;
+            }
+
+            processedCount++;
 
             // construct correct attestation
             let att : Attestation | undefined
@@ -2815,6 +2864,7 @@ class AttestationService {
           }
 
       }
+      console.info(`loadRecentAttestationsTitleOnly - Attestation processing complete: ${processedCount} processed, ${skippedCount} skipped`);
       return attestations;
 
     } catch (error) {
