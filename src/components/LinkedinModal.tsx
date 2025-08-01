@@ -24,10 +24,12 @@ interface LinkedinModalProps {
   isVisible: boolean;
   onClose: () => void;
   onOAuthTrigger?: () => void;
+  onProgressUpdate?: (step: number, message: string, status?: string) => void;
+  onVerificationComplete?: () => void;
 }
 
 
-const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAuthTrigger}) => {
+const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAuthTrigger, onProgressUpdate, onVerificationComplete}) => {
 
   const {t} = useTranslation();
 
@@ -40,6 +42,37 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
   const [url, setUrl] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState("");
+  const [progressMessage, setProgressMessage] = useState("");
+  const [currentStep, setCurrentStep] = useState(0);
+  const [totalSteps, setTotalSteps] = useState(4);
+
+  // Function to update progress from external components
+  const updateProgress = (step: number, message: string, status?: string) => {
+    setCurrentStep(step);
+    setProgressMessage(message);
+    if (status) {
+      setVerificationStatus(status);
+    }
+    // Call external progress update callback if provided
+    if (onProgressUpdate) {
+      onProgressUpdate(step, message, status);
+    }
+  };
+
+  // Function to complete the verification process
+  const completeVerification = () => {
+    setCurrentStep(totalSteps);
+    setProgressMessage("LinkedIn verification completed successfully!");
+    setVerificationStatus("Your LinkedIn attestation has been created and added to your wallet.");
+    // Call external completion callback if provided
+    if (onVerificationComplete) {
+      onVerificationComplete();
+    }
+    setTimeout(() => {
+      setIsVerifying(false);
+      onClose();
+    }, 2000);
+  };
 
 
   const handleClose = () => {
@@ -48,12 +81,26 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
 
   const handleOAuthTrigger = async () => {
     try {
+      setIsVerifying(true);
+      setCurrentStep(1);
+      setProgressMessage("Initiating LinkedIn OAuth process...");
+
       // Call the OAuth trigger immediately
       if (onOAuthTrigger) {
+        setCurrentStep(2);
+        setProgressMessage("Opening LinkedIn authentication popup...");
         onOAuthTrigger();
       }
+
+      // Note: The actual OAuth flow and attestation creation will be handled
+      // by the LinkedInAuth component, which should update the progress
+      setCurrentStep(3);
+      setProgressMessage("Waiting for LinkedIn authentication...");
+
     } catch (error) {
       console.error("Error triggering LinkedIn OAuth:", error);
+      setProgressMessage("Error: " + (error as Error).message);
+      setIsVerifying(false);
     }
   };
 
@@ -170,7 +217,23 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
 
 
   useEffect(() => {
+    // Listen for progress updates from LinkedInAuth
+    const handleProgressUpdate = (event: CustomEvent) => {
+      const { step, message, status } = event.detail;
+      updateProgress(step, message, status);
+    };
 
+    const handleVerificationComplete = () => {
+      completeVerification();
+    };
+
+    window.addEventListener('linkedin-progress-update', handleProgressUpdate as EventListener);
+    window.addEventListener('linkedin-verification-complete', handleVerificationComplete);
+
+    return () => {
+      window.removeEventListener('linkedin-progress-update', handleProgressUpdate as EventListener);
+      window.removeEventListener('linkedin-verification-complete', handleVerificationComplete);
+    };
   }, []);
 
 
@@ -255,9 +318,17 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
 
                   {isVerifying && (
                     <Box sx={{ mt: 2, p: 2, backgroundColor: '#e0f2f7', borderRadius: 1, border: '1px solid #b6effb' }}>
-                      <Typography variant="body2" color="text.secondary">
-                        {verificationStatus}
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        Step {currentStep} of {totalSteps}
                       </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
+                        {progressMessage}
+                      </Typography>
+                      {verificationStatus && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontStyle: 'italic' }}>
+                          {verificationStatus}
+                        </Typography>
+                      )}
                     </Box>
                   )}
 

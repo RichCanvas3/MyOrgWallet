@@ -197,7 +197,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const [isThinking, setIsThinking] = useState(false);
   const thinkingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  
+
 
   // OAuth trigger functions
   const handleLinkedinOAuthTrigger = () => {
@@ -210,6 +210,32 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   const handleShopifyOAuthTrigger = () => {
     shopifyAuthRef.current?.openShopifyPopup();
+  };
+
+  // LinkedIn progress update handlers
+  const handleLinkedinProgressUpdate = (step: number, message: string, status?: string) => {
+    console.log(`LinkedIn Progress - Step ${step}: ${message}`);
+    if (status) {
+      console.log(`Status: ${status}`);
+    }
+
+    // Update the modal progress if it's visible
+    if (isLinkedinModalVisible) {
+      // We need to pass this to the modal somehow
+      // For now, we'll use a custom event
+      window.dispatchEvent(new CustomEvent('linkedin-progress-update', {
+        detail: { step, message, status }
+      }));
+    }
+  };
+
+  const handleLinkedinVerificationComplete = () => {
+    console.log("LinkedIn verification completed successfully!");
+
+    // Update the modal to show completion
+    if (isLinkedinModalVisible) {
+      window.dispatchEvent(new CustomEvent('linkedin-verification-complete'));
+    }
   };
 
   // Debug modal states
@@ -492,7 +518,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           ENS Registration: ${company_config["ens_registration"]},
           Shopify: ${company_config["shopify"]},
           Insurance: ${company_config["insurance"]},
-          Website: ${company_config["website"]},              
+          Website: ${company_config["website"]},
           Org Email: ${company_config["email_org"]},
           Individual Email: ${company_config["email_indiv"]},`);
         return;
@@ -682,8 +708,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       State Registration: ${company_config["state_registration"]},
       ENS Registration: ${company_config["ens_registration"]},
       Shopify: ${company_config["shopify"]},
-      Insurance: ${company_config["insurance"]},  
-      Website: ${company_config["website"]},              
+      Insurance: ${company_config["insurance"]},
+      Website: ${company_config["website"]},
       Org Email: ${company_config["email_org"]},
       Individual Email: ${company_config["email_indiv"]},`);
     return;
@@ -966,7 +992,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           var status = any.status;
           console.log("id: ", id, "formDate: ", formDate, "address: ", address);
           addOrgRegistrationAttestation(state, id, status, address, formDate);
-        
+
           addMessage(Role.Assistant, MessageType.Normal, `${orgName} Registeration Verified!`, '', fileDataRef, sendMessage);
         });
         */
@@ -1010,9 +1036,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Deletion Modal.....', '', fileDataRef, sendMessage);
       } else if (str.includes('create_did')) {
         setCreateWebDidModalVisible(true)
-        addMessage(Role.Assistant, MessageType.Normal, 'Opening Web DID Modal....', '', fileDataRef, sendMessage); 
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening Web DID Modal....', '', fileDataRef, sendMessage);
       } else {
-        addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage); 
+        addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
       }
 
       console.log('Data From Stream: ', str);
@@ -2700,6 +2726,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           isVisible={isLinkedinModalVisible}
           onClose={handleOnLinkedinModalClose}
           onOAuthTrigger={handleLinkedinOAuthTrigger}
+          onProgressUpdate={handleLinkedinProgressUpdate}
+          onVerificationComplete={handleLinkedinVerificationComplete}
         />
         <XModal
           isVisible={isXModalVisible}
@@ -2727,7 +2755,11 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           isVisible={isInsuranceModalVisible}
           onClose={handleOnInsuranceModalClose}
         />
-        <LinkedInAuth ref={linkedInAuthRef} />
+        <LinkedInAuth
+          ref={linkedInAuthRef}
+          onProgressUpdate={handleLinkedinProgressUpdate}
+          onVerificationComplete={handleLinkedinVerificationComplete}
+        />
         <XAuth ref={xAuthRef} />
         <ShopifyAuth ref={shopifyAuthRef} />
         <InsuranceAuth ref={insuranceAuthRef} />

@@ -609,6 +609,26 @@ class EnsService {
 
           if (!isApproved) {
             console.log('Setting approval from smart account...');
+
+            // Check smart account balance before approval operation
+            const approvalBalance = await publicClient.getBalance({
+              address: smartAccountClient.address as `0x${string}`
+            });
+            console.log('Smart Account Balance (before approval):', approvalBalance.toString(), 'wei');
+            console.log('Smart Account Balance (ETH):', (Number(approvalBalance) / 1e18).toFixed(6), 'ETH');
+
+            // Estimate gas cost for approval operation
+            const approvalGasCost = gasConfig.maxFeePerGas * gasConfig.callGasLimit;
+            console.log('Estimated approval gas cost:', approvalGasCost.toString(), 'wei');
+            console.log('Estimated approval gas cost (ETH):', (Number(approvalGasCost) / 1e18).toFixed(6), 'ETH');
+
+            if (approvalBalance < approvalGasCost) {
+              console.error('Insufficient funds for approval operation!');
+              console.error('Required:', approvalGasCost.toString(), 'wei');
+              console.error('Available:', approvalBalance.toString(), 'wei');
+              throw new Error(`Smart account has insufficient funds for approval. Required: ${(Number(approvalGasCost) / 1e18).toFixed(6)} ETH, Available: ${(Number(approvalBalance) / 1e18).toFixed(6)} ETH`);
+            }
+
             const approvalData = encodeFunctionData({
               abi: BaseRegistrarABI.abi,
               functionName: 'setApprovalForAll',
@@ -684,6 +704,25 @@ class EnsService {
           });
 
           console.log('Current nonce:', nonce);
+
+          // Check smart account balance before operation
+          const smartAccountBalance = await publicClient.getBalance({
+            address: smartAccountClient.address as `0x${string}`
+          });
+          console.log('Smart Account Balance:', smartAccountBalance.toString(), 'wei');
+          console.log('Smart Account Balance (ETH):', (Number(smartAccountBalance) / 1e18).toFixed(6), 'ETH');
+
+          // Estimate gas cost for the operation
+          const estimatedGasCost = gasConfig.maxFeePerGas * gasConfig.callGasLimit;
+          console.log('Estimated gas cost:', estimatedGasCost.toString(), 'wei');
+          console.log('Estimated gas cost (ETH):', (Number(estimatedGasCost) / 1e18).toFixed(6), 'ETH');
+
+          if (smartAccountBalance < estimatedGasCost) {
+            console.error('Insufficient funds in smart account!');
+            console.error('Required:', estimatedGasCost.toString(), 'wei');
+            console.error('Available:', smartAccountBalance.toString(), 'wei');
+            throw new Error(`Smart account has insufficient funds. Required: ${(Number(estimatedGasCost) / 1e18).toFixed(6)} ETH, Available: ${(Number(smartAccountBalance) / 1e18).toFixed(6)} ETH`);
+          }
 
           const wrapOpHash = await bundlerClient.sendUserOperation({
             account: smartAccountClient,
