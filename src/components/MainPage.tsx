@@ -516,7 +516,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
           Twitter: ${company_config["x"]},
           State Registration: ${company_config["state_registration"]},
           ENS Registration: ${company_config["ens_registration"]},
-          Linkedin: ${company_config["linkedin"]},
           Shopify: ${company_config["shopify"]},
           Insurance: ${company_config["insurance"]},
           Website: ${company_config["website"]},
@@ -541,7 +540,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
               Twitter: ${company_config["x"]},
               State Registration: ${company_config["state_registration"]},
               ENS Registration: ${company_config["ens_registration"]},
-              Linkedin: ${company_config["linkedin"]},
               Shopify: ${company_config["shopify"]},
               Insurance: ${company_config["insurance"]},
               Website: ${company_config["website"]},
@@ -709,7 +707,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       Twitter: ${company_config["x"]},
       State Registration: ${company_config["state_registration"]},
       ENS Registration: ${company_config["ens_registration"]},
-      Linkedin: ${company_config["linkedin"]},
       Shopify: ${company_config["shopify"]},
       Insurance: ${company_config["insurance"]},
       Website: ${company_config["website"]},
@@ -1014,9 +1011,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         console.log('X verification command detected from AI response');
         setXModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening X verification modal...', '', fileDataRef, sendMessage);
-      } else if (str.includes('insurance_verification')) {
-        //insurance modal here
-        addMessage(Role.Assistant, MessageType.Normal, 'Insurance being verified...', '', fileDataRef, sendMessage);
       } else if (str.includes('website_verification')) {
         //website modal
         console.log('Website verification command detected from AI response');
