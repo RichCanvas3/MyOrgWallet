@@ -149,9 +149,19 @@ class AttestationService {
 
 
     const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
-    //console.info("returned attestations: ", data.attestations.length)
+    console.info("Returned attestations count: ", data.attestations.length)
+    console.info("Loading attestations for addresses:", {
+      orgAddress,
+      indivAddress,
+      orgDid,
+      indivDid,
+      addressesAreDifferent: orgAddress !== indivAddress
+    })
 
     // cycle through aes attestations and update entity with attestation info
+    let processedCount = 0;
+    let skippedCount = 0;
+
     for (const item of data.attestations) {
 
       //console.info("attestationitem: ", item)
@@ -199,15 +209,55 @@ class AttestationService {
           continue
         }
 
-        // find entity
-        if (entityId != undefined && hash != undefined) {
+                  // find entity
+          if (entityId != undefined && hash != undefined) {
 
-          let entity : Entity  | undefined;
-          for (const ent of entities) {
-            if (ent.name == entityId) {
-              entity = ent
+            let entity : Entity  | undefined;
+            for (const ent of entities) {
+              if (ent.name == entityId) {
+                entity = ent
+              }
             }
-          }
+
+            // Additional filtering: Only process attestations that belong to the current user's context
+            let shouldProcessAttestation = true;
+
+            console.log(`Processing attestation ${item.id}:`, {
+              entityId,
+              attester: item.attester,
+              orgAddress,
+              indivAddress,
+              isOrgEntity: entityId.includes("(org)"),
+              isIndivEntity: entityId.includes("(indiv)"),
+              attesterMatchesOrg: item.attester.toLowerCase() === orgAddress.toLowerCase(),
+              attesterMatchesIndiv: item.attester.toLowerCase() === indivAddress.toLowerCase()
+            });
+
+            // For organization-related attestations, check if they belong to the current org
+            if (entityId.includes("(org)") && item.attester.toLowerCase() === orgAddress.toLowerCase()) {
+              // This is an org attestation, verify it belongs to current org
+              shouldProcessAttestation = true;
+            }
+            // For individual-related attestations, check if they belong to the current individual
+            else if (entityId.includes("(indiv)") && item.attester.toLowerCase() === indivAddress.toLowerCase()) {
+              // This is an individual attestation, verify it belongs to current individual
+              shouldProcessAttestation = true;
+            }
+            // If attestation is from a different address than expected, skip it
+            else if (item.attester.toLowerCase() !== orgAddress.toLowerCase() &&
+                     item.attester.toLowerCase() !== indivAddress.toLowerCase()) {
+              console.log(`Skipping attestation ${item.id} - wrong attester: ${item.attester} (expected: ${orgAddress} or ${indivAddress})`);
+              shouldProcessAttestation = false;
+            }
+
+            if (!shouldProcessAttestation) {
+              skippedCount++;
+              console.log(`SKIPPED attestation ${item.id} - entityId: ${entityId}, attester: ${item.attester}`);
+              continue;
+            }
+
+            processedCount++;
+            console.log(`PROCESSED attestation ${item.id} - entityId: ${entityId}, attester: ${item.attester}`);
 
 
           // construct correct attestation
@@ -277,8 +327,9 @@ class AttestationService {
 
       }
 
-    };
+          };
 
+    console.info(`Attestation processing complete: ${processedCount} processed, ${skippedCount} skipped`);
     return entities
 
   }
@@ -440,7 +491,7 @@ class AttestationService {
       const easToUse = easInstance || eas;
       console.info("eas connect: ", easToUse)
       console.info("delegator: ", delegator)
-      
+
       let tx = await easToUse.attest({
         schema: schema,
         data: {
@@ -451,7 +502,7 @@ class AttestationService {
         }
       })
 
-      
+
       console.info("eas attest tx: ", tx)
       const executions = [
         {
@@ -487,7 +538,7 @@ class AttestationService {
         executions: [executions]
       });
 
-      
+
       const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
       let userOpHash: Hex;
 
@@ -506,7 +557,7 @@ class AttestationService {
       });
 
       console.info("done sending user operation")
-    
+
 
       const userOperationReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
       console.info("......... add attestation receipt ................: ", userOperationReceipt)
@@ -770,13 +821,13 @@ class AttestationService {
     console.info("....... signer type: ", typeof signer)
     console.info("....... signer address: ", await signer.getAddress())
     console.info("....... signer provider: ", signer.provider)
-    
+
     // Create a new EAS instance for this specific chain
     const easContractAddress = EAS_CONTRACT_ADDRESS || "0x4200000000000000000000000000000000000021";
     console.info("....... EAS contract address: ", easContractAddress)
     const chainEas = new EAS(easContractAddress);
     console.info("....... EAS instance created: ", chainEas)
-    
+
     try {
       chainEas.connect(signer)
       console.info("....... EAS connected successfully")
@@ -785,7 +836,7 @@ class AttestationService {
       throw error
     }
 
-    
+
 
     console.info("eas is connected so add org attestation: ", attestation)
 

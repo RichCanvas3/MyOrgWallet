@@ -247,6 +247,12 @@ const App = () => {
     }
 
 
+    if (cmd.action == "edit" && cmd.entityId == "linkedin(indiv)" && cmd.did && cmd.displayName) {
+      setSelectedEntityId("linkedin(indiv)")
+      setSelectedDid(cmd.did)
+      setSelectedDisplayName(cmd.displayName)
+      setAttestationViewModalVisible(true)
+    }
     if (cmd.action == "show" && cmd.entityId == "linkedin(indiv)" && cmd.did && cmd.displayName) {
       setSelectedEntityId("linkedin(indiv)")
       setSelectedDid(cmd.did)

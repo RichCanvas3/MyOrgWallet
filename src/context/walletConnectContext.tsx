@@ -26,7 +26,7 @@ import { enableMasca} from '@blockchain-lab-um/masca-connector';
 import { createInjectedProviderSignatoryFactory } from "../signers/injectedProviderSignatoryFactory";
 import { createWeb3AuthSignatoryFactory } from "../signers/web3AuthSignatoryFactory";
 
-            
+
 import {
   KeyDIDProvider,
   getDidKeyResolver as keyDidResolver,
@@ -242,7 +242,7 @@ export const WalletConnectContext = createContext<WalletConnectContextState>({
 
   connect: () => {
     throw new Error('WalletConnectContext must be used within a WalletConnectProvider');
-  },  
+  },
   disconnect: () => {
     throw new Error('WalletConnectContext must be used within a WalletConnectProvider');
   },
@@ -281,7 +281,7 @@ export const useWalletConnect = () => {
     // Create the selected signatory factory based on the name
     const selectedSignatoryFactory = useMemo(() => {
       if (!selectedSignatoryFactoryName) return undefined;
-      
+
       // We'll create the factory dynamically when needed instead of here
       return undefined;
     }, [selectedSignatoryFactoryName, chain]);
@@ -504,7 +504,7 @@ export const useWalletConnect = () => {
 
       // For Web3Auth, we don't rely on wagmi's isConnected
       // For MetaMask, we use wagmi's isConnected
-      const shouldResetConnection = selectedSignatoryFactoryName === 'injectedProviderSignatoryFactory' 
+      const shouldResetConnection = selectedSignatoryFactoryName === 'injectedProviderSignatoryFactory'
         ? (!chain || !signatory || connectedAddress)
         : (!chain || connectedAddress);
 
@@ -548,7 +548,7 @@ export const useWalletConnect = () => {
           });
 
           const mascaApi = await (mascaRslt as any).data.getMascaApi();
-          
+
           // Use the factory to create the Masca credential manager
           const credentialManager = await CredentialManagerFactory.createDefaultCredentialManager(
             credentialManagerType,
@@ -572,7 +572,7 @@ export const useWalletConnect = () => {
               });
             }
           }
-          
+
           return credentialManager;
         } else {
           // Use the factory to create the appropriate credential manager
@@ -597,7 +597,7 @@ export const useWalletConnect = () => {
 
 
 
-    const setupSnap = async (ownerAddress: string) : Promise<any|undefined> => {   
+    const setupSnap = async (ownerAddress: string) : Promise<any|undefined> => {
       return await initializeCredentialManager(ownerAddress);
 
     }
@@ -808,7 +808,7 @@ export const useWalletConnect = () => {
                   ...indivBurnerDel,
                   signature,
                 }
-    
+
                 await DelegationService.saveDelegationToStorage("relationship", owner, indivAccountClient.address, burnerAccountClient.address, indivBurnerDel)
               }
             }
@@ -981,8 +981,8 @@ export const useWalletConnect = () => {
 
       for (let i = 0; i < tryCount; i++) {
 
-        // build individuals AA for EOA Connected Wallet
-        const indivAccountClient = await toMetaMaskSmartAccount({
+        // build organization AA for EOA Connected Wallet
+        const orgAccountClient = await toMetaMaskSmartAccount({
           client: publicClient,
           implementation: Implementation.Hybrid,
           deployParams: [owner, [], [], []],
@@ -990,10 +990,10 @@ export const useWalletConnect = () => {
           deploySalt: toHex(startSeed+i),
         });
 
-        const indivAddress = await indivAccountClient.getAddress()
+        const orgAddress = await orgAccountClient.getAddress()
 
-        if (isBlacklisted(indivAddress) == false) {
-          return indivAccountClient
+        if (isBlacklisted(orgAddress) == false) {
+          return orgAccountClient
         }
       }
       return undefined
@@ -1529,21 +1529,21 @@ export const useWalletConnect = () => {
 
             // Use the signer directly from signatory
             const walletSigner = signatory.signer;
-            
+
             if (!walletSigner) {
               console.error("Failed to get wallet signer");
               return;
             }
-            
+
             // Ensure the signer is properly connected to the correct network
             try {
               const signerAddress = await walletSigner.getAddress();
               console.info("Signer address:", signerAddress);
-              
+
               // Check if signer is connected to the correct network
               const signerChainId = await walletSigner.provider?.getNetwork();
               console.info("Signer chain ID:", signerChainId);
-              
+
               if (signerChainId && signerChainId.chainId !== BigInt(chain.id)) {
                 console.error("Signer is not connected to the correct network");
                 return;
@@ -1552,9 +1552,9 @@ export const useWalletConnect = () => {
               console.error("Error checking signer:", error);
               return;
             }
-            
+
             const walletClient = signatory.walletClient;
-        
+
 
             const entityId = "org(org)"
 
@@ -1610,16 +1610,16 @@ export const useWalletConnect = () => {
 
             // Use the signer directly from signatory
             const walletSigner = signatory.signer;
-            
+
             if (!walletSigner) {
               console.error("Failed to get wallet signer");
               return;
             }
-            
+
             const walletClient = signatory.walletClient;
-        
+
             const entityId = "domain(org)"
-        
+
             if (walletSigner && walletClient && orgName && orgDid && orgBurnerDel && indivEmail && credentialManager) {
 
 
@@ -1693,16 +1693,16 @@ export const useWalletConnect = () => {
 
             // Use the signer directly from signatory
             const walletSigner = signatory.signer;
-            
+
             if (!walletSigner) {
               console.error("Failed to get wallet signer");
               return;
             }
-            
+
             const walletClient = signatory.walletClient;
-        
+
             const entityId = "org-indiv(org)"
-        
+
             if (credentialManager && walletSigner && walletClient && privateIssuerAccount && indivDid && orgDid && orgBurnerDel) {
 
 
@@ -1748,7 +1748,7 @@ export const useWalletConnect = () => {
             }
             else {
 
-              console.info("*********** no wallet signer or client or indivDid or orgDid or orgBurnerDel")  
+              console.info("*********** no wallet signer or client or indivDid or orgDid or orgBurnerDel")
               console.info("credentialManager: ", credentialManager)
               console.info("walletSigner: ", walletSigner)
               console.info("walletClient: ", walletClient)
@@ -1819,10 +1819,10 @@ export const useWalletConnect = () => {
             let walletSigner, walletClient;
             walletSigner = signatory.signer;
             walletClient = signatory.walletClient;
-            
-        
+
+
             const entityId = "indiv(indiv)"
-        
+
             if (walletSigner && walletClient && privateIssuerAccount && indivDid && orgDid && credentialManager) {
 
 
@@ -1869,12 +1869,12 @@ export const useWalletConnect = () => {
 
             // Use existing signatory instead of creating new MetaMask connection
             let walletSigner, walletClient;
-            
+
             walletSigner = signatory.signer
             walletClient = signatory.walletClient
-        
+
             const entityId = "email(indiv)"
-        
+
             if (walletSigner && walletClient && privateIssuerAccount && indivDid && credentialManager) {
 
               let indEmail = "email";
@@ -1941,12 +1941,12 @@ export const useWalletConnect = () => {
 
     const disconnect = async () => {
       console.info("*********** disconnect")
-      
+
       try {
         // Get the signatory factory and call its logout method if available
         if (selectedSignatoryFactoryName) {
           let signatoryFactory;
-          
+
           if (selectedSignatoryFactoryName === 'web3AuthSignatoryFactory') {
             signatoryFactory = createWeb3AuthSignatoryFactory({
               chain: chain as any,
@@ -1962,13 +1962,13 @@ export const useWalletConnect = () => {
               rpcUrl: RPC_URL,
             });
           }
-          
+
           if (signatoryFactory && signatoryFactory.canLogout() && signatoryFactory.logout) {
             console.info(`Calling logout for ${selectedSignatoryFactoryName}`);
             await signatoryFactory.logout();
           }
         }
-        
+
         // Disconnect based on the selected signatory factory
         if (selectedSignatoryFactoryName === 'web3AuthSignatoryFactory') {
           // Disconnect from Web3Auth service
@@ -1980,7 +1980,7 @@ export const useWalletConnect = () => {
           console.info("MetaMask logout - using wagmi disconnect");
           wagmiDisconnect();
         }
-        
+
         // Clear all state
         setSignatory(undefined);
         setOwner(undefined);
@@ -2000,7 +2000,7 @@ export const useWalletConnect = () => {
         setIsIndividualConnected(false);
         setIsConnectionComplete(false);
         setSelectedSignatoryFactoryName(undefined);
-        
+
         console.info("All wallet state cleared");
       } catch (error) {
         console.error('Error during disconnect:', error);
@@ -2088,9 +2088,9 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
       orgBurnerDelegation,
       indivBurnerDelegation,
 
-      connect, 
+      connect,
       disconnect,
- 
+
       setIndivAndOrgInfo,
       buildSmartWallet,
       setupSmartWallet,
@@ -2152,8 +2152,8 @@ export const WalletConnectContextProvider = ({ children }: { children: any }) =>
         credentialManager,
 
         connect,
-        disconnect, 
-        
+        disconnect,
+
 
         setIndivAndOrgInfo,
         buildSmartWallet,

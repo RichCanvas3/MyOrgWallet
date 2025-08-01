@@ -100,6 +100,10 @@ const getEntityIcon = (entityId: string, category?: string): React.ElementType =
     return ShareIcon;
   }
 
+  if (lowerEntityId === 'linkedin(indiv)') {
+    return ShareIcon;
+  }
+
   // Fallback to category-based mapping if no specific entityId match
 
   // Default fallback - try category-based mapping
