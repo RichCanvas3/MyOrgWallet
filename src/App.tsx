@@ -346,6 +346,8 @@ const App = () => {
 
   const handleOnStateRegistrationModalClose = () => {
     setStateRegistrationModalVisible(false);
+    // Note: The StateRegistrationModal handles its own success/error messages
+    // so we don't need to add additional chat messages here
   }
 
   const handleOnAttestationViewModalClose = () => {
