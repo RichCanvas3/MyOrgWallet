@@ -45,6 +45,8 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
   const [progressMessage, setProgressMessage] = useState("");
   const [currentStep, setCurrentStep] = useState(0);
   const [totalSteps, setTotalSteps] = useState(4);
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [isUrlVerifying, setIsUrlVerifying] = useState(false);
 
   // Function to update progress from external components
   const updateProgress = (step: number, message: string, status?: string) => {
@@ -104,6 +106,97 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
     }
   };
 
+  const handleUrlVerification = async () => {
+    if (!linkedinUrl.trim()) {
+      setVerificationStatus("Please enter a LinkedIn URL");
+      return;
+    }
+
+    if (indivAccountClient && chain && indivDid && privateIssuerDid && credentialManager && privateIssuerAccount && burnerAccountClient && indivBurnerDelegation && veramoAgent && signatory) {
+      try {
+        setIsUrlVerifying(true);
+        setVerificationStatus("Creating LinkedIn attestation with provided URL...");
+
+        console.info("Creating LinkedIn attestation with URL:", linkedinUrl);
+
+        // Create verifiable credential with the provided URL
+        const vc = await VerifiableCredentialsService.createSocialVC("linkedin(indiv)", indivDid, privateIssuerDid, "LinkedIn Profile", linkedinUrl);
+        const result = await VerifiableCredentialsService.createCredential(vc, "linkedin(indiv)", "linkedin", indivDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent);
+
+        const fullVc = result.vc;
+        const proof = result.proof;
+        const vcId = result.vcId;
+
+        if (proof && fullVc && vcId && chain && indivAccountClient && indivBurnerDelegation) {
+          // Create attestation
+          const hash = keccak256(toUtf8Bytes("hash value"));
+          const attestation: SocialAttestation = {
+            attester: indivDid,
+            entityId: "linkedin(indiv)",
+            class: "individual",
+            category: "identity",
+            hash: hash,
+            vccomm: (fullVc.credentialSubject as any).commitment.toString(),
+            vcsig: (fullVc.credentialSubject as any).commitmentSignature,
+            vciss: privateIssuerDid,
+            vcid: vcId,
+            proof: proof,
+            name: "LinkedIn Profile",
+            url: linkedinUrl,
+            displayName: "linkedin"
+          };
+
+          const walletSigner = signatory.signer;
+          const uid = await AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivBurnerDelegation], indivAccountClient, burnerAccountClient);
+
+          console.info("LinkedIn attestation created successfully: ", uid);
+
+          // Add success message to conversation
+          if (location.pathname.startsWith("/chat/c/")) {
+            let conversationId = location.pathname.replace("/chat/c/", "");
+            let id = parseInt(conversationId);
+            ConversationService.getConversationById(id).then((conversation) => {
+              if (conversation) {
+                var currentMsgs: ChatMessage[] = JSON.parse(conversation.messages);
+
+                const newMsg: ChatMessage = {
+                  id: currentMsgs.length + 1,
+                  args: "",
+                  role: Role.Developer,
+                  messageType: MessageType.Normal,
+                  content: "I've updated your wallet with a verifiable credential and published your LinkedIn attestation.",
+                };
+
+                const msgs: ChatMessage[] = [...currentMsgs.slice(0, -1), newMsg];
+                const msgs2: ChatMessage[] = [...msgs, currentMsgs[currentMsgs.length - 1]];
+
+                console.info("Updating conversation with attestation success message");
+                ConversationService.updateConversation(conversation, msgs2);
+              }
+            });
+          }
+
+          setVerificationStatus("LinkedIn attestation created successfully!");
+          setTimeout(() => {
+            setIsUrlVerifying(false);
+            onClose();
+          }, 2000);
+        } else {
+          console.error("Missing required data for attestation creation");
+          setVerificationStatus("Error: Missing required data for attestation creation");
+          setIsUrlVerifying(false);
+        }
+      } catch (error) {
+        console.error("Error creating LinkedIn attestation:", error);
+        setVerificationStatus("Error: " + (error as Error).message);
+        setIsUrlVerifying(false);
+      }
+    } else {
+      console.error("Missing required context for attestation creation");
+      setVerificationStatus("Error: Missing required context for attestation creation");
+      setIsUrlVerifying(false);
+    }
+  };
 
   const handleSave = async () => {
     if (indivAccountClient && chain && indivDid && privateIssuerDid && credentialManager && privateIssuerAccount && burnerAccountClient && indivBurnerDelegation && veramoAgent && signatory) {
@@ -315,6 +408,39 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
                   >
                     {isVerifying ? "Verifying..." : "Create LinkedIn Attestation"}
                   </Button>
+
+                  {/* LinkedIn URL Verification Section */}
+                  <Box sx={{ mb: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 2, border: '1px solid #e0e0e0' }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontWeight: 'medium' }}>
+                      Verify this LinkedIn URL Instead
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      label="LinkedIn URL"
+                      variant="outlined"
+                      value={linkedinUrl}
+                      onChange={(e) => setLinkedinUrl(e.target.value)}
+                      placeholder="https://www.linkedin.com/in/your-profile"
+                      sx={{ mb: 2 }}
+                      disabled={isUrlVerifying}
+                    />
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      size="medium"
+                      fullWidth
+                      onClick={handleUrlVerification}
+                      disabled={isUrlVerifying || !linkedinUrl.trim()}
+                      sx={{ py: 1 }}
+                    >
+                      {isUrlVerifying ? "Creating Attestation..." : "Create LinkedIn Attestation"}
+                    </Button>
+                    {verificationStatus && (
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontStyle: 'italic' }}>
+                        {verificationStatus}
+                      </Typography>
+                    )}
+                  </Box>
 
                   {isVerifying && (
                     <Box sx={{ mt: 2, p: 2, backgroundColor: '#e0f2f7', borderRadius: 1, border: '1px solid #b6effb' }}>
