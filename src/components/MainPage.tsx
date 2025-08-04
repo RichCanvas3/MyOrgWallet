@@ -751,9 +751,17 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     setIsAddEnsRecordModalVisible(false);
     setExistingEnsNameForUpdate('');
     addMessage(Role.Assistant, MessageType.Normal, 'Closing ENS registration modal...', '', [], sendMessage);
-
+    thinkingTimeoutRef.current = setTimeout(() => {
+      setIsThinking(true);
+      // Ensure thinking indicator is visible
+      scrollToBottom();
+    }, 750);
     // Ask follow-up question after a short delay
     setTimeout(() => {
+      if (thinkingTimeoutRef.current) {
+        clearTimeout(thinkingTimeoutRef.current);
+      }
+      setIsThinking(false);
       getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
       }).then(any => {
@@ -767,9 +775,17 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     console.log('LinkedIn modal closing, threadID:', threadID);
     setLinkedinModalVisible(false);
     addMessage(Role.Assistant, MessageType.Normal, 'Closing LinkedIn verification modal...', '', [], sendMessage);
-
+    thinkingTimeoutRef.current = setTimeout(() => {
+      setIsThinking(true);
+      // Ensure thinking indicator is visible
+      scrollToBottom();
+    }, 750);
     // Ask follow-up question after a short delay
     setTimeout(() => {
+      if (thinkingTimeoutRef.current) {
+        clearTimeout(thinkingTimeoutRef.current);
+      }
+      setIsThinking(false);
       console.log('Timeout triggered, threadID:', threadID);
       if (!threadID) {
         console.error('threadID is null, cannot proceed');
@@ -791,9 +807,17 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const handleOnXModalClose = () => {
     setXModalVisible(false);
     addMessage(Role.Assistant, MessageType.Normal, 'Closing X (Twitter) verification modal...', '', [], sendMessage);
-
+    thinkingTimeoutRef.current = setTimeout(() => {
+      setIsThinking(true);
+      // Ensure thinking indicator is visible
+      scrollToBottom();
+    }, 750);
     // Ask follow-up question after a short delay
     setTimeout(() => {
+      if (thinkingTimeoutRef.current) {
+        clearTimeout(thinkingTimeoutRef.current);
+      }
+      setIsThinking(false);
       getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
       }).then(any => {
@@ -805,9 +829,17 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const handleOnShopifyModalClose = () => {
     setShopifyModalVisible(false);
     addMessage(Role.Assistant, MessageType.Normal, 'Closing Shopify verification modal...', '', [], sendMessage);
-
+    thinkingTimeoutRef.current = setTimeout(() => {
+      setIsThinking(true);
+      // Ensure thinking indicator is visible
+      scrollToBottom();
+    }, 750);
     // Ask follow-up question after a short delay
     setTimeout(() => {
+      if (thinkingTimeoutRef.current) {
+        clearTimeout(thinkingTimeoutRef.current);
+      }
+      setIsThinking(false);
       getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
       }).then(any => {
@@ -833,9 +865,17 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const handleOnEmailVerificationModalClose = () => {
     setEmailVerificationModalVisible(false);
     addMessage(Role.Assistant, MessageType.Normal, 'Closing Email verification modal...', '', [], sendMessage);
-
+    thinkingTimeoutRef.current = setTimeout(() => {
+      setIsThinking(true);
+      // Ensure thinking indicator is visible
+      scrollToBottom();
+    }, 750);
     // Ask follow-up question after a short delay
     setTimeout(() => {
+      if (thinkingTimeoutRef.current) {
+        clearTimeout(thinkingTimeoutRef.current);
+      }
+      setIsThinking(false);
       getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
       }).then(any => {
@@ -847,9 +887,17 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const handleOnWebsiteModalClose = () => {
     setWebsiteModalVisible(false);
     addMessage(Role.Assistant, MessageType.Normal, 'Closing Website verification modal...', '', [], sendMessage);
-
+    thinkingTimeoutRef.current = setTimeout(() => {
+      setIsThinking(true);
+      // Ensure thinking indicator is visible
+      scrollToBottom();
+    }, 750);
     // Ask follow-up question after a short delay
     setTimeout(() => {
+      if (thinkingTimeoutRef.current) {
+        clearTimeout(thinkingTimeoutRef.current);
+      }
+      setIsThinking(false);
       getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
       }).then(any => {
@@ -861,9 +909,17 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const handleOnInsuranceModalClose = () => {
     setInsuranceModalVisible(false);
     addMessage(Role.Assistant, MessageType.Normal, 'Closing Insurance verification modal...', '', [], sendMessage);
-
+    thinkingTimeoutRef.current = setTimeout(() => {
+      setIsThinking(true);
+      // Ensure thinking indicator is visible
+      scrollToBottom();
+    }, 750);
     // Ask follow-up question after a short delay
     setTimeout(() => {
+      if (thinkingTimeoutRef.current) {
+        clearTimeout(thinkingTimeoutRef.current);
+      }
+      setIsThinking(false);
       getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
       }).then(any => {
@@ -1039,11 +1095,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         console.log('Insurance verification command detected from AI response');
         setInsuranceModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Insurance verification modal...', '', fileDataRef, sendMessage);
-      } else if (str.includes('{"validate": "website(org)"}')) {
-        //website modal from yes response
-        console.log('Website verification triggered from yes response');
-        setWebsiteModalVisible(true);
-        addMessage(Role.Assistant, MessageType.Normal, 'Opening Website verification modal...', '', fileDataRef, sendMessage);
       } else if (str.includes("delete_all")) {
         setDeleteAttestationsModalVisible(true)
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Deletion Modal.....', '', fileDataRef, sendMessage);
