@@ -1913,43 +1913,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     // let inject args if the user said "yes" to actions
     console.log('Checking attestation responses with:', { introduction, lastUserResponse });
 
-    args = checkLinkedinAttestation(introduction, lastUserResponse);
-    console.log('LinkedIn check result:', args);
-    if (args != "") {
-      return args
-    }
-
-    args = checkXAttestation(introduction, lastUserResponse);
-    console.log('X check result:', args);
-    if (args != "") {
-      return args
-    }
-
-    args = checkShopifyAttestation(introduction, lastUserResponse)
-    console.log('Shopify check result:', args);
-    if (args != "") {
-      return args
-    }
-
-    args = checkInsuranceAttestation(introduction, lastUserResponse)
-    console.log('Insurance check result:', args);
-    if (args != "") {
-      console.info("############## return insurance args")
-      return args
-    }
-
-    args = checkWebsiteAttestation(introduction, lastUserResponse)
-    console.log('Website check result:', args);
-    if (args != "") {
-      return args
-    }
-
-    args = checkEmailAttestation(introduction, lastUserResponse)
-    console.log('Email check result:', args);
-    if (args != "") {
-      return args
-    }
-
     return "something went wrong"
   }
 
