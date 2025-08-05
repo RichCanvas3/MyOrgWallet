@@ -772,36 +772,68 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   // Verification modal close handlers
   const handleOnLinkedinModalClose = () => {
-    console.log('LinkedIn modal closing, threadID:', threadID);
+    console.log('............LinkedIn modal closing, threadID:', threadID, "............");
     setLinkedinModalVisible(false);
     addMessage(Role.Assistant, MessageType.Normal, 'Closing LinkedIn verification modal...', '', [], sendMessage);
-    thinkingTimeoutRef.current = setTimeout(() => {
-      setIsThinking(true);
-      // Ensure thinking indicator is visible
-      scrollToBottom();
-    }, 750);
-    // Ask follow-up question after a short delay
-    setTimeout(() => {
-      if (thinkingTimeoutRef.current) {
-        clearTimeout(thinkingTimeoutRef.current);
-      }
-      setIsThinking(false);
-      console.log('Timeout triggered, threadID:', threadID);
-      if (!threadID) {
-        console.error('threadID is null, cannot proceed');
-        return;
-      }
+      
+    if (!threadID) {
+      console.log(`threadID is null`);
+      invokeLangGraphAgent().then(id => {
+        const threadID_Array = id.split("'");
+        const threadIDResult = threadID_Array[1];
+        setThreadID(threadIDResult)
+        thinkingTimeoutRef.current = setTimeout(() => {
+          setIsThinking(true);
+          // Ensure thinking indicator is visible
+          scrollToBottom();
+        }, 750);
+        // Ask follow-up question after a short delay
+        setTimeout(() => {
+          if (thinkingTimeoutRef.current) {
+            clearTimeout(thinkingTimeoutRef.current);
+          }
+          setIsThinking(false);
+          console.log('Timeout triggered, threadID:', threadIDResult);
+          getArgfromUserMessage(threadIDResult, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+            console.log('Got response from getArgfromUserMessage:', str);
+            addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+          }).catch(error => {
+            console.error('Error in getArgfromUserMessage:', error);
+          }).then(any => {
+            console.log('Calling resendConfig with threadID:', threadIDResult);
+            //resendConfig(threadIDResult)
+          });
+        }, 1000);
+      })
+    } else {
+      thinkingTimeoutRef.current = setTimeout(() => {
+        setIsThinking(true);
+        // Ensure thinking indicator is visible
+        scrollToBottom();
+      }, 750);
+      // Ask follow-up question after a short delay
+      setTimeout(() => {
+        if (thinkingTimeoutRef.current) {
+          clearTimeout(thinkingTimeoutRef.current);
+        }
+        setIsThinking(false);
+        console.log('Timeout triggered, threadID:', threadID);
+        if (!threadID) {
+          console.error('threadID is null, cannot proceed');
+          return;
+        }
 
-      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
-        console.log('Got response from getArgfromUserMessage:', str);
-        addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
-      }).catch(error => {
-        console.error('Error in getArgfromUserMessage:', error);
-      }).then(any => {
-        console.log('Calling resendConfig with threadID:', threadID);
-        resendConfig(threadID)
-      });
-    }, 1000);
+        getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+          console.log('Got response from getArgfromUserMessage:', str);
+          addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+        }).catch(error => {
+          console.error('Error in getArgfromUserMessage:', error);
+        }).then(any => {
+          console.log('Calling resendConfig with threadID:', threadID);
+          resendConfig(threadID)
+        });
+      }, 1000);
+    }
   };
 
   const handleOnXModalClose = () => {

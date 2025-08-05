@@ -265,6 +265,7 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
           }
 
           // Close modal after successful creation
+          console.log(".....Closing LinkedIn modal......");
           onClose();
         } else {
           console.error("Missing required data for attestation creation");
