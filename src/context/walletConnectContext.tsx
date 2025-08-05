@@ -287,8 +287,14 @@ export const useWalletConnect = () => {
     }, [selectedSignatoryFactoryName, chain]);
 
 
-    const [orgDid, setOrgDid] = useState<string>();
-    const [indivDid, setIndivDid] = useState<string>();
+    const [orgDid, setOrgDid] = useState<string>(() => {
+      const stored = localStorage.getItem('myorgwallet_orgDid');
+      return stored || undefined;
+    });
+    const [indivDid, setIndivDid] = useState<string>(() => {
+      const stored = localStorage.getItem('myorgwallet_indivDid');
+      return stored || undefined;
+    });
     const [privateIssuerDid, setPrivateIssuerDid] = useState<string>();
 
     const [veramoAgent, setVeramoAgent] = useState<any>();
@@ -308,6 +314,25 @@ export const useWalletConnect = () => {
     const [burnerAccountClient, setBurnerAccountClient] = useState<MetaMaskSmartAccount>();
     const [orgAccountClient, setOrgAccountClient] = useState<MetaMaskSmartAccount>();
     const [indivAccountClient, setIndivAccountClient] = useState<MetaMaskSmartAccount>();
+
+    // Persist account client addresses
+    const setOrgAccountClientWithPersistence = useCallback((client: MetaMaskSmartAccount | undefined) => {
+      setOrgAccountClient(client);
+      if (client) {
+        localStorage.setItem('myorgwallet_orgAccountAddress', client.address);
+      } else {
+        localStorage.removeItem('myorgwallet_orgAccountAddress');
+      }
+    }, []);
+
+    const setIndivAccountClientWithPersistence = useCallback((client: MetaMaskSmartAccount | undefined) => {
+      setIndivAccountClient(client);
+      if (client) {
+        localStorage.setItem('myorgwallet_indivAccountAddress', client.address);
+      } else {
+        localStorage.removeItem('myorgwallet_indivAccountAddress');
+      }
+    }, []);
 
     const [orgIndivDelegation, setOrgIndivDelegation] = useState<Delegation | undefined>();
     const [orgBurnerDelegation, setOrgBurnerDelegation] = useState<Delegation | undefined>();
@@ -356,6 +381,7 @@ export const useWalletConnect = () => {
     const setOrgDidValue = useCallback(async (orgDidValue: string) => {
       try {
         setOrgDid(orgDidValue);
+        localStorage.setItem('myorgwallet_orgDid', orgDidValue);
       } catch (error) {
         console.error('Failed to set org did:', error);
       }
@@ -615,6 +641,44 @@ export const useWalletConnect = () => {
 
 
         const getConnected = async () => {
+          // Try to recover account clients from stored addresses
+          const storedOrgAddress = localStorage.getItem('myorgwallet_orgAccountAddress');
+          const storedIndivAddress = localStorage.getItem('myorgwallet_indivAccountAddress');
+
+          console.info("Attempting to recover account clients from stored addresses:", {
+            storedOrgAddress,
+            storedIndivAddress
+          });
+
+          if (storedIndivAddress && publicClient && signatory) {
+            try {
+              const recoveredIndivClient = await toMetaMaskSmartAccount({
+                address: storedIndivAddress as `0x${string}`,
+                client: publicClient,
+                implementation: Implementation.Hybrid,
+                signatory: signatory,
+              });
+              console.info("Successfully recovered indiv account client");
+              setIndivAccountClientWithPersistence(recoveredIndivClient);
+            } catch (error) {
+              console.error("Failed to recover indiv account client:", error);
+            }
+          }
+
+          if (storedOrgAddress && publicClient && signatory) {
+            try {
+              const recoveredOrgClient = await toMetaMaskSmartAccount({
+                address: storedOrgAddress as `0x${string}`,
+                client: publicClient,
+                implementation: Implementation.Hybrid,
+                signatory: signatory,
+              });
+              console.info("Successfully recovered org account client");
+              setOrgAccountClientWithPersistence(recoveredOrgClient);
+            } catch (error) {
+              console.error("Failed to recover org account client:", error);
+            }
+          }
 
           // Initialize metamask wallet and give access to ceramic datastore
           let ownerEOAAddress = owner
@@ -666,8 +730,14 @@ export const useWalletConnect = () => {
             let localIndivAddress: `0x${string}` | undefined = await indivAccountClient.getAddress() as `0x${string}`
             let localIndivDid : string | undefined = 'did:pkh:eip155:' + chain?.id + ':' + indivAccountClient.address
 
+            console.info("Created localIndivDid:", localIndivDid);
+            console.info("Looking for existing attestations...");
+
             const orgIndivAttestation = await AttestationService.getOrgIndivAttestation(chain, localIndivDid, AttestationService.OrgIndivSchemaUID, "org-indiv(org)");
             const indivAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, localIndivDid, AttestationService.IndivSchemaUID, "indiv(indiv)", "")
+
+            console.info("Found org-indiv attestation:", !!orgIndivAttestation);
+            console.info("Found indiv attestation:", !!indivAttestation);
 
             if (indivAttestation) {
               // Only set name from attestation if we don't already have a manually set name
@@ -675,16 +745,16 @@ export const useWalletConnect = () => {
                 setIndivName((indivAttestation as IndivAttestation).name)
               }
             }
-            else {
-              localIndivAddress = undefined
-              localIndivDid = undefined
-              indivAccountClient = undefined
-            }
+            // Don't clear the account client if no attestation exists - this is normal for new users
+            // Only clear if there's an actual error
 
             // connect to org account abstraction
             // can have three states coming into this section
             setIndivDid(localIndivDid)
-            setIndivAccountClient(indivAccountClient)
+            if (localIndivDid) {
+              localStorage.setItem('myorgwallet_indivDid', localIndivDid);
+            }
+            setIndivAccountClientWithPersistence(indivAccountClient)
 
 
             let orgIndivDel : any | undefined
@@ -730,6 +800,7 @@ export const useWalletConnect = () => {
 
               }
               else {
+                console.info("No org account client found - this is normal for new users who haven't created an organization yet");
               }
 
             }
@@ -743,17 +814,20 @@ export const useWalletConnect = () => {
               localOrgDid = 'did:pkh:eip155:' + chain?.id + ':' + orgAccountClient.address
 
               setOrgDid(localOrgDid)
-              setOrgAccountClient(orgAccountClient)
+              setOrgAccountClientWithPersistence(orgAccountClient)
 
               // setup delegation for org to issuer -> redelegation of orgIndivDel
               try {
                 orgBurnerDel = await DelegationService.getDelegationFromStorage("relationship", ownerEOAAddress, orgAccountClient.address, burnerAccountClient.address)
+                console.info("Loaded org burner delegation:", !!orgBurnerDel);
               }
               catch (error) {
+                console.error("Error loading org burner delegation:", error);
               }
             }
 
             if (orgBurnerDel == null && orgIndivDel && localIndivDid && indivAccountClient && orgAccountClient) {
+              console.info("Creating new org burner delegation...");
 
               const parentDelegationHash = getDelegationHashOffchain(orgIndivDel);
               orgBurnerDel = createDelegation({
@@ -774,6 +848,7 @@ export const useWalletConnect = () => {
               }
 
               await DelegationService.saveDelegationToStorage("relationship", ownerEOAAddress, orgAccountClient.address, burnerAccountClient.address, orgBurnerDel)
+              console.info("Created and saved org burner delegation");
            }
 
             if (orgBurnerDel) {
@@ -788,8 +863,10 @@ export const useWalletConnect = () => {
             if (indivAccountClient) {
               try {
                 indivBurnerDel = await DelegationService.getDelegationFromStorage("relationship", ownerEOAAddress, indivAccountClient.address, burnerAccountClient.address)
+                console.info("Loaded indiv burner delegation:", !!indivBurnerDel);
               }
               catch (error) {
+                console.error("Error loading indiv burner delegation:", error);
               }
 
               if (indivBurnerDel == null && localIndivDid) {
@@ -850,7 +927,10 @@ export const useWalletConnect = () => {
             }
 
             // cycle through savings accounts and add burner account abstraction to each
+            console.info("Checking configuration:", { localOrgDid, localIndivDid, indivAccountClient: !!indivAccountClient });
+
             if (localOrgDid && localIndivDid && indivAccountClient) {
+              console.info("All required components found, loading accounts...");
               const accounts = await AttestationService.loadIndivAccounts(chain, localOrgDid, localIndivDid, "1110");
               for (const account of accounts) {
 
@@ -890,8 +970,39 @@ export const useWalletConnect = () => {
               setIsIndividualConnected(true)
               setIsConnectionComplete(true);
             }
-            else {
+                        else {
               console.info("************* not configured properly")
+              console.info("Missing components:", {
+                localOrgDid: !!localOrgDid,
+                localIndivDid: !!localIndivDid,
+                indivAccountClient: !!indivAccountClient
+              });
+
+              // Check if this is a new user setup (has indiv account but no org yet)
+              if (indivAccountClient && !localOrgDid) {
+                console.info("New user setup detected - individual account exists but no organization yet");
+                setIsIndividualConnected(true);
+                setIsConnectionComplete(true);
+                return;
+              }
+
+              // Try to recover by attempting to find the missing components
+              if (!indivAccountClient && localIndivDid) {
+                console.info("Attempting to recover indivAccountClient...");
+                try {
+                  const recoveredIndivClient = await findValidIndivAccount(owner, signatory, publicClient);
+                  if (recoveredIndivClient) {
+                    console.info("Successfully recovered indivAccountClient");
+                    setIndivAccountClient(recoveredIndivClient);
+                    setIsIndividualConnected(true);
+                    setIsConnectionComplete(true);
+                    return;
+                  }
+                } catch (error) {
+                  console.error("Failed to recover indivAccountClient:", error);
+                }
+              }
+
               setIsIndividualConnected(false)
               setIsConnectionComplete(true);
             }
@@ -1068,8 +1179,11 @@ export const useWalletConnect = () => {
 
           const indivAddress = await indivAccountClient.getAddress()
           let indivDid = 'did:pkh:eip155:' + chain.id + ':' + indivAccountClient.address
-          setIndivDid(indivDid)
-          setIndivAccountClient(indivAccountClient)
+                          setIndivDid(indivDid)
+                if (indivDid) {
+                  localStorage.setItem('myorgwallet_indivDid', indivDid);
+                }
+          setIndivAccountClientWithPersistence(indivAccountClient)
 
           // if indivAccountClient is not deployed then deploy it
           let isDeployed = await indivAccountClient.isDeployed()
@@ -1130,9 +1244,15 @@ export const useWalletConnect = () => {
 
 
 
-          // get attestation for individual account abstraction address
-          console.info(": ", indivDid)
-          const orgIndivAttestation = await AttestationService.getOrgIndivAttestation(chain, indivDid, AttestationService.OrgIndivSchemaUID, "org-indiv(org)");
+                      // get attestation for individual account abstraction address
+            console.info("Looking for org-indiv attestation for indivDid: ", indivDid)
+            let orgIndivAttestation;
+            if (indivDid) {
+              orgIndivAttestation = await AttestationService.getOrgIndivAttestation(chain, indivDid, AttestationService.OrgIndivSchemaUID, "org-indiv(org)");
+              console.info("Found org-indiv attestation:", !!orgIndivAttestation);
+            } else {
+              console.info("No indivDid available, skipping org-indiv attestation lookup");
+            }
 
 
           let orgAddressValue : `0x${string}` | undefined
@@ -1590,7 +1710,16 @@ export const useWalletConnect = () => {
                   proof: proof
                 };
 
-                const uid = await AttestationService.addOrgAttestation(chain, attestation, walletSigner, [orgBurnerDel as Delegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+                // Ensure both delegations exist before proceeding
+                if (!orgBurnerDel || !orgIndivDelegation) {
+                  console.error("Missing delegations:", { orgBurnerDel, orgIndivDelegation });
+                  return;
+                }
+
+                const delegationChain = [orgBurnerDel as Delegation, orgIndivDelegation];
+                console.info("Delegation chain:", delegationChain);
+
+                const uid = await AttestationService.addOrgAttestation(chain, attestation, walletSigner, delegationChain, orgAccountClient, burnerAccountClient)
               }
             }
           }
@@ -1986,6 +2115,10 @@ export const useWalletConnect = () => {
         setOwner(undefined);
         setOrgDid(undefined);
         setIndivDid(undefined);
+        localStorage.removeItem('myorgwallet_indivDid');
+        localStorage.removeItem('myorgwallet_orgDid');
+        localStorage.removeItem('myorgwallet_orgAccountAddress');
+        localStorage.removeItem('myorgwallet_indivAccountAddress');
         setOrgName(undefined);
         setIndivName(undefined);
         setIndivEmail(undefined);

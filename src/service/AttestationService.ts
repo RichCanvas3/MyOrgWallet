@@ -570,11 +570,16 @@ class AttestationService {
                     });
 
       console.info("redeem delegations: ", delegationChain)
+      console.info("delegation chain length: ", delegationChain.length)
+      console.info("executions: ", executions)
+
       const data = DelegationFramework.encode.redeemDelegations({
         delegations: [ delegationChain ],
         modes: [SINGLE_DEFAULT_MODE],
         executions: [executions]
       });
+
+      console.info("encoded delegation data: ", data)
 
 
       const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
@@ -595,15 +600,33 @@ class AttestationService {
       });
 
       console.info("done sending user operation")
+      console.info("waiting for user operation receipt with hash: ", userOpHash)
 
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('User operation receipt timeout after 60 seconds')), 60000);
+      });
 
-      const userOperationReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
+      const userOperationReceipt = await Promise.race([
+        bundlerClient.waitForUserOperationReceipt({ hash: userOpHash }),
+        timeoutPromise
+      ]);
       console.info("......... add attestation receipt ................: ", userOperationReceipt)
     }
     catch (error) {
       console.info(">>>>>>>>>>>> error trying to save using delegate address: ", delegate.address)
       console.info(">>>>>>>>>>>>>> try saving with Delegation Manager")
       console.error("......... error: ", error)
+
+      // Log more detailed error information
+      if (error instanceof Error) {
+        console.error("Error name:", error.name);
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
+
+      // Re-throw the error to prevent silent failures
+      throw error;
     }
 
   }
