@@ -534,26 +534,64 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         if (isMounted) {
           setThreadID(threadIDResult);
           const company_config = await init();
-          //getArgfromUserMessage(threadIDResult, `lets get started: ${company_config}`).then(str => {
-          getArgfromUserMessage(threadIDResult,
-             `Lets get started: Name: ${company_config["name"]},
-              Domain: ${company_config["domain"]},
-              Linkedin: ${company_config["linkedin"]},
-              Twitter: ${company_config["x"]},
-              State Registration: ${company_config["state_registration"]},
-              ENS Registration: ${company_config["ens_registration"]},
-              Shopify: ${company_config["shopify"]},
-              Insurance: ${company_config["insurance"]},
-              Website: ${company_config["website"]},
-              Org Email: ${company_config["email_org"]},
-              Individual Email: ${company_config["email_indiv"]},`).then(str => {
-            if (str) {
-              addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
-            }
-          })
+
+          // Check if we got a mock thread ID (indicating LangGraph is unavailable)
+          if (threadIDResult === 'mock-thread-id-12345') {
+            console.log('LangGraph unavailable, using offline mode');
+            const welcomeMessage = `Welcome! I'm here to help you manage your organization's wallet and attestations.
+
+Since my advanced assistant service is temporarily unavailable, I can help you with basic tasks like:
+
+• Show your wallet addresses
+• Add organization information
+• Verify your LinkedIn profile
+• Register your company
+• Add ENS records
+• And much more!
+
+What would you like to do today?`;
+
+            addMessage(Role.Assistant, MessageType.Normal, welcomeMessage, '', [], sendMessage);
+          } else {
+            // LangGraph is available, use it
+            getArgfromUserMessage(threadIDResult,
+               `Lets get started: Name: ${company_config["name"]},
+                Domain: ${company_config["domain"]},
+                Linkedin: ${company_config["linkedin"]},
+                Twitter: ${company_config["x"]},
+                State Registration: ${company_config["state_registration"]},
+                ENS Registration: ${company_config["ens_registration"]},
+                Shopify: ${company_config["shopify"]},
+                Insurance: ${company_config["insurance"]},
+                Website: ${company_config["website"]},
+                Org Email: ${company_config["email_org"]},
+                Individual Email: ${company_config["email_indiv"]},`).then(str => {
+              if (str) {
+                addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+              }
+            })
+          }
         }
       } catch (error) {
         console.error('Error fetching thread ID:', error);
+        // If thread creation fails, still show a welcome message
+        if (isMounted) {
+          const company_config = await init();
+          const welcomeMessage = `Welcome! I'm here to help you manage your organization's wallet and attestations.
+
+Since my advanced assistant service is temporarily unavailable, I can help you with basic tasks like:
+
+• Show your wallet addresses
+• Add organization information
+• Verify your LinkedIn profile
+• Register your company
+• Add ENS records
+• And much more!
+
+What would you like to do today?`;
+
+          addMessage(Role.Assistant, MessageType.Normal, welcomeMessage, '', [], sendMessage);
+        }
       }
     }
 
@@ -1850,6 +1888,12 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     var lastUserResponse = content.toLowerCase()
     var introduction = userSettings.assistantIntroductions ? userSettings.assistantIntroductions : OPENAI_DEFAULT_ASSISTANT_PROMPT
 
+    // Check if we're in offline mode (mock thread ID)
+    if (currentThreadID === 'mock-thread-id-12345') {
+      console.log('Processing message in offline mode');
+      return "I'm currently operating in offline mode due to service availability. I can still help you with basic tasks, but advanced features may be limited. What would you like to do?";
+    }
+
     if (currentThreadID) {
 
       // Check if user wants to skip the current entity
@@ -1919,23 +1963,43 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       }
 
       if (content.toLowerCase() == 'colorado') {
-        var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'state_register', entities || [], {}, linkedInAuthRef, xAuthRef);
-        console.log('adding attestation')
-        addOrgRegistrationAttestation(response['name'], response['id'], content, response["address"], response["formDate"]);
-        console.log('LangChain Response: ', response.message)
-        return response.message;
+        try {
+          var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'state_register', entities || [], {}, linkedInAuthRef, xAuthRef);
+          console.log('adding attestation')
+          addOrgRegistrationAttestation(response['name'], response['id'], content, response["address"], response["formDate"]);
+          console.log('LangChain Response: ', response.message)
+          return response.message;
+        } catch (error) {
+          console.error("Error calling LangGraph assistant for state registration:", error);
+          return "I'm having trouble processing the state registration request. Please try again in a moment.";
+        }
       } else if ((content.toLowerCase())[12] == 'l') {//'https://www.linkedin.com/in') {
         //console.log('hallo')
-        var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'linkedin_verification', entities || [], {}, linkedInAuthRef, xAuthRef);
-        console.log('LangChain Response: ', response.message)
-        return response.message;
-      } else if (content.toLowerCase() == 'twitter') {
-        var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'x_verification', entities || [], {}, linkedInAuthRef, xAuthRef);
-        return response.message;
+        try {
+          var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'linkedin_verification', entities || [], {}, linkedInAuthRef, xAuthRef);
+          console.log('LangChain Response: ', response.message)
+          return response.message;
+        } catch (error) {
+          console.error("Error calling LangGraph assistant for LinkedIn verification:", error);
+          return "I'm having trouble processing the LinkedIn verification request. Please try again in a moment.";
+        }
+              } else if (content.toLowerCase() == 'twitter') {
+          try {
+            var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'x_verification', entities || [], {}, linkedInAuthRef, xAuthRef);
+            return response.message;
+          } catch (error) {
+            console.error("Error calling LangGraph assistant for X verification:", error);
+            return "I'm having trouble processing the X verification request. Please try again in a moment.";
+          }
       } else {
 
-        var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'none', entities || [], {}, linkedInAuthRef, xAuthRef);
-        return response.message;
+        try {
+          var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'none', entities || [], {}, linkedInAuthRef, xAuthRef);
+          return response.message;
+        } catch (error) {
+          console.error("Error calling LangGraph assistant:", error);
+          return "I'm having trouble connecting to my assistant service right now. Please try again in a moment.";
+        }
       }
     }
 
@@ -1978,7 +2042,16 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
     // let inject args if the user said "yes" to actions
     console.log('Checking attestation responses with:', { introduction, lastUserResponse });
 
-    return "something went wrong"
+    // If we reach here, it means no specific action was detected
+    // Instead of returning a generic error, provide a helpful response
+    return "I'm here to help! You can ask me to help you with various tasks like:\n\n" +
+           "• Show your wallet addresses\n" +
+           "• Add organization information\n" +
+           "• Verify your LinkedIn profile\n" +
+           "• Register your company\n" +
+           "• Add ENS records\n" +
+           "• And much more!\n\n" +
+           "What would you like to do today?"
   }
 
 

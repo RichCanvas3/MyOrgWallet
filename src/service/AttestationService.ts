@@ -177,6 +177,13 @@ class AttestationService {
     // Debug: Log the exact GraphQL query being sent
     console.log("GraphQL Query:", `attester: { in: ["${orgAddress}", "${indivAddress}"] }`)
 
+    // Debug: Log all found attestations
+    console.log("All found attestations:", data.attestations.map((att: any) => ({
+      id: att.id,
+      attester: att.attester,
+      schemaId: att.schemaId
+    })))
+
     // cycle through aes attestations and update entity with attestation info
     let processedCount = 0;
     let skippedCount = 0;

@@ -653,13 +653,13 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
                           variant="body2"
                           sx={{
                             mt: 1,
-                            color: Number(orgBalance) >= 0.004 ? 'success.main' : 'error.main',
+                            color: Number(orgBalance) >= 0.008 ? 'success.main' : 'error.main',
                             fontWeight: 'bold'
                           }}
                         >
-                          {Number(orgBalance) >= 0.004
+                          {Number(orgBalance) >= 0.008
                             ? "✅ There is enough ETH for this transaction!"
-                            : "❌ Not enough. Please transfer ETH to the organization's smart wallet using the address above (0.004 ETH minimum)"}
+                            : "❌ Not enough. Please transfer ETH to the organization's smart wallet using the a8 ETH minimum)"}
                         </Typography>
                       )}
                     </>
