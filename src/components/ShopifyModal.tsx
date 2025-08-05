@@ -25,15 +25,113 @@ interface ShopifyModalProps {
 }
 
 const ShopifyModal: React.FC<ShopifyModalProps> = ({isVisible, onClose, onOAuthTrigger}) => {
+  const {t} = useTranslation();
+
   const dialogRef = useRef<HTMLDivElement>(null);
   const { chain, orgDid, orgAccountClient, privateIssuerDid, credentialManager, privateIssuerAccount, burnerAccountClient, orgBurnerDelegation, orgIndivDelegation, veramoAgent, signatory } = useWallectConnectContext();
 
   const [attestation, setAttestation] = useState<Attestation | null>(null);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
+  const [shopifyUrl, setShopifyUrl] = useState("");
+  const [isUrlVerifying, setIsUrlVerifying] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState("");
 
   const handleClose = () => {
     onClose();
+  };
+
+  const handleUrlVerification = async () => {
+    if (orgAccountClient && chain && orgDid && privateIssuerDid && credentialManager && privateIssuerAccount && burnerAccountClient && orgBurnerDelegation && orgIndivDelegation && veramoAgent && signatory) {
+      try {
+        setIsUrlVerifying(true);
+        setVerificationStatus("Creating Shopify attestation...");
+
+        // Create verifiable credential
+        const vc = await VerifiableCredentialsService.createWebsiteVC("shopify(org)", orgDid, privateIssuerDid, "Shopify Store", shopifyUrl);
+        const result = await VerifiableCredentialsService.createCredential(vc, "shopify(org)", "shopify", orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent);
+
+        const fullVc = result.vc;
+        const proof = result.proof;
+        const vcId = result.vcId;
+
+        if (proof && fullVc && vcId && chain && orgAccountClient && orgBurnerDelegation && orgIndivDelegation && signatory) {
+          const websiteAttestation: WebsiteAttestation = {
+            entityId: "shopify(org)",
+            name: "Shopify Store",
+            url: shopifyUrl,
+            class: "organization",
+            schemaId: AttestationService.WebsiteSchemaUID,
+            schema: AttestationService.WebsiteSchema,
+            priority: 15,
+            introduction: "Verify your Shopify store to establish your e-commerce presence and build customer trust.",
+            instruction: "Connect your Shopify store to create a verifiable credential that proves your business operates a legitimate e-commerce platform.",
+            attestation: {
+              uid: vcId,
+              schemaId: AttestationService.WebsiteSchemaUID,
+              attester: orgAccountClient.address,
+              hash: keccak256(toUtf8Bytes(fullVc)),
+              vc: fullVc,
+              proof: proof,
+              vcId: vcId,
+              entityId: "shopify(org)",
+              name: "Shopify Store",
+              url: shopifyUrl,
+              class: "organization"
+            }
+          };
+
+          const attestationUid = await AttestationService.addWebsiteAttestation(chain, websiteAttestation, signatory, [orgBurnerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient);
+
+          if (attestationUid) {
+            setVerificationStatus("Shopify attestation created successfully!");
+
+            // Update conversation if in chat context
+            if (location.pathname.startsWith("/chat/c/")) {
+              let conversationId = location.pathname.replace("/chat/c/", "");
+              let id = parseInt(conversationId);
+              ConversationService.getConversationById(id).then((conversation) => {
+                if (conversation) {
+                  var currentMsgs: ChatMessage[] = JSON.parse(conversation.messages);
+
+                  const newMsg: ChatMessage = {
+                    id: currentMsgs.length + 1,
+                    args: "",
+                    role: Role.Developer,
+                    messageType: MessageType.Normal,
+                    content: "I've updated your wallet with a verifiable credential and published your Shopify attestation.",
+                  };
+
+                  const msgs: ChatMessage[] = [...currentMsgs.slice(0, -1), newMsg];
+                  const msgs2: ChatMessage[] = [...msgs, currentMsgs[currentMsgs.length - 1]];
+
+                  console.info("Updating conversation with attestation success message");
+                  ConversationService.updateConversation(conversation, msgs2);
+                }
+              });
+            }
+
+            // Close modal after successful creation
+            setTimeout(() => {
+              onClose();
+            }, 2000);
+          } else {
+            setVerificationStatus("Failed to create attestation. Please try again.");
+          }
+        } else {
+          console.error("Missing required data for attestation creation");
+          setVerificationStatus("Missing required data for attestation creation");
+        }
+      } catch (error) {
+        console.error("Error creating Shopify attestation:", error);
+        setVerificationStatus("Error creating attestation. Please try again.");
+      } finally {
+        setIsUrlVerifying(false);
+      }
+    } else {
+      console.error("Missing required context for attestation creation");
+      setVerificationStatus("Missing required context for attestation creation");
+    }
   };
 
   const handleSave = async () => {
@@ -43,66 +141,75 @@ const ShopifyModal: React.FC<ShopifyModalProps> = ({isVisible, onClose, onOAuthT
 
         // Use default values since form fields are removed
         const defaultName = "Shopify Store";
-        const defaultUrl = "https://store.myshopify.com";
+        const defaultUrl = "https://your-store.myshopify.com";
 
-        // Create verifiable credential for website ownership
-        const vc = await VerifiableCredentialsService.createWebsiteOwnershipVC("shopify(org)", orgDid, privateIssuerDid, "commerce", defaultUrl);
-        const result = await VerifiableCredentialsService.createCredential(vc, "shopify(org)", defaultUrl, orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent);
+        // Create verifiable credential
+        const vc = await VerifiableCredentialsService.createWebsiteVC("shopify(org)", orgDid, privateIssuerDid, defaultName, defaultUrl);
+        const result = await VerifiableCredentialsService.createCredential(vc, "shopify(org)", "shopify", orgDid, credentialManager, privateIssuerAccount, burnerAccountClient, veramoAgent);
 
         const fullVc = result.vc;
         const proof = result.proof;
         const vcId = result.vcId;
 
-        if (fullVc && vcId && chain && orgAccountClient) {
-          // Create attestation
-          const hash = keccak256(toUtf8Bytes("hash value"));
-          const attestation: WebsiteAttestation = {
-            type: "commerce",
-            url: defaultUrl,
-            attester: orgDid,
+        if (proof && fullVc && vcId && chain && orgAccountClient && orgBurnerDelegation && orgIndivDelegation && signatory) {
+          const websiteAttestation: WebsiteAttestation = {
             entityId: "shopify(org)",
+            name: defaultName,
+            url: defaultUrl,
             class: "organization",
-            category: "identity",
-            hash: hash,
-            vccomm: (fullVc.credentialSubject as any).commitment.toString(),
-            vcsig: (fullVc.credentialSubject as any).commitmentSignature,
-            vciss: privateIssuerDid,
-            vcid: vcId,
-            proof: proof
+            schemaId: AttestationService.WebsiteSchemaUID,
+            schema: AttestationService.WebsiteSchema,
+            priority: 15,
+            introduction: "Verify your Shopify store to establish your e-commerce presence and build customer trust.",
+            instruction: "Connect your Shopify store to create a verifiable credential that proves your business operates a legitimate e-commerce platform.",
+            attestation: {
+              uid: vcId,
+              schemaId: AttestationService.WebsiteSchemaUID,
+              attester: orgAccountClient.address,
+              hash: keccak256(toUtf8Bytes(fullVc)),
+              vc: fullVc,
+              proof: proof,
+              vcId: vcId,
+              entityId: "shopify(org)",
+              name: defaultName,
+              url: defaultUrl,
+              class: "organization"
+            }
           };
 
-          const walletSigner = signatory.signer;
-          const uid = await AttestationService.addWebsiteAttestation(chain, attestation, walletSigner, [orgBurnerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient);
+          const attestationUid = await AttestationService.addWebsiteAttestation(chain, websiteAttestation, signatory, [orgBurnerDelegation, orgIndivDelegation], orgAccountClient, burnerAccountClient);
 
-          console.info("Shopify attestation created successfully: ", uid);
+          if (attestationUid) {
+            // Update conversation if in chat context
+            if (location.pathname.startsWith("/chat/c/")) {
+              let conversationId = location.pathname.replace("/chat/c/", "");
+              let id = parseInt(conversationId);
+              ConversationService.getConversationById(id).then((conversation) => {
+                if (conversation) {
+                  var currentMsgs: ChatMessage[] = JSON.parse(conversation.messages);
 
-          // Add success message to conversation
-          if (location.pathname.startsWith("/chat/c/")) {
-            let conversationId = location.pathname.replace("/chat/c/", "");
-            let id = parseInt(conversationId);
-            ConversationService.getConversationById(id).then((conversation) => {
-              if (conversation) {
-                var currentMsgs: ChatMessage[] = JSON.parse(conversation.messages);
+                  const newMsg: ChatMessage = {
+                    id: currentMsgs.length + 1,
+                    args: "",
+                    role: Role.Developer,
+                    messageType: MessageType.Normal,
+                    content: "I've updated your wallet with a verifiable credential and published your Shopify attestation.",
+                  };
 
-                const newMsg: ChatMessage = {
-                  id: currentMsgs.length + 1,
-                  args: "",
-                  role: Role.Developer,
-                  messageType: MessageType.Normal,
-                  content: "I've updated your wallet with a verifiable credential and published your Shopify attestation.",
-                };
+                  const msgs: ChatMessage[] = [...currentMsgs.slice(0, -1), newMsg];
+                  const msgs2: ChatMessage[] = [...msgs, currentMsgs[currentMsgs.length - 1]];
 
-                const msgs: ChatMessage[] = [...currentMsgs.slice(0, -1), newMsg];
-                const msgs2: ChatMessage[] = [...msgs, currentMsgs[currentMsgs.length - 1]];
+                  console.info("Updating conversation with attestation success message");
+                  ConversationService.updateConversation(conversation, msgs2);
+                }
+              });
+            }
 
-                console.info("Updating conversation with attestation success message");
-                ConversationService.updateConversation(conversation, msgs2);
-              }
-            });
+            // Close modal after successful creation
+            onClose();
+          } else {
+            console.error("Missing required data for attestation creation");
           }
-
-          // Close modal after successful creation
-          onClose();
         } else {
           console.error("Missing required data for attestation creation");
         }
@@ -168,6 +275,37 @@ const ShopifyModal: React.FC<ShopifyModalProps> = ({isVisible, onClose, onOAuthT
                     overflowY: "auto",
                   }}
                 >
+
+                  {/* Why Shopify Verification is Important Section */}
+                  <Box sx={{ mb: 3, p: 3, backgroundColor: '#f8f9fa', borderRadius: 2, border: '1px solid #e9ecef' }}>
+                    <Typography variant="h6" fontWeight="bold" color="primary" mb={2}>
+                      Why Shopify Verification Matters
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      Shopify verification helps establish your e-commerce business credibility and trust:
+                    </Typography>
+                    <Box component="ul" sx={{ pl: 2, mb: 2 }}>
+                      <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>E-commerce Credibility:</strong> Verifies your business operates a legitimate online store
+                      </Typography>
+                      <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Customer Trust:</strong> Builds confidence with potential customers and partners
+                      </Typography>
+                      <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Business Verification:</strong> Establishes your business as a legitimate e-commerce entity
+                      </Typography>
+                      <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Partnership Opportunities:</strong> Enhances credibility for business partnerships and collaborations
+                      </Typography>
+                      <Typography component="li" variant="body2" color="text.secondary">
+                        <strong>Digital Credentials:</strong> Creates a verifiable, blockchain-based proof of your e-commerce presence
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                      This verification creates a tamper-proof credential that can be shared with customers, partners, and stakeholders to establish trust and credibility for your e-commerce business.
+                    </Typography>
+                  </Box>
+
                   <Button
                     variant="contained"
                     color="primary"
@@ -178,6 +316,39 @@ const ShopifyModal: React.FC<ShopifyModalProps> = ({isVisible, onClose, onOAuthT
                   >
                     Create Shopify Attestation
                   </Button>
+
+                  {/* Shopify URL Verification Section */}
+                  <Box sx={{ mb: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 2, border: '1px solid #e0e0e0' }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontWeight: 'medium' }}>
+                      Verify this Shopify URL Instead
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      label="Shopify URL"
+                      variant="outlined"
+                      value={shopifyUrl}
+                      onChange={(e) => setShopifyUrl(e.target.value)}
+                      placeholder="https://your-store.myshopify.com"
+                      sx={{ mb: 2 }}
+                      disabled={isUrlVerifying}
+                    />
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      size="medium"
+                      fullWidth
+                      onClick={handleUrlVerification}
+                      disabled={isUrlVerifying || !shopifyUrl.trim()}
+                      sx={{ py: 1 }}
+                    >
+                      {isUrlVerifying ? "Creating Attestation..." : "Create Shopify Attestation"}
+                    </Button>
+                    {verificationStatus && (
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontStyle: 'italic' }}>
+                        {verificationStatus}
+                      </Typography>
+                    )}
+                  </Box>
 
                   </Paper>
             </div>
