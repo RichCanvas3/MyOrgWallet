@@ -1038,7 +1038,6 @@ What would you like to do today?`;
   }
 
   const callApp = (message: string, fileDataRef: FileDataRef[]) => {
-    var ngrok_url = 'https://b2f972629ffd.ngrok-free.app';
     if (conversation == null || threadID == null) {
       return
     }
@@ -1080,11 +1079,11 @@ What would you like to do today?`;
       console.log('Processed string:', str);
 
       if (str.includes("ens_registration") || str.includes("ens_verification") && orgAccountClient && chain) {
-        console.log('process ens verification')
-        setIsAddEnsRecordModalVisible(true)
-        setExistingEnsNameForUpdate('')
+        console.log('process ens verification');
+        setIsAddEnsRecordModalVisible(true);
+        setExistingEnsNameForUpdate('');
         // Remove the immediate ENS registration call - it will be handled by the modal
-        addMessage(Role.Assistant, MessageType.Normal, `Opening ENS registration modal...`, '', fileDataRef, sendMessage)
+        addMessage(Role.Assistant, MessageType.Normal, `Opening ENS registration modal...`, '', fileDataRef, sendMessage);
       } else if ((str.includes('state_register') || str.includes('State Registration verification')) && orgAccountClient && chain) {
         setStateRegistrationModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening State Registration verification modal...', '', fileDataRef, sendMessage);
@@ -1132,10 +1131,10 @@ What would you like to do today?`;
         setInsuranceModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Insurance verification modal...', '', fileDataRef, sendMessage);
       } else if (str.includes("delete_all")) {
-        setDeleteAttestationsModalVisible(true)
+        setDeleteAttestationsModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Deletion Modal.....', '', fileDataRef, sendMessage);
       } else if (str.includes('create_did')) {
-        setCreateWebDidModalVisible(true)
+        setCreateWebDidModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Web DID Modal....', '', fileDataRef, sendMessage);
       } else {
         addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
