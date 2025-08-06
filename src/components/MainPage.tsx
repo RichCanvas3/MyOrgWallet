@@ -741,7 +741,7 @@ What would you like to do today?`;
   async function resendConfig(threadID: any) {
     const company_config = await init();
     //getArgfromUserMessage(threadIDResult, `lets get started: ${company_config}`).then(str => {
-    getArgfromUserMessage(threadID,
+    const mes = await getArgfromUserMessage(threadID,
       `Here's the updated data: Name: ${company_config["name"]},
       Domain: ${company_config["domain"]},
       Linkedin: ${company_config["linkedin"]},
@@ -753,7 +753,7 @@ What would you like to do today?`;
       Website: ${company_config["website"]},
       Org Email: ${company_config["email_org"]},
       Individual Email: ${company_config["email_indiv"]},`);
-    return;
+    return mes;
   }
 
   const handleOnDeleteAttestationsModalClose = () => {
@@ -802,10 +802,8 @@ What would you like to do today?`;
         clearTimeout(thinkingTimeoutRef.current);
       }
       setIsThinking(false);
-      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+      resendConfig(threadID).then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
-      }).then(any => {
-        resendConfig(threadID)
       });
     }, 1000);
   };
@@ -828,14 +826,8 @@ What would you like to do today?`;
       setIsThinking(false);
       console.log('Timeout triggered, threadID:', thread);
 
-      getArgfromUserMessage(thread, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
-        console.log('Got response from getArgfromUserMessage:', str);
+      resendConfig(threadID).then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
-      }).catch(error => {
-        console.error('Error in getArgfromUserMessage:', error);
-      }).then(any => {
-        console.log('Calling resendConfig with threadID:', thread);
-        //resendConfig(thread)
       });
     }, 1000);
   };
@@ -854,10 +846,8 @@ What would you like to do today?`;
         clearTimeout(thinkingTimeoutRef.current);
       }
       setIsThinking(false);
-      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+      resendConfig(threadID).then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
-      }).then(any => {
-        resendConfig(threadID)
       });
     }, 1000);
   };
@@ -876,10 +866,8 @@ What would you like to do today?`;
         clearTimeout(thinkingTimeoutRef.current);
       }
       setIsThinking(false);
-      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+      resendConfig(threadID).then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
-      }).then(any => {
-        resendConfig(threadID)
       });
     }, 1000);
   };
@@ -890,10 +878,8 @@ What would you like to do today?`;
 
     // Ask follow-up question after a short delay
     setTimeout(() => {
-      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+      resendConfig(threadID).then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
-      }).then(any => {
-        resendConfig(threadID)
       });
     }, 1000);
   };
@@ -912,10 +898,8 @@ What would you like to do today?`;
         clearTimeout(thinkingTimeoutRef.current);
       }
       setIsThinking(false);
-      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+      resendConfig(threadID).then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
-      }).then(any => {
-        resendConfig(threadID)
       });
     }, 1000);
   };
@@ -934,10 +918,8 @@ What would you like to do today?`;
         clearTimeout(thinkingTimeoutRef.current);
       }
       setIsThinking(false);
-      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+      resendConfig(threadID).then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
-      }).then(any => {
-        resendConfig(threadID)
       });
     }, 1000);
   };
@@ -956,10 +938,8 @@ What would you like to do today?`;
         clearTimeout(thinkingTimeoutRef.current);
       }
       setIsThinking(false);
-      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+      resendConfig(threadID).then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
-      }).then(any => {
-        resendConfig(threadID)
       });
     }, 1000);
   };
