@@ -197,6 +197,36 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({isVisibl
                   Verify Your Organization's Email
                 </Typography>
 
+                {/* Why Email Verification is Important Section */}
+                <Box sx={{ mb: 3, p: 3, backgroundColor: '#f8f9fa', borderRadius: 2, border: '1px solid #e9ecef' }}>
+                  <Typography variant="h6" fontWeight="bold" color="primary" mb={2}>
+                    Why Email Verification Matters
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" paragraph>
+                    Email verification helps establish your organization's official communication channels and digital identity:
+                  </Typography>
+                  <Box component="ul" sx={{ pl: 2, mb: 2 }}>
+                    <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Official Communication:</strong> Verifies your organization's primary email address for business communications
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Digital Identity:</strong> Establishes your organization's official digital contact information
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Professional Credibility:</strong> Builds trust with clients, partners, and stakeholders
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Contact Verification:</strong> Ensures reliable communication channels for business operations
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary">
+                      <strong>Digital Credentials:</strong> Creates a verifiable, blockchain-based proof of your email identity
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                    This verification creates a tamper-proof credential that can be shared with clients, partners, and stakeholders to establish trust and verify your organization's official communication channels.
+                  </Typography>
+                </Box>
+
                 <TextField
                   fullWidth
                   label="Organization Email"

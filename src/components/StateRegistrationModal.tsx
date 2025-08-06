@@ -18,6 +18,16 @@ import VerifiableCredentialsService from '../service/VerifiableCredentialsServic
 import ConversationService from '../service/ConversationService';
 import { ChatMessage, Role, MessageType } from '../models/ChatCompletion';
 
+// Helper function to validate URL format
+const isValidUrl = (url: string): boolean => {
+  try {
+    new URL(url);
+    return url.startsWith('http://') || url.startsWith('https://');
+  } catch {
+    return false;
+  }
+};
+
 interface StateRegistrationModalProps {
   isVisible: boolean;
   onClose: () => void;
@@ -29,6 +39,7 @@ const StateRegistrationModal: React.FC<StateRegistrationModalProps> = ({isVisibl
 
   const [attestation, setAttestation] = useState<Attestation | null>(null);
   const [state, setState] = useState("delaware");
+  const [websiteUrl, setWebsiteUrl] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
 
   // List of all US states
@@ -95,10 +106,15 @@ const StateRegistrationModal: React.FC<StateRegistrationModalProps> = ({isVisibl
     try {
       console.info("Verifying company with LangChain...");
 
+      // Validate website URL if provided
+      if (websiteUrl && !isValidUrl(websiteUrl)) {
+        throw new Error("Please enter a valid website URL (e.g., https://www.yourcompany.com)");
+      }
+
       // Send to LangChain for verification
       const BASE_URL = import.meta.env.VITE_ORGSERVICE_API_URL || 'http://localhost:8501';
       const response = await fetch(
-        `${BASE_URL}/creds/good-standing/company?company=${encodeURIComponent(orgName || "verified")}&state=${state}`
+        `${BASE_URL}/creds/good-standing/company?company=${encodeURIComponent(orgName || "verified")}&state=${state}${websiteUrl ? `&website=${encodeURIComponent(websiteUrl)}` : ''}`
       );
 
       if (!response.ok) {
@@ -182,7 +198,7 @@ const StateRegistrationModal: React.FC<StateRegistrationModalProps> = ({isVisibl
                 args: "",
                 role: Role.Developer,
                 messageType: MessageType.Normal,
-                content: `I've verified your organization with LangChain and updated your wallet with a verifiable credential and published your State Registration attestation.`,
+                content: `I've verified your organization with LangChain${websiteUrl ? ` and your website ${websiteUrl}` : ''} and updated your wallet with a verifiable credential and published your State Registration attestation.`,
               };
 
               const msgs: ChatMessage[] = [...currentMsgs.slice(0, -1), newMsg];
@@ -333,6 +349,23 @@ const StateRegistrationModal: React.FC<StateRegistrationModalProps> = ({isVisibl
                         </MenuItem>
                       ))}
                     </TextField>
+                  </Box>
+
+                  <Box sx={{ mb: 3, p: 2, border: "1px solid #ddd", borderRadius: 2 }}>
+                    <Typography variant="subtitle1" fontWeight="medium" mb={1}>
+                      Company Website URL
+                    </Typography>
+
+                    <TextField
+                      label="Website URL (Optional)"
+                      variant="outlined"
+                      fullWidth
+                      value={websiteUrl}
+                      onChange={(e) => setWebsiteUrl(e.target.value)}
+                      disabled={isVerifying}
+                      placeholder="https://www.yourcompany.com"
+                      helperText="Enter your company's official website URL for additional verification"
+                    />
                   </Box>
                   <Button
                     variant="contained"

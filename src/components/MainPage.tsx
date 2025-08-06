@@ -78,7 +78,8 @@ import StateRegistrationModal from './StateRegistrationModal';
 import EmailVerificationModal from './EmailVerificationModal';
 import WebsiteModal from './WebsiteModal';
 import InsuranceModal from './InsuranceModal';
-import { invokeLangGraphAgent, sendMessageToLangGraphAssistant } from '../service/LangChainService';
+import { invokeLangGraphAgent, sendMessageToLangGraphAssistant, LangGraphTaskManager } from '../service/LangChainService';
+import { threadId } from 'worker_threads';
 
 
 function getFirstValidString(...args: (string | undefined | null)[]): string {
@@ -197,6 +198,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const [isThinking, setIsThinking] = useState(false);
   const thinkingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Add state for LangGraph task status
+  const [isLangGraphTaskRunning, setIsLangGraphTaskRunning] = useState(false);
+
 
 
   // OAuth trigger functions
@@ -304,6 +308,19 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       window.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('selectionchange', handleSelectionChange);
       chatSettingsEmitter.off('chatSettingsChanged', chatSettingsListener);
+    };
+  }, []);
+
+  // Set up LangGraph task status listener
+  useEffect(() => {
+    const handleLangGraphTaskStatusChange = (isRunning: boolean) => {
+      setIsLangGraphTaskRunning(isRunning);
+    };
+
+    LangGraphTaskManager.addStatusListener(handleLangGraphTaskStatusChange);
+
+    return () => {
+      LangGraphTaskManager.removeStatusListener(handleLangGraphTaskStatusChange);
     };
   }, []);
 
@@ -740,7 +757,7 @@ What would you like to do today?`;
   async function resendConfig(threadID: any) {
     const company_config = await init();
     //getArgfromUserMessage(threadIDResult, `lets get started: ${company_config}`).then(str => {
-    getArgfromUserMessage(threadID,
+    const mes = await getArgfromUserMessage(threadID,
       `Here's the updated data: Name: ${company_config["name"]},
       Domain: ${company_config["domain"]},
       Linkedin: ${company_config["linkedin"]},
@@ -752,7 +769,7 @@ What would you like to do today?`;
       Website: ${company_config["website"]},
       Org Email: ${company_config["email_org"]},
       Individual Email: ${company_config["email_indiv"]},`);
-    return;
+    return mes;
   }
 
   const handleOnDeleteAttestationsModalClose = () => {
@@ -785,6 +802,7 @@ What would you like to do today?`;
   const handleOnOrgModalClose = () => {
     setOrgModalVisible(false);
   };
+
   const handleOnAddEnsRecordModalClose = () => {
     setIsAddEnsRecordModalVisible(false);
     setExistingEnsNameForUpdate('');
@@ -800,17 +818,15 @@ What would you like to do today?`;
         clearTimeout(thinkingTimeoutRef.current);
       }
       setIsThinking(false);
-      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+      resendConfig(threadID).then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
-      }).then(any => {
-        resendConfig(threadID)
       });
     }, 1000);
   };
 
   // Verification modal close handlers
-  const handleOnLinkedinModalClose = () => {
-    console.log('LinkedIn modal closing, threadID:', threadID);
+  const handleOnLinkedinModalClose = (thread:any = threadID) => {
+    console.log('LinkedIn modal closing, threadID:', thread);
     setLinkedinModalVisible(false);
     addMessage(Role.Assistant, MessageType.Normal, 'Closing LinkedIn verification modal...', '', [], sendMessage);
     thinkingTimeoutRef.current = setTimeout(() => {
@@ -824,20 +840,10 @@ What would you like to do today?`;
         clearTimeout(thinkingTimeoutRef.current);
       }
       setIsThinking(false);
-      console.log('Timeout triggered, threadID:', threadID);
-      if (!threadID) {
-        console.error('threadID is null, cannot proceed');
-        return;
-      }
+      console.log('Timeout triggered, threadID:', thread);
 
-      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
-        console.log('Got response from getArgfromUserMessage:', str);
+      resendConfig(threadID).then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
-      }).catch(error => {
-        console.error('Error in getArgfromUserMessage:', error);
-      }).then(any => {
-        console.log('Calling resendConfig with threadID:', threadID);
-        resendConfig(threadID)
       });
     }, 1000);
   };
@@ -856,10 +862,8 @@ What would you like to do today?`;
         clearTimeout(thinkingTimeoutRef.current);
       }
       setIsThinking(false);
-      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+      resendConfig(threadID).then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
-      }).then(any => {
-        resendConfig(threadID)
       });
     }, 1000);
   };
@@ -878,10 +882,8 @@ What would you like to do today?`;
         clearTimeout(thinkingTimeoutRef.current);
       }
       setIsThinking(false);
-      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+      resendConfig(threadID).then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
-      }).then(any => {
-        resendConfig(threadID)
       });
     }, 1000);
   };
@@ -892,10 +894,8 @@ What would you like to do today?`;
 
     // Ask follow-up question after a short delay
     setTimeout(() => {
-      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+      resendConfig(threadID).then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
-      }).then(any => {
-        resendConfig(threadID)
       });
     }, 1000);
   };
@@ -914,10 +914,8 @@ What would you like to do today?`;
         clearTimeout(thinkingTimeoutRef.current);
       }
       setIsThinking(false);
-      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+      resendConfig(threadID).then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
-      }).then(any => {
-        resendConfig(threadID)
       });
     }, 1000);
   };
@@ -936,10 +934,8 @@ What would you like to do today?`;
         clearTimeout(thinkingTimeoutRef.current);
       }
       setIsThinking(false);
-      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+      resendConfig(threadID).then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
-      }).then(any => {
-        resendConfig(threadID)
       });
     }, 1000);
   };
@@ -958,10 +954,8 @@ What would you like to do today?`;
         clearTimeout(thinkingTimeoutRef.current);
       }
       setIsThinking(false);
-      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+      resendConfig(threadID).then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
-      }).then(any => {
-        resendConfig(threadID)
       });
     }, 1000);
   };
@@ -1040,7 +1034,6 @@ What would you like to do today?`;
   }
 
   const callApp = (message: string, fileDataRef: FileDataRef[]) => {
-    var ngrok_url = 'https://b2f972629ffd.ngrok-free.app';
     if (conversation == null || threadID == null) {
       return
     }
@@ -1082,11 +1075,11 @@ What would you like to do today?`;
       console.log('Processed string:', str);
 
       if (str.includes("ens_registration") || str.includes("ens_verification") && orgAccountClient && chain) {
-        console.log('process ens verification')
-        setIsAddEnsRecordModalVisible(true)
-        setExistingEnsNameForUpdate('')
+        console.log('process ens verification');
+        setIsAddEnsRecordModalVisible(true);
+        setExistingEnsNameForUpdate('');
         // Remove the immediate ENS registration call - it will be handled by the modal
-        addMessage(Role.Assistant, MessageType.Normal, `Opening ENS registration modal...`, '', fileDataRef, sendMessage)
+        addMessage(Role.Assistant, MessageType.Normal, `Opening ENS registration modal...`, '', fileDataRef, sendMessage);
       } else if ((str.includes('state_register') || str.includes('State Registration verification')) && orgAccountClient && chain) {
         setStateRegistrationModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening State Registration verification modal...', '', fileDataRef, sendMessage);
@@ -1128,17 +1121,49 @@ What would you like to do today?`;
         console.log('Email verification command detected from AI response');
         setEmailVerificationModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Email verification modal...', '', fileDataRef, sendMessage);
-      } else if (str.includes('insurance_verification')) {
+      } else if (str.includes('insurance_verification') || str.includes('insurance_verifcation')) {
         //insurance modal
         console.log('Insurance verification command detected from AI response');
         setInsuranceModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Insurance verification modal...', '', fileDataRef, sendMessage);
       } else if (str.includes("delete_all")) {
-        setDeleteAttestationsModalVisible(true)
+        setDeleteAttestationsModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Deletion Modal.....', '', fileDataRef, sendMessage);
       } else if (str.includes('create_did')) {
-        setCreateWebDidModalVisible(true)
+        setCreateWebDidModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Web DID Modal....', '', fileDataRef, sendMessage);
+      } else if (str.includes("state_skip")) {
+        markCurrentEntityAsSkipped([...entities], "state-registration(org)");
+        const strinlist = str.split('Perform state_skip now.')
+        addMessage(Role.Assistant, MessageType.Normal, `State Registration Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
+      } else if (str.includes("ens_skip")) {
+        markCurrentEntityAsSkipped([...entities], "ens(org)")
+        const strinlist = str.split('Perform ens_skip now.')
+        addMessage(Role.Assistant, MessageType.Normal, `ENS Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
+      } else if (str.includes("linkedin_skip")) {
+        markCurrentEntityAsSkipped([...entities], "linkedin(indiv)")
+        const strinlist = str.split('Perform linkedin_skip now.')
+        addMessage(Role.Assistant, MessageType.Normal, `Linkedin Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
+      } else if (str.includes("x_skip")) {
+        markCurrentEntityAsSkipped([...entities], "x(indiv)")
+        const strinlist = str.split('Perform x_skip now.')
+        addMessage(Role.Assistant, MessageType.Normal, `Twitter Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
+      } else if (str.includes("insurance_skip")) {
+        markCurrentEntityAsSkipped([...entities], "insurance(org)")
+        const strinlist = str.split('Perform insurance_skip now.')
+        addMessage(Role.Assistant, MessageType.Normal, `Insurance Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
+      } else if (str.includes("shopify_skip")) {
+        markCurrentEntityAsSkipped([...entities], "shopify(org)")
+        const strinlist = str.split('Perform shopify_skip now.')
+        addMessage(Role.Assistant, MessageType.Normal, `Shopify Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
+      } else if (str.includes("website_skip")) {
+        markCurrentEntityAsSkipped([...entities], "website(org)")
+        const strinlist = str.split('Perform website_skip now.')
+        addMessage(Role.Assistant, MessageType.Normal, `Website Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
+      } else if (str.includes("email_skip")) {
+        markCurrentEntityAsSkipped([...entities], "email(indiv)")
+        const strinlist = str.split('Perform email_skip now.')
+        addMessage(Role.Assistant, MessageType.Normal, `Email Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
       } else {
         addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
       }
@@ -1885,6 +1910,9 @@ What would you like to do today?`;
     let args = ""
     const stateList = ['colorado', 'delaware']
 
+    // Helper function to add delay before LangChain calls
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
     var lastUserResponse = content.toLowerCase()
     var introduction = userSettings.assistantIntroductions ? userSettings.assistantIntroductions : OPENAI_DEFAULT_ASSISTANT_PROMPT
 
@@ -1964,6 +1992,10 @@ What would you like to do today?`;
 
       if (content.toLowerCase() == 'colorado') {
         try {
+          // Add 2-second delay before LangChain call
+          console.log('Adding 2-second delay before LangChain call...');
+          await delay(2000);
+          console.log('Delay completed, sending message to LangChain...');
           var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'state_register', entities || [], {}, linkedInAuthRef, xAuthRef);
           console.log('adding attestation')
           addOrgRegistrationAttestation(response['name'], response['id'], content, response["address"], response["formDate"]);
@@ -1976,6 +2008,10 @@ What would you like to do today?`;
       } else if ((content.toLowerCase())[12] == 'l') {//'https://www.linkedin.com/in') {
         //console.log('hallo')
         try {
+          // Add 2-second delay before LangChain call
+          console.log('Adding 2-second delay before LangChain call...');
+          await delay(2000);
+          console.log('Delay completed, sending message to LangChain...');
           var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'linkedin_verification', entities || [], {}, linkedInAuthRef, xAuthRef);
           console.log('LangChain Response: ', response.message)
           return response.message;
@@ -1985,6 +2021,10 @@ What would you like to do today?`;
         }
               } else if (content.toLowerCase() == 'twitter') {
           try {
+            // Add 2-second delay before LangChain call
+            console.log('Adding 2-second delay before LangChain call...');
+            await delay(2000);
+            console.log('Delay completed, sending message to LangChain...');
             var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'x_verification', entities || [], {}, linkedInAuthRef, xAuthRef);
             return response.message;
           } catch (error) {
@@ -1994,6 +2034,10 @@ What would you like to do today?`;
       } else {
 
         try {
+          // Add 2-second delay before LangChain call
+          console.log('Adding 2-second delay before LangChain call...');
+          await delay(2000);
+          console.log('Delay completed, sending message to LangChain...');
           var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'none', entities || [], {}, linkedInAuthRef, xAuthRef);
           return response.message;
         } catch (error) {
@@ -2043,15 +2087,8 @@ What would you like to do today?`;
     console.log('Checking attestation responses with:', { introduction, lastUserResponse });
 
     // If we reach here, it means no specific action was detected
-    // Instead of returning a generic error, provide a helpful response
-    return "I'm here to help! You can ask me to help you with various tasks like:\n\n" +
-           "• Show your wallet addresses\n" +
-           "• Add organization information\n" +
-           "• Verify your LinkedIn profile\n" +
-           "• Register your company\n" +
-           "• Add ENS records\n" +
-           "• And much more!\n\n" +
-           "What would you like to do today?"
+    // Return empty string to avoid showing fallback message
+    return ""
   }
 
 
@@ -2102,12 +2139,12 @@ What would you like to do today?`;
 
 
   // Function to mark the current entity as skipped
-  function markCurrentEntityAsSkipped(entities: Entity[]): Entity[] {
+  function markCurrentEntityAsSkipped(entities: Entity[], name: string): Entity[] {
     if (!entities || !orgName) return entities;
-
+    console.log(entities, ".........................................................................................................")
     // Find the current entity being prompted for (first missing, non-skipped entity by priority)
     for (const entity of entities) {
-      if (entity.attestation == undefined && !entity.skipped && entity.introduction != "") {
+      if (entity.name == name && !entity.skipped && entity.introduction != "") {
         console.info("marking entity as skipped: ", entity.name);
         entity.skipped = true;
         break;
@@ -2930,6 +2967,7 @@ What would you like to do today?`;
                           : 'no'
                       }
                       className="message-box"
+                      isLangGraphTaskRunning={isLangGraphTaskRunning}
                     />
                   </div>
                 </div>
@@ -2938,13 +2976,13 @@ What would you like to do today?`;
             </div>
         </div>
         <div
-          className="flex min-w-0"
+          className="flex min-w-0 h-full"
           style={{
             flexBasis: '60%'
           }}
         >
           <RightSide
-            className="rightside-container w-full"
+            className="rightside-container w-full h-full"
             appCommand={appCommand}
             onRefreshAttestations={handleRefreshAttestations}
             onRefreshAccounts={handleRefreshAccounts}

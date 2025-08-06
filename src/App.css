@@ -63,6 +63,9 @@
   border: var(--border-2);
   border-radius: var(--radius);
   margin: 10px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .chat-container {

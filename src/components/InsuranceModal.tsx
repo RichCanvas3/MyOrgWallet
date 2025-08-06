@@ -226,6 +226,36 @@ const InsuranceModal: React.FC<InsuranceModalProps> = ({isVisible, onClose}) => 
                   Verify Your Organization's Insurance
                 </Typography>
 
+                {/* Why Insurance Verification is Important Section */}
+                <Box sx={{ mb: 3, p: 3, backgroundColor: '#f8f9fa', borderRadius: 2, border: '1px solid #e9ecef' }}>
+                  <Typography variant="h6" fontWeight="bold" color="primary" mb={2}>
+                    Why Insurance Verification Matters
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" paragraph>
+                    Insurance verification helps establish your organization's compliance and risk management credentials:
+                  </Typography>
+                  <Box component="ul" sx={{ pl: 2, mb: 2 }}>
+                    <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Risk Management:</strong> Demonstrates your organization's commitment to protecting stakeholders
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Compliance Credibility:</strong> Shows adherence to industry standards and regulatory requirements
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Business Trust:</strong> Builds confidence with clients, partners, and investors
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Professional Standards:</strong> Establishes your organization as a responsible business entity
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary">
+                      <strong>Digital Credentials:</strong> Creates a verifiable, blockchain-based proof of your insurance coverage
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                    This verification creates a tamper-proof credential that can be shared with clients, partners, and stakeholders to establish trust and demonstrate your organization's commitment to risk management and compliance.
+                  </Typography>
+                </Box>
+
                 <TextField
                   fullWidth
                   label="Policy Number"
