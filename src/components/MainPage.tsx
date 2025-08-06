@@ -1116,6 +1116,30 @@ What would you like to do today?`;
       } else if (str.includes('create_did')) {
         setCreateWebDidModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Web DID Modal....', '', fileDataRef, sendMessage);
+      } else if (str.includes("state_skip")) {
+        markCurrentEntityAsSkipped([...entities], "state-registration(org)");
+        addMessage(Role.Assistant, MessageType.Normal, 'State Registration Skipped!', '', fileDataRef, sendMessage);
+      } else if (str.includes("ens_skip")) {
+        markCurrentEntityAsSkipped([...entities], "ens(org)")
+        addMessage(Role.Assistant, MessageType.Normal, 'ENS Skipped!', '', fileDataRef, sendMessage);
+      } else if (str.includes("linkedin_skip")) {
+        markCurrentEntityAsSkipped([...entities], "linkedin(indiv)")
+        addMessage(Role.Assistant, MessageType.Normal, 'Linkedin Skipped!', '', fileDataRef, sendMessage);
+      } else if (str.includes("x_skip")) {
+        markCurrentEntityAsSkipped([...entities], "x(indiv)")
+        addMessage(Role.Assistant, MessageType.Normal, 'Twitter Skipped!', '', fileDataRef, sendMessage);
+      } else if (str.includes("insurance_skip")) {
+        markCurrentEntityAsSkipped([...entities], "insurance(org)")
+        addMessage(Role.Assistant, MessageType.Normal, 'Insurance Skipped!', '', fileDataRef, sendMessage);
+      } else if (str.includes("shopify_skip")) {
+        markCurrentEntityAsSkipped([...entities], "shopify(org)")
+        addMessage(Role.Assistant, MessageType.Normal, 'Shopify Skipped!', '', fileDataRef, sendMessage);
+      } else if (str.includes("website_skip")) {
+        markCurrentEntityAsSkipped([...entities], "website(org)")
+        addMessage(Role.Assistant, MessageType.Normal, 'Website Skipped!', '', fileDataRef, sendMessage);
+      } else if (str.includes("email_skip")) {
+        markCurrentEntityAsSkipped([...entities], "email(indiv)")
+        addMessage(Role.Assistant, MessageType.Normal, 'Email Skipped!', '', fileDataRef, sendMessage);
       } else {
         addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
       }
@@ -2079,12 +2103,12 @@ What would you like to do today?`;
 
 
   // Function to mark the current entity as skipped
-  function markCurrentEntityAsSkipped(entities: Entity[]): Entity[] {
+  function markCurrentEntityAsSkipped(entities: Entity[], name: string): Entity[] {
     if (!entities || !orgName) return entities;
-
+    console.log(entities, ".........................................................................................................")
     // Find the current entity being prompted for (first missing, non-skipped entity by priority)
     for (const entity of entities) {
-      if (entity.attestation == undefined && !entity.skipped && entity.introduction != "") {
+      if (entity.name == name && !entity.skipped && entity.introduction != "") {
         console.info("marking entity as skipped: ", entity.name);
         entity.skipped = true;
         break;
