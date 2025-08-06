@@ -165,6 +165,9 @@ class AttestationService {
 
     const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
     console.info("Returned attestations count: ", data.attestations.length)
+    console.log("=== GRAPHQL QUERY RESULTS ===");
+    console.log("Complete GraphQL response:", JSON.stringify(data, null, 2));
+    console.log("=== END GRAPHQL QUERY RESULTS ===");
     console.info("Loading attestations for addresses:", {
       orgAddress,
       indivAddress,

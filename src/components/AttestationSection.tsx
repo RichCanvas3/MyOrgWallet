@@ -80,6 +80,16 @@ const AttestationStats: React.FC<{
   const total = stats.completed + stats.missing + stats.skipped;
   const completionPercentage = total > 0 ? Math.round((stats.completed / total) * 100) : 0;
 
+  console.log("=== ATTESTATION STATS ===");
+  console.log("Entities processed:", entities.length);
+  console.log("Stats calculation:", stats);
+  console.log("Completed entities:", completed);
+  console.log("Missing entities:", missing);
+  console.log("Skipped entities:", skipped);
+  console.log("Total entities:", total);
+  console.log("Completion percentage:", completionPercentage);
+  console.log("=== END ATTESTATION STATS ===");
+
   const handleChipClick = (type: 'completed' | 'missing' | 'skipped') => {
     setDialogType(type);
     setDialogOpen(true);

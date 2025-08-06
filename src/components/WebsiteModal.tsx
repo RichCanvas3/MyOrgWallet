@@ -182,6 +182,36 @@ const WebsiteModal: React.FC<WebsiteModalProps> = ({isVisible, onClose}) => {
                   Verify Your Organization's Website
                 </Typography>
 
+                {/* Why Website Verification is Important Section */}
+                <Box sx={{ mb: 3, p: 3, backgroundColor: '#f8f9fa', borderRadius: 2, border: '1px solid #e9ecef' }}>
+                  <Typography variant="h6" fontWeight="bold" color="primary" mb={2}>
+                    Why Website Verification Matters
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" paragraph>
+                    Website verification helps establish your organization's digital presence and online credibility:
+                  </Typography>
+                  <Box component="ul" sx={{ pl: 2, mb: 2 }}>
+                    <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Digital Identity:</strong> Verifies your organization's official website and online presence
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Online Credibility:</strong> Builds trust with customers, partners, and stakeholders
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Brand Protection:</strong> Establishes ownership of your organization's digital domain
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      <strong>Professional Presence:</strong> Demonstrates your organization's commitment to digital infrastructure
+                    </Typography>
+                    <Typography component="li" variant="body2" color="text.secondary">
+                      <strong>Digital Credentials:</strong> Creates a verifiable, blockchain-based proof of your website ownership
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                    This verification creates a tamper-proof credential that can be shared with customers, partners, and stakeholders to establish trust and credibility for your organization's digital presence.
+                  </Typography>
+                </Box>
+
                 <TextField
                   fullWidth
                   label="Website URL"
