@@ -1134,28 +1134,36 @@ What would you like to do today?`;
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Web DID Modal....', '', fileDataRef, sendMessage);
       } else if (str.includes("state_skip")) {
         markCurrentEntityAsSkipped([...entities], "state-registration(org)");
-        addMessage(Role.Assistant, MessageType.Normal, 'State Registration Skipped!', '', fileDataRef, sendMessage);
+        const strinlist = str.split('Perform state_skip now.')
+        addMessage(Role.Assistant, MessageType.Normal, `State Registration Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
       } else if (str.includes("ens_skip")) {
         markCurrentEntityAsSkipped([...entities], "ens(org)")
-        addMessage(Role.Assistant, MessageType.Normal, 'ENS Skipped!', '', fileDataRef, sendMessage);
+        const strinlist = str.split('Perform ens_skip now.')
+        addMessage(Role.Assistant, MessageType.Normal, `ENS Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
       } else if (str.includes("linkedin_skip")) {
         markCurrentEntityAsSkipped([...entities], "linkedin(indiv)")
-        addMessage(Role.Assistant, MessageType.Normal, 'Linkedin Skipped!', '', fileDataRef, sendMessage);
+        const strinlist = str.split('Perform linkedin_skip now.')
+        addMessage(Role.Assistant, MessageType.Normal, `Linkedin Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
       } else if (str.includes("x_skip")) {
         markCurrentEntityAsSkipped([...entities], "x(indiv)")
-        addMessage(Role.Assistant, MessageType.Normal, 'Twitter Skipped!', '', fileDataRef, sendMessage);
+        const strinlist = str.split('Perform x_skip now.')
+        addMessage(Role.Assistant, MessageType.Normal, `Twitter Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
       } else if (str.includes("insurance_skip")) {
         markCurrentEntityAsSkipped([...entities], "insurance(org)")
-        addMessage(Role.Assistant, MessageType.Normal, 'Insurance Skipped!', '', fileDataRef, sendMessage);
+        const strinlist = str.split('Perform insurance_skip now.')
+        addMessage(Role.Assistant, MessageType.Normal, `Insurance Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
       } else if (str.includes("shopify_skip")) {
         markCurrentEntityAsSkipped([...entities], "shopify(org)")
-        addMessage(Role.Assistant, MessageType.Normal, 'Shopify Skipped!', '', fileDataRef, sendMessage);
+        const strinlist = str.split('Perform shopify_skip now.')
+        addMessage(Role.Assistant, MessageType.Normal, `Shopify Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
       } else if (str.includes("website_skip")) {
         markCurrentEntityAsSkipped([...entities], "website(org)")
-        addMessage(Role.Assistant, MessageType.Normal, 'Website Skipped!', '', fileDataRef, sendMessage);
+        const strinlist = str.split('Perform website_skip now.')
+        addMessage(Role.Assistant, MessageType.Normal, `Website Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
       } else if (str.includes("email_skip")) {
         markCurrentEntityAsSkipped([...entities], "email(indiv)")
-        addMessage(Role.Assistant, MessageType.Normal, 'Email Skipped!', '', fileDataRef, sendMessage);
+        const strinlist = str.split('Perform email_skip now.')
+        addMessage(Role.Assistant, MessageType.Normal, `Email Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
       } else {
         addMessage(Role.Assistant, MessageType.Normal, str, '', fileDataRef, sendMessage);
       }
