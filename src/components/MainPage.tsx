@@ -785,6 +785,7 @@ What would you like to do today?`;
   const handleOnOrgModalClose = () => {
     setOrgModalVisible(false);
   };
+
   const handleOnAddEnsRecordModalClose = () => {
     setIsAddEnsRecordModalVisible(false);
     setExistingEnsNameForUpdate('');
@@ -800,17 +801,17 @@ What would you like to do today?`;
         clearTimeout(thinkingTimeoutRef.current);
       }
       setIsThinking(false);
-      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+      getArgfromUserMessage(thread, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
       }).then(any => {
-        resendConfig(threadID)
+        resendConfig(thread)
       });
     }, 1000);
   };
 
   // Verification modal close handlers
-  const handleOnLinkedinModalClose = () => {
-    console.log('LinkedIn modal closing, threadID:', threadID);
+  const handleOnLinkedinModalClose = (thread:any = threadID) => {
+    console.log('LinkedIn modal closing, threadID:', thread);
     setLinkedinModalVisible(false);
     addMessage(Role.Assistant, MessageType.Normal, 'Closing LinkedIn verification modal...', '', [], sendMessage);
     thinkingTimeoutRef.current = setTimeout(() => {
@@ -824,20 +825,16 @@ What would you like to do today?`;
         clearTimeout(thinkingTimeoutRef.current);
       }
       setIsThinking(false);
-      console.log('Timeout triggered, threadID:', threadID);
-      if (!threadID) {
-        console.error('threadID is null, cannot proceed');
-        return;
-      }
+      console.log('Timeout triggered, threadID:', thread);
 
-      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+      getArgfromUserMessage(thread, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
         console.log('Got response from getArgfromUserMessage:', str);
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
       }).catch(error => {
         console.error('Error in getArgfromUserMessage:', error);
       }).then(any => {
-        console.log('Calling resendConfig with threadID:', threadID);
-        resendConfig(threadID)
+        console.log('Calling resendConfig with threadID:', thread);
+        //resendConfig(thread)
       });
     }, 1000);
   };
@@ -1128,7 +1125,7 @@ What would you like to do today?`;
         console.log('Email verification command detected from AI response');
         setEmailVerificationModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Email verification modal...', '', fileDataRef, sendMessage);
-      } else if (str.includes('insurance_verification')) {
+      } else if (str.includes('insurance_verification') || str.includes('insurance_verifcation')) {
         //insurance modal
         console.log('Insurance verification command detected from AI response');
         setInsuranceModalVisible(true);
