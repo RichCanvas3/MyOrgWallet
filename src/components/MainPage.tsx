@@ -78,7 +78,7 @@ import StateRegistrationModal from './StateRegistrationModal';
 import EmailVerificationModal from './EmailVerificationModal';
 import WebsiteModal from './WebsiteModal';
 import InsuranceModal from './InsuranceModal';
-import { invokeLangGraphAgent, sendMessageToLangGraphAssistant } from '../service/LangChainService';
+import { invokeLangGraphAgent, sendMessageToLangGraphAssistant, LangGraphTaskManager } from '../service/LangChainService';
 import { threadId } from 'worker_threads';
 
 
@@ -198,6 +198,9 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const [isThinking, setIsThinking] = useState(false);
   const thinkingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Add state for LangGraph task status
+  const [isLangGraphTaskRunning, setIsLangGraphTaskRunning] = useState(false);
+
 
 
   // OAuth trigger functions
@@ -305,6 +308,19 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       window.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('selectionchange', handleSelectionChange);
       chatSettingsEmitter.off('chatSettingsChanged', chatSettingsListener);
+    };
+  }, []);
+
+  // Set up LangGraph task status listener
+  useEffect(() => {
+    const handleLangGraphTaskStatusChange = (isRunning: boolean) => {
+      setIsLangGraphTaskRunning(isRunning);
+    };
+
+    LangGraphTaskManager.addStatusListener(handleLangGraphTaskStatusChange);
+
+    return () => {
+      LangGraphTaskManager.removeStatusListener(handleLangGraphTaskStatusChange);
     };
   }, []);
 
@@ -1862,6 +1878,9 @@ What would you like to do today?`;
     let args = ""
     const stateList = ['colorado', 'delaware']
 
+    // Helper function to add delay before LangChain calls
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
     var lastUserResponse = content.toLowerCase()
     var introduction = userSettings.assistantIntroductions ? userSettings.assistantIntroductions : OPENAI_DEFAULT_ASSISTANT_PROMPT
 
@@ -1941,6 +1960,10 @@ What would you like to do today?`;
 
       if (content.toLowerCase() == 'colorado') {
         try {
+          // Add 2-second delay before LangChain call
+          console.log('Adding 2-second delay before LangChain call...');
+          await delay(2000);
+          console.log('Delay completed, sending message to LangChain...');
           var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'state_register', entities || [], {}, linkedInAuthRef, xAuthRef);
           console.log('adding attestation')
           addOrgRegistrationAttestation(response['name'], response['id'], content, response["address"], response["formDate"]);
@@ -1953,6 +1976,10 @@ What would you like to do today?`;
       } else if ((content.toLowerCase())[12] == 'l') {//'https://www.linkedin.com/in') {
         //console.log('hallo')
         try {
+          // Add 2-second delay before LangChain call
+          console.log('Adding 2-second delay before LangChain call...');
+          await delay(2000);
+          console.log('Delay completed, sending message to LangChain...');
           var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'linkedin_verification', entities || [], {}, linkedInAuthRef, xAuthRef);
           console.log('LangChain Response: ', response.message)
           return response.message;
@@ -1962,6 +1989,10 @@ What would you like to do today?`;
         }
               } else if (content.toLowerCase() == 'twitter') {
           try {
+            // Add 2-second delay before LangChain call
+            console.log('Adding 2-second delay before LangChain call...');
+            await delay(2000);
+            console.log('Delay completed, sending message to LangChain...');
             var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'x_verification', entities || [], {}, linkedInAuthRef, xAuthRef);
             return response.message;
           } catch (error) {
@@ -1971,6 +2002,10 @@ What would you like to do today?`;
       } else {
 
         try {
+          // Add 2-second delay before LangChain call
+          console.log('Adding 2-second delay before LangChain call...');
+          await delay(2000);
+          console.log('Delay completed, sending message to LangChain...');
           var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'none', entities || [], {}, linkedInAuthRef, xAuthRef);
           return response.message;
         } catch (error) {
@@ -2020,15 +2055,8 @@ What would you like to do today?`;
     console.log('Checking attestation responses with:', { introduction, lastUserResponse });
 
     // If we reach here, it means no specific action was detected
-    // Instead of returning a generic error, provide a helpful response
-    return "I'm here to help! You can ask me to help you with various tasks like:\n\n" +
-           "• Show your wallet addresses\n" +
-           "• Add organization information\n" +
-           "• Verify your LinkedIn profile\n" +
-           "• Register your company\n" +
-           "• Add ENS records\n" +
-           "• And much more!\n\n" +
-           "What would you like to do today?"
+    // Return empty string to avoid showing fallback message
+    return ""
   }
 
 
@@ -2907,6 +2935,7 @@ What would you like to do today?`;
                           : 'no'
                       }
                       className="message-box"
+                      isLangGraphTaskRunning={isLangGraphTaskRunning}
                     />
                   </div>
                 </div>
@@ -2915,13 +2944,13 @@ What would you like to do today?`;
             </div>
         </div>
         <div
-          className="flex min-w-0"
+          className="flex min-w-0 h-full"
           style={{
             flexBasis: '60%'
           }}
         >
           <RightSide
-            className="rightside-container w-full"
+            className="rightside-container w-full h-full"
             appCommand={appCommand}
             onRefreshAttestations={handleRefreshAttestations}
             onRefreshAccounts={handleRefreshAccounts}
