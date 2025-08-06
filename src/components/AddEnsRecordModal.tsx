@@ -77,10 +77,19 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
   const [isWrapping, setIsWrapping] = useState(false);
   const [subdomainName, setSubdomainName] = useState('bob');
   const [showSubdomainInput, setShowSubdomainInput] = useState(false);
+  const [timerSeconds, setTimerSeconds] = useState(60); // 1 minute timer
+  const [isTimerActive, setIsTimerActive] = useState(false);
+  const [canCreateSubdomain, setCanCreateSubdomain] = useState(false);
+  // Remove wrap timer state variables
+  // const [wrapTimerSeconds, setWrapTimerSeconds] = useState(60); // 1 minute timer for wrapping
+  // const [isWrapTimerActive, setIsWrapTimerActive] = useState(false);
+  // const [canWrapEns, setCanWrapEns] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const availabilityTimeoutRef = useRef<NodeJS.Timeout>();
-
+  const timerRef = useRef<NodeJS.Timeout>();
+  // Remove wrap timer ref
+  // const wrapTimerRef = useRef<NodeJS.Timeout>();
 
 
   // Update the context usage
@@ -108,6 +117,13 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
     setShouldSkipFirstStep(!!existingEnsName);
     setIsFetchingAvatar(false);
     setUseBasicAvatar(false);
+    // Reset wrapping timer - no longer needed
+    // setIsWrapTimerActive(false);
+    // setWrapTimerSeconds(60);
+    // setCanWrapEns(false);
+    // if (wrapTimerRef.current) {
+    //   clearTimeout(wrapTimerRef.current);
+    // }
     onClose();
   };
 
@@ -488,6 +504,84 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
     }
   }, [shouldSkipFirstStep, activeStep]);
 
+  // Timer effect for subdomain creation
+  useEffect(() => {
+    if (isTimerActive && timerSeconds > 0) {
+      timerRef.current = setTimeout(() => {
+        setTimerSeconds(prev => prev - 1);
+      }, 1000);
+    } else if (timerSeconds === 0) {
+      setIsTimerActive(false);
+      setCanCreateSubdomain(true);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [isTimerActive, timerSeconds]);
+
+  // Start timer when subdomain input is shown
+  useEffect(() => {
+    if (showSubdomainInput && !isTimerActive && timerSeconds === 60) {
+      setIsTimerActive(true);
+      setCanCreateSubdomain(false);
+    }
+  }, [showSubdomainInput, isTimerActive, timerSeconds]);
+
+  // Reset timer when subdomain input is hidden
+  useEffect(() => {
+    if (!showSubdomainInput) {
+      setIsTimerActive(false);
+      setTimerSeconds(60);
+      setCanCreateSubdomain(false);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    }
+  }, [showSubdomainInput]);
+
+  // Cleanup timer on component unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+      // wrapTimerRef is no longer needed
+    };
+  }, []);
+
+  // Timer effect for wrapping ENS name - removed
+  // useEffect(() => {
+  //   if (isWrapTimerActive && wrapTimerSeconds > 0) {
+  //     wrapTimerRef.current = setTimeout(() => {
+  //       setWrapTimerSeconds(prev => prev - 1);
+  //     }, 1000);
+  //   } else if (wrapTimerSeconds === 0) {
+  //     setIsWrapTimerActive(false);
+  //     setCanWrapEns(true);
+  //   }
+  //
+  //   return () => {
+  //     if (wrapTimerRef.current) {
+  //       clearTimeout(wrapTimerRef.current);
+  //     }
+  //   };
+  // }, [isWrapTimerActive, wrapTimerSeconds]);
+
+  // Reset wrap timer when wrapping is completed - removed
+  // useEffect(() => {
+  //   if (!isWrapping && isWrapTimerActive && wrapTimerSeconds === 0) {
+  //     setIsWrapTimerActive(false);
+  //     setWrapTimerSeconds(60);
+  //     setCanWrapEns(false);
+  //     if (wrapTimerRef.current) {
+  //       clearTimeout(wrapTimerRef.current);
+  //     }
+  //   }
+  // }, [isWrapping, isWrapTimerActive, wrapTimerSeconds]);
+
   // Handle ENS name updates after modal opens
   useEffect(() => {
     if (existingEnsName && existingEnsName !== ensName) {
@@ -659,7 +753,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
                         >
                           {Number(orgBalance) >= 0.008
                             ? "✅ There is enough ETH for this transaction!"
-                            : "❌ Not enough. Please transfer ETH to the organization's smart wallet using the a8 ETH minimum)"}
+                            : "❌ Not enough. Please transfer ETH to the organization's smart wallet using the address above (0.008 ETH minimum)"}
                         </Typography>
                       )}
                     </>
@@ -914,6 +1008,10 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
             </Box>
           </Box>
 
+          {/* Timer Display for Wrapping - removed */}
+          {/* This section is no longer needed as the timer is removed. */}
+          {/* The button will be available immediately. */}
+
           <Button
             variant="contained"
             onClick={() => wrapEnsName(ensName)}
@@ -956,11 +1054,20 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
                   helperText={`Will create: ${subdomainName}.${cleanEnsName(ensName)}.eth`}
                   sx={{ mb: 2 }}
                 />
+                {/* Timer Display */}
+                {isTimerActive && timerSeconds > 0 && (
+                  <Box sx={{ mb: 2, textAlign: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Please wait before creating subdomain: {Math.floor(timerSeconds / 60)}:{(timerSeconds % 60).toString().padStart(2, '0')}
+                    </Typography>
+                  </Box>
+                )}
+
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   <Button
                     variant="contained"
                     onClick={createSubdomain}
-                    disabled={isCreatingSubdomain || !subdomainName.trim()}
+                    disabled={isCreatingSubdomain || !subdomainName.trim() || !canCreateSubdomain}
                     sx={{ flex: 1 }}
                   >
                     {isCreatingSubdomain ? (
@@ -968,6 +1075,8 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
                         <CircularProgress size={20} sx={{ mr: 1 }} />
                         Creating...
                       </>
+                    ) : !canCreateSubdomain ? (
+                      `Wait ${Math.floor(timerSeconds / 60)}:${(timerSeconds % 60).toString().padStart(2, '0')}`
                     ) : (
                       'Create Subdomain'
                     )}

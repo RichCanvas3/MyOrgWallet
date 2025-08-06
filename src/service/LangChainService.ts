@@ -7,6 +7,24 @@ import { XAuthRef } from "../components/XAuth"
 import { LANGCHAIN_API_KEY } from "../config";
 import { Entity } from "../models/Entity";
 
+// Task status tracking
+let isTaskRunning = false;
+let taskStatusListeners: ((isRunning: boolean) => void)[] = [];
+
+export const LangGraphTaskManager = {
+  isTaskRunning: () => isTaskRunning,
+  addStatusListener: (listener: (isRunning: boolean) => void) => {
+    taskStatusListeners.push(listener);
+  },
+  removeStatusListener: (listener: (isRunning: boolean) => void) => {
+    taskStatusListeners = taskStatusListeners.filter(l => l !== listener);
+  },
+  setTaskRunning: (running: boolean) => {
+    isTaskRunning = running;
+    taskStatusListeners.forEach(listener => listener(running));
+  }
+};
+
 export async function invokeLangGraphAgent({
   // parameters can be added here if needed
 } = {}) {
@@ -93,6 +111,20 @@ export async function sendMessageToLangGraphAssistant(
   XAuthRef?: React.RefObject<XAuthRef>
 ) {
 
+  // Check if a task is already running
+  if (LangGraphTaskManager.isTaskRunning()) {
+    throw new Error('A LangGraph task is already running. Please wait for it to complete before sending another message.');
+  }
+
+  // Set task as running
+  LangGraphTaskManager.setTaskRunning(true);
+
+  // Set a timeout to prevent tasks from running indefinitely
+  const taskTimeout = setTimeout(() => {
+    console.warn('LangGraph task timeout - forcing task to complete');
+    LangGraphTaskManager.setTaskRunning(false);
+  }, 300000); // 5 minutes timeout
+
   try {
     console.log('Attempting to send message to LangGraph assistant...');
     console.log('Thread ID:', thread_id);
@@ -151,6 +183,12 @@ export async function sendMessageToLangGraphAssistant(
     if (!data.ok) {
       const errorText = await data.text();
       console.error('LangGraph message sending failed:', data.status, errorText);
+
+      // Handle specific 409 error
+      if (data.status === 409) {
+        throw new Error('A LangGraph task is already running. Please wait for it to complete before sending another message.');
+      }
+
       throw new Error(`LangGraph API error: ${data.status} - ${errorText}`);
     }
 
@@ -256,6 +294,11 @@ export async function sendMessageToLangGraphAssistant(
     message: "I'm having trouble connecting to my assistant service right now. Please try again in a moment.",
     id: '', name: '', formDate: '', address: ''
   };
+} finally {
+  // Clear the timeout
+  clearTimeout(taskTimeout);
+  // Always set task as not running when function completes
+  LangGraphTaskManager.setTaskRunning(false);
 }
 
 // Example usage:

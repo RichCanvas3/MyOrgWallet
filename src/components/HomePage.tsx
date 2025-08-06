@@ -13,6 +13,7 @@ import { BuildingOfficeIcon, WalletIcon, ArrowRightCircleIcon, UserGroupIcon } f
 import {ISSUER_PRIVATE_KEY, WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, ETHERSCAN_URL, BUNDLER_URL, PAYMASTER_URL} from "../config";
 import { createWeb3AuthSignatoryFactory } from "../signers/web3AuthSignatoryFactory";
 import { createInjectedProviderSignatoryFactory } from "../signers/injectedProviderSignatoryFactory";
+import { NotificationService } from "../service/NotificationService";
 
 interface HomePageProps {
   className: string;
@@ -48,6 +49,10 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
       setIsLoading(false); // Clear loading state when navigation happens
       setConnectionFailed(false); // Reset connection failed state
       setHasAttemptedConnection(false); // Reset connection attempt state
+
+      // Show success message when user successfully reconnects
+      NotificationService.handleSuccess("Wallet reconnected successfully! Welcome back.");
+
       navigate('/chat/')
     } else if (isConnectionComplete && !isIndividualConnected && hasAttemptedConnection) {
       // Connection process is complete but no accounts found, and user attempted connection
@@ -60,7 +65,7 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
     setIsLoading(true);
     setHasAttemptedConnection(true); // Mark that user has attempted connection
     setConnectionFailed(false); // Reset connection failed state
-    
+
     try {
       if (!chain) {
         throw new Error('Chain not available');
@@ -352,12 +357,12 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
               onClick={() => setConnectionMethod('web3auth')}
               disabled={isLoading}
               size="small"
-              sx={{ 
+              sx={{
                 flex: 1,
                 backgroundColor: connectionMethod === 'web3auth' ? '#48ba2f' : 'transparent',
                 color: connectionMethod === 'web3auth' ? 'white' : '#48ba2f',
                 borderColor: '#48ba2f',
-                '&:hover': { 
+                '&:hover': {
                   backgroundColor: connectionMethod === 'web3auth' ? '#3a9a25' : 'rgba(72, 186, 47, 0.1)',
                   borderColor: '#3a9a25'
                 }
@@ -370,12 +375,12 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
               onClick={() => setConnectionMethod('metamask')}
               disabled={isLoading}
               size="small"
-              sx={{ 
+              sx={{
                 flex: 1,
                 backgroundColor: connectionMethod === 'metamask' ? '#48ba2f' : 'transparent',
                 color: connectionMethod === 'metamask' ? 'white' : '#48ba2f',
                 borderColor: '#48ba2f',
-                '&:hover': { 
+                '&:hover': {
                   backgroundColor: connectionMethod === 'metamask' ? '#3a9a25' : 'rgba(72, 186, 47, 0.1)',
                   borderColor: '#3a9a25'
                 }
@@ -394,9 +399,9 @@ const HomePage: React.FC<HomePageProps> = ({className}) => {
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 Connection failed. No existing organization found for this wallet.
               </Typography>
-              <Button 
-                variant="outlined" 
-                size="small" 
+              <Button
+                variant="outlined"
+                size="small"
                 onClick={() => navigate('/welcome/')}
                 sx={{ borderColor: '#48ba2f', color: '#48ba2f', '&:hover': { borderColor: '#3a9a25', color: '#3a9a25' } }}
               >

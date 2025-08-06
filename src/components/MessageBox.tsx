@@ -36,9 +36,19 @@ export interface MessageBoxHandles {
   pasteText: (text: string) => void;
 }
 
+// Props interface for MessageBox component
+export interface MessageBoxProps {
+  loading: boolean;
+  setLoading: (loading: boolean) => void;
+  callApp: (message: string, fileDataRef: any[]) => void;
+  allowImageAttachment: string;
+  className?: string;
+  isLangGraphTaskRunning?: boolean;
+}
+
 const MessageBox =
   forwardRef<MessageBoxHandles, MessageBoxProps>(
-    ({loading, setLoading, callApp, allowImageAttachment}, ref) => {
+    ({loading, setLoading, callApp, allowImageAttachment, isLangGraphTaskRunning = false}, ref) => {
       const {t} = useTranslation();
       const textValue = useRef('');
       const [isTextEmpty, setIsTextEmpty] = useState(true);
@@ -363,6 +373,15 @@ const MessageBox =
 
       return (
         <div className="message-input-container">
+          {/* LangGraph Task Status */}
+          {isLangGraphTaskRunning && (
+            <div className="langgraph-task-status">
+              <div className="flex items-center gap-2 text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-md px-3 py-2 mb-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                <span>{t('waiting-for-task')}</span>
+              </div>
+            </div>
+          )}
   <form onSubmit={handleSubmit} className="message-form">
     <div id="message-box-border" className="message-box">
       {/* FileDataPreview Full Width at the Top */}
@@ -391,10 +410,11 @@ const MessageBox =
           ref={textAreaRef}
           rows={1}
           className="message-textarea"
-          placeholder={t('send-a-message')}
+          placeholder={isLangGraphTaskRunning ? t('waiting-for-task') : t('send-a-message')}
           onKeyDown={checkForSpecialKey}
           onChange={handleTextChange}
           onPaste={handlePaste}
+          disabled={isLangGraphTaskRunning}
         ></textarea>
 
         {/* Cancel/Submit Button */}
@@ -406,7 +426,7 @@ const MessageBox =
               </button>
             </Tooltip>
           ) : (
-            <SubmitButton disabled={isTextEmpty || loading} loading={loading} />
+            <SubmitButton disabled={isTextEmpty || loading || isLangGraphTaskRunning} loading={loading} />
           )}
         </div>
       </div>
