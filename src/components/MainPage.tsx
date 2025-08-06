@@ -79,6 +79,7 @@ import EmailVerificationModal from './EmailVerificationModal';
 import WebsiteModal from './WebsiteModal';
 import InsuranceModal from './InsuranceModal';
 import { invokeLangGraphAgent, sendMessageToLangGraphAssistant } from '../service/LangChainService';
+import { threadId } from 'worker_threads';
 
 
 function getFirstValidString(...args: (string | undefined | null)[]): string {
@@ -801,10 +802,10 @@ What would you like to do today?`;
         clearTimeout(thinkingTimeoutRef.current);
       }
       setIsThinking(false);
-      getArgfromUserMessage(thread, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
+      getArgfromUserMessage(threadID, 'Proceed to the next step of the verification process. Ask if the user wants to verify something else.').then(str => {
         addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
       }).then(any => {
-        resendConfig(thread)
+        resendConfig(threadID)
       });
     }, 1000);
   };
