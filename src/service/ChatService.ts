@@ -330,6 +330,7 @@ export class ChatService {
     if (this.models !== null) {
       return Promise.resolve(this.models);
     }
+    console.info("... fetching models: ", MODELS_ENDPOINT, OPENAI_API_KEY)
     this.models = fetch(MODELS_ENDPOINT, {
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
