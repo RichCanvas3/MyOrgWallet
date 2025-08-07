@@ -1923,7 +1923,7 @@ What would you like to do today?`;
     }
 
     if (currentThreadID) {
-
+      /*
       // Check if user wants to skip the current entity
       if (content.toLowerCase().includes('skip')) {
         if (entities) {
@@ -1941,7 +1941,7 @@ What would you like to do today?`;
         }
         return "I understand you'd like to skip that for now. What would you like to do next?";
       }
-
+      */
       // Check for "yes" responses to verification questions before sending to LangChain
       if (conversation) {
         var messages: ChatMessage[] = JSON.parse(conversation.messages);
