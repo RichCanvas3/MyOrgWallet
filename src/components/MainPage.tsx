@@ -529,7 +529,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         const company_config = await init();
         //getArgfromUserMessage(threadIDResult, `lets get started: ${company_config}`).then(str => {
         getArgfromUserMessage(threadID,
-         `Lets get started: Name: ${company_config["name"]},
+         `Name: ${company_config["name"]},
           Domain: ${company_config["domain"]},
           Linkedin: ${company_config["linkedin"]},
           Twitter: ${company_config["x"]},
@@ -571,22 +571,51 @@ What would you like to do today?`;
             addMessage(Role.Assistant, MessageType.Normal, welcomeMessage, '', [], sendMessage);
           } else {
             // LangGraph is available, use it
-            getArgfromUserMessage(threadIDResult,
-               `Lets get started: Name: ${company_config["name"]},
-                Domain: ${company_config["domain"]},
-                Linkedin: ${company_config["linkedin"]},
-                Twitter: ${company_config["x"]},
-                State Registration: ${company_config["state_registration"]},
-                ENS Registration: ${company_config["ens_registration"]},
-                Shopify: ${company_config["shopify"]},
-                Insurance: ${company_config["insurance"]},
-                Website: ${company_config["website"]},
-                Org Email: ${company_config["email_org"]},
-                Individual Email: ${company_config["email_indiv"]},`).then(str => {
-              if (str) {
-                addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+            // Send the first message WITH entities data so LangChain knows about attestations
+            try {
+              const response = await sendMessageToLangGraphAssistant(
+                `Lets get started: Name: ${company_config["name"]},
+                 Domain: ${company_config["domain"]},
+                 Linkedin: ${company_config["linkedin"]},
+                 Twitter: ${company_config["x"]},
+                 State Registration: ${company_config["state_registration"]},
+                 ENS Registration: ${company_config["ens_registration"]},
+                 Shopify: ${company_config["shopify"]},
+                 Insurance: ${company_config["insurance"]},
+                 Website: ${company_config["website"]},
+                 Org Email: ${company_config["email_org"]},
+                 Individual Email: ${company_config["email_indiv"]}`,
+                threadIDResult,
+                'none',
+                entities || [], // <-- This is the key: include entities!
+                {},
+                linkedInAuthRef,
+                xAuthRef
+              );
+
+              if (response && response.message) {
+                addMessage(Role.Assistant, MessageType.Normal, response.message, '', [], sendMessage);
               }
-            })
+            } catch (error) {
+              console.error('Error sending initial message to LangChain:', error);
+              // Fallback to original behavior
+              getArgfromUserMessage(threadIDResult,
+                 `Name: ${company_config["name"]},
+                  Domain: ${company_config["domain"]},
+                  Linkedin: ${company_config["linkedin"]},
+                  Twitter: ${company_config["x"]},
+                  State Registration: ${company_config["state_registration"]},
+                  ENS Registration: ${company_config["ens_registration"]},
+                  Shopify: ${company_config["shopify"]},
+                  Insurance: ${company_config["insurance"]},
+                  Website: ${company_config["website"]},
+                  Org Email: ${company_config["email_org"]},
+                  Individual Email: ${company_config["email_indiv"]},`).then(str => {
+                if (str) {
+                  addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+                }
+              })
+            }
           }
         }
       } catch (error) {
@@ -1133,35 +1162,35 @@ What would you like to do today?`;
         setCreateWebDidModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Web DID Modal....', '', fileDataRef, sendMessage);
       } else if (str.includes("state_skip")) {
-        markCurrentEntityAsSkipped([...entities], "state-registration(org)");
+        markCurrentEntityAsSkipped([...(entities || [])], "state-registration(org)");
         const strinlist = str.split('Perform state_skip now.')
         addMessage(Role.Assistant, MessageType.Normal, `State Registration Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
       } else if (str.includes("ens_skip")) {
-        markCurrentEntityAsSkipped([...entities], "ens(org)")
+        markCurrentEntityAsSkipped([...(entities || [])], "ens(org)")
         const strinlist = str.split('Perform ens_skip now.')
         addMessage(Role.Assistant, MessageType.Normal, `ENS Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
       } else if (str.includes("linkedin_skip")) {
-        markCurrentEntityAsSkipped([...entities], "linkedin(indiv)")
+        markCurrentEntityAsSkipped([...(entities || [])], "linkedin(indiv)")
         const strinlist = str.split('Perform linkedin_skip now.')
         addMessage(Role.Assistant, MessageType.Normal, `Linkedin Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
       } else if (str.includes("x_skip")) {
-        markCurrentEntityAsSkipped([...entities], "x(indiv)")
+        markCurrentEntityAsSkipped([...(entities || [])], "x(indiv)")
         const strinlist = str.split('Perform x_skip now.')
         addMessage(Role.Assistant, MessageType.Normal, `Twitter Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
       } else if (str.includes("insurance_skip")) {
-        markCurrentEntityAsSkipped([...entities], "insurance(org)")
+        markCurrentEntityAsSkipped([...(entities || [])], "insurance(org)")
         const strinlist = str.split('Perform insurance_skip now.')
         addMessage(Role.Assistant, MessageType.Normal, `Insurance Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
       } else if (str.includes("shopify_skip")) {
-        markCurrentEntityAsSkipped([...entities], "shopify(org)")
+        markCurrentEntityAsSkipped([...(entities || [])], "shopify(org)")
         const strinlist = str.split('Perform shopify_skip now.')
         addMessage(Role.Assistant, MessageType.Normal, `Shopify Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
       } else if (str.includes("website_skip")) {
-        markCurrentEntityAsSkipped([...entities], "website(org)")
+        markCurrentEntityAsSkipped([...(entities || [])], "website(org)")
         const strinlist = str.split('Perform website_skip now.')
         addMessage(Role.Assistant, MessageType.Normal, `Website Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
       } else if (str.includes("email_skip")) {
-        markCurrentEntityAsSkipped([...entities], "email(indiv)")
+        markCurrentEntityAsSkipped([...(entities || [])], "email(indiv)")
         const strinlist = str.split('Perform email_skip now.')
         addMessage(Role.Assistant, MessageType.Normal, `Email Skipped! ${strinlist[1]}`, '', fileDataRef, sendMessage);
       } else {
