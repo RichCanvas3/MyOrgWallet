@@ -970,7 +970,7 @@ export const useWalletConnect = () => {
               setIsIndividualConnected(true)
               setIsConnectionComplete(true);
             }
-                        else {
+            else {
               console.info("************* not configured properly")
               console.info("Missing components:", {
                 localOrgDid: !!localOrgDid,
@@ -1719,7 +1719,7 @@ export const useWalletConnect = () => {
                 const delegationChain = [orgBurnerDel as Delegation, orgIndivDelegation];
                 console.info("Delegation chain:", delegationChain);
 
-                const uid = await AttestationService.addOrgAttestation(chain, attestation, walletSigner, delegationChain, orgAccountClient, burnerAccountClient)
+                const uid = await AttestationService.addOrgAttestation(chain, attestation, walletSigner, delegationChain, orgAccountClient, burnerAccountClient, false)
               }
             }
           }
@@ -1798,7 +1798,7 @@ export const useWalletConnect = () => {
                     proof: proof
                   };
 
-                  const uid = await AttestationService.addRegisteredDomainAttestation(chain, attestation, walletSigner, [orgBurnerDel as Delegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+                  const uid = await AttestationService.addRegisteredDomainAttestation(chain, attestation, walletSigner, [orgBurnerDel as Delegation, orgIndivDelegation], orgAccountClient, burnerAccountClient, false)
                 }
 
               }
@@ -1872,7 +1872,7 @@ export const useWalletConnect = () => {
                 };
 
                 console.info("AttestationService add org indiv attestation")
-                const uid = await AttestationService.addOrgIndivAttestation(chain, attestation, walletSigner, [orgBurnerDel as Delegation, orgIndivDelegation], orgAccountClient, burnerAccountClient)
+                const uid = await AttestationService.addOrgIndivAttestation(chain, attestation, walletSigner, [orgBurnerDel as Delegation, orgIndivDelegation], orgAccountClient, burnerAccountClient, false)
               }
             }
             else {
@@ -1985,7 +1985,7 @@ export const useWalletConnect = () => {
                   proof: proof
                 };
 
-                const uid = await AttestationService.addIndivAttestation(chain, attestation, walletSigner, [indivBurnerDel as Delegation], indivAccountClient, burnerAccountClient)
+                const uid = await AttestationService.addIndivAttestation(chain, attestation, walletSigner, [indivBurnerDel as Delegation], indivAccountClient, burnerAccountClient, false )
               }
             }
           }
@@ -2043,7 +2043,7 @@ export const useWalletConnect = () => {
                 //console.info("+++++++++++++ burnerAccountClient: ", burnerAccountClient)
 
 
-                const uid = await AttestationService.addIndivEmailAttestation(chain, attestation, walletSigner, [indivBurnerDel as Delegation], indivAccountClient, burnerAccountClient)
+                const uid = await AttestationService.addIndivEmailAttestation(chain, attestation, walletSigner, [indivBurnerDel as Delegation], indivAccountClient, burnerAccountClient, true)
               }
             }
           }
@@ -2051,12 +2051,12 @@ export const useWalletConnect = () => {
           if (indivDid && orgDid && indivBurnerDel) {
             const indivAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, indivDid, AttestationService.IndivSchemaUID, "indiv(indiv)", "")
             if (!indivAttestation) {
-              addIndivAttestation(credentialManager)
+              await addIndivAttestation(credentialManager)
             }
 
             const indivEmailAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, indivDid, AttestationService.IndivEmailSchemaUID, "email(indiv)", "")
             if (!indivEmailAttestation) {
-              addIndivEmailAttestation(credentialManager)
+              await addIndivEmailAttestation(credentialManager)
             }
           }
         }

@@ -164,7 +164,7 @@ const XAuth = forwardRef<XAuthRef, XAuthProps>((props, ref) => {
 
           const walletSigner = signatory.signer
 
-          const uid = AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivBurnerDelegation], orgAccountClient, burnerAccountClient)
+          const uid = await AttestationService.addSocialAttestation(chain, attestation, walletSigner, [indivBurnerDelegation], orgAccountClient, burnerAccountClient)
           console.info("add social attestation complete")
 
           if (location.pathname.startsWith("/chat/c/")) {
