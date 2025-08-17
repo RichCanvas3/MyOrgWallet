@@ -1,0 +1,47 @@
+{
+  "name": "aa-wallet-test-suite",
+  "version": "1.0.0",
+  "description": "Test suite for AA wallet construction using private keys with signatory pattern",
+  "main": "aa-wallet-simple-test.ts",
+  "scripts": {
+    "test": "tsx aa-wallet-simple-test.ts",
+    "test:watch": "tsx --watch aa-wallet-simple-test.ts",
+    "ens:register": "tsx ens-registration-test.ts",
+    "ens:reverse": "tsx ens-reverse-lookup-test.ts",
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "account-abstraction",
+    "aa-wallet",
+    "smart-contract-wallet",
+    "ethereum",
+    "viem",
+    "metamask",
+    "delegation-toolkit"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  },
+  "dependencies": {
+    "@metamask/delegation-toolkit": "^0.11.0",
+    "viem": "^2.31.4",
+    "permissionless": "^0.2.42",
+    "tsx": "^4.0.0",
+    "dotenv": "^16.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "your-repo-url"
+  },
+  "bugs": {
+    "url": "your-repo-url/issues"
+  },
+  "homepage": "your-repo-url#readme"
+}

@@ -70,6 +70,7 @@ import FundCreditCardModal from './FundCreditCardModal';
 import AddSavingsModal from './AddAccountModal';
 import AddAccountModal from './AddEOACrossChainAccountModal';
 import AddEnsRecordModal from './AddEnsRecordModal';
+import AddEnsSubdomainRecordModal from './AddEnsSubdomainRecordModal';
 import OrgModal from './OrgModal';
 import LinkedinModal from './LinkedinModal';
 import XModal from './XModal';
@@ -176,6 +177,8 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   const [isAddAccountModalVisible, setAddAccountModalVisible] = useState(false);
   const [isAddEnsRecordModalVisible, setIsAddEnsRecordModalVisible] = useState(false);
   const [existingEnsNameForUpdate, setExistingEnsNameForUpdate] = useState<string>('');
+  const [isAddEnsSubdomainRecordModalVisible, setIsAddEnsSubdomainRecordModalVisible] = useState(false);
+  const [parentEnsNameForSubdomain, setParentEnsNameForSubdomain] = useState<string>('');
 
   // Verification modal states
   const [isLinkedinModalVisible, setLinkedinModalVisible] = useState(false);
@@ -853,6 +856,27 @@ What would you like to do today?`;
     }, 1000);
   };
 
+  const handleOnAddEnsSubdomainRecordModalClose = () => {
+    setIsAddEnsSubdomainRecordModalVisible(false);
+    setParentEnsNameForSubdomain('');
+    addMessage(Role.Assistant, MessageType.Normal, 'Closing ENS subdomain creation modal...', '', [], sendMessage);
+    thinkingTimeoutRef.current = setTimeout(() => {
+      setIsThinking(true);
+      // Ensure thinking indicator is visible
+      scrollToBottom();
+    }, 750);
+    // Ask follow-up question after a short delay
+    setTimeout(() => {
+      if (thinkingTimeoutRef.current) {
+        clearTimeout(thinkingTimeoutRef.current);
+      }
+      setIsThinking(false);
+      resendConfig(threadID).then(str => {
+        addMessage(Role.Assistant, MessageType.Normal, str, '', [], sendMessage);
+      });
+    }, 1000);
+  };
+
   // Verification modal close handlers
   const handleOnLinkedinModalClose = (thread:any = threadID) => {
     console.log('LinkedIn modal closing, threadID:', thread);
@@ -1109,6 +1133,26 @@ What would you like to do today?`;
         setExistingEnsNameForUpdate('');
         // Remove the immediate ENS registration call - it will be handled by the modal
         addMessage(Role.Assistant, MessageType.Normal, `Opening ENS registration modal...`, '', fileDataRef, sendMessage);
+      } else if (str.includes("ens_subdomain_registration") || str.includes("ens_subdomain_verification") && orgAccountClient && chain) {
+        console.log('process ens subdomain creation');
+        
+        // Get attestation from entities for entityid "ens(org)" and get name
+        const ensAttestation = AttestationService.getAttestationById(entities || [], "ens(org)", true);
+        let ensName = '';
+        
+        if (ensAttestation && 'name' in ensAttestation) {
+          // The parent domain name is the name + ".eth"
+          ensName = (ensAttestation as any).name + ".eth";
+          ensName = "trust1.eth"
+          setParentEnsNameForSubdomain(ensName);
+        } else {
+          // If no ENS attestation found, ask user to provide one
+          addMessage(Role.Assistant, MessageType.Normal, `No ENS attestation found. Please provide the parent ENS name to create a subdomain under (e.g., "create subdomain for myorg.eth")`, '', fileDataRef, sendMessage);
+          return;
+        }
+        
+        setIsAddEnsSubdomainRecordModalVisible(true);
+        addMessage(Role.Assistant, MessageType.Normal, `Opening ENS subdomain creation modal for ${ensName}...`, '', fileDataRef, sendMessage);
       } else if ((str.includes('state_register') || str.includes('State Registration verification')) && orgAccountClient && chain) {
         setStateRegistrationModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening State Registration verification modal...', '', fileDataRef, sendMessage);
@@ -2888,6 +2932,12 @@ What would you like to do today?`;
           onClose={handleOnAddEnsRecordModalClose}
           onRefresh={handleRefreshAttestations}
           existingEnsName={existingEnsNameForUpdate}
+        />
+        <AddEnsSubdomainRecordModal
+          isVisible={isAddEnsSubdomainRecordModalVisible}
+          onClose={handleOnAddEnsSubdomainRecordModalClose}
+          onRefresh={handleRefreshAttestations}
+          parentEnsName={parentEnsNameForSubdomain}
         />
         <LinkedinModal
           isVisible={isLinkedinModalVisible}

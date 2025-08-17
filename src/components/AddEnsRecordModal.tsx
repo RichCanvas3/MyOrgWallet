@@ -73,13 +73,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
   const [useBasicAvatar, setUseBasicAvatar] = useState(false);
   const [orgBalance, setOrgBalance] = useState<string>('0');
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
-  const [isCreatingSubdomain, setIsCreatingSubdomain] = useState(false);
   const [isWrapping, setIsWrapping] = useState(false);
-  const [subdomainName, setSubdomainName] = useState('bob');
-  const [showSubdomainInput, setShowSubdomainInput] = useState(false);
-  const [timerSeconds, setTimerSeconds] = useState(60); // 1 minute timer
-  const [isTimerActive, setIsTimerActive] = useState(false);
-  const [canCreateSubdomain, setCanCreateSubdomain] = useState(false);
   // Remove wrap timer state variables
   // const [wrapTimerSeconds, setWrapTimerSeconds] = useState(60); // 1 minute timer for wrapping
   // const [isWrapTimerActive, setIsWrapTimerActive] = useState(false);
@@ -87,7 +81,6 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
 
   const inputRef = useRef<HTMLInputElement>(null);
   const availabilityTimeoutRef = useRef<NodeJS.Timeout>();
-  const timerRef = useRef<NodeJS.Timeout>();
   // Remove wrap timer ref
   // const wrapTimerRef = useRef<NodeJS.Timeout>();
 
@@ -241,14 +234,14 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
         const ETHRegistrarControllerAddress = '0xfb3cE5D01e0f33f41DbB39035dB9745962F1f968'; // Sepolia
 
         // Check actual availability using the registrar contract
-        const isAvailable = await publicClient.readContract({
+        const availability = await publicClient.readContract({
           address: ETHRegistrarControllerAddress as `0x${string}`,
           abi: ETHRegistrarControllerABI.abi,
           functionName: 'available',
           args: [cleanName]
-        });
+        }) as boolean;
 
-        if (isAvailable) {
+        if (availability) {
           // Get actual registration cost
           const duration = 365 * 24 * 60 * 60; // 1 year in seconds
           const rentPrice = await publicClient.readContract({
@@ -265,7 +258,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
           setEstimatedCost('0');
         }
 
-        setIsAvailable(isAvailable);
+        setIsAvailable(availability);
       } catch (error) {
         console.error('Error checking availability:', error);
         setError('Failed to check ENS name availability');
@@ -357,7 +350,8 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
     setError('');
 
     try {
-      const wrappedName = await EnsService.wrapEnsDomainName(orgAccountClient, cleanName, chain);
+      const signer = signatory.signer;
+      const wrappedName = await EnsService.wrapEnsDomainName(signer, orgAccountClient, cleanName, chain);
       console.log('ENS name wrapped successfully:', wrappedName);
       setSuccess(`ENS name "${wrappedName}.eth" has been wrapped successfully! You can now create subdomains.`);
     } catch (error) {
@@ -470,32 +464,6 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
     }
   };
 
-  const createSubdomain = async () => {
-    if (!ensName || !chain || !orgAccountClient) {
-      setError('Missing required information');
-      return;
-    }
-
-    if (!subdomainName.trim()) {
-      setError('Please enter a subdomain name');
-      return;
-    }
-
-    setIsCreatingSubdomain(true);
-    setError(null);
-
-    try {
-      const cleanParentName = cleanEnsName(ensName);
-      const result = await EnsService.createSubdomain(orgAccountClient, cleanParentName, subdomainName.trim(), chain);
-      setSuccess(`Subdomain "${result}" created successfully!`);
-    } catch (error) {
-      console.error('Error creating subdomain:', error);
-      setError(error instanceof Error ? error.message : 'Failed to create subdomain');
-    } finally {
-      setIsCreatingSubdomain(false);
-    }
-  };
-
   // Auto-advance to logo upload if we have an existing ENS name
   useEffect(() => {
     if (shouldSkipFirstStep && activeStep === 0) {
@@ -503,54 +471,6 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
       setShouldSkipFirstStep(false);
     }
   }, [shouldSkipFirstStep, activeStep]);
-
-  // Timer effect for subdomain creation
-  useEffect(() => {
-    if (isTimerActive && timerSeconds > 0) {
-      timerRef.current = setTimeout(() => {
-        setTimerSeconds(prev => prev - 1);
-      }, 1000);
-    } else if (timerSeconds === 0) {
-      setIsTimerActive(false);
-      setCanCreateSubdomain(true);
-    }
-
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-    };
-  }, [isTimerActive, timerSeconds]);
-
-  // Start timer when subdomain input is shown
-  useEffect(() => {
-    if (showSubdomainInput && !isTimerActive && timerSeconds === 60) {
-      setIsTimerActive(true);
-      setCanCreateSubdomain(false);
-    }
-  }, [showSubdomainInput, isTimerActive, timerSeconds]);
-
-  // Reset timer when subdomain input is hidden
-  useEffect(() => {
-    if (!showSubdomainInput) {
-      setIsTimerActive(false);
-      setTimerSeconds(60);
-      setCanCreateSubdomain(false);
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-    }
-  }, [showSubdomainInput]);
-
-  // Cleanup timer on component unmount
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-      // wrapTimerRef is no longer needed
-    };
-  }, []);
 
   // Timer effect for wrapping ENS name - removed
   // useEffect(() => {
@@ -997,11 +917,9 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
             </Typography>
             <Box component="ul" sx={{ pl: 2, mb: 2 }}>
               <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                <strong>Wrapping:</strong> Converts your ENS name to an NFT, enabling advanced features like subdomain management and transfer capabilities
+                <strong>Wrapping:</strong> Converts your ENS name to an NFT, enabling advanced features like transfer capabilities
               </Typography>
-              <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                <strong>Subdomains:</strong> Create custom addresses (e.g., app.yourname.eth) for different services, team members, or departments
-              </Typography>
+
               <Typography component="li" variant="body2" color="text.secondary">
                 <strong>Benefits:</strong> Enhanced security, better organization, and more control over your digital identity
               </Typography>
@@ -1029,72 +947,7 @@ const AddEnsRecordModal: React.FC<AddEnsRecordModalProps> = ({ isVisible, onClos
             )}
           </Button>
 
-          {/* Subdomain Creation Section */}
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle1" fontWeight="medium" mb={1}>
-              Create Subdomain
-            </Typography>
-            {!showSubdomainInput ? (
-              <Button
-                variant="outlined"
-                onClick={() => setShowSubdomainInput(true)}
-                fullWidth
-                sx={{ mb: 2 }}
-              >
-                Create Custom Subdomain
-              </Button>
-            ) : (
-              <Box sx={{ mb: 2 }}>
-                <TextField
-                  fullWidth
-                  label="Subdomain Name"
-                  placeholder="Enter subdomain (e.g., app, team, support)"
-                  value={subdomainName}
-                  onChange={(e) => setSubdomainName(e.target.value)}
-                  helperText={`Will create: ${subdomainName}.${cleanEnsName(ensName)}.eth`}
-                  sx={{ mb: 2 }}
-                />
-                {/* Timer Display */}
-                {isTimerActive && timerSeconds > 0 && (
-                  <Box sx={{ mb: 2, textAlign: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Please wait before creating subdomain: {Math.floor(timerSeconds / 60)}:{(timerSeconds % 60).toString().padStart(2, '0')}
-                    </Typography>
-                  </Box>
-                )}
 
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button
-                    variant="contained"
-                    onClick={createSubdomain}
-                    disabled={isCreatingSubdomain || !subdomainName.trim() || !canCreateSubdomain}
-                    sx={{ flex: 1 }}
-                  >
-                    {isCreatingSubdomain ? (
-                      <>
-                        <CircularProgress size={20} sx={{ mr: 1 }} />
-                        Creating...
-                      </>
-                    ) : !canCreateSubdomain ? (
-                      `Wait ${Math.floor(timerSeconds / 60)}:${(timerSeconds % 60).toString().padStart(2, '0')}`
-                    ) : (
-                      'Create Subdomain'
-                    )}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={() => {
-                      setShowSubdomainInput(false);
-                      setSubdomainName('bob');
-                    }}
-                    sx={{ flex: 1 }}
-                  >
-                    Cancel
-                  </Button>
-                </Box>
-              </Box>
-            )}
-          </Box>
 
           <Button
             variant="outlined"

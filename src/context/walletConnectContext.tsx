@@ -650,6 +650,8 @@ export const useWalletConnect = () => {
             storedIndivAddress
           });
 
+          console.info("signatory: ", signatory)
+
           if (storedIndivAddress && publicClient && signatory) {
             try {
               const recoveredIndivClient = await toMetaMaskSmartAccount({

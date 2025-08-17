@@ -494,15 +494,13 @@ class EnsService {
         return ensName;
     }
 
-    static async wrapEnsDomainName(smartAccountClient: MetaMaskSmartAccount, ensName: string, chain: Chain) : Promise<string> {
+    static async wrapEnsDomainName(signer: ethers.JsonRpcSigner, smartAccountClient: MetaMaskSmartAccount, ensName: string, chain: Chain) : Promise<string> {
       console.log("Wrapping ENS domain name:", ensName);
 
       if (chain.id !== 11155111) { // Sepolia chain ID
         throw new Error('ENS wrapping is only supported on Sepolia testnet');
       }
 
-      const provider = new ethers.BrowserProvider(window.ethereum)
-      const signer = await provider.getSigner()
 
       // Sepolia contract addresses
       const baseRegistrar = new ethers.Contract(
@@ -541,6 +539,7 @@ class EnsService {
         // Check ownership in BaseRegistrar
         let baseRegistrarOwner;
         try {
+          console.log('Checking ownership in BaseRegistrar...: ', baseRegistrar.target);
           baseRegistrarOwner = await baseRegistrar.ownerOf(tokenId);
           console.log('BaseRegistrar owner:', baseRegistrarOwner);
         } catch (error) {
@@ -888,6 +887,10 @@ class EnsService {
         provider
       );
 
+      console.log('................ Checking ENS name status for:', ensName);
+
+
+
       const parentLabel = ensName.split('.')[0];
       const parentTokenId = keccak256(toUtf8Bytes(parentLabel));
       const parentNode = namehash(ensName + '.eth');
@@ -942,15 +945,12 @@ class EnsService {
     }
 
     // Update the createSubdomain function
-    static async createSubdomain(smartAccountClient: MetaMaskSmartAccount, parentName: string, label: string, chain: Chain): Promise<string> {
+    static async createSubdomain(signer: ethers.JsonRpcSigner, smartAccountClient: MetaMaskSmartAccount, parentName: string, label: string, chain: Chain): Promise<string> {
       console.log("Creating subdomain:", label + "." + parentName + ".eth");
 
       if (chain.id !== 11155111) {
         throw new Error('ENS operations are only supported on Sepolia testnet');
       }
-
-      const provider = new ethers.BrowserProvider(window.ethereum)
-      const signer = await provider.getSigner()
 
       try {
         const smartAccountAddress = await smartAccountClient.getAddress();
