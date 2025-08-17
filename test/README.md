@@ -33,6 +33,14 @@ The test suite replicates the exact patterns and functions from your `walletConn
 - ✅ Uses your exact signatory and smart account patterns
 - ✅ Verifies the reverse lookup was set correctly
 
+### `ens-nft-wrapper-test.ts` 🎨 **ENS NFT WRAPPER TEST**
+**ENS NFT wrapper** functionality using your AA wallet:
+- ✅ Checks if ENS domain is already wrapped
+- ✅ Wraps ENS domains into ERC-1155 NFTs using NameWrapper
+- ✅ Uses your exact signatory and smart account patterns
+- ✅ Supports both .eth domains and subdomains
+- ✅ Verifies wrapping was successful
+
 ### `config.ts`
 **Configuration utility** that manages environment variables:
 - ✅ Environment loading from `.env` files

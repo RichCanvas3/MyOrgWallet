@@ -8,6 +8,7 @@
     "test:watch": "tsx --watch aa-wallet-simple-test.ts",
     "ens:register": "tsx ens-registration-test.ts",
     "ens:reverse": "tsx ens-reverse-lookup-test.ts",
+    "ens:wrap": "tsx ens-nft-wrapper-test.ts",
     "build": "tsc",
     "clean": "rm -rf dist"
   },
