@@ -47,9 +47,9 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
   
   // New state for wrapping functionality
   const [isCheckingWrapStatus, setIsCheckingWrapStatus] = useState(false);
-  const [isWrapping, setIsWrapping] = useState(false);
+
   const [isParentWrapped, setIsParentWrapped] = useState<boolean | null>(null);
-  const [wrapError, setWrapError] = useState<string | null>(null);
+
   const [isCheckingSubdomain, setIsCheckingSubdomain] = useState(false);
   const [subdomainStatus, setSubdomainStatus] = useState<'available' | 'exists' | 'invalid' | null>(null);
 
@@ -191,7 +191,7 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
     });
 
     setIsCheckingWrapStatus(true);
-    setWrapError(null);
+    setError(null);
 
     try {
       const cleanName = cleanEnsName(parentEnsName);
@@ -222,7 +222,7 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
       
       if (parentOwner === '0x0000000000000000000000000000000000000000') {
         console.log('❌ Parent domain does not exist or has no owner');
-        setWrapError(`Parent domain "${cleanName}.eth" does not exist or has no owner`);
+        setError(`Parent domain "${cleanName}.eth" does not exist or has no owner`);
         setIsParentWrapped(false);
         return;
       }
@@ -247,7 +247,7 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
           console.log(`🎯 NameWrapper owner: ${actualOwner}`);
         } catch (error) {
           console.error('❌ Error getting NameWrapper owner:', error);
-          setWrapError(`Failed to get NameWrapper owner: ${error instanceof Error ? error.message : String(error)}`);
+          setError(`Failed to get NameWrapper owner: ${error instanceof Error ? error.message : String(error)}`);
           setIsParentWrapped(false);
           return;
         }
@@ -275,45 +275,17 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
         }
       } else {
         console.log('⚠️  Parent domain is NOT wrapped');
-        setWrapError(`Parent domain "${cleanName}.eth" is not wrapped. Please wrap it first using the "Wrap Parent Domain" button.`);
+        setError(`Parent domain "${cleanName}.eth" is not wrapped.`);
       }
     } catch (error) {
       console.error('❌ Error checking wrap status:', error);
-      setWrapError(`Failed to check wrap status: ${error instanceof Error ? error.message : String(error)}`);
+      setError(`Failed to check wrap status: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setIsCheckingWrapStatus(false);
     }
   };
 
-  // Wrap the parent ENS domain
-  const wrapParentDomain = async () => {
-    if (!parentEnsName || !chain || !orgAccountClient) {
-      setWrapError('Missing required information for wrapping');
-      return;
-    }
 
-    setIsWrapping(true);
-    setWrapError(null);
-
-    try {
-      const signer = signatory.signer;
-      const cleanName = cleanEnsName(parentEnsName);
-      const wrappedName = await EnsService.wrapEnsDomainName(signer, orgAccountClient, cleanName, chain);
-      console.log('Parent ENS domain wrapped successfully:', wrappedName);
-      setIsParentWrapped(true);
-      setSuccess(`Parent domain "${wrappedName}.eth" has been wrapped successfully! You can now create subdomains.`);
-      
-      // Call refresh if provided
-      if (onRefresh) {
-        onRefresh();
-      }
-    } catch (error) {
-      console.error('Error wrapping parent ENS domain:', error);
-      setWrapError(`Failed to wrap parent domain: ${error instanceof Error ? error.message : String(error)}`);
-    } finally {
-      setIsWrapping(false);
-    }
-  };
 
   // Check wrap status when component mounts or parentEnsName changes
   useEffect(() => {
@@ -497,7 +469,6 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
     setError(null);
     setSuccess(null);
     setSubdomainName('');
-    setWrapError(null);
     setSubdomainStatus(null);
     onClose();
   };
@@ -505,7 +476,6 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
   const handleCreateAnother = () => {
     setSuccess(null);
     setSubdomainName('');
-    setWrapError(null);
     setSubdomainStatus(null);
   };
 
@@ -593,52 +563,10 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
                         )}
                       </Button>
                     </Box>
-                  ) : isParentWrapped ? (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="body2" sx={{ color: '#2e7d32', fontWeight: 'medium' }}>
-                        ✓ Domain is wrapped
-                      </Typography>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={checkParentWrapStatus}
-                        disabled={isCheckingWrapStatus}
-                        sx={{ ml: 1 }}
-                      >
-                        Refresh
-                      </Button>
-                    </Box>
-                  ) : (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="body2" sx={{ color: '#ed6c02', fontWeight: 'medium' }}>
-                        ⚠ Domain needs to be wrapped
-                      </Typography>
-                      <Button
-                        variant="contained"
-                        size="small"
-                        onClick={wrapParentDomain}
-                        disabled={isWrapping}
-                        sx={{ ml: 1 }}
-                      >
-                        {isWrapping ? (
-                          <>
-                            <CircularProgress size={16} sx={{ mr: 1 }} />
-                            Wrapping...
-                          </>
-                        ) : (
-                          'Wrap Domain'
-                        )}
-                      </Button>
-                    </Box>
-                  )}
+                  ) : null}
                 </Box>
                 
-                {/* Wrap Error Display */}
-                {wrapError && (
-                  <Alert severity="error" sx={{ mt: 2 }} onClose={() => setWrapError(null)}>
-                    {wrapError}
-                  </Alert>
-                )}
+
               </Box>
 
               {/* Error Alert */}
@@ -681,15 +609,7 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
                     Proposed Subdomain
                   </Typography>
                   
-                  {/* Subdomain Input */}
-                  <TextField
-                    fullWidth
-                    label="Subdomain Name"
-                    placeholder={orgName ? `Default: ${orgName.toLowerCase().replace(/[^a-z0-9-]/g, '')} (from org name)` : "Enter subdomain name"}
-                    value={subdomainName}
-                    onChange={(e) => setSubdomainName(e.target.value)}
-                    sx={{ mb: 3 }}
-                  />
+
                   
                   {/* Subdomain Display */}
                   <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
@@ -700,43 +620,35 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
                       {subdomainName || 'Enter subdomain name'}
                     </Typography>
                     
-                    {/* Status Display */}
-                    {subdomainName.trim() && (
-                      <Box sx={{ mt: 2 }}>
-                        <Typography variant="body2" sx={{ color: '#333333' }} gutterBottom>
-                          Full Domain:
+                    {/* Full Domain Display */}
+                    <Typography variant="body2" sx={{ color: '#333333' }} gutterBottom>
+                      Full Domain:
+                    </Typography>
+                    <Typography variant="body1" fontFamily="monospace" sx={{ mb: 2, color: '#000000' }}>
+                      {subdomainName}.{cleanEnsName(parentEnsName)}.eth
+                    </Typography>
+                    
+                    {/* Availability Status */}
+                    {isCheckingSubdomain ? (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <CircularProgress size={16} />
+                        <Typography variant="body2" sx={{ color: '#666666' }}>
+                          Checking availability...
                         </Typography>
-                        <Typography variant="body1" fontFamily="monospace" sx={{ mb: 2, color: '#000000' }}>
-                          {subdomainName}.{cleanEnsName(parentEnsName)}.eth
-                        </Typography>
-                        
-                        {/* Availability Status */}
-                        {isCheckingSubdomain ? (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <CircularProgress size={16} />
-                            <Typography variant="body2" sx={{ color: '#666666' }}>
-                              Checking availability...
-                            </Typography>
-                          </Box>
-                        ) : subdomainStatus === 'available' ? (
-                          <Alert severity="success" sx={{ mb: 2 }}>
-                            ✅ Subdomain is available
-                          </Alert>
-                        ) : subdomainStatus === 'exists' ? (
-                          <Alert severity="error" sx={{ mb: 2 }}>
-                            ❌ Subdomain already exists
-                          </Alert>
-                        ) : subdomainStatus === 'invalid' ? (
-                          <Alert severity="warning" sx={{ mb: 2 }}>
-                            ⚠️ Invalid format (use only lowercase letters, numbers, hyphens)
-                          </Alert>
-                        ) : null}
                       </Box>
-                    )}
+                    ) : subdomainStatus === 'available' ? (
+                      <Alert severity="success" sx={{ mb: 2 }}>
+                        ✅ Subdomain is available
+                      </Alert>
+                    ) : subdomainStatus === 'exists' ? (
+                      <Alert severity="success" sx={{ mb: 2 }}>
+                        ✅ Subdomain already exists
+                      </Alert>
+                    ) : null}
                   </Box>
                   
                   {/* Action Buttons */}
-                  {subdomainName.trim() && subdomainStatus === 'available' ? (
+                  {subdomainStatus === 'available' ? (
                     <Button
                       variant="contained"
                       onClick={createSubdomain}
