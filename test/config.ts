@@ -34,6 +34,7 @@ export const TEST_CONFIG = {
   // ENS Configuration
   ensName: process.env.ENS_NAME || 'trust100',
   subdomainName: process.env.ENS_SUBDOMAIN_NAME || 'subdomain',
+  subdomainWebsite: process.env.ENS_SUBDOMAIN_WEBSITE || 'https://example.com',
   ensDuration: parseInt(process.env.ENS_DURATION || '31536000'), // 1 year in seconds
 };
 

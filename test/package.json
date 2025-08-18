@@ -10,6 +10,7 @@
     "ens:reverse": "tsx ens-reverse-lookup-test.ts",
     "ens:wrap": "tsx ens-nft-wrapper-test.ts",
     "ens:subdomain": "tsx ens-subdomain-test.ts",
+    "ens:website": "tsx ens-subdomain-website-test.ts",
     "build": "tsc",
     "clean": "rm -rf dist"
   },
