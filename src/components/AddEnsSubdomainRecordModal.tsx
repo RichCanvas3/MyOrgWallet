@@ -39,7 +39,7 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
 }) => {
   // Get parent ENS name from config
   const parentEnsName = ENS_NAME || 'trust102';
-  const [subdomainName, setSubdomainName] = useState('app');
+  const [subdomainName, setSubdomainName] = useState('');
   const [isCreatingSubdomain, setIsCreatingSubdomain] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -50,13 +50,85 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
   const [isWrapping, setIsWrapping] = useState(false);
   const [isParentWrapped, setIsParentWrapped] = useState<boolean | null>(null);
   const [wrapError, setWrapError] = useState<string | null>(null);
+  const [isCheckingSubdomain, setIsCheckingSubdomain] = useState(false);
+  const [subdomainStatus, setSubdomainStatus] = useState<'available' | 'exists' | 'invalid' | null>(null);
 
   // Update the context usage
-  const { chain, signatory, orgAccountClient } = useWallectConnectContext();
+  const { chain, signatory, orgAccountClient, orgName } = useWallectConnectContext();
 
   const cleanEnsName = (name: string) => {
     return name.replace('.eth', '').trim();
   };
+
+  // Check if subdomain already exists
+  const checkSubdomainExists = async (subdomain: string) => {
+    if (!parentEnsName || !chain) return false;
+    
+    try {
+      const publicClient = createPublicClient({
+        chain: chain,
+        transport: http(RPC_URL),
+      });
+      
+      const subdomainNode = namehash(`${subdomain}.${parentEnsName}.eth`);
+      const NAME_WRAPPER_ADDRESS = '0x0635513f179D50A207757E05759CbD106d7dFcE8';
+      
+      // Check if subdomain exists in NameWrapper (since parent is wrapped)
+      const subdomainOwner = await publicClient.readContract({
+        address: NAME_WRAPPER_ADDRESS as `0x${string}`,
+        abi: [{ name: 'ownerOf', type: 'function', inputs: [{ name: 'tokenId', type: 'uint256' }], outputs: [{ name: '', type: 'address' }], stateMutability: 'view' }],
+        functionName: 'ownerOf',
+        args: [BigInt(subdomainNode)]
+      });
+      
+      return subdomainOwner !== '0x0000000000000000000000000000000000000000';
+    } catch (error) {
+      console.log('Error checking subdomain existence:', error);
+      return false;
+    }
+  };
+
+  // Check subdomain availability when name changes
+  const checkSubdomainAvailability = async (name: string) => {
+    if (!name.trim() || !parentEnsName || !chain) {
+      setSubdomainStatus(null);
+      return;
+    }
+
+    // Validate format first
+    const subdomainRegex = /^[a-z0-9-]+$/;
+    if (!subdomainRegex.test(name.toLowerCase())) {
+      setSubdomainStatus('invalid');
+      return;
+    }
+
+    setIsCheckingSubdomain(true);
+    try {
+      const exists = await checkSubdomainExists(name);
+      setSubdomainStatus(exists ? 'exists' : 'available');
+    } catch (error) {
+      setSubdomainStatus(null);
+    } finally {
+      setIsCheckingSubdomain(false);
+    }
+  };
+
+  // Set default subdomain name when modal opens
+  useEffect(() => {
+    if (isVisible && orgName) {
+      const defaultName = orgName.toLowerCase().replace(/[^a-z0-9-]/g, '');
+      setSubdomainName(defaultName);
+    }
+  }, [isVisible, orgName]);
+
+  // Check subdomain availability when name changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      checkSubdomainAvailability(subdomainName);
+    }, 500); // Debounce for 500ms
+
+    return () => clearTimeout(timeoutId);
+  }, [subdomainName]);
 
   // Print comprehensive configuration diagnostics
   const printConfiguration = () => {
@@ -293,6 +365,26 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
       return;
     }
 
+    // Validate subdomain name format
+    const subdomainRegex = /^[a-z0-9-]+$/;
+    if (!subdomainRegex.test(subdomainName.toLowerCase())) {
+      const error = 'Subdomain name can only contain lowercase letters, numbers, and hyphens';
+      console.error('❌', error);
+      setError(error);
+      return;
+    }
+
+    // Check if subdomain already exists
+    console.log('🔍 Checking if subdomain already exists...');
+    const subdomainExists = await checkSubdomainExists(subdomainName);
+    if (subdomainExists) {
+      const error = `Subdomain "${subdomainName}.${parentEnsName}.eth" already exists`;
+      console.error('❌', error);
+      setError(error);
+      return;
+    }
+    console.log('✅ Subdomain name is available');
+
     setIsCreatingSubdomain(true);
     setError(null);
 
@@ -405,17 +497,19 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
   const handleClose = () => {
     setError(null);
     setSuccess(null);
-    setSubdomainName('app');
+    setSubdomainName('');
     setShowSubdomainInput(false);
     setWrapError(null);
+    setSubdomainStatus(null);
     onClose();
   };
 
   const handleCreateAnother = () => {
     setSuccess(null);
-    setSubdomainName('app');
+    setSubdomainName('');
     setShowSubdomainInput(false);
     setWrapError(null);
+    setSubdomainStatus(null);
   };
 
   if (!isVisible) return null;
@@ -441,7 +535,7 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
             leaveFrom="opacity-100 translate-y-0 sm:scale-100"
             leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
           >
-            <div className="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:min-w-[450px] sm:max-w-lg sm:p-6">
+            <div className="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full min-w-[450px] sm:max-w-lg sm:p-6">
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center">
@@ -614,17 +708,28 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
                       <TextField
                         fullWidth
                         label="Subdomain Name"
-                        placeholder="Enter subdomain (e.g., app, team, support)"
+                        placeholder={orgName ? `Default: ${orgName.toLowerCase().replace(/[^a-z0-9-]/g, '')} (from org name)` : "Enter subdomain (e.g., app, team, support)"}
                         value={subdomainName}
                         onChange={(e) => setSubdomainName(e.target.value)}
-                        helperText={`Will create: ${subdomainName}.${cleanEnsName(parentEnsName)}.eth`}
+                        helperText={
+                          subdomainName.trim() ? (
+                            <>
+                              Will create: {subdomainName}.{cleanEnsName(parentEnsName)}.eth
+                              {isCheckingSubdomain && ' (checking availability...)'}
+                              {subdomainStatus === 'available' && ' ✅ Available'}
+                              {subdomainStatus === 'exists' && ' ❌ Already exists'}
+                              {subdomainStatus === 'invalid' && ' ⚠️ Invalid format (use only lowercase letters, numbers, hyphens)'}
+                            </>
+                          ) : 'Enter a subdomain name'
+                        }
+                        error={subdomainStatus === 'exists' || subdomainStatus === 'invalid'}
                         sx={{ mb: 2 }}
                       />
                       <Box sx={{ display: 'flex', gap: 1 }}>
                         <Button
                           variant="contained"
                           onClick={createSubdomain}
-                          disabled={isCreatingSubdomain || !subdomainName.trim()}
+                          disabled={isCreatingSubdomain || !subdomainName.trim() || subdomainStatus === 'exists' || subdomainStatus === 'invalid' || isCheckingSubdomain}
                           sx={{ flex: 1 }}
                         >
                           {isCreatingSubdomain ? (
@@ -640,7 +745,8 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
                           variant="outlined"
                           onClick={() => {
                             setShowSubdomainInput(false);
-                            setSubdomainName('app');
+                            setSubdomainName('');
+                            setSubdomainStatus(null);
                           }}
                           sx={{ flex: 1 }}
                         >
