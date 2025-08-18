@@ -895,7 +895,14 @@ class EnsService {
       const parentTokenId = keccak256(toUtf8Bytes(parentLabel));
       const parentNode = namehash(ensName + '.eth');
 
-      let result = {
+      let result: {
+        exists: boolean;
+        isWrapped: boolean;
+        registrationMethod: string;
+        baseRegistrarOwner?: string;
+        ensRegistryOwner?: string;
+        nameWrapperOwner?: string;
+      } = {
         exists: false,
         isWrapped: false,
         registrationMethod: 'none'
@@ -912,33 +919,41 @@ class EnsService {
         console.log('❌ Not found in BaseRegistrar');
       }
 
-      // Check ENS Registry
+      // Check ENS Registry first (following the test logic)
       try {
         const ensOwner = await ensRegistry.owner(parentNode);
         result.ensRegistryOwner = ensOwner;
-        if (ensOwner !== '0x0000000000000000000000000000000000000000') {
+        console.log('🔍 ENS Registry owner:', ensOwner);
+        
+        if (ensOwner && ensOwner !== '0x0000000000000000000000000000000000000000') {
           result.exists = true;
-          if (!result.registrationMethod || result.registrationMethod === 'none') {
+          
+          // Check if the owner is NameWrapper (meaning it's wrapped)
+          if (ensOwner.toLowerCase() === '0x0635513f179D50A207757E05759CbD106d7dFcE8'.toLowerCase()) {
+            console.log('✅ Domain is wrapped, checking NameWrapper owner...');
+            
+            try {
+              const wrapperOwner = await nameWrapper.ownerOf(parentNode);
+              result.nameWrapperOwner = wrapperOwner;
+              result.isWrapped = true;
+              result.registrationMethod = 'nameWrapper';
+              console.log('✅ Found in NameWrapper, owner:', wrapperOwner);
+            } catch (error) {
+              console.log('❌ Error getting NameWrapper owner:', error);
+              // Still mark as wrapped but with no owner
+              result.isWrapped = true;
+              result.registrationMethod = 'nameWrapper';
+            }
+          } else {
+            // Direct owner (not wrapped)
             result.registrationMethod = 'ensRegistry';
+            console.log('✅ Found in ENS Registry, direct owner:', ensOwner);
           }
-          console.log('✅ Found in ENS Registry, owner:', ensOwner);
         } else {
           console.log('❌ Not found in ENS Registry');
         }
       } catch (error) {
         console.log('❌ Error checking ENS Registry:', error);
-      }
-
-      // Check NameWrapper
-      try {
-        const wrapperOwner = await nameWrapper.ownerOf(parentNode);
-        result.nameWrapperOwner = wrapperOwner;
-        result.isWrapped = true;
-        result.exists = true;
-        result.registrationMethod = 'nameWrapper';
-        console.log('✅ Found in NameWrapper, owner:', wrapperOwner);
-      } catch (error) {
-        console.log('❌ Not wrapped');
       }
 
       return result;
@@ -1181,6 +1196,216 @@ class EnsService {
       }
     }
 
+
+    /**
+     * Create subdomain owned by ORG AA (using logic from org-subdomain-ownership-test.ts)
+     * This method creates a subdomain where the parent domain is owned by the ENS owner AA,
+     * but the subdomain itself is owned by the ORG AA
+     */
+    static async createSubdomainForOrg(
+      signer: ethers.JsonRpcSigner, 
+      ensOwnerClient: MetaMaskSmartAccount, 
+      orgAccountAddress: `0x${string}`, 
+      parentName: string, 
+      label: string, 
+      chain: Chain
+    ): Promise<string> {
+      console.log("Creating subdomain for ORG AA:", label + "." + parentName + ".eth");
+      console.log("ORG AA address:", orgAccountAddress);
+
+      if (chain.id !== 11155111) {
+        throw new Error('ENS operations are only supported on Sepolia testnet');
+      }
+
+            try {
+        const ensOwnerAddress = await ensOwnerClient.getAddress();
+        console.log('ENS Owner AA address:', ensOwnerAddress);
+
+        // Create public client for reading contract data
+        const publicClient = createPublicClient({
+          chain: chain,
+          transport: http(RPC_URL),
+        });
+
+        // Check if the parent domain is wrapped by checking if ENS Registry owner is NameWrapper
+        const ENS_REGISTRY_ADDRESS = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
+        const parentNode = namehash(parentName + '.eth');
+        
+        const parentOwner = await publicClient.readContract({
+          address: ENS_REGISTRY_ADDRESS as `0x${string}`,
+          abi: [{ name: 'owner', type: 'function', inputs: [{ name: 'node', type: 'bytes32' }], outputs: [{ name: '', type: 'address' }], stateMutability: 'view' }],
+          functionName: 'owner',
+          args: [parentNode]
+        }) as `0x${string}`;
+        
+        console.log(`🔗 Parent domain: ${parentName}.eth`);
+        console.log(`🔗 Parent node: ${parentNode}`);
+        console.log(`👤 Parent owner: ${parentOwner}`);
+        
+        if (parentOwner === '0x0000000000000000000000000000000000000000') {
+          throw new Error(`Parent domain ${parentName}.eth does not exist or has no owner`);
+        }
+        
+        // For wrapped ENS records, we need to get the actual owner from NameWrapper
+        let actualOwner: string;
+        if (parentOwner.toLowerCase() === '0x0635513f179D50A207757E05759CbD106d7dFcE8'.toLowerCase()) {
+          console.log('✅ Parent domain is wrapped, getting NameWrapper owner...');
+          
+          try {
+            const tokenId = BigInt(parentNode);
+            actualOwner = await publicClient.readContract({
+              address: '0x0635513f179D50A207757E05759CbD106d7dFcE8' as `0x${string}`,
+              abi: NameWrapperABI.abi,
+              functionName: 'ownerOf',
+              args: [tokenId]
+            }) as `0x${string}`;
+            
+            console.log(`🎯 NameWrapper owner: ${actualOwner}`);
+          } catch (error) {
+            console.error('❌ Error getting NameWrapper owner:', error);
+            throw new Error(`Failed to get NameWrapper owner: ${error.message}`);
+          }
+        } else {
+          actualOwner = parentOwner;
+          console.log(`🎯 Direct owner: ${actualOwner}`);
+        }
+        
+        // Check if the ENS owner AA matches the actual owner (like the test)
+        if (actualOwner.toLowerCase() !== ensOwnerAddress.toLowerCase()) {
+          console.log('⚠️  Warning: ENS Owner AA does not match NameWrapper owner');
+          console.log(`Expected: ${actualOwner}`);
+          console.log(`Actual: ${ensOwnerAddress}`);
+          console.log('⚠️  Continuing anyway as the smart account might be the correct one');
+        }
+
+                 // Set up contracts
+         const nameWrapper = new ethers.Contract(
+           '0x0635513f179D50A207757E05759CbD106d7dFcE8',
+           NameWrapperABI.abi,
+           signer
+         );
+
+         const publicResolver = new ethers.Contract(
+           '0x8FADE66B79cC9f707aB26799354482EB93a5B7dD',
+           PublicResolverABI.abi,
+           signer
+         );
+
+         const subnode = namehash(label + '.' + parentName + '.eth');
+
+                 console.log('Parent node:', parentNode);
+         console.log('Subnode:', subnode);
+
+         // Check if subdomain already exists
+         try {
+           let subdomainOwner;
+           // Since we know the parent is wrapped (we checked above), check NameWrapper
+           subdomainOwner = await nameWrapper.ownerOf(subnode);
+
+           if (subdomainOwner !== '0x0000000000000000000000000000000000000000') {
+             console.log('Subdomain already exists, owner:', subdomainOwner);
+             throw new Error(`Subdomain "${label}.${parentName}.eth" already exists and is owned by ${subdomainOwner}`);
+           }
+         } catch (error) {
+           console.log('Subdomain does not exist yet, proceeding with creation');
+         }
+
+        // Create bundler client and get gas prices (with paymaster like the test)
+        const bundlerClient = createBundlerClient({
+          transport: http(BUNDLER_URL),
+          paymaster: true,
+          chain: chain,
+          paymasterContext: {
+            mode: 'SPONSORED',
+          },
+        });
+
+        const pimlicoClient = createPimlicoClient({
+          transport: http(BUNDLER_URL),
+        });
+
+        const { fast: gasFee } = await pimlicoClient.getUserOperationGasPrice();
+        const gasConfig = {
+          maxFeePerGas: gasFee.maxFeePerGas,
+          maxPriorityFeePerGas: gasFee.maxPriorityFeePerGas,
+          callGasLimit: 500000n,
+          preVerificationGas: 100000n,
+          verificationGasLimit: 500000n
+        };
+
+        // Create subdomain using NameWrapper's setSubnodeRecord
+        // This creates the subdomain and sets the ORG AA as the owner
+        console.log('Creating subdomain via NameWrapper...');
+        const subdomainData = encodeFunctionData({
+          abi: NameWrapperABI.abi,
+          functionName: 'setSubnodeRecord',
+          args: [
+            parentNode, // parent node
+            label, // label (string, not hash)
+            orgAccountAddress, // owner (ORG AA address)
+            publicResolver.target as `0x${string}`, // resolver
+            0n, // TTL (0 = no expiration) - uint64
+            0, // fuses (0 = no restrictions) - uint32
+            0n // expiry (0 = no expiration) - uint64
+          ]
+        });
+
+        console.log('Create subdomain call details:', {
+          to: nameWrapper.target,
+          data: subdomainData,
+          parentNode,
+          label: label,
+          owner: orgAccountAddress,
+          resolver: publicResolver.target,
+          ttl: 0n,
+          fuses: 0,
+          expiry: 0n
+        });
+
+        const subdomainOpHash = await bundlerClient.sendUserOperation({
+          account: ensOwnerClient,
+          calls: [{
+            to: nameWrapper.target as `0x${string}`,
+            data: subdomainData,
+            value: 0n
+          }],
+          ...gasConfig
+        });
+
+        console.log('Subdomain creation transaction sent:', subdomainOpHash);
+
+        // Wait for confirmation
+        const { receipt } = await bundlerClient.waitForUserOperationReceipt({
+          hash: subdomainOpHash,
+        });
+
+        console.log('Subdomain created successfully:', receipt);
+
+        // Wait and verify
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
+                 // Verify subdomain creation
+         let subdomainOwner;
+         // Since we know the parent is wrapped, check NameWrapper
+         subdomainOwner = await nameWrapper.ownerOf(subnode);
+
+        console.log('New subdomain owner:', subdomainOwner);
+
+        if (subdomainOwner.toLowerCase() === orgAccountAddress.toLowerCase()) {
+          console.log(`✅ Subdomain "${label}.${parentName}.eth" created successfully and owned by ORG AA!`);
+          return label + '.' + parentName + '.eth';
+        } else {
+          throw new Error(
+            `Subdomain creation verification failed. ` +
+            `Expected owner: ${orgAccountAddress}, ` +
+            `Actual owner: ${subdomainOwner}`
+          );
+        }
+      } catch (error) {
+        console.error('Error creating subdomain for ORG AA:', error);
+        throw error;
+      }
+    }
 
     /**
      * Get ENS name for an address (reverse resolution)

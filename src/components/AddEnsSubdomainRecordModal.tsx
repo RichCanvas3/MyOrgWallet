@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
-import { createPublicClient, http, formatEther } from 'viem';
+import { createPublicClient, http, formatEther, namehash } from 'viem';
 
 import {
   XMarkIcon,
@@ -22,36 +22,34 @@ import {
 import { Transition } from '@headlessui/react';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import EnsService from '../service/EnsService';
+import { toMetaMaskSmartAccount, Implementation } from '@metamask/delegation-toolkit';
+import { privateKeyToAccount } from 'viem/accounts';
+import { ENS_PRIVATE_KEY, ENS_NAME, RPC_URL } from '../config';
 
 interface AddEnsSubdomainRecordModalProps {
   isVisible: boolean;
   onClose: () => void;
   onRefresh?: () => void;
-  parentEnsName: string; // The parent ENS name to create subdomains under
 }
 
 const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({ 
   isVisible, 
   onClose, 
-  onRefresh, 
-  parentEnsName 
+  onRefresh
 }) => {
+  // Get parent ENS name from config
+  const parentEnsName = ENS_NAME || 'trust102';
   const [subdomainName, setSubdomainName] = useState('app');
   const [isCreatingSubdomain, setIsCreatingSubdomain] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showSubdomainInput, setShowSubdomainInput] = useState(false);
-  const [timerSeconds, setTimerSeconds] = useState(60); // 1 minute timer
-  const [isTimerActive, setIsTimerActive] = useState(false);
-  const [canCreateSubdomain, setCanCreateSubdomain] = useState(false);
   
   // New state for wrapping functionality
   const [isCheckingWrapStatus, setIsCheckingWrapStatus] = useState(false);
   const [isWrapping, setIsWrapping] = useState(false);
   const [isParentWrapped, setIsParentWrapped] = useState<boolean | null>(null);
   const [wrapError, setWrapError] = useState<string | null>(null);
-
-  const timerRef = useRef<NodeJS.Timeout>();
 
   // Update the context usage
   const { chain, signatory, orgAccountClient } = useWallectConnectContext();
@@ -60,21 +58,155 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
     return name.replace('.eth', '').trim();
   };
 
-  // Check if parent ENS domain is already wrapped
+  // Print comprehensive configuration diagnostics
+  const printConfiguration = () => {
+    console.log('🔧 Modal Configuration:');
+    console.log(`   Chain: ${chain?.name} (ID: ${chain?.id})`);
+    console.log(`   RPC URL: ${RPC_URL}`);
+    console.log(`   Bundler URL: ${import.meta.env.VITE_BUNDLER_URL || 'NOT_SET'}`);
+    console.log(`   Parent ENS: ${ENS_NAME}.eth`);
+    console.log(`   ENS Private Key: ${ENS_PRIVATE_KEY ? `${ENS_PRIVATE_KEY.substring(0, 10)}...${ENS_PRIVATE_KEY.substring(58)}` : 'NOT_SET'}`);
+    console.log(`   Subdomain Name: ${subdomainName}`);
+    console.log(`   Modal Visible: ${isVisible}`);
+    console.log(`   Parent Wrapped: ${isParentWrapped}`);
+  };
+
+  // Calculate the expected AA address for the ENS owner
+  const getExpectedEnsOwnerAA = () => {
+    const ensPrivateKey = ENS_PRIVATE_KEY as `0x${string}`;
+    if (!ensPrivateKey) {
+      console.log('❌ ENS_PRIVATE_KEY not configured');
+      return null;
+    }
+    
+    try {
+      const ensOwnerEOA = privateKeyToAccount(ensPrivateKey);
+      console.log('🔍 ENS Owner EOA:', ensOwnerEOA.address);
+      console.log('🔧 Expected AA Parameters:', {
+        owner: ensOwnerEOA.address,
+        salt: 200,
+        saltHex: `0x${(200).toString(16)}`,
+        implementation: 'Hybrid'
+      });
+      
+      // Note: The actual AA address would be calculated by the smart account factory
+      // This is just for reference - the actual address will be shown when the AA is created
+      return {
+        eoaAddress: ensOwnerEOA.address,
+        expectedSalt: 200,
+        expectedSaltHex: `0x${(200).toString(16)}`
+      };
+    } catch (error) {
+      console.error('❌ Error calculating expected AA:', error);
+      return null;
+    }
+  };
+
+  // Check if parent ENS domain is already wrapped (following test approach)
   const checkParentWrapStatus = async () => {
     if (!parentEnsName || !chain) {
+      console.log('❌ Missing parentEnsName or chain:', { parentEnsName, chain: chain?.name });
       return;
     }
+
+    console.log('🔍 Starting wrap status check (test approach)...');
+    console.log('📋 Configuration:', {
+      parentEnsName,
+      chainName: chain.name,
+      chainId: chain.id,
+      ENS_NAME: ENS_NAME,
+      ENS_PRIVATE_KEY: ENS_PRIVATE_KEY ? `${ENS_PRIVATE_KEY.slice(0, 10)}...` : 'NOT_SET'
+    });
 
     setIsCheckingWrapStatus(true);
     setWrapError(null);
 
     try {
       const cleanName = cleanEnsName(parentEnsName);
-      const status = await EnsService.checkEnsNameStatus(cleanName, chain);
-      setIsParentWrapped(status.isWrapped);
+      console.log('🧹 Cleaned ENS name:', cleanName);
+      
+      // Create public client for reading contract data (like the test)
+      const publicClient = createPublicClient({
+        chain: chain,
+        transport: http(RPC_URL),
+      });
+      
+      // Check if the parent domain is wrapped by checking if ENS Registry owner is NameWrapper (like the test)
+      const ENS_REGISTRY_ADDRESS = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
+      const NAME_WRAPPER_ADDRESS = '0x0635513f179D50A207757E05759CbD106d7dFcE8';
+      const parentNode = namehash(cleanName + '.eth');
+      
+      console.log('🔍 Checking ENS Registry for parent domain owner...');
+      const parentOwner = await publicClient.readContract({
+        address: ENS_REGISTRY_ADDRESS as `0x${string}`,
+        abi: [{ name: 'owner', type: 'function', inputs: [{ name: 'node', type: 'bytes32' }], outputs: [{ name: '', type: 'address' }], stateMutability: 'view' }],
+        functionName: 'owner',
+        args: [parentNode]
+      }) as `0x${string}`;
+      
+      console.log(`🔗 Parent domain: ${cleanName}.eth`);
+      console.log(`🔗 Parent node: ${parentNode}`);
+      console.log(`👤 Parent owner: ${parentOwner}`);
+      
+      if (parentOwner === '0x0000000000000000000000000000000000000000') {
+        console.log('❌ Parent domain does not exist or has no owner');
+        setWrapError(`Parent domain "${cleanName}.eth" does not exist or has no owner`);
+        setIsParentWrapped(false);
+        return;
+      }
+      
+      // For wrapped ENS records, we need to get the actual owner from NameWrapper (like the test)
+      let actualOwner: string;
+      let isWrapped = false;
+      
+      if (parentOwner.toLowerCase() === NAME_WRAPPER_ADDRESS.toLowerCase()) {
+        console.log('✅ Parent domain is wrapped, getting NameWrapper owner...');
+        isWrapped = true;
+        
+        try {
+          const tokenId = BigInt(parentNode);
+          actualOwner = await publicClient.readContract({
+            address: NAME_WRAPPER_ADDRESS as `0x${string}`,
+            abi: [{ name: 'ownerOf', type: 'function', inputs: [{ name: 'tokenId', type: 'uint256' }], outputs: [{ name: '', type: 'address' }], stateMutability: 'view' }],
+            functionName: 'ownerOf',
+            args: [tokenId]
+          }) as `0x${string}`;
+          
+          console.log(`🎯 NameWrapper owner: ${actualOwner}`);
+        } catch (error) {
+          console.error('❌ Error getting NameWrapper owner:', error);
+          setWrapError(`Failed to get NameWrapper owner: ${error instanceof Error ? error.message : String(error)}`);
+          setIsParentWrapped(false);
+          return;
+        }
+      } else {
+        actualOwner = parentOwner;
+        console.log(`🎯 Direct owner (not wrapped): ${actualOwner}`);
+      }
+      
+      setIsParentWrapped(isWrapped);
+      
+      if (isWrapped) {
+        console.log('✅ Parent domain is wrapped successfully');
+        console.log('👑 Current wrapped domain owner:', actualOwner);
+        
+        // Calculate what the expected AA address should be
+        const ensPrivateKey = ENS_PRIVATE_KEY as `0x${string}`;
+        if (ensPrivateKey) {
+          const ensOwnerEOA = privateKeyToAccount(ensPrivateKey);
+          console.log('🔍 Expected AA owner details:', {
+            eoaAddress: ensOwnerEOA.address,
+            expectedAASalt: 200,
+            expectedAASaltHex: `0x${(200).toString(16)}`,
+            note: 'This AA should own the wrapped parent domain'
+          });
+        }
+      } else {
+        console.log('⚠️  Parent domain is NOT wrapped');
+        setWrapError(`Parent domain "${cleanName}.eth" is not wrapped. Please wrap it first using the "Wrap Parent Domain" button.`);
+      }
     } catch (error) {
-      console.error('Error checking wrap status:', error);
+      console.error('❌ Error checking wrap status:', error);
       setWrapError(`Failed to check wrap status: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setIsCheckingWrapStatus(false);
@@ -114,18 +246,50 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
   // Check wrap status when component mounts or parentEnsName changes
   useEffect(() => {
     if (isVisible && parentEnsName) {
+      console.log('🚀 Modal Initialization');
+      console.log('='.repeat(60));
+      
+      // Print comprehensive configuration
+      printConfiguration();
+      console.log('');
+      
+      // Show expected AA details
+      console.log('🎯 Expected ENS Owner AA Details:');
+      getExpectedEnsOwnerAA();
+      console.log('');
+      
+      // Check parent wrap status
       checkParentWrapStatus();
     }
   }, [isVisible, parentEnsName]);
 
   const createSubdomain = async () => {
+    console.log('🚀 Starting Subdomain Creation Process');
+    console.log('='.repeat(60));
+    
+    // Print comprehensive configuration
+    printConfiguration();
+    console.log('');
+    
+    console.log('📋 Input Validation:');
+    console.log(`   Parent ENS Name: ${parentEnsName}`);
+    console.log(`   Subdomain Name: ${subdomainName}`);
+    console.log(`   Chain Available: ${!!chain}`);
+    console.log(`   Chain Name: ${chain?.name}`);
+    console.log(`   ORG Account Client Available: ${!!orgAccountClient}`);
+    console.log('');
+
     if (!parentEnsName || !chain || !orgAccountClient) {
-      setError('Missing required information');
+      const error = 'Missing required information';
+      console.error('❌', error, { parentEnsName, chain: chain?.name, hasOrgAccountClient: !!orgAccountClient });
+      setError(error);
       return;
     }
 
     if (!subdomainName.trim()) {
-      setError('Please enter a subdomain name');
+      const error = 'Please enter a subdomain name';
+      console.error('❌', error);
+      setError(error);
       return;
     }
 
@@ -135,8 +299,90 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
     try {
       const signer = signatory.signer;
       const cleanParentName = cleanEnsName(parentEnsName);
-      const result = await EnsService.createSubdomain(signer, orgAccountClient, cleanParentName, subdomainName.trim(), chain);
-      setSuccess(`Subdomain "${result}" created successfully!`);
+      console.log('🧹 Cleaned parent name:', cleanParentName);
+      
+      // Get the ORG AA address
+      const orgAccountAddress = await orgAccountClient.getAddress();
+      console.log('🏢 ORG AA address:', orgAccountAddress);
+      
+      // Step 1: Create ENS Owner Client
+      console.log('🔍 Step 1: Creating ENS Owner Client');
+      console.log('-'.repeat(40));
+      
+      const ensPrivateKey = ENS_PRIVATE_KEY as `0x${string}`;
+      console.log(`🔑 ENS Private Key: ${ensPrivateKey ? `${ensPrivateKey.substring(0, 10)}...${ensPrivateKey.substring(58)}` : 'NOT_SET'}`);
+      
+      if (!ensPrivateKey) {
+        throw new Error('ENS_PRIVATE_KEY configuration is required');
+      }
+      
+      // Create EOA from private key (this is the owner of the AA)
+      const ensOwnerEOA = privateKeyToAccount(ensPrivateKey);
+      console.log(`✅ ENS Owner EOA created: ${ensOwnerEOA.address}`);
+      
+      // Create public client
+      const publicClient = createPublicClient({
+        chain: chain,
+        transport: http(RPC_URL),
+      });
+      console.log(`✅ Public client created for chain: ${chain.name}`);
+      
+      // Create signatory for ENS owner
+      const ensSignatory = {
+        account: ensOwnerEOA,
+        signer: signer
+      };
+      console.log(`✅ ENS Owner signatory created for address: ${ensOwnerEOA.address}`);
+      
+      // Create ENS owner smart account (AA) using the same logic as the test
+      console.log('🔍 Creating organization smart account for ENS owner...');
+      console.log('🔧 Smart Account Parameters:');
+      console.log(`   Owner Address: ${ensOwnerEOA.address}`);
+      console.log(`   Deploy Salt: 0x${(200).toString(16)} (200)`);
+      console.log(`   Implementation: Hybrid`);
+      console.log(`   Deploy Params: [owner, [], [], []]`);
+      
+      const ensOwnerClient = await toMetaMaskSmartAccount({
+        client: publicClient,
+        implementation: Implementation.Hybrid,
+        deployParams: [ensOwnerEOA.address, [], [], []],
+        signatory: ensSignatory,
+        deploySalt: `0x${(10000).toString(16)}` as `0x${string}`, // Organization salt like in test
+      });
+      
+      const ensOwnerAddress = await ensOwnerClient.getAddress();
+      console.log(`✅ ENS Owner smart account found at: ${ensOwnerAddress}`);
+      console.log(`🎯 This AA will be used to call the registrar for parent domain operations`);
+      console.log('');
+      
+      // Step 2: Call EnsService.createSubdomainForOrg
+      console.log('🔍 Step 2: Creating Subdomain via EnsService');
+      console.log('-'.repeat(40));
+      
+      console.log('🎯 Subdomain Creation Parameters:');
+      console.log(`   Parent ENS: ${cleanParentName}.eth`);
+      console.log(`   Subdomain: ${subdomainName.trim()}.${cleanParentName}.eth`);
+      console.log(`   ENS Owner EOA: ${ensOwnerEOA.address}`);
+      console.log(`   ENS Owner AA: ${ensOwnerAddress}`);
+      console.log(`   ORG AA: ${orgAccountAddress}`);
+      console.log(`   Chain: ${chain.name} (ID: ${chain.id})`);
+      console.log('');
+      
+      console.log('🚀 Calling EnsService.createSubdomainForOrg...');
+      
+      const result = await EnsService.createSubdomainForOrg(
+        signer, 
+        ensOwnerClient, 
+        orgAccountAddress as `0x${string}`, 
+        cleanParentName, 
+        subdomainName.trim(), 
+        chain
+      );
+      
+      console.log(`✅ Subdomain created successfully: ${result}`);
+      console.log('='.repeat(60));
+      
+      setSuccess(`Subdomain "${result}" created successfully and owned by ORG AA!`);
       
       // Reset form
       setSubdomainName('app');
@@ -154,61 +400,13 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
     }
   };
 
-  // Timer effect for subdomain creation
-  useEffect(() => {
-    if (isTimerActive && timerSeconds > 0) {
-      timerRef.current = setTimeout(() => {
-        setTimerSeconds(prev => prev - 1);
-      }, 1000);
-    } else if (timerSeconds === 0) {
-      setIsTimerActive(false);
-      setCanCreateSubdomain(true);
-    }
 
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-    };
-  }, [isTimerActive, timerSeconds]);
-
-  // Start timer when subdomain input is shown
-  useEffect(() => {
-    if (showSubdomainInput && !isTimerActive && timerSeconds === 60) {
-      setIsTimerActive(true);
-      setCanCreateSubdomain(false);
-    }
-  }, [showSubdomainInput, isTimerActive, timerSeconds]);
-
-  // Reset timer when subdomain input is hidden
-  useEffect(() => {
-    if (!showSubdomainInput) {
-      setIsTimerActive(false);
-      setTimerSeconds(60);
-      setCanCreateSubdomain(false);
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-    }
-  }, [showSubdomainInput]);
-
-  // Cleanup timer on component unmount
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-    };
-  }, []);
 
   const handleClose = () => {
     setError(null);
     setSuccess(null);
     setSubdomainName('app');
     setShowSubdomainInput(false);
-    setTimerSeconds(60);
-    setIsTimerActive(false);
-    setCanCreateSubdomain(false);
     setWrapError(null);
     onClose();
   };
@@ -217,9 +415,6 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
     setSuccess(null);
     setSubdomainName('app');
     setShowSubdomainInput(false);
-    setTimerSeconds(60);
-    setIsTimerActive(false);
-    setCanCreateSubdomain(false);
     setWrapError(null);
   };
 
@@ -266,7 +461,7 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
                   Parent Domain:
                 </Typography>
                 <Typography variant="h6" fontWeight="medium">
-                  {parentEnsName}
+                  {parentEnsName}.eth
                 </Typography>
                 
                 {/* Initial Loading State */}
@@ -425,20 +620,11 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
                         helperText={`Will create: ${subdomainName}.${cleanEnsName(parentEnsName)}.eth`}
                         sx={{ mb: 2 }}
                       />
-                      {/* Timer Display */}
-                      {isTimerActive && timerSeconds > 0 && (
-                        <Box sx={{ mb: 2, textAlign: 'center' }}>
-                          <Typography variant="body2" color="text.secondary">
-                            Please wait before creating subdomain: {Math.floor(timerSeconds / 60)}:{(timerSeconds % 60).toString().padStart(2, '0')}
-                          </Typography>
-                        </Box>
-                      )}
-
                       <Box sx={{ display: 'flex', gap: 1 }}>
                         <Button
                           variant="contained"
                           onClick={createSubdomain}
-                          disabled={isCreatingSubdomain || !subdomainName.trim() || !canCreateSubdomain}
+                          disabled={isCreatingSubdomain || !subdomainName.trim()}
                           sx={{ flex: 1 }}
                         >
                           {isCreatingSubdomain ? (
@@ -446,8 +632,6 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
                               <CircularProgress size={20} sx={{ mr: 1 }} />
                               Creating...
                             </>
-                          ) : !canCreateSubdomain ? (
-                            `Wait ${Math.floor(timerSeconds / 60)}:${(timerSeconds % 60).toString().padStart(2, '0')}`
                           ) : (
                             'Create Subdomain'
                           )}

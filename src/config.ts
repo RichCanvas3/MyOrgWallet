@@ -46,3 +46,7 @@ export const CIRCLE_WALLET_API_KEY: string = import.meta.env.VITE_CIRCLE_WALLET_
 export const CIRCLE_WALLET_ENTITY_SECRET: string = import.meta.env.VITE_CIRCLE_WALLET_ENTITY_SECRET;
 
 export const LANGCHAIN_API_KEY: string = import.meta.env.VITE_LANGCHAIN_API_KEY;
+
+// ENS Configuration
+export const ENS_PRIVATE_KEY: string = import.meta.env.VITE_ENS_PRIVATE_KEY;
+export const ENS_NAME: string = import.meta.env.VITE_ENS_NAME;
