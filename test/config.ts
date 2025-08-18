@@ -22,6 +22,10 @@ export const TEST_CONFIG = {
   privateKey: process.env.PRIVATE_KEY as `0x${string}` || 
     '0x1234567890123456789012345678901234567890123456789012345678901234' as `0x${string}`,
 
+  // Organization Private Key (WARNING: Never use in production)
+  orgPrivateKey: process.env.ORG_PRIVATE_KEY as `0x${string}` || 
+    '0x1234567890123456789012345678901234567890123456789012345678901234' as `0x${string}`,
+
   // Gas Configuration
   gasLimit: parseInt(process.env.GAS_LIMIT || '500000'),
   maxPriorityFee: parseInt(process.env.MAX_PRIORITY_FEE || '1500000000'),
