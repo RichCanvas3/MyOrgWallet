@@ -43,7 +43,7 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
   const [isCreatingSubdomain, setIsCreatingSubdomain] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [showSubdomainInput, setShowSubdomainInput] = useState(false);
+
   
   // New state for wrapping functionality
   const [isCheckingWrapStatus, setIsCheckingWrapStatus] = useState(false);
@@ -474,11 +474,10 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
       console.log(`✅ Subdomain created successfully: ${result}`);
       console.log('='.repeat(60));
       
-      setSuccess(`Subdomain "${result}" created successfully and owned by ORG AA!`);
+      setSuccess(`Subdomain "${result}" created successfully!`);
       
       // Reset form
-      setSubdomainName('app');
-      setShowSubdomainInput(false);
+      setSubdomainName('');
       
       // Call refresh if provided
       if (onRefresh) {
@@ -498,7 +497,6 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
     setError(null);
     setSuccess(null);
     setSubdomainName('');
-    setShowSubdomainInput(false);
     setWrapError(null);
     setSubdomainStatus(null);
     onClose();
@@ -507,7 +505,6 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
   const handleCreateAnother = () => {
     setSuccess(null);
     setSubdomainName('');
-    setShowSubdomainInput(false);
     setWrapError(null);
     setSubdomainStatus(null);
   };
@@ -524,44 +521,43 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
       leaveFrom="opacity-100"
       leaveTo="opacity-0"
     >
-      <div className="fixed inset-0 z-50 overflow-y-auto">
-        <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-          <Transition
-            show={isVisible}
-            enter="transition ease-out duration-300"
-            enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-            enterTo="opacity-100 translate-y-0 sm:scale-100"
-            leave="transition ease-in duration-200"
-            leaveFrom="opacity-100 translate-y-0 sm:scale-100"
-            leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-          >
-            <div className="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full min-w-[450px] sm:max-w-lg sm:p-6">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                  <GlobeAltIcon className="h-6 w-6 text-blue-600 mr-2" />
-                  <Typography variant="h6" component="h2">
-                    Create ENS Subdomain
-                  </Typography>
-                </div>
-                <IconButton onClick={handleClose} size="small">
-                  <XMarkIcon className="h-5 w-5" />
-                </IconButton>
-              </div>
+      <div className="modal-overlay">
+        <Transition
+          show={isVisible}
+          enter="modal-enter"
+          enterFrom="modal-enter-from"
+          enterTo="modal-enter-to"
+          leave="modal-leave"
+          leaveFrom="modal-leave-from"
+          leaveTo="modal-leave-to"
+        >
+          <div className="modal-dialog">
+            {/* Header */}
+            <div className="modal-header">
+              <h1 className="modal-title">
+                Create ENS Subdomain
+              </h1>
+              <button onClick={handleClose} className="close-button">
+                <XMarkIcon className="close-icon" aria-hidden="true" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="modal-content">
 
               {/* Parent ENS Name Display */}
               <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                <Typography variant="body2" color="text.primary" gutterBottom>
+                <Typography variant="body2" sx={{ color: '#333333' }} gutterBottom>
                   Parent Domain:
                 </Typography>
-                <Typography variant="h6" fontWeight="medium">
+                <Typography variant="h6" fontWeight="medium" sx={{ color: '#000000' }}>
                   {parentEnsName}.eth
                 </Typography>
                 
                 {/* Initial Loading State */}
                 {isParentWrapped === null && !isCheckingWrapStatus && (
                   <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: '#666666' }}>
                       Loading wrap status...
                     </Typography>
                   </Box>
@@ -572,13 +568,13 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
                   {isCheckingWrapStatus ? (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <CircularProgress size={16} />
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" sx={{ color: '#666666' }}>
                         Checking wrap status...
                       </Typography>
                     </Box>
                   ) : isParentWrapped === null ? (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" sx={{ color: '#666666' }}>
                         Wrap status unknown
                       </Typography>
                       <Button
@@ -599,7 +595,7 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
                     </Box>
                   ) : isParentWrapped ? (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="body2" color="success.main" sx={{ fontWeight: 'medium' }}>
+                      <Typography variant="body2" sx={{ color: '#2e7d32', fontWeight: 'medium' }}>
                         ✓ Domain is wrapped
                       </Typography>
                       <Button
@@ -614,7 +610,7 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
                     </Box>
                   ) : (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="body2" color="warning.main" sx={{ fontWeight: 'medium' }}>
+                      <Typography variant="body2" sx={{ color: '#ed6c02', fontWeight: 'medium' }}>
                         ⚠ Domain needs to be wrapped
                       </Typography>
                       <Button
@@ -679,98 +675,100 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
               )}
 
               {/* Subdomain Creation Section */}
-              {!success && !isParentWrapped && isParentWrapped !== null && (
-                <Box sx={{ mb: 2 }}>
-                  <Alert severity="info">
-                    <AlertTitle>Parent Domain Must Be Wrapped</AlertTitle>
-                    The parent ENS domain must be wrapped before you can create subdomains. Please wrap the domain first using the button above.
-                  </Alert>
-                </Box>
-              )}
-              
-              {/* Subdomain Creation Section */}
               {!success && isParentWrapped && (
                 <Box sx={{ mb: 2 }}>
-                  <Typography variant="subtitle1" fontWeight="medium" mb={1}>
-                    Create Subdomain
+                  <Typography variant="subtitle1" fontWeight="medium" mb={2} sx={{ color: '#000000' }}>
+                    Proposed Subdomain
                   </Typography>
-                  {!showSubdomainInput ? (
+                  
+                  {/* Subdomain Input */}
+                  <TextField
+                    fullWidth
+                    label="Subdomain Name"
+                    placeholder={orgName ? `Default: ${orgName.toLowerCase().replace(/[^a-z0-9-]/g, '')} (from org name)` : "Enter subdomain name"}
+                    value={subdomainName}
+                    onChange={(e) => setSubdomainName(e.target.value)}
+                    sx={{ mb: 3 }}
+                  />
+                  
+                  {/* Subdomain Display */}
+                  <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                    <Typography variant="body2" sx={{ color: '#333333' }} gutterBottom>
+                      Subdomain Name:
+                    </Typography>
+                    <Typography variant="h6" fontWeight="medium" sx={{ mb: 1, color: '#000000' }}>
+                      {subdomainName || 'Enter subdomain name'}
+                    </Typography>
+                    
+                    {/* Status Display */}
+                    {subdomainName.trim() && (
+                      <Box sx={{ mt: 2 }}>
+                        <Typography variant="body2" sx={{ color: '#333333' }} gutterBottom>
+                          Full Domain:
+                        </Typography>
+                        <Typography variant="body1" fontFamily="monospace" sx={{ mb: 2, color: '#000000' }}>
+                          {subdomainName}.{cleanEnsName(parentEnsName)}.eth
+                        </Typography>
+                        
+                        {/* Availability Status */}
+                        {isCheckingSubdomain ? (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <CircularProgress size={16} />
+                            <Typography variant="body2" sx={{ color: '#666666' }}>
+                              Checking availability...
+                            </Typography>
+                          </Box>
+                        ) : subdomainStatus === 'available' ? (
+                          <Alert severity="success" sx={{ mb: 2 }}>
+                            ✅ Subdomain is available
+                          </Alert>
+                        ) : subdomainStatus === 'exists' ? (
+                          <Alert severity="error" sx={{ mb: 2 }}>
+                            ❌ Subdomain already exists
+                          </Alert>
+                        ) : subdomainStatus === 'invalid' ? (
+                          <Alert severity="warning" sx={{ mb: 2 }}>
+                            ⚠️ Invalid format (use only lowercase letters, numbers, hyphens)
+                          </Alert>
+                        ) : null}
+                      </Box>
+                    )}
+                  </Box>
+                  
+                  {/* Action Buttons */}
+                  {subdomainName.trim() && subdomainStatus === 'available' ? (
                     <Button
-                      variant="outlined"
-                      onClick={() => setShowSubdomainInput(true)}
+                      variant="contained"
+                      onClick={createSubdomain}
+                      disabled={isCreatingSubdomain}
                       fullWidth
                       sx={{ mb: 2 }}
                     >
-                      Create Custom Subdomain
+                      {isCreatingSubdomain ? (
+                        <>
+                          <CircularProgress size={20} sx={{ mr: 1 }} />
+                          Creating Subdomain...
+                        </>
+                      ) : (
+                        'Create Subdomain'
+                      )}
                     </Button>
                   ) : (
-                    <Box sx={{ mb: 2 }}>
-                      <TextField
-                        fullWidth
-                        label="Subdomain Name"
-                        placeholder={orgName ? `Default: ${orgName.toLowerCase().replace(/[^a-z0-9-]/g, '')} (from org name)` : "Enter subdomain (e.g., app, team, support)"}
-                        value={subdomainName}
-                        onChange={(e) => setSubdomainName(e.target.value)}
-                        helperText={
-                          subdomainName.trim() ? (
-                            <>
-                              Will create: {subdomainName}.{cleanEnsName(parentEnsName)}.eth
-                              {isCheckingSubdomain && ' (checking availability...)'}
-                              {subdomainStatus === 'available' && ' ✅ Available'}
-                              {subdomainStatus === 'exists' && ' ❌ Already exists'}
-                              {subdomainStatus === 'invalid' && ' ⚠️ Invalid format (use only lowercase letters, numbers, hyphens)'}
-                            </>
-                          ) : 'Enter a subdomain name'
-                        }
-                        error={subdomainStatus === 'exists' || subdomainStatus === 'invalid'}
-                        sx={{ mb: 2 }}
-                      />
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Button
-                          variant="contained"
-                          onClick={createSubdomain}
-                          disabled={isCreatingSubdomain || !subdomainName.trim() || subdomainStatus === 'exists' || subdomainStatus === 'invalid' || isCheckingSubdomain}
-                          sx={{ flex: 1 }}
-                        >
-                          {isCreatingSubdomain ? (
-                            <>
-                              <CircularProgress size={20} sx={{ mr: 1 }} />
-                              Creating...
-                            </>
-                          ) : (
-                            'Create Subdomain'
-                          )}
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          onClick={() => {
-                            setShowSubdomainInput(false);
-                            setSubdomainName('');
-                            setSubdomainStatus(null);
-                          }}
-                          sx={{ flex: 1 }}
-                        >
-                          Cancel
-                        </Button>
-                      </Box>
-                    </Box>
+                    <Button
+                      variant="outlined"
+                      onClick={handleClose}
+                      fullWidth
+                      sx={{ mb: 2 }}
+                    >
+                      Close
+                    </Button>
                   )}
                 </Box>
               )}
 
-              {/* Close Button */}
-              {!success && (
-                <Button
-                  variant="outlined"
-                  onClick={handleClose}
-                  fullWidth
-                >
-                  Close
-                </Button>
-              )}
             </div>
-          </Transition>
-        </div>
+          </div>
+        </Transition>
       </div>
     </Transition>
   );
