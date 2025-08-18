@@ -130,7 +130,36 @@ async function checkSubdomainOwnership(
     console.log(`🔍 Checking ownership for subdomain: ${subdomain}`);
     console.log(`🔗 Subdomain node: ${subdomainNode}`);
     
-    // Check if the subdomain has an owner
+    // For wrapped subdomains, check NameWrapper first
+    try {
+      const subdomainTokenId = BigInt(subdomainNode);
+      const nameWrapperOwner = await publicClient.readContract({
+        address: ENS_CONTRACTS.NameWrapper,
+        abi: NameWrapperABI.abi,
+        functionName: 'ownerOf',
+        args: [subdomainTokenId]
+      }) as `0x${string}`;
+      
+      if (nameWrapperOwner !== '0x0000000000000000000000000000000000000000') {
+        console.log(`✅ Subdomain exists in NameWrapper, owner: ${nameWrapperOwner}`);
+        
+        // Check if the subdomain has a resolver set
+        const resolver = await publicClient.readContract({
+          address: ENS_CONTRACTS.ENSRegistry,
+          abi: [{ name: 'resolver', type: 'function', inputs: [{ name: 'node', type: 'bytes32' }], outputs: [{ name: '', type: 'address' }], stateMutability: 'view' }],
+          functionName: 'resolver',
+          args: [subdomainNode]
+        }) as `0x${string}`;
+        
+        console.log(`🔧 Resolver: ${resolver}`);
+        
+        return { exists: true, owner: nameWrapperOwner, resolver };
+      }
+    } catch (error) {
+      console.log('Subdomain not found in NameWrapper, checking ENS Registry...');
+    }
+    
+    // Fallback: Check ENS Registry directly
     const owner = await publicClient.readContract({
       address: ENS_CONTRACTS.ENSRegistry,
       abi: [{ name: 'owner', type: 'function', inputs: [{ name: 'node', type: 'bytes32' }], outputs: [{ name: '', type: 'address' }], stateMutability: 'view' }],
