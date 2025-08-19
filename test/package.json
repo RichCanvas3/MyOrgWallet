@@ -12,9 +12,11 @@
     "ens:subdomain": "tsx ens-subdomain-test.ts",
     "ens:website": "tsx ens-subdomain-website-test.ts",
     "ens:org-subdomain": "tsx org-subdomain-ownership-test.ts",
+    "ens:register:mainnet": "tsx ens-registration-mainnet-test.ts",
     "nft:transfer": "tsx nft-transfer-test.ts",
     "nft:transfer:mainnet": "tsx nft-transfer-mainnet-test.ts",
-    "mainnet-test": "tsx aa-wallet-simple-mainnet-test.ts",
+    "test:mainnet": "tsx aa-wallet-simple-mainnet-test.ts",
+    "test:biconomy:mainnet": "tsx aa-wallet-simple-biconomy-mainnet-test.ts",
     "build": "tsc",
     "clean": "rm -rf dist"
   },
@@ -30,15 +32,18 @@
   "author": "Your Name",
   "license": "MIT",
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "@types/node": "^20.0.0"
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@biconomy/account": "^4.5.7",
+    "@biconomy/bundler": "^4.1.1",
+    "@biconomy/paymaster": "^4.1.1",
     "@metamask/delegation-toolkit": "^0.11.0",
-    "viem": "^2.31.4",
+    "dotenv": "^16.0.0",
     "permissionless": "^0.2.42",
     "tsx": "^4.0.0",
-    "dotenv": "^16.0.0"
+    "viem": "^2.31.4"
   },
   "engines": {
     "node": ">=18.0.0"
