@@ -40,6 +40,14 @@ export const TEST_CONFIG = {
   subdomainName: process.env.ENS_SUBDOMAIN_NAME || 'subdomain',
   subdomainWebsite: process.env.ENS_SUBDOMAIN_WEBSITE || 'https://example.com',
   ensDuration: parseInt(process.env.ENS_DURATION || '31536000'), // 1 year in seconds
+
+  // Transfer Configuration
+  fromPrivateKey: process.env.FROM_PRIVATE_KEY as `0x${string}` || 
+    '0x1234567890123456789012345678901234567890123456789012345678901234' as `0x${string}`,
+  fromAAAddress: process.env.FROM_AA_ADDRESS as `0x${string}` || 
+    '0x905f406Ad2D097565297980660657Ab9Dca827EA' as `0x${string}`,
+  toAAAddress: process.env.TO_AA_ADDRESS as `0x${string}` || 
+    '0x905f406Ad2D097565297980660657Ab9Dca827EA' as `0x${string}`,
 };
 
 /**
@@ -70,6 +78,10 @@ export function validateConfig(): void {
     errors.push('PRIVATE_KEY environment variable is required');
   }
 
+  if (!process.env.FROM_PRIVATE_KEY) {
+    errors.push('FROM_PRIVATE_KEY environment variable is required');
+  }
+
   if (!process.env.RPC_URL) {
     errors.push('RPC_URL environment variable is required');
   }
@@ -83,6 +95,13 @@ export function validateConfig(): void {
   if (privateKey && (!privateKey.startsWith('0x') || privateKey.length !== 66)) {
     errors.push('PRIVATE_KEY must be a valid 0x-prefixed 64-character hex string');
   }
+
+  const fromPrivateKey = process.env.FROM_PRIVATE_KEY;
+  if (fromPrivateKey && (!fromPrivateKey.startsWith('0x') || fromPrivateKey.length !== 66)) {
+    errors.push('FROM_PRIVATE_KEY must be a valid 0x-prefixed 64-character hex string');
+  }
+
+
 
   // Validate chain ID
   const chainId = parseInt(process.env.CHAIN_ID || '11155111');

@@ -315,6 +315,7 @@ async function main() {
       }
       
       // Try to find an available domain for testing
+      /*
       console.log('🔍 Searching for an available domain for testing...');
       try {
         ensName = await findAvailableDomain(publicClient, 'test');
@@ -325,6 +326,7 @@ async function main() {
         console.error('❌ Could not find an available domain:', error);
         throw new Error(`Domain ${TEST_CONFIG.ensName}.eth is not available and could not find alternative`);
       }
+      */
     }
     
     if (!isAvailable) {
