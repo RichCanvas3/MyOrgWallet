@@ -17,6 +17,7 @@
     "nft:transfer:mainnet": "tsx nft-transfer-mainnet-test.ts",
     "test:mainnet": "tsx aa-wallet-simple-mainnet-test.ts",
     "test:biconomy:mainnet": "tsx aa-wallet-simple-biconomy-mainnet-test.ts",
+    "test:biconomy:nft:transfer": "tsx biconomy-nft-transfer-mainnet-test.ts",
     "build": "tsc",
     "clean": "rm -rf dist"
   },

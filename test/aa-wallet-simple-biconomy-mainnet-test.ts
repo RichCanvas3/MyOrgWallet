@@ -122,29 +122,49 @@ async function main(): Promise<{
       };
     }
 
-    const initCode = await sa.getInitCode();
-    console.log("📍 Init code:", initCode);
-
-    const { wait } = await sa.sendTransaction({
-      to: zeroAddress as `0x${string}`,
-      value: 0n,
-      data: '0x'
-    });
-
-    const {
-      receipt: { transactionHash },
-      success,
-    } = await wait();
-
-    console.log("✅ Smart account contract deployed to mainnet!");
-    console.log("📍 Deployment completed successfully");
+    // Step 5: Deploy the smart account
+    console.log('📤 Deploying smart account...');
     
-    // Step 5: Deploy using no-op transaction
-    console.log('📤 Deploying smart account using no-op transaction...');
+    try {
+      // Use the built-in deploy method which works reliably
+      console.log('🔧 Using deploy() method for deployment...');
+      const deployTx = await sa.deploy();
+      console.log('✅ Smart account deployment transaction sent');
+      
+      // Wait for deployment confirmation
+      const receipt = await deployTx.wait();
+      console.log('✅ Smart account contract deployed to mainnet!');
+      console.log('📍 Deployment completed successfully');
+      console.log(`📍 Transaction hash: ${receipt.transactionHash}`);
+      
+    } catch (deployError) {
+      console.log('⚠️  deploy() method failed:', deployError);
+      console.log('💡 Trying alternative deployment approach...');
+      
+      // Alternative: Try using sendTransaction with init code
+      try {
+        console.log('🔧 Attempting deployment with sendTransaction...');
+        const { wait } = await sa.sendTransaction({
+          to: zeroAddress as `0x${string}`,
+          value: 0n,
+          data: '0x'
+        });
+        
+        const receipt = await wait();
+        console.log('✅ Smart account contract deployed to mainnet!');
+        console.log('📍 Deployment completed successfully');
+        console.log(`📍 Transaction hash: ${receipt.transactionHash}`);
+        
+      } catch (sendError) {
+        throw new Error(`All deployment methods failed. Deploy error: ${deployError}, Send error: ${sendError}`);
+      }
+    }
     
-    // Build a tiny call (no-op write) so the SA deploys on first op.
-    // Example: call zeroAddress with 0 value and empty data – the factory ignores it.
-    
+    console.log('\n🎉 Biconomy Smart Account Deployment Complete!');
+    console.log('✅ Smart account created and deployed successfully');
+    console.log(`📍 Smart account address: ${saAddress}`);
+    console.log('\n⚠️  REMINDER: This ran on Ethereum Mainnet');
+    console.log('   Smart account deployment cost real ETH');
     
     return {
       deployedAddress: saAddress,
