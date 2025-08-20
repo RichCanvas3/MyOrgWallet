@@ -21,38 +21,34 @@ const MAINNET_CONFIG = {
 
 // --- Contract Addresses ---
 const ENS_REGISTRY = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e' as const;
+const REVERSE_REGISTRAR = '0xa58E81fe9b61B5c3fE2AFD33CF304c454AbFc7Cb' as const;
 
 // --- ABIs ---
-const registryAbi = parseAbi([
+const ensRegistryAbi = parseAbi([
   'function resolver(bytes32 node) view returns (address)',
   'function owner(bytes32 node) view returns (address)',
-  'function setResolver(bytes32 node, address resolver)',
 ]);
+
+const reverseRegistrarAbi = parseAbi([
+  'function claim(address owner) returns (bytes32)',
+  'function claimWithResolver(address owner, address resolver) returns (bytes32)',
+  'function setName(string name) returns (bytes32)',
+  'function node(address addr) view returns (bytes32)',
+]);
+
+// --- Helper Functions ---
+/**
+ * Ensures ENS name has .eth suffix
+ */
+function ensureEthSuffix(name: string): string {
+  return name.endsWith('.eth') ? name : `${name}.eth`;
+}
 
 const publicResolverAbi = parseAbi([
   'function setName(bytes32 node, string name)',
   'function name(bytes32 node) view returns (string)',
   'function addr(bytes32 node) view returns (address)',
 ]);
-
-// --- Helper Functions ---
-import { keccak256, hexToBytes, stringToBytes } from 'viem';
-
-function labelhash(label: string): `0x${string}` { 
-  return keccak256(stringToBytes(label)); 
-}
-
-function namehash(name: string): `0x${string}` {
-  let node: `0x${string}` = '0x' + '00'.repeat(32) as `0x${string}`;
-  if (name) {
-    const labels = name.split('.');
-    for (let i = labels.length - 1; i >= 0; i--) {
-      const lh = labelhash(labels[i]);
-      node = keccak256(new Uint8Array([...hexToBytes(node), ...hexToBytes(lh)])) as `0x${string}`;
-    }
-  }
-  return node;
-}
 
 /**
  * Creates a Biconomy smart account client
@@ -88,18 +84,22 @@ async function checkReverseResolution(
   ethAddress: `0x${string}`
 ): Promise<{ isConfigured: boolean; ensName?: string; error?: string; reverseNode?: string }> {
   try {
-    // Calculate the reverse namehash for the ETH address
-    const reverseName = `${ethAddress.slice(2).toLowerCase()}.addr.reverse`;
-    const reverseNode = namehash(reverseName);
+    // Get the reverse node from the Reverse Registrar
+    const reverseNode = await publicClient.readContract({
+      address: REVERSE_REGISTRAR,
+      abi: reverseRegistrarAbi,
+      functionName: 'node',
+      args: [ethAddress],
+    }) as `0x${string}`;
     
     console.log(`🔍 Checking reverse resolution for ${ethAddress}`);
-    console.log(`📍 Reverse name: ${reverseName}`);
     console.log(`📍 Reverse node: ${reverseNode}`);
     
     // Check if there's a resolver set for the reverse node
+    // We need to check the ENS Registry for the resolver, not the Reverse Registrar
     const reverseResolverAddr = await publicClient.readContract({
       address: ENS_REGISTRY,
-      abi: registryAbi,
+      abi: ensRegistryAbi,
       functionName: 'resolver',
       args: [reverseNode],
     }) as `0x${string}`;
@@ -150,112 +150,128 @@ async function setupCompleteReverseResolution(
   try {
     console.log(`🔧 Setting up complete reverse resolution for ${ethAddress} -> ${ensName}`);
     
-    // Calculate the reverse namehash
-    const reverseName = `${ethAddress.slice(2).toLowerCase()}.addr.reverse`;
-    const reverseNode = namehash(reverseName);
+    // Get the reverse node from the Reverse Registrar
+    const reverseNode = await publicClient.readContract({
+      address: REVERSE_REGISTRAR,
+      abi: reverseRegistrarAbi,
+      functionName: 'node',
+      args: [ethAddress],
+    }) as `0x${string}`;
     
-    console.log(`📍 Reverse name: ${reverseName}`);
     console.log(`📍 Reverse node: ${reverseNode}`);
     
     // Step 1: Check current status
     const currentStatus = await checkReverseResolution(publicClient, ethAddress);
     
     if (currentStatus.isConfigured) {
-      console.log('✅ Reverse resolution already configured!');
-      return { success: true, steps: ['Already configured'] };
+      const expectedName = ensureEthSuffix(ensName);
+      if (currentStatus.ensName === expectedName) {
+        console.log('✅ Reverse resolution already configured correctly!');
+        return { success: true, steps: ['Already configured correctly'] };
+      } else {
+        console.log(`⚠️  Reverse resolution exists but needs updating:`);
+        console.log(`   Current: ${currentStatus.ensName}`);
+        console.log(`   Target: ${expectedName}`);
+        console.log(`🔧 Proceeding to update the reverse name...`);
+      }
     }
     
-    // Step 2: Check if we own the reverse node
-    const reverseNodeOwner = await publicClient.readContract({
+    // Step 2: Claim the reverse node with resolver in one transaction (if not already owned)
+    if (!currentStatus.isConfigured) {
+      console.log('🔧 Step 1: Claiming reverse node with resolver...');
+      
+      const claimWithResolverData = encodeFunctionData({
+      abi: reverseRegistrarAbi,
+      functionName: 'claimWithResolver',
+      args: [ethAddress, MAINNET_CONFIG.publicResolver],
+    });
+    
+    console.log(`📍 Claiming reverse node for: ${ethAddress}`);
+    console.log(`📍 Setting resolver to: ${MAINNET_CONFIG.publicResolver}`);
+    console.log(`📍 Encoded data: ${claimWithResolverData}`);
+    
+    let claimReverseNodeTx;
+    try {
+      claimReverseNodeTx = await smartAccount.sendTransaction({
+        to: REVERSE_REGISTRAR,
+        data: claimWithResolverData,
+        value: 0n
+      });
+      console.log('✅ Claim reverse node transaction sent');
+    } catch (error) {
+      console.error('❌ Error claiming reverse node:', error);
+      return { success: false, error: `Failed to claim reverse node: ${error}` };
+    }
+    
+    // Wait for claim transaction
+    console.log('⏳ Waiting for reverse node claim transaction confirmation...');
+    let claimReceipt;
+    try {
+      claimReceipt = await claimReverseNodeTx.wait();
+      
+      if (claimReceipt && typeof claimReceipt === 'object' && 'userOpHash' in claimReceipt) {
+        console.log('✅ Claim reverse node UserOp completed!');
+        console.log(`📍 UserOp Hash: ${claimReceipt.userOpHash}`);
+        console.log(`📍 Success: ${claimReceipt.success}`);
+        
+        if (claimReceipt.success === 'false') {
+          throw new Error(`Claim reverse node UserOp failed: ${claimReceipt.reason || 'Unknown error'}`);
+        }
+      } else {
+        console.log('✅ Claim reverse node transaction confirmed!');
+        console.log(`📍 Transaction hash: ${claimReceipt.transactionHash}`);
+      }
+    } catch (error) {
+      console.error('❌ Error confirming claim transaction:', error);
+      return { success: false, error: `Failed to confirm claim transaction: ${error}` };
+    }
+    
+    // Wait for blockchain state to update
+    console.log('⏳ Waiting for blockchain state to update after claim...');
+    await new Promise(resolve => setTimeout(resolve, 10000));
+    
+    // Verify ownership was transferred
+    const newOwner = await publicClient.readContract({
       address: ENS_REGISTRY,
-      abi: registryAbi,
+      abi: ensRegistryAbi,
       functionName: 'owner',
       args: [reverseNode],
     }) as `0x${string}`;
     
-    console.log(`📍 Reverse node owner: ${reverseNodeOwner}`);
-    console.log(`📍 ETH address: ${ethAddress}`);
-    
-    if (reverseNodeOwner.toLowerCase() !== ethAddress.toLowerCase()) {
-      console.log('⚠️  Reverse node is not owned by the ETH address');
-      console.log('💡 You need to own the reverse node to set up reverse resolution');
-      console.log('   This typically requires claiming the reverse node first');
-      return { 
-        success: false, 
-        error: 'Reverse node not owned by ETH address. Claim the reverse node first.' 
-      };
+    if (newOwner.toLowerCase() !== ethAddress.toLowerCase()) {
+      console.error('❌ Reverse node ownership verification failed after claim');
+      return { success: false, error: 'Reverse node ownership not transferred after claim' };
     }
     
-    console.log('✅ Reverse node ownership verified');
-    
-    // Step 3: Set resolver for the reverse node
-    console.log('🔧 Step 1: Setting resolver for reverse node...');
-    
-    const setResolverData = encodeFunctionData({
-      abi: registryAbi,
-      functionName: 'setResolver',
-      args: [reverseNode, MAINNET_CONFIG.publicResolver],
-    });
-    
-    console.log(`📍 Setting resolver: ${MAINNET_CONFIG.publicResolver}`);
-    console.log(`📍 Encoded data: ${setResolverData}`);
-    
-    let setResolverTx;
-    try {
-      setResolverTx = await smartAccount.sendTransaction({
-        to: ENS_REGISTRY,
-        data: setResolverData,
-        value: 0n
-      });
-      console.log('✅ Set resolver transaction sent');
-    } catch (error) {
-      console.error('❌ Error setting resolver:', error);
-      return { success: false, error: `Failed to set resolver: ${error}` };
+    console.log('✅ Reverse node successfully claimed and ownership verified');
+    console.log('✅ Resolver already set during reverse node claim');
+    } else {
+      console.log('✅ Reverse node already owned, proceeding to update name...');
     }
     
-    // Wait for resolver transaction
-    console.log('⏳ Waiting for resolver transaction confirmation...');
-    let resolverReceipt;
-    try {
-      resolverReceipt = await setResolverTx.wait();
-      
-      if (resolverReceipt && typeof resolverReceipt === 'object' && 'userOpHash' in resolverReceipt) {
-        console.log('✅ Resolver UserOp completed!');
-        console.log(`📍 UserOp Hash: ${resolverReceipt.userOpHash}`);
-        console.log(`📍 Success: ${resolverReceipt.success}`);
-        
-        if (resolverReceipt.success === 'false') {
-          throw new Error(`Resolver UserOp failed: ${resolverReceipt.reason || 'Unknown error'}`);
-        }
-      } else {
-        console.log('✅ Resolver transaction confirmed!');
-        console.log(`📍 Transaction hash: ${resolverReceipt.transactionHash}`);
-      }
-    } catch (error) {
-      console.error('❌ Error confirming resolver transaction:', error);
-      return { success: false, error: `Failed to confirm resolver transaction: ${error}` };
+    // Step 3: Set the name on the resolver
+    if (!currentStatus.isConfigured) {
+      console.log('🔧 Step 2: Setting name on resolver...');
+    } else {
+      console.log('🔧 Step 1: Updating reverse name...');
     }
     
-    // Step 4: Wait for blockchain state to update
-    console.log('⏳ Waiting for blockchain state to update...');
-    await new Promise(resolve => setTimeout(resolve, 10000));
-    
-    // Step 5: Set the name on the resolver
-    console.log('🔧 Step 2: Setting name on resolver...');
+    // Ensure the ENS name includes the .eth suffix
+    const fullEnsName = ensureEthSuffix(ensName);
     
     const setNameData = encodeFunctionData({
-      abi: publicResolverAbi,
+      abi: reverseRegistrarAbi,
       functionName: 'setName',
-      args: [reverseNode, ensName],
+      args: [fullEnsName],
     });
     
-    console.log(`📍 Setting name: ${ensName}`);
+    console.log(`📍 Setting name: ${fullEnsName}`);
     console.log(`📍 Encoded data: ${setNameData}`);
     
     let setNameTx;
     try {
       setNameTx = await smartAccount.sendTransaction({
-        to: MAINNET_CONFIG.publicResolver,
+        to: REVERSE_REGISTRAR,
         data: setNameData,
         value: 0n
       });
@@ -288,25 +304,32 @@ async function setupCompleteReverseResolution(
       return { success: false, error: `Failed to confirm name transaction: ${error}` };
     }
     
-    // Step 6: Verify the setup
-    console.log('🔍 Verifying reverse resolution setup...');
+    // Step 4: Verify the setup
+    if (!currentStatus.isConfigured) {
+      console.log('🔍 Verifying reverse resolution setup...');
+    } else {
+      console.log('🔍 Verifying reverse name update...');
+    }
     await new Promise(resolve => setTimeout(resolve, 5000));
     
     const finalCheck = await checkReverseResolution(publicClient, ethAddress);
     
-    if (finalCheck.isConfigured && finalCheck.ensName === ensName) {
+    if (finalCheck.isConfigured && finalCheck.ensName === fullEnsName) {
       console.log('✅ Reverse resolution setup completed successfully!');
       return { 
         success: true, 
-        steps: [
-          'Set resolver for reverse node',
+        steps: currentStatus.isConfigured ? [
+          'Update reverse name',
+          'Verification passed'
+        ] : [
+          'Claim reverse node with resolver',
           'Set name on resolver',
           'Verification passed'
         ]
       };
     } else {
       console.log('⚠️  Reverse resolution setup may have failed');
-      console.log(`📍 Expected: ${ensName}`);
+      console.log(`📍 Expected: ${fullEnsName}`);
       console.log(`📍 Got: ${finalCheck.ensName || 'Not configured'}`);
       return { 
         success: false, 
@@ -355,10 +378,12 @@ function printMainnetConfig(): void {
   console.log(`   Chain: mainnet (ID: ${MAINNET_CONFIG.chainId})`);
   console.log(`   RPC URL: ${MAINNET_CONFIG.rpcUrl}`);
   console.log(`   Bundler URL: ${MAINNET_CONFIG.bundlerUrl}`);
-  console.log(`   ENS Name: ${MAINNET_CONFIG.ensName}`);
+  console.log(`   ENS Name: ${ensureEthSuffix(MAINNET_CONFIG.ensName)}`);
   console.log(`   ETH Address: ${MAINNET_CONFIG.ethAddress}`);
+  console.log(`   ENS Registry: ${ENS_REGISTRY}`);
   console.log(`   Public Resolver: ${MAINNET_CONFIG.publicResolver}`);
   console.log(`   Owner Private Key: ${MAINNET_CONFIG.ownerPrivateKey ? 'Set' : 'Not set'}`);
+  console.log(`   Reverse Registrar: ${REVERSE_REGISTRAR}`);
   console.log('');
 }
 
@@ -431,14 +456,25 @@ async function main(): Promise<{
     
     if (currentStatus.isConfigured) {
       console.log('✅ Reverse resolution already configured!');
-      return {
-        ensName: MAINNET_CONFIG.ensName,
-        ethAddress: MAINNET_CONFIG.ethAddress,
-        success: true,
-        steps: ['Already configured'],
-        message: 'Reverse resolution already configured',
-        status: 'already_configured'
-      };
+      
+      // Check if the existing name needs updating to include .eth suffix
+      const expectedName = ensureEthSuffix(MAINNET_CONFIG.ensName);
+      if (currentStatus.ensName === expectedName) {
+        console.log(`✅ Reverse resolution is correctly configured with: ${expectedName}`);
+        return {
+          ensName: expectedName,
+          ethAddress: MAINNET_CONFIG.ethAddress,
+          success: true,
+          steps: ['Already configured correctly'],
+          message: 'Reverse resolution already configured correctly',
+          status: 'already_configured'
+        };
+      } else {
+        console.log(`⚠️  Reverse resolution exists but name needs updating:`);
+        console.log(`   Current: ${currentStatus.ensName}`);
+        console.log(`   Expected: ${expectedName}`);
+        console.log(`🔧 Proceeding to update the reverse name...`);
+      }
     }
     
     // Step 5: Set up complete reverse resolution
@@ -455,7 +491,7 @@ async function main(): Promise<{
       console.log(`📍 Steps completed: ${setupResult.steps?.join(', ')}`);
       
       return {
-        ensName: MAINNET_CONFIG.ensName,
+        ensName: ensureEthSuffix(MAINNET_CONFIG.ensName),
         ethAddress: MAINNET_CONFIG.ethAddress,
         success: true,
         steps: setupResult.steps,

@@ -20,6 +20,7 @@
     "test:biconomy:nft:transfer": "tsx biconomy-nft-transfer-mainnet-test.ts",
     "test:biconomy:ens:update": "tsx biconomy-ens-eth-record-update-mainnet-test.ts",
     "test:biconomy:ens:reverse": "tsx biconomy-ens-reverse-resolution-setup-mainnet-test.ts",
+    "test:ens:reverse:lookup": "tsx ens-reverse-name-lookup-mainnet-test.ts",
     "build": "tsc",
     "clean": "rm -rf dist"
   },
