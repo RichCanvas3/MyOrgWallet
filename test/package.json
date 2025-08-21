@@ -21,6 +21,8 @@
     "test:biconomy:ens:update": "tsx biconomy-ens-eth-record-update-mainnet-test.ts",
     "test:biconomy:ens:reverse": "tsx biconomy-ens-reverse-resolution-setup-mainnet-test.ts",
     "test:ens:reverse:lookup": "tsx ens-reverse-name-lookup-mainnet-test.ts",
+    "test:eoa:7702:4337:bundler": "tsx eoa-7702-4337-bundler-test.ts",
+    "test:7702:simple": "tsx 7702-delegation-simple-test.ts",
     "build": "tsc",
     "clean": "rm -rf dist"
   },
