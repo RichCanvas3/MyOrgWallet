@@ -1,13 +1,28 @@
-import { createPublicClient, createWalletClient, http, encodeFunctionData, parseAbi, type PublicClient, type WalletClient, decodeEventLog } from 'viem'
+import { createPublicClient, createWalletClient, http, encodeFunctionData, parseAbi, toHex, type PublicClient, type WalletClient, decodeEventLog } from 'viem'
 import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts'
 import { sepolia } from 'viem/chains'
 import { config } from 'dotenv'
-import { hexToBytes } from 'viem';
-config()
+import { hexToBytes, zeroAddress } from 'viem';
+import {
+  createBundlerClient,
+  createPaymasterClient,
+  UserOperationReceipt,
+} from "viem/account-abstraction";
 
+import { createPimlicoClient } from "permissionless/clients/pimlico";
+import {  
+  toSafeSmartAccount, 
+} from 'permissionless/accounts'
+
+// Removed ENTRYPOINT_ADDRESS_V07 import; using v0.6 EntryPoint set above
+
+config()
 const RPC_URL = process.env.RPC_URL || 'https://rpc.sepolia.org'
-const PRIVATE_KEY = process.env.SEPOLIA_TEST_ACCOUNT_PRIVATE_KEY as `0x${string}`
+const PRIVATE_KEY = (process.env.PRIVATE_KEY || process.env.SEPOLIA_TEST_ACCOUNT_PRIVATE_KEY) as `0x${string}`
 const DELEGATED_CONTRACT_ADDRESS = process.env.DELEGATED_CONTRACT_ADDRESS as `0x${string}`
+const BUNDLER_URL = process.env.BUNDLER_URL
+const PAYMASTER_URL = process.env.PAYMASTER_URL
+
 
 // Optional EIP-7702 authorization pieces from env (fallback if signer cannot signAuthorization)
 const AUTH_CHAIN_ID = process.env.EIP7702_AUTH_CHAIN_ID
@@ -43,8 +58,14 @@ export const abi = parseAbi([
   'event Log(string message)'
 ])
 
+// Minimal EntryPoint ABI (v0.6)
+const entryPointAbi = parseAbi([
+  'function getNonce(address sender, uint192 key) view returns (uint256)',
+  'function getUserOpHash((address sender,uint256 nonce,bytes initCode,bytes callData,uint256 callGasLimit,uint256 verificationGasLimit,uint256 preVerificationGas,uint256 maxFeePerGas,uint256 maxPriorityFeePerGas,bytes paymasterAndData,bytes signature) userOp) view returns (bytes32)'
+])
+
 function validateEnv(): void {
-  if (!PRIVATE_KEY) throw new Error('SEPOLIA_TEST_ACCOUNT_PRIVATE_KEY is required')
+  if (!PRIVATE_KEY) throw new Error('PRIVATE_KEY is required')
   if (!DELEGATED_CONTRACT_ADDRESS) throw new Error('DELEGATED_CONTRACT_ADDRESS is required')
 }
 
@@ -82,23 +103,10 @@ async function main(): Promise<void> {
 
       const delegator = '0x4879fCAe486979B80aE130FE2fa2E3Ab633c7dda'; // your stateless delegator contract
       
-      /*
-      console.log('........... Sending transaction...');
-        const hash = await client.sendTransaction({
-            to: delegator,
-            data: data1,  //encodeFunctionData({ abi, functionName: 'ping' }),
 
-            maxPriorityFeePerGas: 1_000_000_000n,        // 1 gwei
-            maxFeePerGas:        3_000_000_000n,        // 3 gwei
-        });
-
-        console.log('........... Tx hash:', hash);
-        const receipt = await publicClient.waitForTransactionReceipt({ hash });
-    console.log('Receipt:', receipt);
-      */
       const eoa = '0x9cfc7E44757529769A28747F86425C682fE64653' as const;
 
-
+        /*
             
       // 1) Configure auto-forward receiver on the EOA via 7702 call to itself
       const setForwardData = encodeFunctionData({
@@ -135,31 +143,9 @@ async function main(): Promise<void> {
       console.log('Fund (7702) tx:', fundHash);
       const rec = await publicClient.waitForTransactionReceipt({ hash: fundHash });
       console.log('Fund receipt:', rec);
+        */
 
       /*
-      const WRAPPER = '0xA41d7095bb93c17Ef47cE305f5887215359F223c' as const;
-        const EOA     = '0x9cfc7E44757529769A28747F86425C682fE64653' as const;
-
-        const owner = await publicClient.readContract({
-        address: WRAPPER,
-        abi,
-        functionName: 'owner',
-        });
-        console.log({ owner, EOA }); // must match exactly (case-insensitive)
-      */
-      // ABI for your delegator’s ping()
-      
-      //const data = encodeFunctionData({ abi, functionName: 'ping' });
-
-
-      // 2) Now execute a normal call (or send ETH) as before
-      const data = encodeFunctionData({
-        abi: abi,
-        functionName: "execute",
-        args: [recipient, ammont, "0x"],
-      });
-      
-
       const domain = {
         name: 'EIP7702Authorization',
         version: '1',
@@ -195,7 +181,7 @@ async function main(): Promise<void> {
         const yParity = v % 2;
       
       // Build the off-chain 7702 authorization
-      /*
+
       const auth = {
         chainId: BigInt(11155111),
         address: delegator,
@@ -215,20 +201,131 @@ console.log({ balEOA: balEOA.toString(), balRecipient: balRecipient.toString() }
       });
       
 
-      const hash2 = await client.sendTransaction({
-        // IMPORTANT
-        type: 'eip7702',
-        to: eoa,                   // most stateless patterns target the EOA (transient code intercepts)
-        data,
-        authorizationList: [auth],
-        maxPriorityFeePerGas: 1_000_000_000n, // 1 gwei
-        maxFeePerGas:        3_000_000_000n,  // 3 gwei (or estimate & bump)
+      if (BUNDLER_URL) {
+        // Build ERC-4337 UserOperation for delegator as sender
+
+        const bundler = createBundlerClient({
+          transport: http(BUNDLER_URL),
+          paymaster: true,
+          chain: sepolia,
+          paymasterContext: {
+            mode:             'SPONSORED',
+          },
+        });
+
+        const pimlicoClient = createPimlicoClient({
+          transport: http(BUNDLER_URL),
+        });
+
+        const { fast: fee2 } = await pimlicoClient.getUserOperationGasPrice();
+
+        const data = encodeFunctionData({
+          abi: abi,
+          functionName: 'ping',
+        });
+
+
+        const owner = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
+
+
+        console.info("building delegate client")
+        const delegateClient = await toSafeSmartAccount({
+          client: publicClient,
+          owners: [owner], // Array of owners; can add more for multisig
+          entryPoint: {
+            address: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+            version: '0.6',
+          },
+          version: '1.4.1', // Safe account version
+        })
+
+        console.info("sending user operation")
+        const userOpHash = await bundler.sendUserOperation({
+          account: delegateClient,               // the 4337 account (Safe) we built
+          calls: [
+            {
+              to: delegator as `0x${string}`,
+              data: data,
+              value: 0n,
+            },
+          ],
+          ...fee2,
+          // Optional: override gas; if omitted, Pimlico will simulate/fill
+          // maxFeePerGas, maxPriorityFeePerGas, preVerificationGas, verificationGasLimit, callGasLimit
+        });
+        console.info('signed user op: ', userOpHash)
+
+        const receipt = await bundler.waitForUserOperationReceipt({
+          hash: userOpHash
+        });
+        console.info('receipt: ', receipt)
+        console.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  ")
+
+        // Minimal delegate client for wrapped EOA: encodes a single execute(to,value,data)
+        /*
+        const delegateClient: any = {
+          address: eoa as `0x${string}`,
+          entryPoint: { address: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789", version: '0.6' },
+          async encodeCalls(calls: { to: `0x${string}`; data?: `0x${string}`; value?: bigint }[]) {
+            if (calls.length !== 1) throw new Error('Only single call supported');
+            const c = calls[0];
+            return encodeFunctionData({ abi, functionName: 'execute', args: [c.to, c.value ?? 0n, c.data ?? '0x'] });
+          },
+          async getAddress() { return eoa as `0x${string}` },
+          async getNonce() { return await publicClient.readContract({ address: eoa as `0x${string}`, abi, functionName: 'nonce' }) },
+          async signUserOperationHash(hash: `0x${string}`) { return await client.signMessage({ account, message: { raw: hash } }) },
+          async getFactory() { return {} },
+          async getFactoryArgs() { return {} },
+          async getInitCode() { return '0x' },
+          async getStubSignature() {
+            // 65-byte stub signature for gas estimation
+            return ('0x' + '00'.repeat(65 * 2)) as `0x${string}`
+          },
+        };
+        */
+        const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+      const userOpHash2 = await bundler.sendUserOperation({
+        account: delegateClient,
+        calls: [
+          {
+            to: recipient as `0x${string}`,
+            value: ammont,
+            data: '0x',
+          },
+        ],
+
+        ...fee
+
       });
 
+        console.log('UserOperation hash:', userOpHash2)
+        const txHash = await bundler.request({
+          method: 'eth_getUserOperationReceipt',
+          params: [userOpHash2]
+        })
 
-    console.log('........... Tx hash2:', hash2);
-    const receipt2   = await publicClient.waitForTransactionReceipt({ hash: hash2 });
-    console.log('Receipt2:', receipt2)  ;
+        console.log('Bundler tx hash:', txHash)
+      } else {
+
+        const data = encodeFunctionData({
+          abi: abi,
+          functionName: "execute",
+          args: [recipient, ammont, "0x"],
+        });
+        
+        const hash2 = await client.sendTransaction({
+          // IMPORTANT
+          type: 'eip7702',
+          to: eoa,                   // most stateless patterns target the EOA (transient code intercepts)
+          data,
+          authorizationList: [auth],
+          maxPriorityFeePerGas: 1_000_000_000n, // 1 gwei
+          maxFeePerGas:        3_000_000_000n,  // 3 gwei (or estimate & bump)
+        });
+        console.log('........... Tx hash2:', hash2);
+        const receipt2   = await publicClient.waitForTransactionReceipt({ hash: hash2 });
+        console.log('Receipt2:', receipt2);
+      }
 }
 
 main().catch((err) => { console.error('❌ Test failed:', err); process.exit(1) })
