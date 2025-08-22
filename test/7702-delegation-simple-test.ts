@@ -17,10 +17,29 @@ const AUTH_Y_PARITY = process.env.EIP7702_AUTH_Y_PARITY
 const AUTH_R = process.env.EIP7702_AUTH_R as `0x${string}` | undefined
 const AUTH_S = process.env.EIP7702_AUTH_S as `0x${string}` | undefined
 
-// Updated ABI to match the provided Delegation contract
-const DelegatedAbi = parseAbi([
-  'function initialize()',
+// ABI for ERC4337Wrapper
+export const abi = parseAbi([
+  'function implementationAddress() view returns (address)',
+  'function nonce() view returns (uint256)',
+  'function authorizedDelegates(address) view returns (bool)',
+  'function forwardReceiver() view returns (address)',
+  'function authorizeDelegate(address delegate)',
+  'function revokeDelegate(address delegate)',
+  'function setForwardReceiver(address receiver)',
+  'function clearForwardReceiver()',
+  'function execute(address target, uint256 value, bytes data)',
+  'function executeWithSignature(address target, uint256 value, bytes data, bytes signature)',
+  'function executeBatch(address[] targets, uint256[] values, bytes[] datas)',
+  'function forward(address to, uint256 amount)',
+  'function withdraw(uint256 amount)',
   'function ping()',
+  'function debugWho() view returns (address msgSender, address self, bool auth)',
+  'event DelegateAuthorized(address indexed delegate)',
+  'event DelegateRevoked(address indexed delegate)',
+  'event TransactionExecuted(address indexed target, uint256 value, bytes data)',
+  'event EIP7702DelegationReceived(address indexed from, uint256 value)',
+  'event AutoForwardReceiverSet(address indexed receiver)',
+  'event AutoForwarded(address indexed from, address indexed to, uint256 amount)',
   'event Log(string message)'
 ])
 
@@ -51,12 +70,23 @@ async function main(): Promise<void> {
         transport: http(RPC_URL)
       });
 
-      const abi = [{ type:'function', name:'ping', stateMutability:'nonpayable', inputs:[], outputs:[] }];
+      const ammont = 100n
+      const recipient = '0x8272226863aACD003975B5C497E366c14D009605'
+      // Ensure forward receiver is an EOA (accepts ETH). If recipient is a contract, use burn EOA.
+      const codeAtRecipient = await publicClient.getCode({ address: recipient as `0x${string}` });
+      const receiverEoa = (codeAtRecipient === '0x'
+        ? (recipient as `0x${string}`)
+        : ('0x000000000000000000000000000000000000dEaD' as const));
 
+
+
+      const delegator = '0x4879fCAe486979B80aE130FE2fa2E3Ab633c7dda'; // your stateless delegator contract
+      
+      /*
       console.log('........... Sending transaction...');
         const hash = await client.sendTransaction({
-            to: '0xC7A4F4Df76393387b8e74E65e185d8A9fad2e8D8',
-            data: encodeFunctionData({ abi, functionName: 'ping' }),
+            to: delegator,
+            data: data1,  //encodeFunctionData({ abi, functionName: 'ping' }),
 
             maxPriorityFeePerGas: 1_000_000_000n,        // 1 gwei
             maxFeePerGas:        3_000_000_000n,        // 3 gwei
@@ -65,14 +95,70 @@ async function main(): Promise<void> {
         console.log('........... Tx hash:', hash);
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
     console.log('Receipt:', receipt);
-      
+      */
       const eoa = '0x9cfc7E44757529769A28747F86425C682fE64653' as const;
-      const delegator = '0xC7A4F4Df76393387b8e74E65e185d8A9fad2e8D8'; // your stateless delegator contract
-      
+
+
+            
+      // 1) Configure auto-forward receiver on the EOA via 7702 call to itself
+      const setForwardData = encodeFunctionData({
+        abi,
+        functionName: 'setForwardReceiver',
+        args: [receiverEoa],
+      });
+      const authSet = await client.signAuthorization({ contractAddress: delegator });
+      const txSet = await client.sendTransaction({
+        type: 'eip7702',
+        to: eoa,
+        data: setForwardData,
+        authorizationList: [authSet],
+        maxPriorityFeePerGas: 1_000_000_000n,
+        maxFeePerGas:        3_000_000_000n,
+      });
+      console.log('SetForwardReceiver tx:', txSet);
+      const setReceipt = await publicClient.waitForTransactionReceipt({ hash: txSet });
+      console.log('SetForwardReceiver receipt:', setReceipt);
+
+
+
+      // Simple funding transfer to the EOA under 7702 (triggers receive() auto-forward)
+      const fundAmount = 100_000_000_000_000n; // 0.0001 ETH
+      const fundAuth = authSet; // reuse same delegator authorization
+      const fundHash = await client.sendTransaction({
+        type: 'eip7702',
+        to: eoa,
+        value: fundAmount,
+        authorizationList: [fundAuth],
+        maxPriorityFeePerGas: 1_000_000_000n,
+        maxFeePerGas:        3_000_000_000n,
+      });
+      console.log('Fund (7702) tx:', fundHash);
+      const rec = await publicClient.waitForTransactionReceipt({ hash: fundHash });
+      console.log('Fund receipt:', rec);
+
+      /*
+      const WRAPPER = '0xA41d7095bb93c17Ef47cE305f5887215359F223c' as const;
+        const EOA     = '0x9cfc7E44757529769A28747F86425C682fE64653' as const;
+
+        const owner = await publicClient.readContract({
+        address: WRAPPER,
+        abi,
+        functionName: 'owner',
+        });
+        console.log({ owner, EOA }); // must match exactly (case-insensitive)
+      */
       // ABI for your delegator’s ping()
       
-      const data = encodeFunctionData({ abi, functionName: 'ping' });
+      //const data = encodeFunctionData({ abi, functionName: 'ping' });
 
+
+      // 2) Now execute a normal call (or send ETH) as before
+      const data = encodeFunctionData({
+        abi: abi,
+        functionName: "execute",
+        args: [recipient, ammont, "0x"],
+      });
+      
 
       const domain = {
         name: 'EIP7702Authorization',
@@ -108,7 +194,8 @@ async function main(): Promise<void> {
         const v = sigBytes[64];
         const yParity = v % 2;
       
-      // Build the off-chain 7702 authorization (shape varies by lib; placeholder values below):
+      // Build the off-chain 7702 authorization
+      /*
       const auth = {
         chainId: BigInt(11155111),
         address: delegator,
@@ -117,6 +204,15 @@ async function main(): Promise<void> {
         r,
         s,
       };
+      */
+
+      const balEOA = await publicClient.getBalance({ address: eoa });
+const balRecipient = await publicClient.getBalance({ address: recipient });
+console.log({ balEOA: balEOA.toString(), balRecipient: balRecipient.toString() });
+
+      const auth = await client.signAuthorization({
+        contractAddress: delegator, // deployed ERC4337MultiEOAWrapper
+      });
       
 
       const hash2 = await client.sendTransaction({
