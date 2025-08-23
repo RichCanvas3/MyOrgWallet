@@ -1,13 +1,21 @@
 import { createPublicClient, createWalletClient, http, encodeFunctionData, parseAbi, toHex, type PublicClient, type WalletClient, decodeEventLog } from 'viem'
 import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts'
+import {
+  createBundlerClient,
+  bundlerActions,
+  paymasterActions,
+  entryPoint07Address,
+  createPaymasterClient,           // pass an explicit paymaster instead of `paymaster: true`
+} from "viem/account-abstraction";
+import { smartAccountActions } from 'permissionless'
+import { pimlicoActions } from 'permissionless/actions/pimlico'
+
 import { sepolia } from 'viem/chains'
 import { config } from 'dotenv'
 import { hexToBytes, zeroAddress } from 'viem';
-import {
-  createBundlerClient,
-  createPaymasterClient,
-  UserOperationReceipt,
-} from "viem/account-abstraction";
+
+
+
 
 import { createPimlicoClient } from "permissionless/clients/pimlico";
 import {  
@@ -85,7 +93,7 @@ async function main(): Promise<void> {
     const pending = await publicClient.getTransactionCount({ address: addr, blockTag: 'pending' });
     console.log({ latest, pending });
 
-    const client = createWalletClient({
+      const client = createWalletClient({
         account: account,
         chain: sepolia,
         transport: http(RPC_URL)
@@ -193,8 +201,8 @@ async function main(): Promise<void> {
       */
 
       const balEOA = await publicClient.getBalance({ address: eoa });
-const balRecipient = await publicClient.getBalance({ address: recipient });
-console.log({ balEOA: balEOA.toString(), balRecipient: balRecipient.toString() });
+      const balRecipient = await publicClient.getBalance({ address: recipient });
+      console.log({ balEOA: balEOA.toString(), balRecipient: balRecipient.toString() });
 
       const auth = await client.signAuthorization({
         contractAddress: delegator, // deployed ERC4337MultiEOAWrapper
@@ -206,26 +214,33 @@ console.log({ balEOA: balEOA.toString(), balRecipient: balRecipient.toString() }
 
         const bundler = createBundlerClient({
           transport: http(BUNDLER_URL),
-          paymaster: true,
           chain: sepolia,
-          paymasterContext: {
-            mode:             'SPONSORED',
-          },
-        });
+        })
+        .extend(bundlerActions)
+        .extend(paymasterActions)
+        //.extend(pimlicoActions({ entryPoint: { address: entryPoint07Address, version: "0.7" } }));
 
-        const pimlicoClient = createPimlicoClient({
-          transport: http(BUNDLER_URL),
-        });
+        //const pimlicoClient = createPimlicoClient({
+        //  transport: http(BUNDLER_URL),
+        //});
 
-        const { fast: fee2 } = await pimlicoClient.getUserOperationGasPrice();
+        //const { fast: fee2 } = await pimlicoClient.getUserOperationGasPrice();
 
         const data = encodeFunctionData({
           abi: abi,
           functionName: 'ping',
         });
 
+        const execData = encodeFunctionData({
+          abi: abi,
+          functionName: "execute",
+          args: [delegator as `0x${string}`, 0n, data],
+        });
+
+
 
         const owner = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
+
 
 
         console.info("building delegate client")
@@ -233,26 +248,46 @@ console.log({ balEOA: balEOA.toString(), balRecipient: balRecipient.toString() }
           client: publicClient,
           owners: [owner], // Array of owners; can add more for multisig
           entryPoint: {
-            address: "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
-            version: '0.6',
+            address: entryPoint07Address,
+            version: '0.7',
           },
           version: '1.4.1', // Safe account version
         })
 
-        console.info("sending user operation")
-        const userOpHash = await bundler.sendUserOperation({
-          account: delegateClient,               // the 4337 account (Safe) we built
-          calls: [
-            {
-              to: delegator as `0x${string}`,
-              data: data,
-              value: 0n,
-            },
-          ],
-          ...fee2,
-          // Optional: override gas; if omitted, Pimlico will simulate/fill
-          // maxFeePerGas, maxPriorityFeePerGas, preVerificationGas, verificationGasLimit, callGasLimit
+        console.info("preparing user operation")
+        const paymasterClient = createPaymasterClient({
+          transport: http(PAYMASTER_URL),
         });
+
+        const prepared = await bundler.prepareUserOperation(
+          {
+            account: delegateClient,
+            calls: [{ to: delegator as `0x${string}`, data: execData, value: 0n }],
+            entryPoint: {
+              address: entryPoint07Address,
+              version: '0.7',
+            },
+            paymaster: paymasterClient,
+            paymasterContext: {
+              mode: 'SPONSORED',
+            },
+            
+          }
+        );
+        console.info("sponsoring user operation")
+        prepared.maxFeePerGas        = fee2.maxFeePerGas;
+        prepared.maxPriorityFeePerGas = fee2.maxPriorityFeePerGas;
+
+        
+        const sponsored = await bundler.sponsorUserOperation({
+          userOperation: prepared,
+          // sponsorshipPolicyId: "your-policy-id",
+        })
+        prepared.paymasterAndData = sponsored.paymasterAndData
+
+        console.info("sending user operation")
+        prepared.signature = await (delegateClient as any).signUserOperation(prepared as any)
+        const userOpHash = await bundler.sendUserOperation(prepared as any);
         console.info('signed user op: ', userOpHash)
 
         const receipt = await bundler.waitForUserOperationReceipt({
