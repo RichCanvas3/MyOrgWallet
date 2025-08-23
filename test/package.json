@@ -24,6 +24,8 @@
     "test:eoa:7702:4337:bundler": "tsx eoa-7702-4337-bundler-test.ts",
     "test:7702:simple": "tsx 7702-delegation-simple-test.ts",
     "test:7702:metamask": "tsx metamask-eip7702-smart-account-test.ts",
+    "ens:eoa:register": "tsx ens-registration-eoa-test.ts",
+    "ens:eoa:nft:transfer": "tsx ens-nft-wrapper-eoa-test.ts",
     "build": "tsc",
     "clean": "rm -rf dist"
   },

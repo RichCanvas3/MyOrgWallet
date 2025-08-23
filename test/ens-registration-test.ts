@@ -50,7 +50,7 @@ const ENS_REGISTRY_ABI = [
 // ENS Contract Addresses (Sepolia)
 const ENS_CONTRACTS = {
   ETHRegistrarController: '0xfb3cE5D01e0f33f41DbB39035dB9745962F1f968' as `0x${string}`,
-  PublicResolver: '0x8FADE66B79cC9f707aB26799354482EB93a5B7dD' as `0x${string}`,
+  PublicResolver: '0xE99638b40E4Fff0129D56f03b55b6bbC4BBE49b5' as `0x${string}`,
   ENSRegistry: '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e' as `0x${string}`,
 };
 
