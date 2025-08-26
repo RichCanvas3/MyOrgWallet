@@ -38,7 +38,9 @@
 
 ## 📋 Overview
 
-**MyOrgWallet** is a cutting-edge Web3 digital wallet designed for organizations, empowering seamless and secure interactions in decentralized ecosystems. Built with modern blockchain technology and AI-driven management, it provides comprehensive organizational wallet solutions with advanced security and compliance features.
+MyOrgWallet (OrgTrust.eth) is an organizational identity and trust management platform for decentralized and agentic AI ecosystems. Rather than a traditional wallet, it is an application that enables organizations to prove who they are, manage their credentials, link their assets, and publish attestations that build verifiable trust.
+
+MyOrgWallet empowers organizations to establish OrgTrust as a first-class identity layer for Web3 commerce, compliance, and AI-driven agentic marketplaces.
 
 ✨ Key Features
 
