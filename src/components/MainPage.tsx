@@ -1127,15 +1127,15 @@ What would you like to do today?`;
       console.log('Processing message:', message);
       console.log('Processed string:', str);
 
+      
       if (str.includes("ens_registration") || str.includes("ens_verification") && orgAccountClient && chain) {
         console.log('process ens verification');
         setIsAddEnsRecordModalVisible(true);
         setExistingEnsNameForUpdate('');
         // Remove the immediate ENS registration call - it will be handled by the modal
         addMessage(Role.Assistant, MessageType.Normal, `Opening ENS registration modal...`, '', fileDataRef, sendMessage);
-      } else if (str.includes("ens_subdomain_registration") || str.includes("ens_subdomain_verification") && orgAccountClient && chain) {
-        console.log('process ens subdomain creation');
-        
+      } 
+      else if (str.includes("ens_subdomain_registration") || str.includes("ens_subdomain_verification") && orgAccountClient && chain) {        
         // Get attestation from entities for entityid "ens(org)" and get name
         const ensAttestation = AttestationService.getAttestationById(entities || [], "ens(org)", true);
         let ensName = '';

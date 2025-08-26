@@ -443,7 +443,7 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
         chain
       );
       
-      console.log(`✅ Subdomain created successfully: ${result}`);
+      console.log(`✅ Domain created successfully: ${result}`);
       console.log('='.repeat(60));
       
       setSuccess(`Subdomain "${result}" created successfully!`);
@@ -456,8 +456,8 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
         onRefresh();
       }
     } catch (error) {
-      console.error('Error creating subdomain:', error);
-      setError(error instanceof Error ? error.message : 'Failed to create subdomain');
+      console.error('Error creating domain:', error);
+      setError(error instanceof Error ? error.message : 'Failed to create domain');
     } finally {
       setIsCreatingSubdomain(false);
     }
@@ -505,7 +505,7 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
             {/* Header */}
             <div className="modal-header">
               <h1 className="modal-title">
-                Create ENS Subdomain
+                Create ENS Domain
               </h1>
               <button onClick={handleClose} className="close-button">
                 <XMarkIcon className="close-icon" aria-hidden="true" />
@@ -606,7 +606,7 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
               {!success && isParentWrapped && (
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="subtitle1" fontWeight="medium" mb={2} sx={{ color: '#000000' }}>
-                    Proposed Subdomain
+                    Proposed Domain
                   </Typography>
                   
 
@@ -614,10 +614,10 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
                   {/* Subdomain Display */}
                   <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
                     <Typography variant="body2" sx={{ color: '#333333' }} gutterBottom>
-                      Subdomain Name:
+                    Domain Name:
                     </Typography>
                     <Typography variant="h6" fontWeight="medium" sx={{ mb: 1, color: '#000000' }}>
-                      {subdomainName || 'Enter subdomain name'}
+                      {subdomainName || 'Enter domain name'}
                     </Typography>
                     
                     {/* Full Domain Display */}
@@ -638,11 +638,11 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
                       </Box>
                     ) : subdomainStatus === 'available' ? (
                       <Alert severity="success" sx={{ mb: 2 }}>
-                        ✅ Subdomain is available
+                        ✅ Domain is available
                       </Alert>
                     ) : subdomainStatus === 'exists' ? (
                       <Alert severity="success" sx={{ mb: 2 }}>
-                        ✅ Subdomain already exists
+                        ✅ Domain already exists
                       </Alert>
                     ) : null}
                   </Box>
@@ -659,10 +659,10 @@ const AddEnsSubdomainRecordModal: React.FC<AddEnsSubdomainRecordModalProps> = ({
                       {isCreatingSubdomain ? (
                         <>
                           <CircularProgress size={20} sx={{ mr: 1 }} />
-                          Creating Subdomain...
+                          Creating Domain...
                         </>
                       ) : (
-                        'Create Subdomain'
+                        'Create Domain'
                       )}
                     </Button>
                   ) : (

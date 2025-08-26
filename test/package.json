@@ -25,7 +25,9 @@
     "test:7702:simple": "tsx 7702-delegation-simple-test.ts",
     "test:7702:metamask": "tsx metamask-eip7702-smart-account-test.ts",
     "ens:eoa:register": "tsx ens-registration-eoa-test.ts",
-    "ens:eoa:nft:transfer": "tsx ens-nft-wrapper-eoa-test.ts",
+    "ens:eoa:nft:wrapper": "tsx ens-nft-wrapper-eoa-test.ts",
+    "ens:eoa:nft:transfer": "tsx metamask-ens-nft-transfer-eip7702-paymaster-test.ts",
+    "aa:owner": "tsx aa-owner-test.ts",
     "build": "tsc",
     "clean": "rm -rf dist"
   },

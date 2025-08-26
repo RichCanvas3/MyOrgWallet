@@ -1,4 +1,4 @@
-# 🏢 MyOrgWallet Web Application
+# 🏢 MyOrgWallet (OrgTrust.eth) Web Application
 
 <div align="center">
 
@@ -7,9 +7,8 @@
 ![Web3](https://img.shields.io/badge/Web3-F16822?style=for-the-badge&logo=web3.js&logoColor=white)
 ![Ethereum](https://img.shields.io/badge/Ethereum-3C3C3D?style=for-the-badge&logo=Ethereum&logoColor=white)
 ![MetaMask](https://img.shields.io/badge/MetaMask-FF6B35?style=for-the-badge&logo=MetaMask&logoColor=white)
-![USDC](https://img.shields.io/badge/USDC-2775CA?style=for-the-badge&logo=circle&logoColor=white)
-![CCTP](https://img.shields.io/badge/CCTP%20v2-000000?style=for-the-badge&logo=circle&logoColor=white)
-![LiFi](https://img.shields.io/badge/LiFi-000000?style=for-the-badge&logo=circle&logoColor=white)
+![LangChain](https://www.langchain.com/)
+
 
 **🚀 The Future of Organizational Digital Wallets and building Trust**  
 *Empowering seamless and secure Web3 interactions for organizations*
@@ -41,18 +40,51 @@
 
 **MyOrgWallet** is a cutting-edge Web3 digital wallet designed for organizations, empowering seamless and secure interactions in decentralized ecosystems. Built with modern blockchain technology and AI-driven management, it provides comprehensive organizational wallet solutions with advanced security and compliance features.
 
-### ✨ Key Features
+✨ Key Features
 
-- 🤖 **Smart Agentic AI Driven Management** - OpenAI and LangChain powered assistant
-- 🏦 **Organization Chart-of-Accounts (CoA)** - Complete financial management
-- 🔐 **Advanced Security** - Account Abstraction (ERC-4337) with delegation controls
-- 📜 **Verifiable Credentials** - W3C compliant digital identity management
-- 🌐 **Cross-Chain Support** - Multi-chain operations with CCTP v2 and LiFi
-- 🎯 **KYB Compliance** - Know-Your-Business verification framework leveraging MetaMask Card verification
+🏢 Organization Identity – Seamless Web3 onboarding and on-chain digital identity (ENS, DIDs, Verifiable Credentials, Attestations, and ZKPs) for organizations.
+
+🤖 Agentic AI Management – OpenAI + LangChain powered assistant to manage onboarding, attestations, and financial flows.
+
+🏦 Organization Chart-of-Accounts (CoA) – Map traditional finance (assets, liabilities, cards) to on-chain smart accounts.
+
+🔐 Delegated Security – Account Abstraction (ERC-4337) with MetaMask Delegation Toolkit for granular access control.
+
+📜 Verifiable Credentials – W3C-compliant, fraud-proof credentials issued directly to smart accounts and managed via Snap integrations.
+
+🌐 Cross-Chain Operations – Seamless multi-chain USDC flows (CCTP v2, LiFi bridging).
+
+🎯 KYB Compliance – Organizational verification via MetaMask Card checks, DNS/ENS proofs, and public attestations.
 
 ---
 
 ## 🎯 Core Capabilities
+
+### Organization Identity
+
+The heart of MyOrgWallet is the ability to create and prove an Organization Identity that is both user-friendly and cryptographically secure:
+
+Web3Auth Onboarding – Social login to bootstrap an EOA and linked smart account (no ETH required).
+
+Smart Account Identity – Every organization has an Account Abstraction (AA) smart wallet as its root identity.
+
+Decentralized Identifiers (DIDs) – Each AA is assigned a DID (did:aa, did:key, did:web), verifiable on-chain and across registries.
+
+ENS Integration – Register ENS names for organizations (including wrapped NFTs and subdomains). Preparing for ENS v2 multi-chain naming.
+
+DNS / Web Proofs – Link corporate domains to on-chain identity using .well-known/did-configuration.
+
+Verifiable Credentials – Issue and store org credentials (formation docs, leadership roles, licenses) in MetaMask Snap.
+
+Attestations & ZKPs – Publish attestations on Optimism / Linea (EAS, Verax) with optional ZKP proofs for compliance and reputation.
+
+DIDComm Messaging – Secure peer-to-peer agent communication leveraging org DIDs for A2A trust exchange.
+
+| Feature | Description | Networks |
+|---------|-------------|----------|
+| [Social Web3 Onboarding](https://odysee.com/MyOrgWallet-Web3Auth-Onboarding:4) | Simple EOA and Org Account Abstraction (AA) | Ethereum Sepolia |
+| [ENS Domain registration (no user eth required)](https://odysee.com/OrgTrustENS2:5) | Simple ENS registration hooked to AA, Wrapped NFT | Ethereum Sepolia |
+| [Decentralized Identifier](https://github.com/RichCanvas3/mcp-aa-did) | veramo foundation sdk leveraging did:key, did:aa  | Veramo |
 
 ### Organization Trust Score
 
