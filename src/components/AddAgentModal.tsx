@@ -5,13 +5,13 @@ import AttestationService, { attestationsEmitter, type AttestationChangeEvent } 
 import type { Attestation } from '../models/Attestation';
 
 interface AddAgentModalProps {
-  open: boolean;
+  isVisible: boolean;
   onClose: () => void;
-  orgDid: string;
-  indivDid: string;
+  orgDid?: string;
+  indivDid?: string;
 }
 
-const AddAgentModal: React.FC<AddAgentModalProps> = ({ open, onClose, orgDid, indivDid }) => {
+const AddAgentModal: React.FC<AddAgentModalProps> = ({ isVisible, onClose, orgDid, indivDid }) => {
   const { chain, signatory } = useWallectConnectContext();
   const [domain, setDomain] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -51,7 +51,7 @@ const AddAgentModal: React.FC<AddAgentModalProps> = ({ open, onClose, orgDid, in
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog open={isVisible} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>Add Agent</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>

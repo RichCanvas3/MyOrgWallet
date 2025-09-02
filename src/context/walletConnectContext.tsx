@@ -645,13 +645,6 @@ export const useWalletConnect = () => {
           const storedOrgAddress = localStorage.getItem('myorgwallet_orgAccountAddress');
           const storedIndivAddress = localStorage.getItem('myorgwallet_indivAccountAddress');
 
-          console.info("Attempting to recover account clients from stored addresses:", {
-            storedOrgAddress,
-            storedIndivAddress
-          });
-
-          console.info("signatory: ", signatory)
-
           if (storedIndivAddress && publicClient && signatory) {
             try {
               const recoveredIndivClient = await toMetaMaskSmartAccount({
@@ -660,7 +653,6 @@ export const useWalletConnect = () => {
                 implementation: Implementation.Hybrid,
                 signatory: signatory,
               });
-              console.info("Successfully recovered indiv account client");
               setIndivAccountClientWithPersistence(recoveredIndivClient);
             } catch (error) {
               console.error("Failed to recover indiv account client:", error);
@@ -675,7 +667,6 @@ export const useWalletConnect = () => {
                 implementation: Implementation.Hybrid,
                 signatory: signatory,
               });
-              console.info("Successfully recovered org account client");
               setOrgAccountClientWithPersistence(recoveredOrgClient);
             } catch (error) {
               console.error("Failed to recover org account client:", error);
@@ -732,14 +723,8 @@ export const useWalletConnect = () => {
             let localIndivAddress: `0x${string}` | undefined = await indivAccountClient.getAddress() as `0x${string}`
             let localIndivDid : string | undefined = 'did:pkh:eip155:' + chain?.id + ':' + indivAccountClient.address
 
-            console.info("Created localIndivDid:", localIndivDid);
-            console.info("Looking for existing attestations...");
-
             const orgIndivAttestation = await AttestationService.getOrgIndivAttestation(chain, localIndivDid, AttestationService.OrgIndivSchemaUID, "org-indiv(org)");
             const indivAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, localIndivDid, AttestationService.IndivSchemaUID, "indiv(indiv)", "")
-
-            console.info("Found org-indiv attestation:", !!orgIndivAttestation);
-            console.info("Found indiv attestation:", !!indivAttestation);
 
             if (indivAttestation) {
               // Only set name from attestation if we don't already have a manually set name
@@ -821,7 +806,6 @@ export const useWalletConnect = () => {
               // setup delegation for org to issuer -> redelegation of orgIndivDel
               try {
                 orgBurnerDel = await DelegationService.getDelegationFromStorage("relationship", ownerEOAAddress, orgAccountClient.address, burnerAccountClient.address)
-                console.info("Loaded org burner delegation:", !!orgBurnerDel);
               }
               catch (error) {
                 console.error("Error loading org burner delegation:", error);
@@ -865,7 +849,6 @@ export const useWalletConnect = () => {
             if (indivAccountClient) {
               try {
                 indivBurnerDel = await DelegationService.getDelegationFromStorage("relationship", ownerEOAAddress, indivAccountClient.address, burnerAccountClient.address)
-                console.info("Loaded indiv burner delegation:", !!indivBurnerDel);
               }
               catch (error) {
                 console.error("Error loading indiv burner delegation:", error);
@@ -929,10 +912,7 @@ export const useWalletConnect = () => {
             }
 
             // cycle through savings accounts and add burner account abstraction to each
-            console.info("Checking configuration:", { localOrgDid, localIndivDid, indivAccountClient: !!indivAccountClient });
-
             if (localOrgDid && localIndivDid && indivAccountClient) {
-              console.info("All required components found, loading accounts...");
               const accounts = await AttestationService.loadIndivAccounts(chain, localOrgDid, localIndivDid, "1110");
               for (const account of accounts) {
 
@@ -994,7 +974,6 @@ export const useWalletConnect = () => {
                 try {
                   const recoveredIndivClient = await findValidIndivAccount(owner, signatory, publicClient);
                   if (recoveredIndivClient) {
-                    console.info("Successfully recovered indivAccountClient");
                     setIndivAccountClient(recoveredIndivClient);
                     setIsIndividualConnected(true);
                     setIsConnectionComplete(true);
@@ -1251,7 +1230,6 @@ export const useWalletConnect = () => {
             let orgIndivAttestation;
             if (indivDid) {
               orgIndivAttestation = await AttestationService.getOrgIndivAttestation(chain, indivDid, AttestationService.OrgIndivSchemaUID, "org-indiv(org)");
-              console.info("Found org-indiv attestation:", !!orgIndivAttestation);
             } else {
               console.info("No indivDid available, skipping org-indiv attestation lookup");
             }

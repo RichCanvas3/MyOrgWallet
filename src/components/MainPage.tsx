@@ -223,7 +223,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
   // LinkedIn progress update handlers
   const handleLinkedinProgressUpdate = (step: number, message: string, status?: string) => {
-    console.log(`LinkedIn Progress - Step ${step}: ${message}`);
     if (status) {
       console.log(`Status: ${status}`);
     }
@@ -239,26 +238,12 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   };
 
   const handleLinkedinVerificationComplete = () => {
-    console.log("LinkedIn verification completed successfully!");
-
     // Update the modal to show completion
     if (isLinkedinModalVisible) {
       window.dispatchEvent(new CustomEvent('linkedin-verification-complete'));
     }
   };
 
-  // Debug modal states
-  useEffect(() => {
-    console.log('Modal states changed:', {
-      linkedin: isLinkedinModalVisible,
-      x: isXModalVisible,
-      shopify: isShopifyModalVisible,
-      stateRegistration: isStateRegistrationModalVisible,
-      emailVerification: isEmailVerificationModalVisible,
-      website: isWebsiteModalVisible,
-      insurance: isInsuranceModalVisible
-    });
-  }, [isLinkedinModalVisible, isXModalVisible, isShopifyModalVisible, isStateRegistrationModalVisible, isEmailVerificationModalVisible, isWebsiteModalVisible, isInsuranceModalVisible]);
 
   // Refresh callbacks for sections
   const handleRefreshAttestations = () => {
@@ -358,7 +343,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
       await AttestationService.setEntityAttestations(chain, orgDid, indivDid, currentWalletAddress).then((ents) => {
 
         if (ents != undefined) {
-          console.log("ents: ", ents)
+          //console.log("ents: ", ents)
           setEntities(ents)
           for (const entity of ents) {
             if (entity.name == "org(org)" && entity.attestation) {
@@ -366,7 +351,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
               orgname = safeJsonStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == "domain(org)") {
-              console.log('domain here!!!!!')
               domain = safeJsonStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == "ens(org)") {
               ens_registration = safeJsonStringify(entity.attestation as OrgAttestation)
@@ -398,7 +382,6 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
               orgIndiv_org = safeJsonStringify(entity.attestation as OrgAttestation)
               orgname = safeJsonStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == "domain(org)") {
-              console.log('domain here!!!!!')
               domain = safeJsonStringify(entity.attestation as OrgAttestation)
             } else if (entity.name == "ens(org)") {
               ens_registration = safeJsonStringify(entity.attestation as OrgAttestation)
@@ -1209,7 +1192,7 @@ What would you like to do today?`;
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Deletion Modal.....', '', fileDataRef, sendMessage);
       } else if (str.includes("add_agent")) {
         setAddAgentModalVisible(true);
-        addMessage(Role.Assistant, MessageType.Normal, 'Opening Deletion Modal.....', '', fileDataRef, sendMessage);
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening Add Agent Modal.....', '', fileDataRef, sendMessage);
       }else if (str.includes('create_did')) {
         setCreateWebDidModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Web DID Modal....', '', fileDataRef, sendMessage);
@@ -1502,8 +1485,8 @@ What would you like to do today?`;
         actionMessage="delete attestations"
       }
       if (lastUserResponse.toLowerCase().includes("add agent")) {
-        setAddAgentModalVisible(true)
-        actionMessage="add agent"
+        //setAddAgentModalVisible(true)
+        //actionMessage="add agent"
       }
       if (lastUserResponse.toLowerCase().includes("approve leader")) {
         console.info("approve leader ...")
@@ -2078,13 +2061,13 @@ What would you like to do today?`;
       if (content.toLowerCase() == 'colorado') {
         try {
           // Add 2-second delay before LangChain call
-          console.log('Adding 2-second delay before LangChain call...');
+          //console.log('Adding 2-second delay before LangChain call...');
           await delay(2000);
-          console.log('Delay completed, sending message to LangChain...');
+          //console.log('Delay completed, sending message to LangChain...');
           var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'state_register', entities || [], {}, linkedInAuthRef, xAuthRef);
-          console.log('adding attestation')
+          //console.log('adding attestation')
           addOrgRegistrationAttestation(response['name'], response['id'], content, response["address"], response["formDate"]);
-          console.log('LangChain Response: ', response.message)
+          //console.log('LangChain Response: ', response.message)
           return response.message;
         } catch (error) {
           console.error("Error calling LangGraph assistant for state registration:", error);
@@ -2094,11 +2077,11 @@ What would you like to do today?`;
         //console.log('hallo')
         try {
           // Add 2-second delay before LangChain call
-          console.log('Adding 2-second delay before LangChain call...');
+          //console.log('Adding 2-second delay before LangChain call...');
           await delay(2000);
-          console.log('Delay completed, sending message to LangChain...');
+          //console.log('Delay completed, sending message to LangChain...');
           var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'linkedin_verification', entities || [], {}, linkedInAuthRef, xAuthRef);
-          console.log('LangChain Response: ', response.message)
+          //console.log('LangChain Response: ', response.message)
           return response.message;
         } catch (error) {
           console.error("Error calling LangGraph assistant for LinkedIn verification:", error);
@@ -2107,7 +2090,7 @@ What would you like to do today?`;
               } else if (content.toLowerCase() == 'twitter') {
           try {
             // Add 2-second delay before LangChain call
-            console.log('Adding 2-second delay before LangChain call...');
+            //console.log('Adding 2-second delay before LangChain call...');
             await delay(2000);
             console.log('Delay completed, sending message to LangChain...');
             var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'x_verification', entities || [], {}, linkedInAuthRef, xAuthRef);
@@ -2120,9 +2103,9 @@ What would you like to do today?`;
 
         try {
           // Add 2-second delay before LangChain call
-          console.log('Adding 2-second delay before LangChain call...');
+          //console.log('Adding 2-second delay before LangChain call...');
           await delay(2000);
-          console.log('Delay completed, sending message to LangChain...');
+          //console.log('Delay completed, sending message to LangChain...');
           var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'none', entities || [], {}, linkedInAuthRef, xAuthRef);
           return response.message;
         } catch (error) {

@@ -29,8 +29,6 @@ export async function invokeLangGraphAgent({
   // parameters can be added here if needed
 } = {}) {
   try {
-    console.log('Attempting to create LangGraph thread...');
-    console.log('API Key (first 10 chars):', LANGCHAIN_API_KEY.substring(0, 10) + '...');
 
     const response = await fetch('https://myorgwalletlang-7ced710fbd1a5b698d578945dc0f68bd.us.langgraph.app/threads', {
       method: 'POST',
@@ -82,7 +80,6 @@ export async function invokeLangGraphAgent({
     }
 
     const text = await response.text();
-    console.log('LangGraph thread created successfully');
     return text;
   } catch (error) {
     console.error('Error creating LangGraph thread:', error);
@@ -126,9 +123,9 @@ export async function sendMessageToLangGraphAssistant(
   }, 300000); // 5 minutes timeout
 
   try {
-    console.log('Attempting to send message to LangGraph assistant...');
-    console.log('Thread ID:', thread_id);
-    console.log('Message:', message.substring(0, 50) + '...');
+    //console.log('Attempting to send message to LangGraph assistant...');
+    //console.log('Thread ID:', thread_id);
+    //console.log('Message:', message.substring(0, 50) + '...');
 
     const data = await fetch('https://myorgwalletlang-7ced710fbd1a5b698d578945dc0f68bd.us.langgraph.app/threads/'+ thread_id +'/runs/stream', {
       method: 'POST',

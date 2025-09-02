@@ -136,7 +136,6 @@ class AttestationService {
     if (currentWalletAddress) {
       // If we have a current wallet address, only query attestations from addresses
       // that belong to this specific wallet session
-      console.log("Filtering attestations for current wallet:", currentWalletAddress);
 
       // For now, we'll still query both addresses but add more specific filtering later
       // This is a conservative approach to ensure we don't miss any attestations
@@ -164,28 +163,6 @@ class AttestationService {
 
 
     const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
-    console.info("Returned attestations count: ", data.attestations.length)
-    console.log("=== GRAPHQL QUERY RESULTS ===");
-    console.log("Complete GraphQL response:", JSON.stringify(data, null, 2));
-    console.log("=== END GRAPHQL QUERY RESULTS ===");
-    console.info("Loading attestations for addresses:", {
-      orgAddress,
-      indivAddress,
-      orgDid,
-      indivDid,
-      currentWalletAddress,
-      addressesAreDifferent: orgAddress !== indivAddress
-    })
-
-    // Debug: Log the exact GraphQL query being sent
-    console.log("GraphQL Query:", `attester: { in: ["${orgAddress}", "${indivAddress}"] }`)
-
-    // Debug: Log all found attestations
-    console.log("All found attestations:", data.attestations.map((att: any) => ({
-      id: att.id,
-      attester: att.attester,
-      schemaId: att.schemaId
-    })))
 
     // cycle through aes attestations and update entity with attestation info
     let processedCount = 0;
@@ -251,16 +228,6 @@ class AttestationService {
             // Additional filtering: Only process attestations that belong to the current user's context
             let shouldProcessAttestation = true;
 
-            console.log(`Processing attestation ${item.id}:`, {
-              entityId,
-              attester: item.attester,
-              orgAddress,
-              indivAddress,
-              isOrgEntity: entityId.includes("(org)"),
-              isIndivEntity: entityId.includes("(indiv)"),
-              attesterMatchesOrg: item.attester.toLowerCase() === orgAddress.toLowerCase(),
-              attesterMatchesIndiv: item.attester.toLowerCase() === indivAddress.toLowerCase()
-            });
 
             // For organization-related attestations, check if they belong to the current org
             if (entityId.includes("(org)") && item.attester.toLowerCase() === orgAddress.toLowerCase()) {
@@ -291,23 +258,21 @@ class AttestationService {
                 item.attester.toLowerCase() === indivAddress.toLowerCase();
 
               if (!attestationBelongsToCurrentWallet) {
-                console.log(`Skipping attestation ${item.id} - not from current wallet context: ${item.attester} (current wallet: ${currentWalletAddress})`);
+                //console.log(`Skipping attestation ${item.id} - not from current wallet context: ${item.attester} (current wallet: ${currentWalletAddress})`);
                 shouldProcessAttestation = false;
               } else {
-                console.log(`Keeping attestation ${item.id} - belongs to current wallet context: ${item.attester} (current wallet: ${currentWalletAddress})`);
+                //console.log(`Keeping attestation ${item.id} - belongs to current wallet context: ${item.attester} (current wallet: ${currentWalletAddress})`);
               }
             }
 
             if (!shouldProcessAttestation) {
               skippedCount++;
-              console.log(`SKIPPED attestation ${item.id} - entityId: ${entityId}, attester: ${item.attester}`);
+              //console.log(`SKIPPED attestation ${item.id} - entityId: ${entityId}, attester: ${item.attester}`);
               continue;
             }
 
             processedCount++;
-            console.log(`PROCESSED attestation ${item.id} - entityId: ${entityId}, attester: ${item.attester}`);
-
-
+ 
           // construct correct attestation
           if (entity != undefined) {
             let att: Attestation | undefined;
@@ -377,7 +342,6 @@ class AttestationService {
 
           };
 
-    console.info(`Attestation processing complete: ${processedCount} processed, ${skippedCount} skipped`);
     return entities
 
   }
@@ -1747,7 +1711,7 @@ class AttestationService {
 
     const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && name != undefined) {
-      console.info("set to social attestation with name: ", name)
+      //console.info("set to social attestation with name: ", name)
       let displayName = name
       if (displayName == "" || displayName == undefined || displayName == null) {
         displayName = entityId.replace("(org)", "").replace("(indiv)", "")
@@ -2833,7 +2797,6 @@ class AttestationService {
     if (currentWalletAddress) {
       // If we have a current wallet address, only query attestations from addresses
       // that belong to this specific wallet session
-      console.log("loadRecentAttestationsTitleOnly - Filtering attestations for current wallet:", currentWalletAddress);
 
       // For now, we'll still query both addresses but add more specific filtering later
       // This is a conservative approach to ensure we don't miss any attestations
@@ -2864,14 +2827,6 @@ class AttestationService {
 
 
       const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
-      console.info("loadRecentAttestationsTitleOnly - Returned attestations count: ", data.attestations.length)
-      console.info("loadRecentAttestationsTitleOnly - Loading attestations for addresses:", {
-        orgAddress,
-        indivAddress,
-        orgDid,
-        indivDid,
-        addressesAreDifferent: orgAddress !== indivAddress
-      })
 
       const attestations : Attestation[] = []
       let processedCount = 0;
@@ -2920,16 +2875,7 @@ class AttestationService {
             // Additional filtering: Only process attestations that belong to the current user's context
             let shouldProcessAttestation = true;
 
-            console.log(`loadRecentAttestationsTitleOnly - Processing attestation ${item.id}:`, {
-              entityId,
-              attester: item.attester,
-              orgAddress,
-              indivAddress,
-              isOrgEntity: entityId.includes("(org)"),
-              isIndivEntity: entityId.includes("(indiv)"),
-              attesterMatchesOrg: item.attester.toLowerCase() === orgAddress.toLowerCase(),
-              attesterMatchesIndiv: item.attester.toLowerCase() === indivAddress.toLowerCase()
-            });
+            
 
             // For organization-related attestations, check if they belong to the current org
             if (entityId.includes("(org)") && item.attester.toLowerCase() === orgAddress.toLowerCase()) {
@@ -2944,7 +2890,6 @@ class AttestationService {
             // If attestation is from a different address than expected, skip it
             else if (item.attester.toLowerCase() !== orgAddress.toLowerCase() &&
                      item.attester.toLowerCase() !== indivAddress.toLowerCase()) {
-              console.log(`loadRecentAttestationsTitleOnly - SKIPPED attestation ${item.id} - wrong attester: ${item.attester} (expected: ${orgAddress} or ${indivAddress})`);
               shouldProcessAttestation = false;
             }
 
@@ -2960,10 +2905,8 @@ class AttestationService {
                 item.attester.toLowerCase() === indivAddress.toLowerCase();
 
               if (!attestationBelongsToCurrentWallet) {
-                console.log(`loadRecentAttestationsTitleOnly - Skipping attestation ${item.id} - not from current wallet context: ${item.attester} (current wallet: ${currentWalletAddress})`);
                 shouldProcessAttestation = false;
               } else {
-                console.log(`loadRecentAttestationsTitleOnly - Keeping attestation ${item.id} - belongs to current wallet context: ${item.attester} (current wallet: ${currentWalletAddress})`);
               }
             }
 
@@ -3056,7 +2999,6 @@ class AttestationService {
           }
 
       }
-      console.info(`loadRecentAttestationsTitleOnly - Attestation processing complete: ${processedCount} processed, ${skippedCount} skipped`);
       return attestations;
 
     } catch (error) {
