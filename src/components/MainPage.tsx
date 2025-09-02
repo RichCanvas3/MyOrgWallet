@@ -61,6 +61,7 @@ import { keccak256, toUtf8Bytes } from 'ethers';
 
 
 import DeleteAttestationsModal from './DeleteAttestationsModal';
+import AddAgentModal from './AddAgentModal';
 import ApproveLeaderModal from './ApproveLeaderModal';
 import ApproveAccountAccessModal from './ApproveAccountAccessModal';
 import CreateWebDidModal from './CreateWebDidModal';
@@ -167,6 +168,7 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
 
   const [isDeleteAttestationsModalVisible, setDeleteAttestationsModalVisible] = useState(false);
+  const [isAddAgentModalVisible, setAddAgentModalVisible] = useState(false);
   const [isApproveLeaderModalVisible, setApproveLeaderModalVisible] = useState(false);
   const [isApproveAccountAccessModalVisible, setApproveAccountAccessModalVisible] = useState(false);
   const [isCreateWebDidModalVisible, setCreateWebDidModalVisible] = useState(false);
@@ -807,6 +809,9 @@ What would you like to do today?`;
   const handleOnDeleteAttestationsModalClose = () => {
     setDeleteAttestationsModalVisible(false);
   };
+  const handleOnAddAgentModalClose = () => {
+    setAddAgentModalVisible(false);
+  };
   const handleOnApproveLeaderModalClose = () => {
     setApproveLeaderModalVisible(false);
   };
@@ -1202,7 +1207,10 @@ What would you like to do today?`;
       } else if (str.includes("delete_all")) {
         setDeleteAttestationsModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Deletion Modal.....', '', fileDataRef, sendMessage);
-      } else if (str.includes('create_did')) {
+      } else if (str.includes("add_agent")) {
+        setAddAgentModalVisible(true);
+        addMessage(Role.Assistant, MessageType.Normal, 'Opening Deletion Modal.....', '', fileDataRef, sendMessage);
+      }else if (str.includes('create_did')) {
         setCreateWebDidModalVisible(true);
         addMessage(Role.Assistant, MessageType.Normal, 'Opening Web DID Modal....', '', fileDataRef, sendMessage);
       } else if (str.includes("state_skip")) {
@@ -1492,6 +1500,10 @@ What would you like to do today?`;
           lastUserResponse.toLowerCase().includes("delete attestations")) {
         setDeleteAttestationsModalVisible(true)
         actionMessage="delete attestations"
+      }
+      if (lastUserResponse.toLowerCase().includes("add agent")) {
+        setAddAgentModalVisible(true)
+        actionMessage="add agent"
       }
       if (lastUserResponse.toLowerCase().includes("approve leader")) {
         console.info("approve leader ...")
@@ -2881,6 +2893,10 @@ What would you like to do today?`;
         <DeleteAttestationsModal
           isVisible={isDeleteAttestationsModalVisible}
           onClose={handleOnDeleteAttestationsModalClose}
+        />
+        <AddAgentModal
+          isVisible={isAddAgentModalVisible}
+          onClose={handleOnAddAgentModalClose}
         />
         <ApproveLeaderModal
           isVisible={isApproveLeaderModalVisible}

@@ -70,7 +70,7 @@ Web3Auth Onboarding – Social login to bootstrap an EOA and linked smart accoun
 
 Smart Account Identity – Every organization has an Account Abstraction (AA) smart wallet as its root identity.
 
-Decentralized Identifiers (DIDs) – Each AA is assigned a DID (did:aa, did:key, did:web), verifiable on-chain and across registries.
+Decentralized Identifiers (DIDs) – Each AA is assigned a DID (did:aa, did:ethr, did:key, did:web), verifiable on-chain and across registries.
 
 ENS Integration – Register ENS names for organizations (including wrapped NFTs and subdomains). Preparing for ENS v2 multi-chain naming.
 

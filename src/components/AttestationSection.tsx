@@ -261,7 +261,7 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
 }) => {
   const { signatory } = useWallectConnectContext();
   const currentWalletAddress = signatory?.walletClient?.account?.address;
-    const [tabValue, setTabValue] = useState<'individual' | 'organization'>('individual');
+    const [tabValue, setTabValue] = useState<'individual' | 'organization' | 'agent'>('individual');
     const [categories, setCategories] = useState<AttestationCategory[]>([]);
     const [attestations, setAttestations] = useState<Attestation[]>([]);
 
@@ -274,7 +274,7 @@ const AttestationSection: React.FC<AttestationSectionProps> = ({
 
     const handleTabChange = (_: SyntheticEvent, newValue: string) => {
 
-        setTabValue(newValue as 'individual' | 'organization');
+        setTabValue(newValue as 'individual' | 'organization' | 'agent');
 
         let currentCategories = []
         for (const cat of categories) {
@@ -424,6 +424,7 @@ return (
         <TabList onChange={handleTabChange} aria-label="Attestation tabs">
           <Tab label="Individual" value="individual" />
           <Tab label="Organization" value="organization" sx={{ ml: 2 }} />
+          <Tab label="Agent" value="agent" sx={{ ml: 2 }} />
         </TabList>
       </Box>
 
