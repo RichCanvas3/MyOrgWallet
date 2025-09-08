@@ -251,6 +251,10 @@ Design a solution showcasing these features, such as a decentralized eCommerce p
 
 <img src="./public/delegation.jpeg" width="600px">
 
+## Agent Structure
+
+<img src="./docs/images/AgentStructure.png" width="750px">
+
 ## Goals
 
 * Provide an organization a digital wallet (Account Abstraction) to manage their organizational and individual attestations.

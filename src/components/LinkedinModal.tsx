@@ -367,33 +367,13 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
                   }}
                 >
 
-                  {/* Why LinkedIn Verification is Important Section */}
+                  {/* LinkedIn Account Attestation Section */}
                   <Box sx={{ mb: 3, p: 3, backgroundColor: '#f8f9fa', borderRadius: 2, border: '1px solid #e9ecef' }}>
                     <Typography variant="h6" fontWeight="bold" color="primary" mb={2}>
-                      Why LinkedIn Verification Matters
+                      LinkedIn Account Attestation
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" paragraph>
-                      LinkedIn verification helps establish your professional identity and credibility in the digital world:
-                    </Typography>
-                    <Box component="ul" sx={{ pl: 2, mb: 2 }}>
-                      <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        <strong>Professional Identity:</strong> Verifies your professional profile and work history
-                      </Typography>
-                      <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        <strong>Network Trust:</strong> Builds credibility with your professional network and connections
-                      </Typography>
-                      <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        <strong>Career Opportunities:</strong> Enhances your profile for job searches and business opportunities
-                      </Typography>
-                      <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        <strong>Business Relationships:</strong> Establishes trust with potential clients, partners, and collaborators
-                      </Typography>
-                      <Typography component="li" variant="body2" color="text.secondary">
-                        <strong>Digital Credentials:</strong> Creates a verifiable, blockchain-based proof of your professional identity
-                      </Typography>
-                    </Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                      This verification creates a tamper-proof credential that can be shared with your professional network, potential employers, and business partners to establish trust and credibility.
+                    <Typography variant="body2" color="text.secondary">
+                      By proceeding with this verification, you attest that you have a valid LinkedIn account and authorize the creation of a verifiable credential based on your LinkedIn profile information.
                     </Typography>
                   </Box>
 
@@ -409,7 +389,8 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
                     {isVerifying ? "Verifying..." : "Create LinkedIn Attestation"}
                   </Button>
 
-                  {/* LinkedIn URL Verification Section */}
+                  {/* LinkedIn URL Verification Section - Hidden for now */}
+                  {/* 
                   <Box sx={{ mb: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 2, border: '1px solid #e0e0e0' }}>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontWeight: 'medium' }}>
                       Verify this LinkedIn URL Instead
@@ -441,6 +422,7 @@ const LinkedinModal: React.FC<LinkedinModalProps> = ({isVisible, onClose, onOAut
                       </Typography>
                     )}
                   </Box>
+                  */}
 
                   {isVerifying && (
                     <Box sx={{ mt: 2, p: 2, backgroundColor: '#e0f2f7', borderRadius: 1, border: '1px solid #b6effb' }}>
