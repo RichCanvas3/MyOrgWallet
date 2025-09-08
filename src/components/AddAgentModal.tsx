@@ -3,14 +3,15 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, B
 import { useWallectConnectContext } from '../context/walletConnectContext';
 import AttestationService, { attestationsEmitter, type AttestationChangeEvent } from '../service/AttestationService';
 import { Implementation, toMetaMaskSmartAccount } from '@metamask/delegation-toolkit';
-import { createPublicClient, http, keccak256, stringToHex, zeroAddress } from 'viem';
+import { createPublicClient, http, keccak256, stringToHex, zeroAddress, toHex } from 'viem';
 import { sepolia } from 'viem/chains';
 import { encodeNewAgent, getAgentByDomain, ensureIdentityWithAA, fetchAgentsByOwner, checkAgentExistsByDomain, type AgentData, type AgentsResponse } from '../service/AgentAdapter';
-import { PAYMASTER_URL } from '../config';
 import { createBundlerClient } from 'viem/account-abstraction';
 import { createPimlicoClient } from 'permissionless/clients/pimlico';
 import { BUNDLER_URL } from '../config';
-import type { Attestation } from '../models/Attestation';
+import type { Attestation, AIAgentAttestation } from '../models/Attestation';
+import VerifiableCredentialsService from '../service/VerifiableCredentialsService';
+import { toUtf8Bytes } from 'ethers';
 
 interface AddAgentModalProps {
   isVisible: boolean;
@@ -21,7 +22,7 @@ interface AddAgentModalProps {
 
 
 const AddAgentModal: React.FC<AddAgentModalProps> = ({ isVisible, onClose, orgDid, indivDid }) => {
-  const { chain, signatory } = useWallectConnectContext();
+  const { chain, signatory, orgDid: contextOrgDid, privateIssuerDid, credentialManager, privateIssuerAccount, veramoAgent } = useWallectConnectContext();
   const [domain, setDomain] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +60,78 @@ const AddAgentModal: React.FC<AddAgentModalProps> = ({ isVisible, onClose, orgDi
     onClose();
   };
 
+  const createAIAgentAttestation = async (domain: string, agentAccountClient: any) => {
+    try {
+      if (!contextOrgDid || !privateIssuerDid || !credentialManager || !privateIssuerAccount || !veramoAgent || !signatory || !chain) {
+        console.error("Missing required context for AIAgent attestation creation");
+        return;
+      }
+
+      // Get the AIAgent's address and construct its DID
+      const agentAddress = await agentAccountClient.getAddress();
+      const aiAgentDid = `did:pkh:eip155:${chain.id}:${agentAddress}`;
+      
+      console.info("AIAgent address:", agentAddress);
+      console.info("AIAgent DID:", aiAgentDid);
+
+      // Check if AIAgent attestation already exists using the AIAgent's DID
+      console.info("Checking if AIAgent attestation already exists for domain:", domain);
+      const existingAttestation = await AttestationService.getAttestationByDidAndSchemaId(
+        chain, 
+        aiAgentDid, 
+        AttestationService.AIAgentSchemaUID, 
+        "aiagent(aiagent)", 
+        domain
+      );
+
+      if (existingAttestation) {
+        console.info("AIAgent attestation already exists for domain:", domain);
+        return;
+      }
+
+      console.info("Creating AIAgent verifiable credential...");
+      
+      // Create verifiable credential for AIAgent
+      const vc = await VerifiableCredentialsService.createAIAgentVC("aiagent(aiagent)", contextOrgDid, privateIssuerDid, `AI Agent: ${domain}`, domain);
+      const result = await VerifiableCredentialsService.createCredential(vc, "aiagent(aiagent)", "aiagent", contextOrgDid, credentialManager, privateIssuerAccount, agentAccountClient, veramoAgent);
+
+      const fullVc = result.vc;
+      const proof = result.proof;
+      const vcId = result.vcId;
+
+      if (proof && fullVc && vcId && chain && agentAccountClient) {
+        // Create AIAgent attestation
+        const hash = keccak256(toUtf8Bytes("hash value"));
+        const attestation: AIAgentAttestation = {
+          attester: aiAgentDid,
+          entityId: "aiagent(aiagent)",
+          class: "aiagent",
+          category: "wallet",
+          hash: hash,
+          vccomm: (fullVc.credentialSubject as any).commitment.toString(),
+          vcsig: (fullVc.credentialSubject as any).commitmentSignature,
+          vciss: privateIssuerDid,
+          vcid: vcId,
+          proof: proof,
+          orgDid: contextOrgDid,
+          agentDomain: domain,
+          displayName: domain
+        };
+
+        console.info("***** AIAgent AA address: ", agentAccountClient.address);
+
+        const walletSigner = signatory.signer;
+        const uid = await AttestationService.addAIAgentAttestation(chain, attestation, walletSigner, [], agentAccountClient, agentAccountClient);
+
+        console.info("AIAgent attestation created successfully: ", uid);
+      } else {
+        console.error("Failed to create AIAgent verifiable credential");
+      }
+    } catch (error) {
+      console.error("Error creating AIAgent attestation:", error);
+    }
+  };
+
   const handleAdd = async () => {
     setError(null);
     if (!domain || !chain || !signatory?.walletClient?.account?.address) {
@@ -74,8 +147,43 @@ const AddAgentModal: React.FC<AddAgentModalProps> = ({ isVisible, onClose, orgDi
       // 1) Check if agent already exists via API first (faster check)
       console.info("Checking if agent exists via API for domain:", normalizedDomain);
       const existsInAPI = await checkAgentExistsByDomain(ownerAddress, normalizedDomain);
+      const publicClient = createPublicClient({ chain: sepolia, transport: http() });
+      const identityRegistrationAddress = (import.meta as any).env.VITE_IDENTITY_REGISTRY_ADDRESS as `0x${string}`
+      if (!identityRegistrationAddress) throw new Error('Missing VITE_IDENTITY_REGISTRY_ADDRESS')
+      
       if (existsInAPI) {
         console.info("Agent already exists in API for domain:", normalizedDomain);
+        
+        // Even if agent exists, check if attestation exists and create if needed
+        console.info("Checking if AIAgent attestation exists for existing agent...");
+        const salt = BigInt(keccak256(stringToHex(domain.trim().toLowerCase())));
+        const agentAA = await toMetaMaskSmartAccount({
+          client: publicClient,
+          implementation: Implementation.Hybrid,
+          deployParams: [signatory!.walletClient!.account!.address, [], [], []],
+          signatory: { walletClient: signatory!.walletClient! },
+          deploySalt: toHex(salt) as `0x${string}`,
+        });
+
+
+
+        console.info("********* domain: ", domain)
+        console.info("********* eoa: ", signatory!.walletClient!.account!.address)
+        const deploySalt = BigInt(keccak256(stringToHex(domain.trim().toLowerCase())));
+        const smartAccount = await toMetaMaskSmartAccount({
+          client: publicClient,
+          implementation: Implementation.Hybrid,
+          deployParams: [signatory!.walletClient!.account!.address, [], [], []],
+          signatory: { walletClient: signatory!.walletClient! },
+          deploySalt: toHex(deploySalt) as `0x${string}`,
+        } as any);
+        const aa = await smartAccount.getAddress() as `0x${string}`;
+
+        console.info("********* agentAA: ", aa)
+
+        
+        await createAIAgentAttestation(normalizedDomain, agentAA);
+        
         setSubmitting(false);
         setExistsOpen(true);
         return;
@@ -83,12 +191,23 @@ const AddAgentModal: React.FC<AddAgentModalProps> = ({ isVisible, onClose, orgDi
 
       // 2) Check if agent already exists on-chain (backup check)
       console.info("Checking if agent exists on-chain for domain:", normalizedDomain);
-      const publicClient = createPublicClient({ chain: sepolia, transport: http() });
-      const identityRegistrationAddress = (import.meta as any).env.VITE_IDENTITY_REGISTRY_ADDRESS as `0x${string}`
-      if (!identityRegistrationAddress) throw new Error('Missing VITE_IDENTITY_REGISTRY_ADDRESS')
       const existingOnChain = await getAgentByDomain({ publicClient, registry: identityRegistrationAddress, domain: normalizedDomain })
       if (existingOnChain) {
         console.info("Agent already exists on-chain for domain:", normalizedDomain);
+        
+        // Even if agent exists, check if attestation exists and create if needed
+        console.info("Checking if AIAgent attestation exists for existing agent...");
+        const salt: `0x${string}` = keccak256(stringToHex(domain.trim().toLowerCase())) as `0x${string}`;
+        const existingAgentAccountClient = await toMetaMaskSmartAccount({
+          client: publicClient,
+          implementation: Implementation.Hybrid,
+          deployParams: [signatory!.walletClient!.account!.address, [], [], []],
+          signatory: { walletClient: signatory!.walletClient! },
+          deploySalt: salt,
+        });
+        
+        await createAIAgentAttestation(normalizedDomain, existingAgentAccountClient);
+        
         setSubmitting(false);
         setExistsOpen(true);
         return;
@@ -141,6 +260,9 @@ const AddAgentModal: React.FC<AddAgentModalProps> = ({ isVisible, onClose, orgDi
         agentAccount: agentAccountClient,
       })
 
+      // Create AIAgent attestation after successful agent creation
+      console.info("Creating AIAgent attestation...");
+      await createAIAgentAttestation(normalizedDomain, agentAccountClient);
 
       setSubmitting(false);
       onClose();
@@ -190,8 +312,9 @@ const AddAgentModal: React.FC<AddAgentModalProps> = ({ isVisible, onClose, orgDi
             )}
             renderOption={(props, option) => {
               const agent = existingAgents.find(a => a.agentDomain === option);
+              const { key, ...otherProps } = props;
               return (
-                <Box component="li" {...props}>
+                <Box component="li" key={key} {...otherProps}>
                   <Box>
                     <Typography variant="body2" fontWeight="medium">
                       {option}
