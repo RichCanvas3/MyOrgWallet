@@ -158,26 +158,9 @@ export function AttestationCard({
   const cleanEntityId = (entityId || '').replace(/\(org\)|\(indiv\)|\(agent\)/g, '');
 
   // Parse domain name for AIAgent attestations
-  const getDisplayContent = () => {
-    if (attestation.class === 'agent' && displayName) {
-      const domainParts = displayName.split('.');
-      if (domainParts.length >= 2) {
-        const agentName = domainParts[0];
-        const orgDomain = domainParts.slice(1).join('.');
-        return (
-          <Box>
-            <Typography variant="body2" sx={{ fontSize: '0.75rem', lineHeight: 1.2 }}>
-              <strong>name:</strong> {agentName}
-            </Typography>
-            <Typography variant="body2" sx={{ fontSize: '0.75rem', lineHeight: 1.2 }}>
-              <strong>domain:</strong> {orgDomain}
-            </Typography>
-          </Box>
-        );
-      }
-    }
-    return displayName;
-  };
+  const isAIAgentWithDomain = attestation.class === 'agent' && displayName && displayName.includes('.');
+  const agentName = isAIAgentWithDomain ? displayName.split('.')[0] : null;
+  const orgDomain = isAIAgentWithDomain ? displayName.split('.').slice(1).join('.') : null;
 
   // Icon component based on entityId
   const Icon = getEntityIcon(entityId || '', category);
@@ -331,21 +314,46 @@ export function AttestationCard({
 
             {/* Description */}
             <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-              <Typography
-                variant="body2"
-                color={isMetaMaskCard ? '#333' : 'text.secondary'}
-                sx={{
-                  lineHeight: 1.3,
-                  fontSize: '0.75rem',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {getDisplayContent()}
-              </Typography>
+              {isAIAgentWithDomain ? (
+                <Box sx={{ width: '100%' }}>
+                  <Typography
+                    variant="body2"
+                    color={isMetaMaskCard ? '#333' : 'text.secondary'}
+                    sx={{
+                      lineHeight: 1.2,
+                      fontSize: '0.75rem',
+                    }}
+                  >
+                    <strong>name:</strong> {agentName}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color={isMetaMaskCard ? '#333' : 'text.secondary'}
+                    sx={{
+                      lineHeight: 1.2,
+                      fontSize: '0.75rem',
+                    }}
+                  >
+                    <strong>domain:</strong> {orgDomain}
+                  </Typography>
+                </Box>
+              ) : (
+                <Typography
+                  variant="body2"
+                  color={isMetaMaskCard ? '#333' : 'text.secondary'}
+                  sx={{
+                    lineHeight: 1.3,
+                    fontSize: '0.75rem',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {displayName}
+                </Typography>
+              )}
             </Box>
 
 
