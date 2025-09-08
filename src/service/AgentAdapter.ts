@@ -4,6 +4,29 @@ import { createBundlerClient, createPaymasterClient, bundlerActions } from 'viem
 import { createPimlicoClient } from 'permissionless/clients/pimlico'
 import { encodeNonce } from "permissionless/utils"
 
+// API Response Interfaces
+export interface AgentData {
+  agentId: string;
+  agentAddress: string;
+  agentDomain: string;
+  metadataURI: string | null;
+  createdAtBlock: number;
+  createdAtTime: number;
+  derivedAddress: string;
+}
+
+export interface AgentsResponse {
+  success: boolean;
+  owner: string;
+  totalOwned: number;
+  agents: AgentData[];
+  computedAt: string;
+  chain: {
+    id: number;
+    name: string;
+  };
+}
+
 // Minimal ERC-8004-like adapter for IdentityRegistration (TypeScript)
 // Assumes IdentityRegistration has function:
 //   function newAgent(string domain, address agentAccount, bytes signature) external returns (uint256 agentId)
@@ -228,6 +251,129 @@ export async function ensureIdentityWithAA(params: {
   console.info("get agent by domain")
   const updated = await getAgentByDomain({ publicClient, registry, domain })
   return (updated ?? agentAddress)
+}
+
+// API Functions for Agent Data Retrieval
+
+/**
+ * Fetch agents by owner address from the API
+ * @param ownerAddress - The EOA address of the owner
+ * @param apiBaseUrl - Base URL for the API (defaults to localhost:3000)
+ * @returns Promise<AgentsResponse> - The API response with agent data
+ */
+export async function fetchAgentsByOwner(
+  ownerAddress: string,
+  apiBaseUrl: string = 'http://localhost:3000'
+): Promise<AgentsResponse> {
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/agents/by-owner?owner=${ownerAddress}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data: AgentsResponse = await response.json();
+    
+    if (!data.success) {
+      throw new Error('API returned unsuccessful response');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch agents by owner:', error);
+    throw new Error(`Failed to fetch agents: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Get all agent domains for a specific owner
+ * @param ownerAddress - The EOA address of the owner
+ * @param apiBaseUrl - Base URL for the API (defaults to localhost:3000)
+ * @returns Promise<string[]> - Array of agent domain names
+ */
+export async function getAgentDomainsByOwner(
+  ownerAddress: string,
+  apiBaseUrl: string = 'http://localhost:3000'
+): Promise<string[]> {
+  try {
+    const response = await fetchAgentsByOwner(ownerAddress, apiBaseUrl);
+    return response.agents.map(agent => agent.agentDomain);
+  } catch (error) {
+    console.error('Failed to get agent domains:', error);
+    return [];
+  }
+}
+
+/**
+ * Get agent data by domain name for a specific owner
+ * @param ownerAddress - The EOA address of the owner
+ * @param domain - The agent domain to search for
+ * @param apiBaseUrl - Base URL for the API (defaults to localhost:3000)
+ * @returns Promise<AgentData | null> - Agent data if found, null otherwise
+ */
+export async function getAgentByDomainFromAPI(
+  ownerAddress: string,
+  domain: string,
+  apiBaseUrl: string = 'http://localhost:3000'
+): Promise<AgentData | null> {
+  try {
+    const response = await fetchAgentsByOwner(ownerAddress, apiBaseUrl);
+    const normalizedDomain = domain.trim().toLowerCase();
+    
+    const agent = response.agents.find(agent => 
+      agent.agentDomain.toLowerCase() === normalizedDomain
+    );
+    
+    return agent || null;
+  } catch (error) {
+    console.error('Failed to get agent by domain from API:', error);
+    return null;
+  }
+}
+
+/**
+ * Get agent data by agent ID for a specific owner
+ * @param ownerAddress - The EOA address of the owner
+ * @param agentId - The agent ID to search for
+ * @param apiBaseUrl - Base URL for the API (defaults to localhost:3000)
+ * @returns Promise<AgentData | null> - Agent data if found, null otherwise
+ */
+export async function getAgentByIdFromAPI(
+  ownerAddress: string,
+  agentId: string,
+  apiBaseUrl: string = 'http://localhost:3000'
+): Promise<AgentData | null> {
+  try {
+    const response = await fetchAgentsByOwner(ownerAddress, apiBaseUrl);
+    
+    const agent = response.agents.find(agent => agent.agentId === agentId);
+    
+    return agent || null;
+  } catch (error) {
+    console.error('Failed to get agent by ID from API:', error);
+    return null;
+  }
+}
+
+/**
+ * Check if an agent exists for a specific domain and owner
+ * @param ownerAddress - The EOA address of the owner
+ * @param domain - The agent domain to check
+ * @param apiBaseUrl - Base URL for the API (defaults to localhost:3000)
+ * @returns Promise<boolean> - True if agent exists, false otherwise
+ */
+export async function checkAgentExistsByDomain(
+  ownerAddress: string,
+  domain: string,
+  apiBaseUrl: string = 'http://localhost:3000'
+): Promise<boolean> {
+  try {
+    const agent = await getAgentByDomainFromAPI(ownerAddress, domain, apiBaseUrl);
+    return agent !== null;
+  } catch (error) {
+    console.error('Failed to check if agent exists:', error);
+    return false;
+  }
 }
 
 
