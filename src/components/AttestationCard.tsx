@@ -154,12 +154,12 @@ export function AttestationCard({
 }: AttestationCardProps) {
   const { entityId, displayName, category, isValidated } = attestation;
 
-  // Clean up entityId for display by removing (org), (indiv), and (aiagent) suffixes
-  const cleanEntityId = (entityId || '').replace(/\(org\)|\(indiv\)|\(aiagent\)/g, '');
+  // Clean up entityId for display by removing (org), (indiv), and (agent) suffixes
+  const cleanEntityId = (entityId || '').replace(/\(org\)|\(indiv\)|\(agent\)/g, '');
 
   // Parse domain name for AIAgent attestations
   const getDisplayContent = () => {
-    if (attestation.class === 'aiagent' && displayName) {
+    if (attestation.class === 'agent' && displayName) {
       const domainParts = displayName.split('.');
       if (domainParts.length >= 2) {
         const agentName = domainParts[0];

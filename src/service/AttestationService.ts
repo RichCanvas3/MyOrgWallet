@@ -281,7 +281,7 @@ class AttestationService {
             if (entityId == "indiv(indiv)") {
               att = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
-            if (entityId == "aiagent(aiagent)") {
+            if (entityId == "agent(agent)") {
               att = this.constructAIAgentAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "account(indiv)") {
@@ -788,12 +788,12 @@ class AttestationService {
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && orgdid != undefined && vcid != undefined && agentdomain != undefined) {
       let displayName = agentdomain
       if (displayName == "" || displayName == undefined || displayName == null) {
-        displayName = entityId.replace("(aiagent)", "").replace("(org)", "").replace("(indiv)", "")
+        displayName = entityId.replace("(agent)", "").replace("(org)", "").replace("(indiv)", "")
       }
       
       const att : AIAgentAttestation = {
         displayName: displayName,
-        class: "aiagent",
+        class: "agent",
         category: "wallet",
         entityId: entityId,
         attester: attesterDid,
@@ -1837,7 +1837,7 @@ class AttestationService {
       //console.info("set to social attestation with name: ", name)
       let displayName = name
       if (displayName == "" || displayName == undefined || displayName == null) {
-        displayName = entityId.replace("(org)", "").replace("(indiv)", "").replace("(aiagent)", "")
+        displayName = entityId.replace("(org)", "").replace("(indiv)", "").replace("(agent)", "")
       }
 
       const att : SocialAttestation = {
@@ -3046,7 +3046,7 @@ class AttestationService {
             if (entityId == "indiv(indiv)") {
               att = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
-            if (entityId == "aiagent(aiagent)") {
+            if (entityId == "agent(agent)") {
               att = this.constructAIAgentAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "account(indiv)") {
@@ -3686,7 +3686,7 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
       priority: 10
     },
     {
-      name: "aiagent(aiagent)",
+      name: "agent(agent)",
       schemaId: this.AIAgentSchemaUID,
       schema: this.AIAgentSchema,
       priority: 10

@@ -76,7 +76,7 @@ const AddAgentModal: React.FC<AddAgentModalProps> = ({ isVisible, onClose, orgDi
         chain, 
         aiAgentDid, 
         AttestationService.AIAgentSchemaUID, 
-        "aiagent(aiagent)", 
+        "agent(agent)", 
         domain
       );
 
@@ -86,8 +86,8 @@ const AddAgentModal: React.FC<AddAgentModalProps> = ({ isVisible, onClose, orgDi
 
       
       // Create verifiable credential for AIAgent
-      const vc = await VerifiableCredentialsService.createAIAgentVC("aiagent(aiagent)", contextOrgDid, privateIssuerDid, `AI Agent: ${domain}`, domain);
-      const result = await VerifiableCredentialsService.createCredential(vc, "aiagent(aiagent)", "aiagent", contextOrgDid, credentialManager, privateIssuerAccount, agentAccountClient, veramoAgent);
+      const vc = await VerifiableCredentialsService.createAIAgentVC("agent(agent)", contextOrgDid, privateIssuerDid, `AI Agent: ${domain}`, domain);
+      const result = await VerifiableCredentialsService.createCredential(vc, "agent(agent)", "agent", contextOrgDid, credentialManager, privateIssuerAccount, agentAccountClient, veramoAgent);
 
       const fullVc = result.vc;
       const proof = result.proof;
@@ -98,8 +98,8 @@ const AddAgentModal: React.FC<AddAgentModalProps> = ({ isVisible, onClose, orgDi
         const hash = keccak256(toUtf8Bytes("hash value"));
         const attestation: AIAgentAttestation = {
           attester: aiAgentDid,
-          entityId: "aiagent(aiagent)",
-          class: "aiagent",
+          entityId: "agent(agent)",
+          class: "agent",
           category: "wallet",
           hash: hash,
           vccomm: (fullVc.credentialSubject as any).commitment.toString(),

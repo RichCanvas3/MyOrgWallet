@@ -20,17 +20,7 @@ const AgentsPage: React.FC<AgentsPageProps> = ({ orgDid, indivDid, onSelectAttes
   const { chain, signatory } = useWallectConnectContext();
   const currentWalletAddress = signatory?.walletClient?.account?.address;
   
-  // Debug: Log context values on every render
-  console.info("AgentsPage render - context values:", {
-    hasChain: !!chain,
-    chainId: chain?.id,
-    hasSignatory: !!signatory,
-    hasWalletClient: !!signatory?.walletClient,
-    hasAccount: !!signatory?.walletClient?.account,
-    currentWalletAddress,
-    orgDid,
-    indivDid
-  });
+
   const [categories, setCategories] = useState<AttestationCategory[]>([]);
   const [attestations, setAttestations] = useState<Attestation[]>([]);
   const [aiAgentAttestations, setAiAgentAttestations] = useState<Attestation[]>([]);
@@ -39,26 +29,9 @@ const AgentsPage: React.FC<AgentsPageProps> = ({ orgDid, indivDid, onSelectAttes
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // Debug: Log component mount
-  useEffect(() => {
-    console.info("AgentsPage component mounted");
-    return () => {
-      console.info("AgentsPage component unmounted");
-    };
-  }, []);
 
-  // Debug: Track dependency changes
-  useEffect(() => {
-    console.info("Dependencies changed:", {
-      signatoryAddress: signatory?.walletClient?.account?.address,
-      chainId: chain?.id,
-      timestamp: new Date().toISOString()
-    });
-  }, [signatory?.walletClient?.account?.address, chain]);
 
   const loadAIAgentAttestations = useCallback(async (agents: AgentData[]) => {
-    console.info("loadAIAgentAttestations called with agents:", agents.length);
-    
     if (!chain || !signatory?.walletClient?.account?.address) {
       console.info("Missing dependencies for loadAIAgentAttestations", { chain: !!chain, signatory: !!signatory });
       return;
@@ -69,8 +42,6 @@ const AgentsPage: React.FC<AgentsPageProps> = ({ orgDid, indivDid, onSelectAttes
 
     for (const agent of agents) {
       try {
-        console.info(`Loading AIAgent attestation for: ${agent.agentDomain}`);
-        
         // Create the agent's AA client to get its address
         const salt = BigInt(keccak256(stringToHex(agent.agentDomain.trim().toLowerCase())));
         const agentAccountClient = await toMetaMaskSmartAccount({
@@ -83,24 +54,35 @@ const AgentsPage: React.FC<AgentsPageProps> = ({ orgDid, indivDid, onSelectAttes
 
         const agentAddress = await agentAccountClient.getAddress();
         const aiAgentDid = `did:pkh:eip155:${chain.id}:${agentAddress}`;
-        
-        console.info(`AIAgent DID for ${agent.agentDomain}:`, aiAgentDid);
 
         // Get AIAgent attestation for this agent
         const aiAgentAttestation = await AttestationService.getAttestationByDidAndSchemaId(
           chain,
           aiAgentDid,
           AttestationService.AIAgentSchemaUID,
-          "aiagent(aiagent)",
+          "agent(agent)",
           agent.agentDomain
         );
 
         if (aiAgentAttestation) {
-          console.info(`Found AIAgent attestation for ${agent.agentDomain}:`, aiAgentAttestation);
           allAIAgentAttestations.push(aiAgentAttestation);
-        } else {
-          console.info(`No AIAgent attestation found for ${agent.agentDomain}`);
         }
+
+        // Get AIAgent attestation for this agent
+        // only need this become some agents are named with entityId of aiagent instead of agent
+        const aiAgentAttestation2 = await AttestationService.getAttestationByDidAndSchemaId(
+          chain,
+          aiAgentDid,
+          AttestationService.AIAgentSchemaUID,
+          "aiagent(aiagent)",
+          agent.agentDomain
+        );
+        
+
+        if (aiAgentAttestation2) {
+          aiAgentAttestation2.entityId = "agent(agent)"
+          allAIAgentAttestations.push(aiAgentAttestation2);
+        } 
       } catch (error) {
         console.error(`Failed to load AIAgent attestation for ${agent.agentDomain}:`, error);
       }
@@ -113,7 +95,7 @@ const AgentsPage: React.FC<AgentsPageProps> = ({ orgDid, indivDid, onSelectAttes
   const handleAttestationChange = (event: AttestationChangeEvent) => {
     if (event.action === 'add' && event.attestation) {
       const att = event.attestation;
-      if (att.class === 'aiagent') {
+      if (att.class === 'agent') {
         if (!aiAgentAttestations.find(a => a.entityId === att.entityId)) {
           setAiAgentAttestations(prev => [att, ...prev]);
         }
@@ -147,13 +129,12 @@ const AgentsPage: React.FC<AgentsPageProps> = ({ orgDid, indivDid, onSelectAttes
   };
 
   useEffect(() => {
-    console.info("********* agents page orgDid: ", orgDid)
     if (orgDid && indivDid && chain) {
       AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, indivDid, currentWalletAddress).then((atts) => {
         setAttestations(atts)
       })
       AttestationService.loadAttestationCategories().then((cats) => {
-        setCategories(cats.filter(c => c.class === 'agent' || c.class === 'aiagent'))
+        setCategories(cats.filter(c => c.class === 'agent' || c.class === 'agent'))
       })
     }
     attestationsEmitter.on('attestationChangeEvent', handleAttestationChange);
@@ -162,33 +143,16 @@ const AgentsPage: React.FC<AgentsPageProps> = ({ orgDid, indivDid, onSelectAttes
 
   // Load agents and their AIAgent attestations
   useEffect(() => {
-    console.info("********* agents page loadAIAgentAttestations: ", loadAIAgentAttestations)
     const loadAgents = async () => {
-      console.info("loadAgents useEffect triggered", { 
-        hasSignatory: !!signatory, 
-        hasWalletClient: !!signatory?.walletClient, 
-        hasAccount: !!signatory?.walletClient?.account,
-        hasAddress: !!signatory?.walletClient?.account?.address,
-        hasChain: !!chain
-      });
       
       if (!signatory?.walletClient?.account?.address || !chain) {
-        console.info("Missing required dependencies for loadAgents", { 
-          signatory: !!signatory, 
-          walletClient: !!signatory?.walletClient, 
-          account: !!signatory?.walletClient?.account,
-          address: signatory?.walletClient?.account?.address,
-          chain: !!chain
-        });
         return;
       }
 
       setLoadingAgents(true);
       try {
         const ownerAddress = signatory.walletClient.account.address;
-        console.info("Fetching agents for owner:", ownerAddress);
         const data = await fetchAgentsByOwner(ownerAddress);
-        console.info("********* ai agents data: ", data)
         
         if (data.success && data.agents) {
           setAgents(data.agents);
@@ -205,7 +169,6 @@ const AgentsPage: React.FC<AgentsPageProps> = ({ orgDid, indivDid, onSelectAttes
     loadAgents();
   }, [signatory?.walletClient?.account?.address, chain, loadAIAgentAttestations]);
 
-  console.info("********* agents page has arrived ")
 
   const filtered = attestations.filter(a => a.class === 'agent');
   const allAttestations = [...filtered, ...aiAgentAttestations];
