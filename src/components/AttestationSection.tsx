@@ -38,6 +38,7 @@ import AttestationService, {
   AttestationChangeEvent,
   attestationsEmitter,
 } from '../service/AttestationService';
+import AgentsPage from './AgentsPage';
 import { useWallectConnectContext } from "../context/walletConnectContext";
 import { Entity } from '../models/Entity';
 
@@ -453,68 +454,76 @@ return (
         overflow: 'hidden',
       }}
     >
-      <Box
-        ref={scrollContainerRef}
-        sx={{
-          flex: 1,
-          overflowY: 'auto',
-          width: '100%',
-          minHeight: 0,
-          px: 2,
-          py: 1,
-        }}
-      >
-        {/* Category Headers */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="h6" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
-            Attestation Details
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            {sortedAttestations.length} total attestations across {currentCategories.length} categories
-          </Typography>
-        </Box>
-
-        {/* Continuous Flow Attestation Cards */}
+      {tabValue === 'agent' ? (
+        <AgentsPage
+          orgDid={orgDid}
+          indivDid={indivDid}
+          onSelectAttestation={onSelectAttestation}
+        />
+      ) : (
         <Box
+          ref={scrollContainerRef}
           sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 2,
-            justifyContent: 'flex-start',
+            flex: 1,
+            overflowY: 'auto',
+            width: '100%',
+            minHeight: 0,
+            px: 2,
+            py: 1,
           }}
         >
-          {sortedAttestations.length > 0 ? (
-            sortedAttestations.map((att, index) => (
-              <AttestationCard
-                key={`${att.uid}-${att.entityId}-${att.attester}-${index}`}
-                attestation={att}
-                selected={selectedId === att.id}
-                onSelect={() => {
-                  setSelectedId(att.entityId);
-                  onSelectAttestation(att);
+          {/* Category Headers */}
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 600, color: 'text.primary' }}>
+              Attestation Details
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              {sortedAttestations.length} total attestations across {currentCategories.length} categories
+            </Typography>
+          </Box>
+
+          {/* Continuous Flow Attestation Cards */}
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 2,
+              justifyContent: 'flex-start',
+            }}
+          >
+            {sortedAttestations.length > 0 ? (
+              sortedAttestations.map((att, index) => (
+                <AttestationCard
+                  key={`${att.uid}-${att.entityId}-${att.attester}-${index}`}
+                  attestation={att}
+                  selected={selectedId === att.id}
+                  onSelect={() => {
+                    setSelectedId(att.entityId);
+                    onSelectAttestation(att);
+                  }}
+                  hoverable
+                />
+              ))
+            ) : (
+              <Box
+                sx={{
+                  width: '100%',
+                  textAlign: 'center',
+                  py: 4,
+                  color: 'text.secondary',
                 }}
-                hoverable
-              />
-            ))
-          ) : (
-            <Box
-              sx={{
-                width: '100%',
-                textAlign: 'center',
-                py: 4,
-                color: 'text.secondary',
-              }}
-            >
-              <Typography variant="body1">
-                No attestations found
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                {searchTerm ? 'Try adjusting your search terms' : 'Add some attestations to get started'}
-              </Typography>
-            </Box>
-          )}
+              >
+                <Typography variant="body1">
+                  No attestations found
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  {searchTerm ? 'Try adjusting your search terms' : 'Add some attestations to get started'}
+                </Typography>
+              </Box>
+            )}
+          </Box>
         </Box>
-      </Box>
+      )}
     </TabPanel>
   </TabContext>
 </Box>

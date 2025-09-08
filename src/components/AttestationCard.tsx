@@ -154,8 +154,30 @@ export function AttestationCard({
 }: AttestationCardProps) {
   const { entityId, displayName, category, isValidated } = attestation;
 
-  // Clean up entityId for display by removing (org) and (indiv) suffixes
-  const cleanEntityId = (entityId || '').replace(/\(org\)|\(indiv\)/g, '');
+  // Clean up entityId for display by removing (org), (indiv), and (aiagent) suffixes
+  const cleanEntityId = (entityId || '').replace(/\(org\)|\(indiv\)|\(aiagent\)/g, '');
+
+  // Parse domain name for AIAgent attestations
+  const getDisplayContent = () => {
+    if (attestation.class === 'aiagent' && displayName) {
+      const domainParts = displayName.split('.');
+      if (domainParts.length >= 2) {
+        const agentName = domainParts[0];
+        const orgDomain = domainParts.slice(1).join('.');
+        return (
+          <Box>
+            <Typography variant="body2" sx={{ fontSize: '0.75rem', lineHeight: 1.2 }}>
+              <strong>name:</strong> {agentName}
+            </Typography>
+            <Typography variant="body2" sx={{ fontSize: '0.75rem', lineHeight: 1.2 }}>
+              <strong>domain:</strong> {orgDomain}
+            </Typography>
+          </Box>
+        );
+      }
+    }
+    return displayName;
+  };
 
   // Icon component based on entityId
   const Icon = getEntityIcon(entityId || '', category);
@@ -322,7 +344,7 @@ export function AttestationCard({
                   textOverflow: 'ellipsis',
                 }}
               >
-                {displayName}
+                {getDisplayContent()}
               </Typography>
             </Box>
 

@@ -71,11 +71,7 @@ const AddAgentModal: React.FC<AddAgentModalProps> = ({ isVisible, onClose, orgDi
       const agentAddress = await agentAccountClient.getAddress();
       const aiAgentDid = `did:pkh:eip155:${chain.id}:${agentAddress}`;
       
-      console.info("AIAgent address:", agentAddress);
-      console.info("AIAgent DID:", aiAgentDid);
-
       // Check if AIAgent attestation already exists using the AIAgent's DID
-      console.info("Checking if AIAgent attestation already exists for domain:", domain);
       const existingAttestation = await AttestationService.getAttestationByDidAndSchemaId(
         chain, 
         aiAgentDid, 
@@ -85,11 +81,9 @@ const AddAgentModal: React.FC<AddAgentModalProps> = ({ isVisible, onClose, orgDi
       );
 
       if (existingAttestation) {
-        console.info("AIAgent attestation already exists for domain:", domain);
         return;
       }
 
-      console.info("Creating AIAgent verifiable credential...");
       
       // Create verifiable credential for AIAgent
       const vc = await VerifiableCredentialsService.createAIAgentVC("aiagent(aiagent)", contextOrgDid, privateIssuerDid, `AI Agent: ${domain}`, domain);
@@ -118,12 +112,9 @@ const AddAgentModal: React.FC<AddAgentModalProps> = ({ isVisible, onClose, orgDi
           displayName: domain
         };
 
-        console.info("***** AIAgent AA address: ", agentAccountClient.address);
-
         const walletSigner = signatory.signer;
         const uid = await AttestationService.addAIAgentAttestation(chain, attestation, walletSigner, [], agentAccountClient, agentAccountClient);
 
-        console.info("AIAgent attestation created successfully: ", uid);
       } else {
         console.error("Failed to create AIAgent verifiable credential");
       }
@@ -145,17 +136,14 @@ const AddAgentModal: React.FC<AddAgentModalProps> = ({ isVisible, onClose, orgDi
       const ownerAddress = signatory.walletClient.account.address;
 
       // 1) Check if agent already exists via API first (faster check)
-      console.info("Checking if agent exists via API for domain:", normalizedDomain);
       const existsInAPI = await checkAgentExistsByDomain(ownerAddress, normalizedDomain);
       const publicClient = createPublicClient({ chain: sepolia, transport: http() });
       const identityRegistrationAddress = (import.meta as any).env.VITE_IDENTITY_REGISTRY_ADDRESS as `0x${string}`
       if (!identityRegistrationAddress) throw new Error('Missing VITE_IDENTITY_REGISTRY_ADDRESS')
       
       if (existsInAPI) {
-        console.info("Agent already exists in API for domain:", normalizedDomain);
-        
+
         // Even if agent exists, check if attestation exists and create if needed
-        console.info("Checking if AIAgent attestation exists for existing agent...");
         const salt = BigInt(keccak256(stringToHex(domain.trim().toLowerCase())));
         const agentAA = await toMetaMaskSmartAccount({
           client: publicClient,
@@ -167,8 +155,6 @@ const AddAgentModal: React.FC<AddAgentModalProps> = ({ isVisible, onClose, orgDi
 
 
 
-        console.info("********* domain: ", domain)
-        console.info("********* eoa: ", signatory!.walletClient!.account!.address)
         const deploySalt = BigInt(keccak256(stringToHex(domain.trim().toLowerCase())));
         const smartAccount = await toMetaMaskSmartAccount({
           client: publicClient,
@@ -179,9 +165,7 @@ const AddAgentModal: React.FC<AddAgentModalProps> = ({ isVisible, onClose, orgDi
         } as any);
         const aa = await smartAccount.getAddress() as `0x${string}`;
 
-        console.info("********* agentAA: ", aa)
 
-        
         await createAIAgentAttestation(normalizedDomain, agentAA);
         
         setSubmitting(false);
@@ -190,13 +174,10 @@ const AddAgentModal: React.FC<AddAgentModalProps> = ({ isVisible, onClose, orgDi
       }
 
       // 2) Check if agent already exists on-chain (backup check)
-      console.info("Checking if agent exists on-chain for domain:", normalizedDomain);
+
       const existingOnChain = await getAgentByDomain({ publicClient, registry: identityRegistrationAddress, domain: normalizedDomain })
       if (existingOnChain) {
-        console.info("Agent already exists on-chain for domain:", normalizedDomain);
-        
         // Even if agent exists, check if attestation exists and create if needed
-        console.info("Checking if AIAgent attestation exists for existing agent...");
         const salt: `0x${string}` = keccak256(stringToHex(domain.trim().toLowerCase())) as `0x${string}`;
         const existingAgentAccountClient = await toMetaMaskSmartAccount({
           client: publicClient,
@@ -213,7 +194,6 @@ const AddAgentModal: React.FC<AddAgentModalProps> = ({ isVisible, onClose, orgDi
         return;
       }
 
-      console.info("Agent does not exist for this domain, proceeding with creation:", normalizedDomain)
 
       // 3) Create Agent AA (Hybrid) similar to indiv account abstraction
       const salt: `0x${string}` = keccak256(stringToHex(domain.trim().toLowerCase())) as `0x${string}`;
@@ -227,7 +207,6 @@ const AddAgentModal: React.FC<AddAgentModalProps> = ({ isVisible, onClose, orgDi
       const agentAddress = await agentAccountClient.getAddress();
 
       // Ensure Agent AA is deployed (same pattern as indiv/org deploy)
-      console.info("ensure agent account client is deployed")
       const deployed = await agentAccountClient.isDeployed();
       if (!deployed) {
         if (!BUNDLER_URL) throw new Error('Missing BUNDLER_URL for deployment');
@@ -261,7 +240,6 @@ const AddAgentModal: React.FC<AddAgentModalProps> = ({ isVisible, onClose, orgDi
       })
 
       // Create AIAgent attestation after successful agent creation
-      console.info("Creating AIAgent attestation...");
       await createAIAgentAttestation(normalizedDomain, agentAccountClient);
 
       setSubmitting(false);

@@ -147,6 +147,7 @@ const AgentsPage: React.FC<AgentsPageProps> = ({ orgDid, indivDid, onSelectAttes
   };
 
   useEffect(() => {
+    console.info("********* agents page orgDid: ", orgDid)
     if (orgDid && indivDid && chain) {
       AttestationService.loadRecentAttestationsTitleOnly(chain, orgDid, indivDid, currentWalletAddress).then((atts) => {
         setAttestations(atts)
@@ -161,6 +162,7 @@ const AgentsPage: React.FC<AgentsPageProps> = ({ orgDid, indivDid, onSelectAttes
 
   // Load agents and their AIAgent attestations
   useEffect(() => {
+    console.info("********* agents page loadAIAgentAttestations: ", loadAIAgentAttestations)
     const loadAgents = async () => {
       console.info("loadAgents useEffect triggered", { 
         hasSignatory: !!signatory, 
@@ -202,6 +204,8 @@ const AgentsPage: React.FC<AgentsPageProps> = ({ orgDid, indivDid, onSelectAttes
 
     loadAgents();
   }, [signatory?.walletClient?.account?.address, chain, loadAIAgentAttestations]);
+
+  console.info("********* agents page has arrived ")
 
   const filtered = attestations.filter(a => a.class === 'agent');
   const allAttestations = [...filtered, ...aiAgentAttestations];

@@ -786,8 +786,13 @@ class AttestationService {
 
     const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
     if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && orgdid != undefined && vcid != undefined && agentdomain != undefined) {
+      let displayName = agentdomain
+      if (displayName == "" || displayName == undefined || displayName == null) {
+        displayName = entityId.replace("(aiagent)", "").replace("(org)", "").replace("(indiv)", "")
+      }
+      
       const att : AIAgentAttestation = {
-        displayName: agentdomain,
+        displayName: displayName,
         class: "aiagent",
         category: "wallet",
         entityId: entityId,
@@ -1832,7 +1837,7 @@ class AttestationService {
       //console.info("set to social attestation with name: ", name)
       let displayName = name
       if (displayName == "" || displayName == undefined || displayName == null) {
-        displayName = entityId.replace("(org)", "").replace("(indiv)", "")
+        displayName = entityId.replace("(org)", "").replace("(indiv)", "").replace("(aiagent)", "")
       }
 
       const att : SocialAttestation = {
