@@ -58,6 +58,8 @@ MyOrgWallet empowers organizations to establish OrgTrust as a first-class identi
 
 🎯 KYB Compliance – Organizational verification via MetaMask Card checks, DNS/ENS proofs, and public attestations.
 
+🤖 Agent Identity Framework (ERC-8004) – Comprehensive agent identity system supporting AI Agents, Organization Agents, and Individual Agents with unique addresses and Account Abstraction integration.
+
 ---
 
 ## 🎯 Core Capabilities
@@ -81,6 +83,20 @@ Verifiable Credentials – Issue and store org credentials (formation docs, lead
 Attestations & ZKPs – Publish attestations on Optimism / Linea (EAS, Verax) with optional ZKP proofs for compliance and reputation.
 
 DIDComm Messaging – Secure peer-to-peer agent communication leveraging org DIDs for A2A trust exchange.
+
+### Agent Identity Framework (ERC-8004)
+
+MyOrgWallet implements a comprehensive Agent Identity system based on ERC-8004 principles, enabling seamless interaction between different agent types:
+
+**AI Agents** – Autonomous AI entities with Account Abstraction smart wallets, capable of executing complex workflows, managing attestations, and participating in agentic flows with built-in reputation tracking.
+
+**Organization Agents** – Corporate entities represented as smart contract wallets with delegated authority, managing organizational attestations, financial flows, and compliance requirements.
+
+**Individual Agents** – Human users with Account Abstraction wallets, participating in organizational governance, delegation chains, and cross-agent interactions.
+
+**Agentic Flows** – Human, Organizational, and AI Agents collaborate in dynamic workflows where reputation, trust, and verifiable credentials are exchanged and validated according to ERC-8004 standards.
+
+**Reputation Management** – All agent types maintain on-chain reputation scores tracked through attestations, verifiable credentials, and interaction history, enabling trust-based decision making in agentic marketplaces.
 
 | Feature | Description | Networks |
 |---------|-------------|----------|
@@ -166,6 +182,21 @@ Once linea mainnet support DKT myOrgWallet will run under linea mainnet and Vera
 ### Account Abstraction (AA):
 
 Utilize ERC-4337 to enable smart contract wallets, supporting gasless transactions and flexible user experiences without traditional private key management. Simplify onboarding with paymasters and bundled transactions.
+
+### Agent Identity System (ERC-8004):
+
+Implement a comprehensive agent identity framework where AI Agents, Organization Agents, and Individual Agents each possess unique Account Abstraction addresses and participate in agentic flows with reputation tracking:
+
+**Agent Types & Addresses:**
+- **AI Agents** – Autonomous entities with smart contract wallets, executing workflows and managing attestations
+- **Organization Agents** – Corporate entities with delegated authority and financial management capabilities  
+- **Individual Agents** – Human users with Account Abstraction wallets participating in governance and delegation
+
+**Agentic Flows & Reputation:**
+- Enable seamless interaction between Human, Organizational, and AI Agents
+- Track reputation through on-chain attestations, verifiable credentials, and interaction history
+- Implement ERC-8004 compliant reputation scoring for trust-based decision making
+- Support cross-agent communication and collaboration in decentralized marketplaces
 
 ### Delegation:
 
