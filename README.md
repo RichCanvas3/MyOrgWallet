@@ -88,15 +88,15 @@ DIDComm Messaging – Secure peer-to-peer agent communication leveraging org DID
 
 MyOrgWallet implements a comprehensive Agent Identity system based on ERC-8004 principles, enabling seamless interaction between different agent types:
 
-**AI Agents** – Autonomous AI entities with Account Abstraction smart wallets, capable of executing complex workflows, managing attestations, and participating in agentic flows with built-in reputation tracking.
+**AI Agents** – Autonomous AI entities with Account Abstraction as smart contracts, capable of executing complex workflows, managing attestations, and participating in agentic flows with built-in reputation tracking.
 
-**Organization Agents** – Corporate entities represented as smart contract wallets with delegated authority, managing organizational attestations, financial flows, and compliance requirements.
+**Organization Agents** – Corporate entities represented as smart contract with delegated authority, managing organizational attestations, financial flows, and compliance requirements.
 
-**Individual Agents** – Human users with Account Abstraction wallets, participating in organizational governance, delegation chains, and cross-agent interactions.
+**Individual Agents** – Human users with Account Abstraction as smart contract, participating in organizational governance, delegation chains, and cross-agent interactions.
 
 **Agentic Flows** – Human, Organizational, and AI Agents collaborate in dynamic workflows where reputation, trust, and verifiable credentials are exchanged and validated according to ERC-8004 standards.
 
-**Reputation Management** – All agent types maintain on-chain reputation scores tracked through attestations, verifiable credentials, and interaction history, enabling trust-based decision making in agentic marketplaces.
+**Reputation Management** – All agent types maintain reputation information tracked through attestations, verifiable credentials, and interaction history, enabling trust-based decision making in agentic marketplaces.
 
 | Feature | Description | Networks |
 |---------|-------------|----------|
