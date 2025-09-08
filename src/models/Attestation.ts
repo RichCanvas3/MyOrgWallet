@@ -43,6 +43,11 @@ export interface IndivAttestation extends Attestation {
   name: string
 }
 
+export interface AIAgentAttestation extends Attestation {
+  orgDid: string
+  agentDomain: string
+}
+
 export interface OrgIndivAttestation extends Attestation {
   indivDid: string,
   name: string,

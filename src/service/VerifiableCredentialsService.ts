@@ -93,6 +93,32 @@ class VerifiableCredentialsService {
       return vc;
     }
 
+
+    static async createAIAgentVC(
+      entityId: string,
+      did: string,
+      issuerDid: string,
+      orgDid: string,
+      domainName: string
+    ): Promise<VerifiableCredential> {
+      let vc : VerifiableCredential = {
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
+        type: ["VerifiableCredential", "SocialCredential"],
+        issuer: issuerDid,
+        issuanceDate: new Date().toISOString(),
+        credentialSubject: {
+          id: did,
+          orgDid: orgDid,
+          domainName: domainName,
+          verifiedMethod: "OAuth",
+          platform: "richcanvas",
+          provider: entityId
+        }
+      }
+
+      return vc;
+    }
+
     static async createRegisteredDomainVC(
       entityId: string,
       orgDid: string,

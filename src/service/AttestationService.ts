@@ -6,6 +6,7 @@ import { Entity } from '../models/Entity';
 import { Attestation,
   AttestationCategory,
   IndivAttestation,
+  AIAgentAttestation,
   OrgIndivAttestation,
   OrgAttestation,
   IndivAccountAttestation,
@@ -279,6 +280,9 @@ class AttestationService {
 
             if (entityId == "indiv(indiv)") {
               att = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+            }
+            if (entityId == "aiagent(aiagent)") {
+              att = this.constructAIAgentAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "account(indiv)") {
               att = this.constructIndivAccountAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
@@ -692,6 +696,120 @@ class AttestationService {
     }
 
   }
+
+
+  
+  static AIAgentSchemaUID = "0xeab949eeef45faa3119bea08f4fa0460e446354f1eee808737266bd6c3588e8b"
+  static AIAgentSchema = this.BaseSchema + "string orgdid, string agentdomain"
+  static async addAIAgentAttestation(chain: Chain, attestation: AIAgentAttestation, signer: ethers.JsonRpcSigner, delegationChain: Delegation[], aiAgentAccountClient: MetaMaskSmartAccount, aiAgentDelegateClient: MetaMaskSmartAccount, verifyAttestationAvailability: boolean = true): Promise<string> {
+
+    console.info("....... add ai agent attestation signer: ", signer)
+    eas.connect(signer)
+
+    const issuedate = Math.floor(new Date().getTime() / 1000); // Convert to seconds
+    const expiredate = Math.floor(new Date("2027-03-10").getTime() / 1000); // Convert to seconds
+
+    console.info("create ai agent attestation: ", attestation)
+
+    if (attestation.vccomm && attestation.vcsig && attestation.vciss && attestation.vcid && attestation.proof && attestation.agentDomain) {
+
+      const schemaEncoder = new SchemaEncoder(this.AIAgentSchema);
+      const schemaItems : SchemaItem[] = [
+          { name: 'entityid', value: attestation.entityId, type: 'string' },
+          { name: 'hash', value: attestation.hash, type: 'bytes32' },
+          { name: 'issuedate', value: issuedate, type: 'uint64' },
+          { name: 'expiredate', value: expiredate, type: 'uint64' },
+
+          { name: 'vccomm', value: attestation.vccomm, type: 'string' },
+          { name: 'vcsig', value: attestation.vcsig, type: 'string' },
+          { name: 'vciss', value: attestation.vciss, type: 'string' },
+          { name: 'vcid', value: attestation.vcid, type: 'string' },
+
+          { name: 'proof', value: attestation.proof, type: 'string' },
+
+          { name: 'orgdid', value: attestation.orgDid, type: 'string' },
+          { name: 'agentdomain', value: attestation.agentDomain, type: 'string' },
+
+        ];
+
+        const encodedData = schemaEncoder.encodeData(schemaItems);
+        await AttestationService.storeAttestation(chain, this.AIAgentSchemaUID, encodedData, aiAgentAccountClient, aiAgentDelegateClient, delegationChain, undefined, verifyAttestationAvailability)
+
+        let event: AttestationChangeEvent = {action: 'add', entityId: attestation.entityId, attestation: attestation};
+        attestationsEmitter.emit('attestationChangeEvent', event);
+
+        console.info("********************  done adding ai agent attestation *********************")
+
+    }
+
+    return attestation.entityId
+
+  }
+  static constructAIAgentAttestation(chain: Chain, uid: string, schemaId: string, entityId : string, attester: string, hash: string, decodedData: SchemaDecodedItem[]) : Attestation | undefined {
+
+    let vccomm : string | undefined
+    let vcsig : string | undefined
+    let vciss : string | undefined
+    let vcid : string | undefined
+    let proof : string | undefined
+    let orgdid: string | undefined
+    let agentdomain: string | undefined
+
+    for (const field of decodedData) {
+      let fieldName = field["name"]
+
+      if (fieldName == "hash") {
+        hash = field["value"].value as string
+      }
+      if (fieldName == "vccomm") {
+        vccomm = field["value"].value as string
+      }
+      if (fieldName == "vcsig") {
+        vcsig = field["value"].value as string
+      }
+      if (fieldName == "vciss") {
+        vciss = field["value"].value as string
+      }
+      if (fieldName == "vcid") {
+        vcid = field["value"].value as string
+      }
+      if (fieldName == "proof") {
+        proof = field["value"].value as string
+      }
+      if (fieldName == "orgdid") {
+        orgdid = field["value"].value as string
+      }
+      if (fieldName == "agentdomain") {
+        agentdomain = field["value"].value as string
+      }
+    }
+
+    const attesterDid = "did:pkh:eip155:" + chain?.id + ":" + attester
+    if (uid != undefined && schemaId != undefined && entityId != undefined && hash != undefined && orgdid != undefined && vcid != undefined && agentdomain != undefined) {
+      const att : AIAgentAttestation = {
+        displayName: agentdomain,
+        class: "aiagent",
+        category: "wallet",
+        entityId: entityId,
+        attester: attesterDid,
+        schemaId: schemaId,
+        uid: uid,
+        hash: hash,
+        vccomm: vccomm,
+        vcsig: vcsig,
+        vciss: vciss,
+        vcid: vcid,
+        proof: proof,
+        orgDid: orgdid,
+        agentDomain: agentdomain
+      }
+
+      return att
+    }
+
+    return undefined
+  }
+
 
 
   static IndivSchemaUID = "0x6cec06c3c01411fb63e6635161a5b761c0f57c99d5e067d459174d193b32b6fb"
@@ -2923,6 +3041,9 @@ class AttestationService {
             if (entityId == "indiv(indiv)") {
               att = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
+            if (entityId == "aiagent(aiagent)") {
+              att = this.constructAIAgentAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+            }
             if (entityId == "account(indiv)") {
               att = this.constructIndivAccountAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
             }
@@ -3280,6 +3401,13 @@ class AttestationService {
           rtnAttestation = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
         }
       }
+      if (schemaId == this.AIAgentSchemaUID) {
+        const schemaEncoder = new SchemaEncoder(this.AIAgentSchema);
+        const decodedData = schemaEncoder.decodeData(item.data);
+        if (this.checkEntity(entityId, decodedData)) {
+          rtnAttestation = this.constructAIAgentAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+        }
+      }
       if (schemaId == this.OrgIndivSchemaUID) {
 
         const schemaEncoder = new SchemaEncoder(this.OrgIndivSchema);
@@ -3550,6 +3678,12 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
       name: "indiv(indiv)",
       schemaId: this.IndivSchemaUID,
       schema: this.IndivSchema,
+      priority: 10
+    },
+    {
+      name: "aiagent(aiagent)",
+      schemaId: this.AIAgentSchemaUID,
+      schema: this.AIAgentSchema,
       priority: 10
     },
     {
