@@ -531,20 +531,6 @@ class AttestationService {
     });
 
 
-    console.info("pimlico client configruation for BUNDLER URL")
-    const pimlicoClient = createPimlicoClient({
-      transport: http(BUNDLER_URL),
-    });
-    const bundlerClient = createBundlerClient({
-                    transport: http(BUNDLER_URL),
-                    paymaster: paymasterClient,
-                    chain: chain,
-                    paymasterContext: {
-                      mode:             'SPONSORED',
-                    },
-                  });
-
-    // This code was using executions before it was defined - removing it
 
     try {
       const key1 = BigInt(Date.now())      // or some secure random
@@ -667,10 +653,10 @@ class AttestationService {
 
 
             const query = `
-            query Attestations($schema: String!, $first: Int) {
+            query Attestations($first: Int, $txHash: String! ) {
               attestations(first: $first, where: { 
-                    txHash: { equals: $txHash }
-                    revoked: { equals: false }
+                    txHash: $txHash
+                    revoked: false
               }) {
                 id
                 schema

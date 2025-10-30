@@ -724,6 +724,8 @@ export const useWalletConnect = () => {
             let localIndivDid : string | undefined = 'did:pkh:eip155:' + chain?.id + ':' + indivAccountClient.address
 
             const orgIndivAttestation = await AttestationService.getOrgIndivAttestation(chain, localIndivDid, AttestationService.OrgIndivSchemaUID, "org-indiv(org)");
+            console.info("check if found orgIndivAttestation for indivDid: ", localIndivDid, " => ", orgIndivAttestation)
+            
             const indivAttestation = await AttestationService.getAttestationByDidAndSchemaId(chain, localIndivDid, AttestationService.IndivSchemaUID, "indiv(indiv)", "")
 
             if (indivAttestation) {
