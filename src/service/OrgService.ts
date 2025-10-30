@@ -1,5 +1,5 @@
 
-import {OPENAI_API_KEY} from "../config";
+
 import {CustomError} from "./CustomError";
 
 import axios from 'axios'

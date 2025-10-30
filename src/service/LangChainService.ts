@@ -30,7 +30,11 @@ export async function invokeLangGraphAgent({
 } = {}) {
   try {
 
-    const response = await fetch('https://myorgwalletlang-7ced710fbd1a5b698d578945dc0f68bd.us.langgraph.app/threads', {
+    //const langchainUrl = "https://myorgwalletlang-7ced710fbd1a5b698d578945dc0f68bd.us.langgraph.app";
+    const langchainUrl = "https://ht-husky-ant-58-bc64eddf895e59d39937dff96b62b05c.us.langgraph.app";
+    const langchainUrlThreads = langchainUrl + "/threads"
+
+    const response = await fetch(langchainUrlThreads, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -43,7 +47,7 @@ export async function invokeLangGraphAgent({
           user_id: "f67be9df-f865-4e95-a8b5-e272ac95bc48",
           session_type: "test",
           custom_note: "Created via API",
-          LANGGRAPH_API_URL: 'https://myorgwalletlang-7ced710fbd1a5b698d578945dc0f68bd.us.langgraph.app'
+          LANGGRAPH_API_URL: langchainUrl
         },
         if_exists: 'do_nothing',
         ttl: {
@@ -127,7 +131,11 @@ export async function sendMessageToLangGraphAssistant(
     //console.log('Thread ID:', thread_id);
     //console.log('Message:', message.substring(0, 50) + '...');
 
-    const data = await fetch('https://myorgwalletlang-7ced710fbd1a5b698d578945dc0f68bd.us.langgraph.app/threads/'+ thread_id +'/runs/stream', {
+    //const langchainUrl = "https://myorgwalletlang-7ced710fbd1a5b698d578945dc0f68bd.us.langgraph.app";
+    const langchainUrl = "https://ht-husky-ant-58-bc64eddf895e59d39937dff96b62b05c.us.langgraph.app";
+    const langchainUrlThreads = langchainUrl + "/threads/"
+
+    const data = await fetch(langchainUrlThreads + thread_id +'/runs/stream', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -149,7 +157,7 @@ export async function sendMessageToLangGraphAssistant(
         metadata: {
           langgraph_auth_user_id: "f67be9df-f865-4e95-a8b5-e272ac95bc48",
           user_id: "f67be9df-f865-4e95-a8b5-e272ac95bc48",
-          LANGGRAPH_API_URL: 'https://myorgwalletlang-7ced710fbd1a5b698d578945dc0f68bd.us.langgraph.app'
+          LANGGRAPH_API_URL: langchainUrl
         },
         config: {
           tags: [''],
@@ -281,14 +289,14 @@ export async function sendMessageToLangGraphAssistant(
     console.error("Error processing LangGraph response:", error);
     console.error("Response data:", { dataList });
     return {
-      message: "I encountered an error processing your request. Please try again.",
+      message: "I encountered an error processing your request. Please try again." + error, 
       id: '', name: '', formDate: '', address: ''
     };
   }
 } catch (error) {
   console.error("Error in sendMessageToLangGraphAssistant:", error);
   return {
-    message: "I'm having trouble connecting to my assistant service right now. Please try again in a moment.",
+    message: "I'm having trouble connecting to my assistant service right now 2. Please try again in a moment.",
     id: '', name: '', formDate: '', address: ''
   };
 } finally {

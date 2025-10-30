@@ -337,101 +337,98 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
 
 
     if (orgAccountClient && chain && orgDid && indivDid) {
-
+      console.info("init() 55 ........")
       // Get the current wallet address for additional filtering
       const currentWalletAddress = signatory?.walletClient?.account?.address;
-      await AttestationService.setEntityAttestations(chain, orgDid, indivDid, currentWalletAddress).then((ents) => {
+      const ents = await AttestationService.setEntityAttestations(chain, orgDid, indivDid, currentWalletAddress)
+      if (ents != undefined) {
+        //console.log("ents: ", ents)
+        setEntities(ents)
+        for (const entity of ents) {
+          if (entity.name == "org(org)" && entity.attestation) {
+            setOrgNameValue((entity.attestation as OrgAttestation).name)
 
-        if (ents != undefined) {
-          //console.log("ents: ", ents)
-          setEntities(ents)
-          for (const entity of ents) {
-            if (entity.name == "org(org)" && entity.attestation) {
-              setOrgNameValue((entity.attestation as OrgAttestation).name)
-
-              orgname = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == "domain(org)") {
-              domain = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == "ens(org)") {
-              ens_registration = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == "indiv(indiv)") {
-              indiv = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'linkedin(indiv)') {
-              linkedin = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'x(indiv)') {
-              x = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'account(indiv)') {
-              account_indiv = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'insurance(org)') {
-              insurance = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'website(org)') {
-              website = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'shopify(org)') {
-              shopify = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'email(org)') {
-             email_org = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'email(indiv)') {
-             email_indiv = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'state-registration(org)') {
-              state_registration = safeJsonStringify(entity.attestation)
-            } else if (entity.name == 'account-org(org)') {
-             accountOrg_org = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'account(org)') {
-             account_org = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'org-indiv(org)') {
-              orgIndiv_org = safeJsonStringify(entity.attestation as OrgAttestation)
-              orgname = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == "domain(org)") {
-              domain = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == "ens(org)") {
-              ens_registration = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == "indiv(indiv)") {
-              indiv = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'linkedin(indiv)') {
-              linkedin = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'x(indiv)') {
-              x = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'account(indiv)') {
-              account_indiv = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'insurance(org)') {
-              insurance = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'website(org)') {
-              website = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'shopify(org)') {
-              shopify = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'email(org)') {
-             email_org = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'email(indiv)') {
-             email_indiv = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'state-registration(org)') {
-              state_registration = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'account-org(org)') {
-             accountOrg_org = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'account(org)') {
-             account_org = safeJsonStringify(entity.attestation as OrgAttestation)
-            } else if (entity.name == 'org-indiv(org)') {
-              orgIndiv_org = safeJsonStringify(entity.attestation as OrgAttestation)
-            }
-          }
-
-          if (!conversation) {
-            if (location.pathname.startsWith("/chat/c/")) {
-              let conversationId = location.pathname.replace("/chat/c/", "")
-              handleSelectedConversation(conversationId)
-            }
-            else {
-              newConversation(ents)
-            }
+            orgname = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == "domain(org)") {
+            domain = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == "ens(org)") {
+            ens_registration = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == "indiv(indiv)") {
+            indiv = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'linkedin(indiv)') {
+            linkedin = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'x(indiv)') {
+            x = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'account(indiv)') {
+            account_indiv = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'insurance(org)') {
+            insurance = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'website(org)') {
+            website = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'shopify(org)') {
+            shopify = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'email(org)') {
+           email_org = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'email(indiv)') {
+           email_indiv = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'state-registration(org)') {
+            state_registration = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'account-org(org)') {
+           accountOrg_org = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'account(org)') {
+           account_org = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'org-indiv(org)') {
+            orgIndiv_org = (entity.attestation as OrgAttestation)?.name  
+          } else if (entity.name == "domain(org)") {
+            domain = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == "ens(org)") {
+            ens_registration = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == "indiv(indiv)") {
+            indiv = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'linkedin(indiv)') {
+            linkedin = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'x(indiv)') {
+            x = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'account(indiv)') {
+            account_indiv = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'insurance(org)') {
+            insurance = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'website(org)') {
+            website = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'shopify(org)') {
+            shopify = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'email(org)') {
+           email_org = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'email(indiv)') {
+           email_indiv = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'state-registration(org)') {
+            state_registration = (entity.attestation as OrgAttestation)?.name  
+          } else if (entity.name == 'account-org(org)') {
+           accountOrg_org = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'account(org)') {
+           account_org = (entity.attestation as OrgAttestation)?.name
+          } else if (entity.name == 'org-indiv(org)') {
+            orgIndiv_org = (entity.attestation as OrgAttestation)?.name
           }
         }
-      })
 
+        if (!conversation) {
+          if (location.pathname.startsWith("/chat/c/")) {
+            let conversationId = location.pathname.replace("/chat/c/", "")
+            handleSelectedConversation(conversationId)
+          }
+          else {
+            newConversation(ents)
+          }
+        }
+      }
 
     }
     else {
+      console.info("init() navigate to / ........")
       navigate("/")
     }
-    //return ents_array
+    console.info("init() return orgname: ........", orgname)
     return {
       "name": orgname,
       "linkedin": linkedin,
@@ -453,22 +450,15 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   }
 
 
-  //const company_config = ''
-
-  //console.log('company config: ', company_config)
-
-
   useEffect(() => {
     //console.info("........ is connected: ", signatory)
     if (signatory == undefined) {
       navigate('/')
     }
-
   }, [signatory]);
 
   useEffect(() => {
     conversationsEmitter.on('conversationChangeEvent', handleConversationChange);
-
     return () => {
       conversationsEmitter.off('conversationChangeEvent', handleConversationChange);
     };
@@ -508,14 +498,18 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
   }, [userSettings]);
 
   useEffect(() => {
+
+    console.info("fetchThreadID() useEffect() ........")
     let isMounted = true;
 
     async function fetchThreadID() {
       if (!isMounted) {
         return;
-      } else if (threadID) {
+      } 
+      else if (threadID) {
+
         const company_config = await init();
-        //getArgfromUserMessage(threadIDResult, `lets get started: ${company_config}`).then(str => {
+
         getArgfromUserMessage(threadID,
          `Name: ${company_config["name"]},
           Domain: ${company_config["domain"]},
@@ -537,30 +531,35 @@ const MainPage: React.FC<MainPageProps> = ({className, appCommand}) => {
         const threadIDResult = threadID_Array[1];
 
         if (isMounted) {
+          console.info("setThreadID 11 ........")
           setThreadID(threadIDResult);
+          console.info("init() 2 ........")
           const company_config = await init();
 
           // Check if we got a mock thread ID (indicating LangGraph is unavailable)
           if (threadIDResult === 'mock-thread-id-12345') {
             console.log('LangGraph unavailable, using offline mode');
             const welcomeMessage = `Welcome! I'm here to help you manage your organization's wallet and attestations.
+                Since my advanced assistant service is temporarily unavailable, I can help you with basic tasks like:
+                • Show your wallet addresses
+                • Add organization information
+                • Verify your LinkedIn profile
+                • Register your company
+                • Add ENS records
+                • And much more!
 
-Since my advanced assistant service is temporarily unavailable, I can help you with basic tasks like:
-
-• Show your wallet addresses
-• Add organization information
-• Verify your LinkedIn profile
-• Register your company
-• Add ENS records
-• And much more!
-
-What would you like to do today?`;
+                What would you like to do today?`;
 
             addMessage(Role.Assistant, MessageType.Normal, welcomeMessage, '', [], sendMessage);
-          } else {
+          } 
+          else {
+
+            console.info("thread is not set so lets get it initialized")
+
             // LangGraph is available, use it
             // Send the first message WITH entities data so LangChain knows about attestations
             try {
+
               const response = await sendMessageToLangGraphAssistant(
                 `Lets get started: Name: ${company_config["name"]},
                  Domain: ${company_config["domain"]},
@@ -584,6 +583,7 @@ What would you like to do today?`;
               if (response && response.message) {
                 addMessage(Role.Assistant, MessageType.Normal, response.message, '', [], sendMessage);
               }
+
             } catch (error) {
               console.error('Error sending initial message to LangChain:', error);
               // Fallback to original behavior
@@ -610,6 +610,7 @@ What would you like to do today?`;
         console.error('Error fetching thread ID:', error);
         // If thread creation fails, still show a welcome message
         if (isMounted) {
+          console.info("init() 3 ........")
           const company_config = await init();
           const welcomeMessage = `Welcome! I'm here to help you manage your organization's wallet and attestations.
 
@@ -772,6 +773,7 @@ What would you like to do today?`;
   };
 
   async function resendConfig(threadID: any) {
+    console.info("init() 4 ........")
     const company_config = await init();
     //getArgfromUserMessage(threadIDResult, `lets get started: ${company_config}`).then(str => {
     const mes = await getArgfromUserMessage(threadID,
@@ -1085,8 +1087,9 @@ What would you like to do today?`;
     setAllowAutoScroll(true);
 
     // Add user's message
+    console.info("addMessage() ccc ........")
     addMessage(Role.User, MessageType.Normal, message, '', fileDataRef, sendMessage);
-
+    console.info("addMessage() done ........")
     // Force scroll to bottom after adding user message
     setTimeout(() => {
       scrollToBottom();
@@ -1308,62 +1311,13 @@ What would you like to do today?`;
 
 
   function sendMessage(updatedMessages: ChatMessage[], args: string) {
-    /*
-    // if we know what to do already from processor then go ahead and do it.  No need to call openai
-    if (args != "") {
-      console.info("*********************** no need to have AI look at user input becasue it told us what to do: ", args)
 
-
-
-      let messages: ChatMessage[] = [
-        {
-          id: 0,
-          messageType: MessageType.Normal,
-          role: Role.Assistant,
-          content: "",
-          args: args
-        } as ChatMessage,
-        ...updatedMessages
-      ];
-      setMessages(messages)
-
-
-
-
-      //console.info(">>>>>>>> handleStreamedResponse ")
-      handleStreamedResponse("", args, [], true)
-      return
-    }
-    */
+    console.info("sendMessage() aaaaa ........")
+   
 
     let defaultIntroduction
     let defaultInstruction
-    let defaultTools
-    /*
-    //console.info("set ai stuff")
-    if (entities != undefined) {
-      for (const entity of entities) {
-        //console.info("entity: ", entity, entity.attestation)
-        if (entity.attestation == undefined && entity.introduction) {
-          //console.info(">>>>>> add tools for : ", entity.name)
-          if (entity.introduction != undefined) {
-            defaultIntroduction = entity.introduction.replace("[org]", orgName?orgName:"")
-          }
-          if (entity.instruction != undefined) {
-            defaultInstruction = entity.instruction.replace("[org]", orgName?orgName:"")
-          }
-          if (entity.tools != undefined) {
-            defaultTools = entity.tools
-          }
-          break
-        }
-      }
-    }
-    */
-    //console.info("tell AI what we need to do")
-    //console.info("default introduction: ", defaultIntroduction)
-    //console.info("default instruction: ", defaultInstruction)
-    //console.info("default tools: ", defaultTools)
+   
 
 
     setLoading(true);
@@ -1384,46 +1338,8 @@ What would you like to do today?`;
       DEFAULT_INTRODUCTIONS
     );
 
-    let messages: ChatMessage[] = [
-      {
-        role: Role.System,
-        content: systemPrompt
-      } as ChatMessage,
-      {
-        id: 0,
-        messageType: MessageType.Normal,
-        role: Role.Assistant,
-        content: assistantPrompt
-      } as ChatMessage,
-      ...updatedMessages
-    ];
 
-    let effectiveSettings = getEffectiveChatSettings();
-
-    /*
-    console.info("....... defaultTools: ", defaultTools)
-    ChatService.sendMessageStreamed(effectiveSettings, messages, defaultTools, handleStreamedResponse)
-      .then((response: ChatCompletion) => {
-        //console.info(">>>>> sendMessageStreamed response: ", response)
-        //addMessage(Role.Assistant, MessageType.Error, "lets do next thing", []);
-        // no-op
-      })
-      .catch(err => {
-        console.info(">>>>> error sendMEssageStreamed: ")
-        if (err instanceof CustomError) {
-          const message: string = err.message;
-          setLoading(false);
-
-          console.info("...... add assistant message to list: ", message)
-          addMessage(Role.Assistant, MessageType.Error, message, "", []);
-        } else {
-          NotificationService.handleUnexpectedError(err, 'Failed to send message to openai.');
-        }
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-    */
+    
     setLoading(false);
   }
 
@@ -1975,8 +1891,11 @@ What would you like to do today?`;
 
   async function processUserMessage(currentThreadID: string, content: string) {
 
+    console.info("processUserMessage() yyyy ........")
+    console.info("currentThreadID: ", currentThreadID)
+    //console.info("content: ", content)
+
     let args = ""
-    const stateList = ['colorado', 'delaware']
 
     // Helper function to add delay before LangChain calls
     const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -1991,72 +1910,8 @@ What would you like to do today?`;
     }
 
     if (currentThreadID) {
-      /*
-      // Check if user wants to skip the current entity
-      if (content.toLowerCase().includes('skip')) {
-        if (entities) {
-          const updatedEntities = markCurrentEntityAsSkipped([...entities]);
-          setEntities(updatedEntities);
 
-          // Find next entity to prompt for
-          const nextEntity = getCurrentEntity(updatedEntities);
-          if (nextEntity && orgName) {
-            const nextPrompt = nextEntity.introduction?.replace("[org]", orgName) || "What would you like to do next?";
-            return `I understand you'd like to skip that for now. ${nextPrompt}`;
-          } else {
-            return "No problem! You've completed all the required attestations. Feel free to let me know if you'd like to add any additional verifications or if you have any questions.";
-          }
-        }
-        return "I understand you'd like to skip that for now. What would you like to do next?";
-      }
-      */
-      // Check for "yes" responses to verification questions before sending to LangChain
-      if (conversation) {
-        var messages: ChatMessage[] = JSON.parse(conversation.messages);
-        if (messages.length > 0) {
-          const lastAssistantMessage = messages[messages.length - 1].content.toLowerCase();
-          /*
-          console.log('Checking yes response with last assistant message:', lastAssistantMessage);
 
-          // Check for yes responses to verification questions
-          let args = checkLinkedinAttestation(lastAssistantMessage, lastUserResponse);
-          if (args != "") {
-            console.log('LinkedIn yes detected, returning:', args);
-            return args;
-          }
-
-          args = checkXAttestation(lastAssistantMessage, lastUserResponse);
-          if (args != "") {
-            console.log('X yes detected, returning:', args);
-            return args;
-          }
-
-          args = checkShopifyAttestation(lastAssistantMessage, lastUserResponse);
-          if (args != "") {
-            console.log('Shopify yes detected, returning:', args);
-            return args;
-          }
-
-          args = checkInsuranceAttestation(lastAssistantMessage, lastUserResponse);
-          if (args != "") {
-            console.log('Insurance yes detected, returning:', args);
-            return args;
-          }
-
-          args = checkWebsiteAttestation(lastAssistantMessage, lastUserResponse);
-          if (args != "") {
-            console.log('Website yes detected, returning:', args);
-            return args;
-          }
-
-          args = checkEmailAttestation(lastAssistantMessage, lastUserResponse);
-          if (args != "") {
-            console.log('Email yes detected, returning:', args);
-            return args;
-          }
-          */
-        }
-      }
 
       if (content.toLowerCase() == 'colorado') {
         try {
@@ -2073,13 +1928,17 @@ What would you like to do today?`;
           console.error("Error calling LangGraph assistant for state registration:", error);
           return "I'm having trouble processing the state registration request. Please try again in a moment.";
         }
-      } else if ((content.toLowerCase())[12] == 'l') {//'https://www.linkedin.com/in') {
+      } 
+      else if ((content.toLowerCase())[12] == 'l') {//'https://www.linkedin.com/in') {
+
+        console.info("linkedin_verification 11 ........")
+        /*
         //console.log('hallo')
         try {
           // Add 2-second delay before LangChain call
           //console.log('Adding 2-second delay before LangChain call...');
           await delay(2000);
-          //console.log('Delay completed, sending message to LangChain...');
+          console.log('Delay completed, sending message to LangChain 1...');
           var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'linkedin_verification', entities || [], {}, linkedInAuthRef, xAuthRef);
           //console.log('LangChain Response: ', response.message)
           return response.message;
@@ -2092,25 +1951,27 @@ What would you like to do today?`;
             // Add 2-second delay before LangChain call
             //console.log('Adding 2-second delay before LangChain call...');
             await delay(2000);
-            console.log('Delay completed, sending message to LangChain...');
+            console.log('Delay completed, sending message to LangChain 2...');
             var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'x_verification', entities || [], {}, linkedInAuthRef, xAuthRef);
             return response.message;
           } catch (error) {
             console.error("Error calling LangGraph assistant for X verification:", error);
             return "I'm having trouble processing the X verification request. Please try again in a moment.";
           }
-      } else {
+        */
+      } 
+      else {
 
         try {
           // Add 2-second delay before LangChain call
           //console.log('Adding 2-second delay before LangChain call...');
           await delay(2000);
-          //console.log('Delay completed, sending message to LangChain...');
+          console.log('Delay completed, sending message to LangChain bbb...');
           var response = await sendMessageToLangGraphAssistant(lastUserResponse, currentThreadID, 'none', entities || [], {}, linkedInAuthRef, xAuthRef);
           return response.message;
         } catch (error) {
           console.error("Error calling LangGraph assistant:", error);
-          return "I'm having trouble connecting to my assistant service right now. Please try again in a moment.";
+          return "I'm having trouble connecting to my assistant service right now 1. Please try again in a moment.";
         }
       }
     }
@@ -2152,7 +2013,7 @@ What would you like to do today?`;
 
 
     // let inject args if the user said "yes" to actions
-    console.log('Checking attestation responses with:', { introduction, lastUserResponse });
+    //console.log('Checking attestation responses with:', { introduction, lastUserResponse });
 
     // If we reach here, it means no specific action was detected
     // Return empty string to avoid showing fallback message
@@ -2233,462 +2094,7 @@ What would you like to do today?`;
     return entities;
   }
 
-  // Function to get the current entity being prompted for
-  function getCurrentEntity(entities: Entity[]): Entity | undefined {
-    if (!entities) return undefined;
 
-    for (const entity of entities) {
-      if (entity.attestation == undefined && !entity.skipped && entity.introduction != "") {
-        return entity;
-      }
-    }
-    return undefined;
-  }
-
-  function processAssistantMessage(isFirstCall: boolean, content: string, args: string, prevMessages: ChatMessage[], updatedMessage: ChatMessage, fileDataRef: FileDataRef[]) {
-
-    console.log("processAssistantMessage called with args:", args);
-    console.log("processAssistantMessage content:", content);
-
-    const result = {
-      isToolFunction: false,
-      messages: [] as ChatMessage[]
-    };
-
-    if (args) {
-      const argsVal = extractJsonFromString(args)
-      //console.info("argsVal: ", argsVal)
-      if (argsVal != null) {
-
-        result.isToolFunction = true
-        let command = JSON.parse(argsVal)
-
-        if ("edit" in command) {
-          let socialCommand = command["edit"]
-          if (socialCommand && socialCommand.toLowerCase() == "linkedin(indiv)") {
-            //console.info("....... edit linkedin information .........")
-            const cmd : Command = {
-              action: "edit",
-              did: indivDid,
-              entityId: "linkedin(indiv)",
-            }
-            appCommand(cmd)
-          }
-          if (socialCommand.toLowerCase() == "x(indiv)") {
-            //console.info("....... edit x information .........")
-            const cmd : Command = {
-              action: "edit",
-              did: indivDid,
-              entityId: "linkedin(indiv)",
-            }
-            appCommand(cmd)
-          }
-        }
-        if ("validate" in command) {
-          //console.info("social edit request: ", command["validate"])
-          let socialCommand = command["validate"]
-          if (socialCommand.toLowerCase() == "linkedin(indiv)") {
-
-            if (isFirstCall) {
-              linkedInAuthRef.current?.openLinkedInPopup();
-            }
-
-            entities?.forEach((ent) => {
-              if (ent.name == "linkedin(indiv)") {
-                ent.attestation = { entityId: "linkedin(indiv)", hash: "", attester: ""}
-              }
-            })
-            setEntities(entities)
-
-            if (orgName && entities) {
-              result.messages = postToolCmdSendMessages(prevMessages, orgName, entities)
-            }
-
-            clearInputArea();
-            //messageBoxRef.current?.reset();
-          }
-          if (socialCommand.toLowerCase() == "x(indiv)") {
-
-            if (isFirstCall) {
-              xAuthRef.current?.openXPopup();
-            }
-
-            entities?.forEach((ent) => {
-              if (ent.name == "x(indiv)") {
-                ent.attestation = { entityId: "x(indiv)", hash: "", attester: ""}
-              }
-            })
-            setEntities(entities)
-
-            if (orgName && entities) {
-              result.messages = postToolCmdSendMessages(prevMessages, orgName, entities)
-            }
-
-            clearInputArea();
-            //messageBoxRef.current?.reset();
-          }
-          if (socialCommand.toLowerCase() == "shopify(org)") {
-
-            if (isFirstCall) {
-              shopifyAuthRef.current?.openShopifyPopup();
-            }
-
-            entities?.forEach((ent) => {
-              if (ent.name == "shopify(org)") {
-                ent.attestation = { entityId: "shopify(org)", hash: "", attester: ""}
-              }
-            })
-            setEntities(entities)
-
-            if (orgName && entities) {
-              result.messages = postToolCmdSendMessages(prevMessages, orgName, entities)
-            }
-
-            clearInputArea();
-            //messageBoxRef.current?.reset();
-          }
-
-          if (socialCommand.toLowerCase() == "insurance(org)") {
-
-            console.info("isFirstCall: ", isFirstCall)
-            if (isFirstCall) {
-              console.info("open insurance popup: ", insuranceAuthRef.current)
-              insuranceAuthRef.current?.openInsurancePopup()
-            }
-
-            entities?.forEach((ent) => {
-              if (ent.name == "insurance(org)") {
-                ent.attestation = { entityId: "insurance(org)", hash: "", attester: ""}
-              }
-            })
-            setEntities(entities)
-
-            console.info("post tool cmd send message")
-            if (orgName && entities) {
-              result.messages = postToolCmdSendMessages(prevMessages, orgName, entities)
-            }
-
-            clearInputArea();
-          }
-          if (socialCommand.toLowerCase() == "stateRegistration(org)") {
-
-            if (isFirstCall) {
-              const cmd: Command = {
-                action: "edit",
-                did: orgDid,
-                entityId: "stateRegistration(org)",
-                displayName: "State Registration Verification"
-              }
-              appCommand(cmd)
-            }
-
-            entities?.forEach((ent) => {
-              if (ent.name == "stateRegistration(org)") {
-                ent.attestation = { entityId: "stateRegistration(org)", hash: "", attester: ""}
-              }
-            })
-            setEntities(entities)
-
-            if (orgName && entities) {
-              result.messages = postToolCmdSendMessages(prevMessages, orgName, entities)
-            }
-
-            clearInputArea();
-          }
-
-        }
-
-        console.info("............. command: ", command)
-        if ("orgName" in command) {
-          let newOrgName = command["orgName"]
-          if (newOrgName) {
-            if (isFirstCall) {
-
-              setNewOrgName(newOrgName)
-              setOrgModalVisible(true)
-
-              entities?.forEach((ent) => {
-                if (ent.name == "org(org)") {
-                  ent.attestation = { entityId: "org(org)", hash: "", attester: ""}
-                }
-              })
-              setEntities(entities)
-
-              if (newOrgName && entities) {
-                result.messages = postToolCmdSendMessages(prevMessages, newOrgName, entities)
-              }
-
-
-            }
-          }
-        }
-
-
-        if ("state" in command) {
-          let state = command["state"]
-          if (state) {
-            if (isFirstCall) {
-              // Note: State registration attestation is handled elsewhere
-              // This is just a placeholder for the UI update
-
-              entities?.forEach((ent) => {
-                if (ent.name == "state-registration(org)") {
-                  ent.attestation = { entityId: "state-registration(org)", hash: "", attester: ""}
-                }
-              })
-              //setEntities(entities)
-
-              console.info("entities and orgName: ", orgName, entities)
-              if (orgName && entities) {
-                console.info("prev messages: ", prevMessages)
-                result.messages = postToolCmdSendMessages(prevMessages, orgName, entities)
-                console.info("state returned messages: ", result.messages)
-              }
-
-            }
-          }
-        }
-
-        if ("domain" in command) {
-          let domain = command["domain"]
-          if (domain) {
-            if (isFirstCall) {
-              addOrgDomainAttestation(domain).then(() => {
-
-                if (location.pathname.startsWith("/chat/c/")) {
-                  let conversationId = location.pathname.replace("/chat/c/", "")
-                  let id = parseInt(conversationId)
-                  ConversationService.getConversationById(id).then((conversation) => {
-                    if (conversation) {
-
-                      var currentMsgs: ChatMessage[] = JSON.parse(conversation.messages);
-
-                      const newMsg: ChatMessage = {
-                        id: currentMsgs.length + 1,
-                        args: "",
-                        role: Role.Developer,
-                        messageType: MessageType.Normal,
-                        content: "I've updated your wallet with a verifiable credential and published your domain attestation.",
-                      };
-
-                      const msgs: ChatMessage[] = [...currentMsgs.slice(0, -1), newMsg]
-                      const msgs2: ChatMessage[] = [...msgs, currentMsgs[currentMsgs.length - 1]]
-
-                      console.info("update conversation message ")
-                      ConversationService.updateConversation(conversation, msgs2)
-                    }
-                  })
-
-                }
-
-              })
-
-              entities?.forEach((ent) => {
-                if (ent.name == "domain(org)") {
-                  ent.attestation = { entityId: "domain(org)", hash: "", attester: ""}
-                }
-              })
-              setEntities(entities)
-
-              if (orgName && entities) {
-                result.messages = postToolCmdSendMessages(prevMessages, orgName, entities)
-              }
-
-            }
-
-          }
-        }
-
-        // Handle ENS domain creation
-        if ("createEns" in command) {
-          let ensName = command["createEns"]
-          if (ensName) {
-            if (isFirstCall) {
-              createEnsDomainName(ensName).then(() => {
-                console.log("ENS domain creation complete");
-                // Update UI or show success message
-                if (orgName && entities) {
-                  result.messages = postToolCmdSendMessages(prevMessages, orgName, entities)
-                }
-              }).catch((error) => {
-                console.error("Error creating ENS domain:", error);
-              });
-              clearInputArea();
-            }
-          }
-        }
-
-        if ("email" in command) {
-          let email = command["email"]
-          console.info("email value: ", email)
-          if (email) {
-            if (isFirstCall) {
-              addOrgEmailAttestation(email).then(() => {
-
-              })
-
-              entities?.forEach((ent) => {
-                if (ent.name == "email(org)") {
-                  ent.attestation = { entityId: "email(org)", hash: "", attester: ""}
-                }
-              })
-              setEntities(entities)
-
-              if (orgName && entities) {
-                result.messages = postToolCmdSendMessages(prevMessages, orgName, entities)
-              }
-
-            }
-
-          }
-        }
-
-        if ("website" in command) {
-          let website = command["website"]
-          if (website) {
-            if (isFirstCall) {
-              addOrgWebsiteAttestation(website).then(() => {
-
-              })
-
-              entities?.forEach((ent) => {
-                if (ent.name == "website(org)") {
-                  ent.attestation = { entityId: "website(org)", hash: "", attester: ""}
-                }
-              })
-              setEntities(entities)
-
-              if (orgName && entities) {
-                result.messages = postToolCmdSendMessages(prevMessages, orgName, entities)
-              }
-
-            }
-
-          }
-        }
-
-
-      }
-    }
-
-
-    return result
-  }
-
-  function handleStreamedResponse(content: string, args: string, fileDataRef: FileDataRef[], done: boolean) {
-
-    //console.info("...... handleStreamedResponse content: ", content)
-    //console.info("...... handleStreamedResponse args: ", args)
-
-    let isFirstCall = 0
-    setMessages(prevMessages => {
-
-      //console.info("...... prevMessages: ", prevMessages)
-
-
-      // get the latest list of messages,  remember this can be called twice
-
-      isFirstCall = isFirstCall + 1
-
-
-
-      let isNew: boolean = false;
-      try {
-        if (prevMessages.length === 0) {
-          console.log("prevMessages is empty, returning empty array");
-          return [];
-        }
-        console.log("Last message role:", prevMessages[prevMessages.length - 1].role);
-        if (prevMessages[prevMessages.length - 1].role === Role.User) {
-          console.log("Last message was a user message, setting isNew = true");
-          isNew = true;
-        } else {
-          console.log("Last message was not a user message, isNew = false");
-        }
-      } catch (e) {
-        console.error('Error getting the role');
-        console.error('prevMessages = ' + safeJsonStringify(prevMessages));
-        console.error(e);
-      }
-
-      // if args are passed in and isNew (no assistant message) then go ahead and add Assistant message
-      // user sent a direct message to execute a tool without assistant getting involved
-      if (isNew == true && args != "") {
-
-        if (args != "" && content == "") {
-          content = "how can I help you? "
-        }
-
-        const message: ChatMessage = {
-          id: prevMessages.length + 1,
-          role: Role.Assistant,
-          messageType: MessageType.Normal,
-          content: content,
-          args: args,
-          fileDataRef: fileDataRef,
-        };
-        isNew = false
-        prevMessages = [...prevMessages, message]
-      }
-
-      if (isNew) {
-        console.log("isNew is true, creating new assistant message");
-        const message: ChatMessage = {
-          id: prevMessages.length + 1,
-          role: Role.Assistant,
-          messageType: MessageType.Normal,
-          content: content,
-          args: args,
-          fileDataRef: fileDataRef,
-        };
-        //console.info("......... is new because last message is User")
-        //console.info("return ...prevMessages, message ")
-
-        const msgs = [...prevMessages, message]
-        console.log("Returning messages with new assistant message:", msgs.length);
-        return msgs;
-      } else {
-        console.log("isNew is false, updating existing assistant message");
-
-        let updatedContent = prevMessages[prevMessages.length - 1].content
-        if (updatedContent != content) {
-          updatedContent = updatedContent + content
-        }
-
-        const updatedMessage = {
-          ...prevMessages[prevMessages.length - 1],
-          content: updatedContent,
-          args: prevMessages[prevMessages.length - 1].args + args
-        };
-        // Replace the old last message with the updated one
-        if (done == true) {
-          // received message from AI Assitant => updatedMessage
-          // go do what the AI assistant message told us to do  =>  appCommand
-          console.log("Processing assistant message:", updatedMessage.content);
-          console.log("Args:", updatedMessage.args);
-          const response = processAssistantMessage(isFirstCall == 1, updatedMessage.content, updatedMessage.args, prevMessages, updatedMessage, fileDataRef);
-          console.log("ProcessAssistantMessage response:", response);
-          if (response.isToolFunction && response.messages) {
-            console.log("Returning tool function messages");
-            return response.messages
-          }
-          console.log("Returning regular assistant message");
-          const finalMessages = [...prevMessages.slice(0, -1), updatedMessage];
-          console.log("Final messages count:", finalMessages.length);
-          return finalMessages;
-        }
-        else {
-          console.log("Streaming update, returning updated message");
-          const finalMessages = [...prevMessages.slice(0, -1), updatedMessage];
-          console.log("Final messages count:", finalMessages.length);
-          return finalMessages;
-        }
-
-        return [...prevMessages];
-      }
-
-    });
-  }
 
 
   const scrollToBottom = () => {

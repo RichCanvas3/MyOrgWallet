@@ -257,6 +257,7 @@ class AttestationService {
           }
         }
         catch (error) {
+          console.info("error: ", error)
           console.info("error uid 1: ", item.id)
           console.info("error schemaId 1: ", item.schema)
           console.info("decode error 1: ", error)
@@ -2841,11 +2842,27 @@ class AttestationService {
         }
 
         console.info("delete attestation: ", att.schemaId, att.uid)
+
+        console.info("################# sendUserOperation ........")
+        const singleCall = [call]
+        userOpHash = await bundlerClient.sendUserOperation({
+          account: delegateClient,
+          calls: singleCall,
+          ...fee,
+        });
+    
+    
+        const userOperationReceipt = await bundlerClient.waitForUserOperationReceipt({ hash: userOpHash });
+        console.info("################# delete result: ", userOperationReceipt)
+    
+        console.info("################# delete successful")
+
         calls.push(call)
       }
     }
 
 
+    /*
     console.info("################# sendUserOperation ........")
     userOpHash = await bundlerClient.sendUserOperation({
       account: delegateClient,
@@ -2862,6 +2879,7 @@ class AttestationService {
 
     let event: AttestationChangeEvent = {action: 'delete-all', entityId: ""};
     attestationsEmitter.emit('attestationChangeEvent', event);
+    */
 
   }
 
@@ -2961,7 +2979,7 @@ class AttestationService {
     query Attestations($first: Int, $addresses: [String!]) {
   attestations(
     first: $first
-    where: {attester_in: $addresses}
+    where: {attester_in: $addresses, revoked: false}
   ) {
     id
     uid
