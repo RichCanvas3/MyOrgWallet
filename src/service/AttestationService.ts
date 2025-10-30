@@ -2,6 +2,7 @@ import {EventEmitter} from "./EventEmitter";
 import FileDataService from './FileDataService';
 import { ChatMessage } from '../models/ChatCompletion';
 import { Entity } from '../models/Entity';
+import { JsonRpcProvider } from 'ethers'; // ethers v6
 
 import { Attestation,
   AttestationCategory,
@@ -26,14 +27,12 @@ import { Attestation,
 import { Organization } from '../models/Organization';
 import { ethers, formatEther, Interface, ZeroAddress } from "ethers"; // install alongside EAS
 import { EAS, SchemaEncoder, SchemaDecodedItem, SchemaItem } from '@ethereum-attestation-service/eas-sdk';
-import { AccountStateConflictError, WalletClient } from "viem";
-import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
 
 import { encodeNonce } from "permissionless/utils"
 
 
 
-import {WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, BUNDLER_URL, PAYMASTER_URL, EAS_URL, EAS_CONTRACT_ADDRESS} from "../config";
+import {WEB3_AUTH_NETWORK, WEB3_AUTH_CLIENT_ID, RPC_URL, BUNDLER_URL, PAYMASTER_URL, EAS_URL, EAS_AUTH_TOKEN, EAS_CONTRACT_ADDRESS} from "../config";
 
 const STORE_URL = `${import.meta.env.VITE_API_URL}/json`;
 
@@ -84,14 +83,57 @@ export interface AttestationChangeEvent {
 
 const graphQLUrl = EAS_URL || "https://optimism.easscan.org";
 
-const easApolloClient = new ApolloClient({
-  uri: graphQLUrl + "/graphql",
-  cache: new InMemoryCache(),
-});
+
+
+
+console.info("easAuthToken: ", EAS_AUTH_TOKEN)
+console.info("graphQLUrl: ", graphQLUrl)
+// Simple GraphQL POST helper using fetch
+const GRAPHQL_API_KEY = EAS_AUTH_TOKEN;
+const GRAPHQL_URL = graphQLUrl;
+
+const fetchJson = async (body: any) => {
+
+
+  const endpoint = (GRAPHQL_URL || '').replace(/\/graphql\/?$/i, '');
+    
+  // Prepare headers
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+    'accept': 'application/json'
+  };
+  
+  // Add authorization header if API key is provided
+  if (GRAPHQL_API_KEY) {
+    headers['Authorization'] = `Bearer ${GRAPHQL_API_KEY}`;
+  }
+  
+  const res = await fetch(endpoint, { 
+    method: 'POST', 
+    headers, 
+    body: JSON.stringify(body) 
+  } as any);
+
+
+
+
+  if (!res.ok) {
+    let text = '';
+    try { text = await res.text(); } catch {}
+    throw new Error(`GraphQL ${res.status}: ${text || res.statusText}`);
+  }
+  const json = await res.json();
+  console.info("json: ", json)
+  return json;
+};
 
 
 const easContractAddress = EAS_CONTRACT_ADDRESS ||"0x4200000000000000000000000000000000000021";
+console.info("easContractAddress: ", easContractAddress)
 const eas = new EAS(easContractAddress);
+
+const provider = new JsonRpcProvider(RPC_URL);
+eas.connect(provider)
 
 
 
@@ -146,24 +188,28 @@ class AttestationService {
       addressesToQuery = [orgAddress, indivAddress];
     }
 
-    let exists = false
-    const query = gql`
-      query {
-        attestations(
-          where: {
-            attester: { in: [${addressesToQuery.map(addr => `"${addr}"`).join(", ")}] }
-            revoked: { equals: false }
-          }
-        ) {
+    const addresses: string[] = addressesToQuery
+    .filter(Boolean)
+    .map(a => a.trim().toLowerCase());
+      console.info("addresses: ", addresses)
+
+      const query = `
+      query Attestations($first: Int, $addresses: [String!]) {
+        attestations(first: $first, where: { 
+              attester_in: $addresses
+              revoked: false
+        }) {
           id
+          schema
           attester
-          schemaId
-          data
         }
-      }`;
+      }
+    `;
+    
 
+    const resp = await fetchJson({ query, variables: { first: 1000, addresses: addresses } }) as any;
+    const data = resp?.data;
 
-    const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
 
     // cycle through aes attestations and update entity with attestation info
     let processedCount = 0;
@@ -177,12 +223,12 @@ class AttestationService {
       let schema : string | undefined
       for (const entity of AttestationService.DefaultEntities) {
         //console.info("item: ", item, entity.schemaId)
-        if (entity.schemaId == item.schemaId) {
+        if (entity.schemaId == item.schema) {
           schema = entity.schema
         }
       }
 
-      //console.info("schemaId: ", item.schemaId)
+      //console.info("schemaId: ", item.schema)
 
       if (schema) {
 
@@ -195,7 +241,8 @@ class AttestationService {
         let decodedData : SchemaDecodedItem[] = []
 
         try {
-          decodedData = schemaEncoder.decodeData(item.data);
+          const att = await eas.getAttestation(item.id)
+          decodedData = schemaEncoder.decodeData(att.data);
           for (const field of decodedData) {
 
             let fieldName = field["name"]
@@ -211,7 +258,7 @@ class AttestationService {
         }
         catch (error) {
           console.info("error uid 1: ", item.id)
-          console.info("error schemaId 1: ", item.schemaId)
+          console.info("error schemaId 1: ", item.schema)
           console.info("decode error 1: ", error)
           continue
         }
@@ -279,58 +326,58 @@ class AttestationService {
             let att: Attestation | undefined;
 
             if (entityId == "indiv(indiv)") {
-              att = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructIndivAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "agent(agent)") {
-              att = this.constructAIAgentAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructAIAgentAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "account(indiv)") {
-              att = this.constructIndivAccountAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructIndivAccountAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "account-org(org)") {
-              att = this.constructAccountOrgDelAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructAccountOrgDelAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "account-indiv(org)") {
-              att = this.constructAccountIndivDelAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructAccountIndivDelAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "account(org)") {
-              att = this.constructOrgAccountAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructOrgAccountAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "org(org)") {
-              att = this.constructOrgAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructOrgAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "org-indiv(org)") {
-              att = this.constructOrgIndivAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructOrgIndivAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "linkedin(indiv)") {
-              att = this.constructSocialAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructSocialAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "x(indiv)") {
-              att = this.constructSocialAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructSocialAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "shopify(org)") {
-              att = this.constructWebsiteAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructWebsiteAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "insurance(org)") {
-              att = this.constructInsuranceAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructInsuranceAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "state-registration(org)") {
-              att = this.constructStateRegistrationAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructStateRegistrationAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "domain(org)") {
-              att = this.constructRegisteredDomainAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructRegisteredDomainAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "ens(org)") {
-              att = this.constructRegisteredENSAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructRegisteredENSAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "website(org)") {
-              att = this.constructWebsiteAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructWebsiteAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "email(org)") {
-              att = this.constructEmailAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructEmailAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "email(indiv)") {
-              att = this.constructIndivEmailAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructIndivEmailAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
 
             if (att != undefined) {
@@ -399,24 +446,23 @@ class AttestationService {
 
     const address = orgDid.replace("did:pkh:eip155:" + chain?.id + ":", "")
 
-    let exists = false
-    const query = gql`
-      query {
-        attestations(
-          where: {
+    const query = `
+    query Attestations($schema: String!, $first: Int) {
+      attestations(first: $first, where: { 
             attester: { equals: "${address}"}
-            schemaId:  { equals: "${AttestationService.RevokeSchemaUID}"}
+            schema:  { equals: "${AttestationService.RevokeSchemaUID}"}
             revoked: { equals: false }
-          }
-        ) {
-          id
-          schemaId
-          data
-        }
-      }`;
+      }) {
+        id
+        schema
+      }
+    }
+  `;
+  
+    const resp = await fetchJson({ query, variables: { first: 1000 } }) as any;
+    const data = resp?.data;
 
 
-    const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
 
     // cycle through aes attestations and update entity with attestation info
     for (const item of data.attestations) {
@@ -430,7 +476,8 @@ class AttestationService {
       let decodedData : SchemaDecodedItem[] = []
 
       try {
-        decodedData = schemaEncoder.decodeData(item.data);
+        const att = await eas.getAttestation(item.id)
+        decodedData = schemaEncoder.decodeData(att.data);
         for (const field of decodedData) {
 
           let fieldName = field["name"]
@@ -446,14 +493,14 @@ class AttestationService {
       }
       catch (error) {
         console.info("error uid: ", item.id)
-        console.info("error schemaId: ", item.schemaId)
+        console.info("error schemaId: ", item.schema)
         console.info("decode error: ", error)
         throw error
       }
 
 
       if (attVccomm == vccomm) {
-        return { "uid": item.id, "schemaId": item.schemaId, "proof": attProof}
+        return { "uid": item.id, "schemaId": item.schema, "proof": attProof}
       }
 
     }
@@ -597,7 +644,7 @@ class AttestationService {
         const maxRetries = 5;
         const baseDelay = 4000; // Start with 4 seconds
         let attestationQuery = null;
-        let apolloQuery = null;
+
         let lastError = null;
         
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -613,46 +660,33 @@ class AttestationService {
             attestationQuery = await easToUse.getAttestation((userOperationReceipt as any).receipt.transactionHash);
             console.info(`✅ On-chain attestation verified successfully on attempt ${attempt}:`, attestationQuery);
             
-            // Step 2: Query the attestation via Apollo GraphQL to verify indexer is ready
+            // Step 2: Query the attestation via subgraph to verify indexer is ready
             console.info("🔍 Step 2: Verifying GraphQL indexer availability...");
             const txHash = (userOperationReceipt as any).receipt.transactionHash;
-            const apolloQuery = gql`
-              query GetAttestationByTxHash($txHash: String!) {
-                attestations(
-                  where: {
-                    transactionHash: { equals: $txHash }
+
+
+
+            const query = `
+            query Attestations($schema: String!, $first: Int) {
+              attestations(first: $first, where: { 
+                    txHash: { equals: $txHash }
                     revoked: { equals: false }
-                  }
-                ) {
-                  id
-                  attester
-                  schemaId
-                  data
-                  transactionHash
-                  blockTimestamp
-                }
+              }) {
+                id
+                schema
               }
-            `;
+            }
+          `;
+          
+            const resp = await fetchJson({ query, variables: { first: 1000, txHash: txHash } }) as any;
+            const data = resp?.data;
+
             
-            const apolloResult = await easApolloClient.query({ 
-              query: apolloQuery, 
-              variables: { txHash },
-              fetchPolicy: "no-cache" 
-            });
-            
-            if (apolloResult.data.attestations && apolloResult.data.attestations.length > 0) {
-              const apolloAttestation = apolloResult.data.attestations[0];
-              console.info(`✅ GraphQL indexer verification successful on attempt ${attempt}:`, apolloAttestation);
+            if (data.attestations && data.attestations.length > 0) {
+              const attestation = data.attestations[0];
+              console.info(`✅ GraphQL indexer verification successful on attempt ${attempt}:`, attestation);
               
-              // Additional verification: check if the attestation data matches what we sent
-              if (attestationQuery && attestationQuery.data) {
-                console.info("✅ Attestation data verified:", {
-                  schema: attestationQuery.schema,
-                  recipient: attestationQuery.recipient,
-                  attester: attestationQuery.attester,
-                  data: attestationQuery.data
-                });
-              }
+
               
               // Success! Both on-chain and GraphQL are ready
               console.info("🎉 Complete verification successful - attestation is available both on-chain and via GraphQL!");
@@ -2931,25 +2965,34 @@ class AttestationService {
 
     try {
 
-      //console.info("load attestations for: ", indivAddress)
-      let exists = false
-      const query = gql`
-        query {
-          attestations(
-            where: {
-              attester: { in: [${addressesToQuery.map(addr => `"${addr}"`).join(", ")}] }
-              revoked: { equals: false }
-            }
-          ) {
-            id
-            attester
-            schemaId
-            data
-          }
-        }`;
+
+      const addresses: string[] = addressesToQuery
+      .filter(Boolean)
+      .map(a => a.trim().toLowerCase());
+        console.info("addresses: ", addresses)
+
+    const query = `
+    query Attestations($first: Int, $addresses: [String!]) {
+  attestations(
+    first: $first
+    where: {attester_in: $addresses}
+  ) {
+    id
+    uid
+    schema
+    recipient
+    attester
+  }
+}
+  `;
 
 
-      const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
+
+    
+
+    const resp = await fetchJson({ query, variables: { first: 1000, addresses: addresses }}) as any;
+    const data = resp?.data;
+
 
       const attestations : Attestation[] = []
       let processedCount = 0;
@@ -2959,8 +3002,7 @@ class AttestationService {
 
           let schema
           for (const entity of AttestationService.DefaultEntities) {
-            //console.info("item: ", item, entity.schemaId)
-            if (entity.schemaId == item.schemaId) {
+            if (entity.schemaId == item.schema) {
               schema = entity.schema
               break
             }
@@ -2976,7 +3018,8 @@ class AttestationService {
 
             try {
               const schemaEncoder = new SchemaEncoder(schema);
-              decodedData = schemaEncoder.decodeData(item.data);
+              const att = await eas.getAttestation(item.id)
+              decodedData = schemaEncoder.decodeData(att.data);
               for (const field of decodedData) {
                 if (field["name"] == "entityid") {
                   if (typeof field["value"].value === "string") {
@@ -2992,7 +3035,7 @@ class AttestationService {
             }
             catch (error) {
               console.info("error uid: ", item.id)
-              console.info("error schemaId: ", item.schemaId)
+              console.info("error schemaId: ", item.schema)
             }
 
             // Additional filtering: Only process attestations that belong to the current user's context
@@ -3044,58 +3087,58 @@ class AttestationService {
             let att : Attestation | undefined
 
             if (entityId == "indiv(indiv)") {
-              att = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructIndivAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "agent(agent)") {
-              att = this.constructAIAgentAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructAIAgentAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "account(indiv)") {
-              att = this.constructIndivAccountAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructIndivAccountAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "account-org(org)") {
-              att = this.constructAccountOrgDelAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructAccountOrgDelAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "account-indiv(org)") {
-              att = this.constructAccountIndivDelAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructAccountIndivDelAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "account(org)") {
-              att = this.constructOrgAccountAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructOrgAccountAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "org(org)") {
-              att = this.constructOrgAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructOrgAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "org-indiv(org)") {
-              att = this.constructOrgIndivAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructOrgIndivAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "linkedin(indiv)") {
-              att = this.constructSocialAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructSocialAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "x(indiv)") {
-              att = this.constructSocialAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructSocialAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "shopify(org)") {
-              att = this.constructWebsiteAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructWebsiteAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "insurance(org)") {
-              att = this.constructInsuranceAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructInsuranceAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "state-registration(org)") {
-              att = this.constructStateRegistrationAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructStateRegistrationAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "ens(org)") {
-              att = this.constructRegisteredENSAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructRegisteredENSAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "domain(org)") {
-              att = this.constructRegisteredDomainAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructRegisteredDomainAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "website(org)") {
-              att = this.constructWebsiteAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructWebsiteAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "email(org)") {
-              att = this.constructEmailAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructEmailAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
             if (entityId == "email(indiv)") {
-              att = this.constructIndivEmailAttestation(chain, item.id, item.schemaId, entityId, item.attester, hash, decodedData)
+              att = this.constructIndivEmailAttestation(chain, item.id, item.schema, entityId, item.attester, hash, decodedData)
             }
 
 
@@ -3104,7 +3147,7 @@ class AttestationService {
               att = {
                 uid: item.id,
                 attester: "did:pkh:eip155:" + chain?.id + ":" + item.attester,
-                schemaId: item.schemaId,
+                schemaId: item.schema,
                 entityId: entityId,
                 url: "https://www.richcanvas3.com",
                 hash: hash,
@@ -3114,7 +3157,7 @@ class AttestationService {
               //console.info("att: ", att.displayName, item.id)
               att.uid = item.id,
               att.attester = "did:pkh:eip155:" + chain?.id + ":" + item.attester,
-              att.schemaId = item.schemaId,
+              att.schemaId = item.schema,
               entityId = entityId
 
               attestations.push(att)
@@ -3180,33 +3223,45 @@ class AttestationService {
 
 
   static async loadOrganizations(chain: Chain): Promise<Organization[]> {
+
+
+
     try {
+      // Log the GraphQL endpoint being used for debugging
+      const graphQLEndpoint = graphQLUrl + "/graphql";
+      console.info(`Loading organizations from GraphQL endpoint: ${graphQLEndpoint}, chain: ${chain?.id}`);
 
-      let exists = false
+
       const schemaId = AttestationService.OrgSchemaUID
-      const query = gql`
-        query {
-          attestations(
-            where: {
-              schemaId: { equals: "${schemaId}" }
-              revoked: { equals: false }
-            }
-          ) {
+      const query = `
+        query Attestations($schema: String!, $first: Int) {
+          attestations(first: $first, where: { revoked: false, schema: $schema }) {
             id
-            schemaId
             attester
-            data
+            schema
           }
-        }`;
+        }
+      `;
+
+      const resp = await fetchJson({ query, variables: { schema: schemaId, first: 1000 } }) as any;
+      const data = resp?.data;
 
 
-      const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
+      // Ensure data.attestations exists
+      if (!data || !data.attestations) {
+        console.warn("No attestations data returned from GraphQL query");
+        return [];
+      }
 
       const organizations : Organization[] = []
 
       let id = 1
 
       for (const item of data.attestations) {
+
+
+        // get attestation from eas contract
+        const att = await eas.getAttestation(item.id)
 
         let schema = this.OrgSchema
 
@@ -3218,7 +3273,7 @@ class AttestationService {
           let hash = ""
 
           const schemaEncoder = new SchemaEncoder(schema);
-          const decodedData = schemaEncoder.decodeData(item.data);
+          const decodedData = schemaEncoder.decodeData(att.data);
 
           //console.info("data: ", decodedData)
 
@@ -3274,8 +3329,11 @@ class AttestationService {
       return organizations;
 
     } catch (error) {
-      console.error("Error loading recent attestations:", error);
-      throw error;
+      const graphQLEndpoint = graphQLUrl + "/graphql";
+      console.error("Error loading organizations:", error);
+      console.error("GraphQL endpoint attempted:", graphQLEndpoint);
+      console.error("Chain ID:", chain?.id);
+      console.error("Schema ID:", AttestationService.OrgSchemaUID);
     }
   }
 
@@ -3360,6 +3418,7 @@ class AttestationService {
 
       if (fieldName == "entityid") {
         if (fieldValue == entityId) {
+          console.info("@@@@@@@@@@@@@ entityId found: ", entityId)
           return true
         }
       }
@@ -3375,152 +3434,155 @@ class AttestationService {
 
     const address = did.replace("did:pkh:eip155:" + chain?.id + ":", "")
 
+    const query = `
+    query Attestations($schema: String!, $first: Int) {
+      attestations(first: $first, where: { 
+            attester: $address
+            schema: $schema
+            revoked: false
+      }) {
+        id
+        schema
+      }
+    }
+  `;
 
-    let exists = false
-    const query = gql`
-      query {
-        attestations(
-          where: {
-            attester: { equals: "${address}" }
-            schemaId: { equals: "${schemaId}" }
-            revoked: { equals: false }
-          }
-        ) {
-          id
-          schemaId
-          data
-        }
-      }`;
 
-    const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
-    //console.info(">>>>>>>>>>>>>>>>>>> data: ", data)
+
+    const resp = await fetchJson({ query, variables: { schema: schemaId, address: address, first: 1000 } }) as any;
+    const data = resp?.data;
+
+
+
 
     // cycle through aes attestations and update entity with attestation info
     for (const item of data.attestations) {
 
+      const att = await eas.getAttestation(item.id)
+
       //console.info("reading attestations: ", item.id, data.attestations.length)
       if (schemaId == this.IndivSchemaUID) {
         const schemaEncoder = new SchemaEncoder(this.IndivSchema);
-        const decodedData = schemaEncoder.decodeData(item.data);
+        const decodedData = schemaEncoder.decodeData(att.data);
         if (this.checkEntity(entityId, decodedData)) {
-          rtnAttestation = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+          rtnAttestation = this.constructIndivAttestation(chain, item.id, item.schema, entityId, address, "", decodedData)
         }
       }
       if (schemaId == this.AIAgentSchemaUID) {
         const schemaEncoder = new SchemaEncoder(this.AIAgentSchema);
-        const decodedData = schemaEncoder.decodeData(item.data);
+        const decodedData = schemaEncoder.decodeData(att.data);
         if (this.checkEntity(entityId, decodedData)) {
-          rtnAttestation = this.constructAIAgentAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+          rtnAttestation = this.constructAIAgentAttestation(chain, item.id, item.schema, entityId, address, "", decodedData)
         }
       }
       if (schemaId == this.OrgIndivSchemaUID) {
 
         const schemaEncoder = new SchemaEncoder(this.OrgIndivSchema);
-        const decodedData = schemaEncoder.decodeData(item.data);
+        const decodedData = schemaEncoder.decodeData(att.data);
         if (this.checkEntity(entityId, decodedData)) {
           console.info("construct org indiv attestation")
-          rtnAttestation = this.constructOrgIndivAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+          rtnAttestation = this.constructOrgIndivAttestation(chain, item.id, item.schema, entityId, address, "", decodedData)
         }
       }
       if (schemaId == this.OrgSchemaUID) {
         const schemaEncoder = new SchemaEncoder(this.OrgSchema);
-        const decodedData = schemaEncoder.decodeData(item.data);
+        const decodedData = schemaEncoder.decodeData(att.data);
         if (this.checkEntity(entityId, decodedData)) {
-          rtnAttestation = this.constructOrgAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+          rtnAttestation = this.constructOrgAttestation(chain, item.id, item.schema, entityId, address, "", decodedData)
         }
       }
       if (schemaId == this.IndivAccountSchemaUID) {
         const schemaEncoder = new SchemaEncoder(this.IndivAccountSchema);
-        const decodedData = schemaEncoder.decodeData(item.data);
+        const decodedData = schemaEncoder.decodeData(att.data);
         if (this.checkEntity(entityId, decodedData)) {
           console.info("construct account attestation")
-          rtnAttestation = this.constructIndivAccountAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+          rtnAttestation = this.constructIndivAccountAttestation(chain, item.id, item.schema, entityId, address, "", decodedData)
         }
       }
       if (schemaId == this.AccountOrgDelSchemaUID) {
         const schemaEncoder = new SchemaEncoder(this.AccountOrgDelSchema);
-        const decodedData = schemaEncoder.decodeData(item.data);
+        const decodedData = schemaEncoder.decodeData(att.data);
         if (this.checkEntity(entityId, decodedData)) {
           console.info("construct account org del attestation")
-          rtnAttestation = this.constructAccountOrgDelAttestation(chain, item.id, item.schemaId, entityId, address, displayName, decodedData)
+          rtnAttestation = this.constructAccountOrgDelAttestation(chain, item.id, item.schema, entityId, address, displayName, decodedData)
         }
       }
       if (schemaId == this.AccountIndivDelSchemaUID) {
         const schemaEncoder = new SchemaEncoder(this.AccountIndivDelSchema);
-        const decodedData = schemaEncoder.decodeData(item.data);
+        const decodedData = schemaEncoder.decodeData(att.data);
         if (this.checkEntity(entityId, decodedData)) {
           console.info("construct account indiv del attestation")
-          rtnAttestation = this.constructAccountIndivDelAttestation(chain, item.id, item.schemaId, entityId, address, displayName, decodedData)
+          rtnAttestation = this.constructAccountIndivDelAttestation(chain, item.id, item.schema, entityId, address, displayName, decodedData)
         }
       }
       if (schemaId == this.OrgAccountSchemaUID) {
         const schemaEncoder = new SchemaEncoder(this.OrgAccountSchema);
-        const decodedData = schemaEncoder.decodeData(item.data);
+        const decodedData = schemaEncoder.decodeData(att.data);
         if (this.checkEntity(entityId, decodedData)) {
           console.info("construct org account attestation")
-          rtnAttestation = this.constructOrgAccountAttestation(chain, item.id, item.schemaId, entityId, address, displayName, decodedData)
+          rtnAttestation = this.constructOrgAccountAttestation(chain, item.id, item.schema, entityId, address, displayName, decodedData)
         }
       }
       if (schemaId == this.StateRegistrationSchemaUID) {
         const schemaEncoder = new SchemaEncoder(this.StateRegistrationSchema);
-        const decodedData = schemaEncoder.decodeData(item.data);
+        const decodedData = schemaEncoder.decodeData(att.data);
         if (this.checkEntity(entityId, decodedData)) {
           console.info("construct state reg attestation")
-          rtnAttestation = this.constructStateRegistrationAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+          rtnAttestation = this.constructStateRegistrationAttestation(chain, item.id, item.schema, entityId, address, "", decodedData)
         }
       }
       if (schemaId == this.RegisteredDomainSchemaUID) {
         const schemaEncoder = new SchemaEncoder(this.RegisteredDomainSchema);
-        const decodedData = schemaEncoder.decodeData(item.data);
+        const decodedData = schemaEncoder.decodeData(att.data);
         if (this.checkEntity(entityId, decodedData)) {
-          rtnAttestation = this.constructRegisteredDomainAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+          rtnAttestation = this.constructRegisteredDomainAttestation(chain, item.id, item.schema, entityId, address, "", decodedData)
         }
       }
       if (schemaId == this.RegisteredENSSchemaUID) {
         const schemaEncoder = new SchemaEncoder(this.RegisteredENSSchema);
-        const decodedData = schemaEncoder.decodeData(item.data);
+        const decodedData = schemaEncoder.decodeData(att.data);
         if (this.checkEntity(entityId, decodedData)) {
-          rtnAttestation = this.constructRegisteredENSAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+          rtnAttestation = this.constructRegisteredENSAttestation(chain, item.id, item.schema, entityId, address, "", decodedData)
         }
       }
       if (schemaId == this.SocialSchemaUID) {
         const schemaEncoder = new SchemaEncoder(this.SocialSchema);
-        const decodedData = schemaEncoder.decodeData(item.data);
+        const decodedData = schemaEncoder.decodeData(att.data);
         if (this.checkEntity(entityId, decodedData)) {
           console.info(">>>>>>>>>>>>>>> construct social attestation: ", entityId)
-          rtnAttestation = this.constructSocialAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+          rtnAttestation = this.constructSocialAttestation(chain, item.id, item.schema, entityId, address, "", decodedData)
         }
       }
       if (schemaId == this.WebsiteSchemaUID) {
         const schemaEncoder = new SchemaEncoder(this.WebsiteSchema);
-        const decodedData = schemaEncoder.decodeData(item.data);
+        const decodedData = schemaEncoder.decodeData(att.data);
         if (this.checkEntity(entityId, decodedData)) {
           console.info(">>>>>>>>>>>>>>> construct website attestation: ", entityId)
-          rtnAttestation = this.constructWebsiteAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+          rtnAttestation = this.constructWebsiteAttestation(chain, item.id, item.schema, entityId, address, "", decodedData)
         }
       }
       if (schemaId == this.InsuranceSchemaUID) {
         const schemaEncoder = new SchemaEncoder(this.WebsiteSchema);
-        const decodedData = schemaEncoder.decodeData(item.data);
+        const decodedData = schemaEncoder.decodeData(att.data);
         if (this.checkEntity(entityId, decodedData)) {
           console.info(">>>>>>>>>>>>>>> construct insurance attestation: ", entityId)
-          rtnAttestation = this.constructInsuranceAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+          rtnAttestation = this.constructInsuranceAttestation(chain, item.id, item.schema, entityId, address, "", decodedData)
         }
       }
       if (schemaId == this.EmailSchemaUID) {
         const schemaEncoder = new SchemaEncoder(this.EmailSchema);
-        const decodedData = schemaEncoder.decodeData(item.data);
+        const decodedData = schemaEncoder.decodeData(att.data);
         if (this.checkEntity(entityId, decodedData)) {
           console.info(">>>>>>>>>>>>>>> construct email attestation: ", entityId)
-          rtnAttestation = this.constructEmailAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+          rtnAttestation = this.constructEmailAttestation(chain, item.id, item.schema, entityId, address, "", decodedData)
         }
       }
       if (schemaId == this.IndivEmailSchemaUID) {
         const schemaEncoder = new SchemaEncoder(this.IndivEmailSchema);
-        const decodedData = schemaEncoder.decodeData(item.data);
+        const decodedData = schemaEncoder.decodeData(att.data);
         if (this.checkEntity(entityId, decodedData)) {
           console.info(">>>>>>>>>>>>>>> construct indiv email attestation: ", entityId)
-          rtnAttestation = this.constructIndivEmailAttestation(chain, item.id, item.schemaId, entityId, address, "", decodedData)
+          rtnAttestation = this.constructIndivEmailAttestation(chain, item.id, item.schema, entityId, address, "", decodedData)
         }
       }
 
@@ -3541,37 +3603,33 @@ class AttestationService {
 
   static async getRegisteredDomainAttestations(chain: Chain, domain: string, schemaId: string, entityId: string): Promise<Attestation[] | undefined> {
 
-    //console.info("get attestation by address and schemaId and entityId: ", address, schemaId, entityId)
-    let rtnAttestation : Attestation | undefined
-
-    let exists = false
-    const query = gql`
-      query {
-        attestations(
-          where: {
-            schemaId: { equals: "${schemaId}" }
+    const query = `
+    query Attestations($schema: String!, $first: Int) {
+      attestations(first: $first, where: { 
+            schema: { equals: "${schemaId}" }
             revoked: { equals: false }
-          }
-        ) {
-          id
-          attester
-          schemaId
-          data
-        }
-      }`;
+      }) {
+        id
+        schema
+        attester
+      }
+    }
+  `;
 
-    const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
-    //console.info(">>>>>>>>>>>>>>>>>>> data: ", data)
+    const resp = await fetchJson({ query, variables: { schema: schemaId, first: 1000 } }) as any;
+    const data = resp?.data;
+
 
     // cycle through aes attestations and update entity with attestation info
     let rtnAttestations : Attestation[] = []
     for (const item of data.attestations) {
       if (schemaId == this.RegisteredDomainSchemaUID) {
+        const att = await eas.getAttestation(item.id)
         const schemaEncoder = new SchemaEncoder(this.RegisteredDomainSchema);
-        const decodedData = schemaEncoder.decodeData(item.data);
+        const decodedData = schemaEncoder.decodeData(att.data);
         if (this.checkEntity(entityId, decodedData)) {
           const orgAddress = item.attester
-          const att = this.constructRegisteredDomainAttestation(chain, item.id, item.schemaId, entityId, orgAddress, "", decodedData)
+          const att = this.constructRegisteredDomainAttestation(chain, item.id, item.schema, entityId, orgAddress, "", decodedData)
           if ((att as RegisteredDomainAttestation).domain.toLowerCase() == domain.toLowerCase()) {
             rtnAttestations.push(att as RegisteredDomainAttestation)
           }
@@ -3592,30 +3650,30 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
   //console.info("get attestation by address and schemaId and entityId: ", address, schemaId, entityId)
   let rtnAttestations : IndivAttestation[] = []
 
-  let exists = false
-  const query = gql`
-    query {
-      attestations(
-        where: {
-          schemaId: { equals: "${schemaId}" }
-          revoked: { equals: false }
-        }
-      ) {
-        id
-        attester
-        schemaId
-        data
-      }
-    }`;
+  const query = `
+  query Attestations($schema: String!, $first: Int) {
+    attestations(first: $first, where: { 
+          schema: $schema
+          revoked: false
+    }) {
+      id
+      schema
+      attester
+    }
+  }
+`;
 
-  const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
+  const resp = await fetchJson({ query, variables: { schema: schemaId, first: 1000 } }) as any;
+  const data = resp?.data;
 
   // cycle through aes attestations and update entity with attestation info
   for (const item of data.attestations) {
     const schemaEncoder = new SchemaEncoder(this.IndivSchema);
-    const decodedData = schemaEncoder.decodeData(item.data);
+
+    const att = await eas.getAttestation(item.id)
+    const decodedData = schemaEncoder.decodeData(att.data);
     if (this.checkEntity(entityId, decodedData)) {
-      const indAtt = this.constructIndivAttestation(chain, item.id, item.schemaId, entityId, item.attester, "", decodedData)
+      const indAtt = this.constructIndivAttestation(chain, item.id, item.schema, entityId, item.attester, "", decodedData)
       if (indAtt && (indAtt as IndivAttestation).orgDid.toLowerCase() == orgDid.toLowerCase()) {
         const indivDid = indAtt.attester
 
@@ -3637,33 +3695,32 @@ static async getIndivsNotApprovedAttestations(chain: Chain, orgDid: string): Pro
 
     let rtnAttestation : Attestation | undefined
 
-    let exists = false
-    const query = gql`
-      query {
-        attestations(
-          where: {
-            schemaId: { equals: "${schemaId}" }
-            revoked: { equals: false }
-          }
-        ) {
-          id
-          attester
-          schemaId
-          data
-        }
-      }`;
-
-    const { data } = await easApolloClient.query({ query: query, fetchPolicy: "no-cache", });
-
+    const query = `
+    query Attestations($schema: String!, $first: Int) {
+      attestations(first: $first, where: { 
+            schema: $schema 
+            revoked: false
+      }) {
+        id
+        schema
+        attester
+      }
+    }
+  `;
+  
+    const resp = await fetchJson({ query, variables: { schema: schemaId, first: 1000 } }) as any;
+    const data = resp?.data;
 
     // cycle through aes attestations and update entity with attestation info
     for (const item of data.attestations) {
       if (schemaId == this.OrgIndivSchemaUID) {
         const schemaEncoder = new SchemaEncoder(this.OrgIndivSchema);
-        const decodedData = schemaEncoder.decodeData(item.data);
+
+        const att = await eas.getAttestation(item.id)
+        const decodedData = schemaEncoder.decodeData(att.data);
         if (this.checkEntity(entityId, decodedData)) {
           const orgAddress = item.attester
-          const att = this.constructOrgIndivAttestation(chain, item.id, item.schemaId, entityId, orgAddress, "", decodedData)
+          const att = this.constructOrgIndivAttestation(chain, item.id, item.schema, entityId, orgAddress, "", decodedData)
           if ((att as OrgIndivAttestation).indivDid.toLowerCase() == indivDid.toLowerCase()) {
             rtnAttestation = att
             break

@@ -18,6 +18,7 @@ export const SHOPIFY_CLIENT_ID: string = import.meta.env.VITE_SHOPIFY_CLIENT_ID;
 export const ETHERSCAN_API_KEY: string = import.meta.env.VITE_ETHERSCAN_API_KEY;
 export const ETHERSCAN_URL: string = import.meta.env.VITE_ETHERSCAN_URL;
 export const EAS_URL: string = import.meta.env.VITE_EAS_URL;
+export const EAS_AUTH_TOKEN: string = import.meta.env.VITE_EAS_AUTH_TOKEN;
 export const EAS_CONTRACT_ADDRESS: string = import.meta.env.VITE_EAS_CONTRACT_ADDRESS;
 
 export const CHAIN_NAME: string = import.meta.env.VITE_CHAIN_NAME;

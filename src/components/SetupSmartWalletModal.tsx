@@ -81,6 +81,7 @@ const SetupSmartWalletModal: React.FC = () => {
     console.info("signatory: ", signatory)
     if (owner && signatory) {
       try {
+        console.info("start build smart wallet")
         await buildSmartWallet(owner, signatory);
         handleToast('Smart wallet built', 'success');
       } catch (error) {

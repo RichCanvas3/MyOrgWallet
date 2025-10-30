@@ -1122,6 +1122,39 @@ export const useWalletConnect = () => {
       return undefined
     }
 
+    const OWNABLE_ABI = ['function owner() view returns (address)'];
+    const SAFE_ABI = ['function getOwners() view returns (address[])'];
+
+    const getSmartAccountOwnerInfo = async (
+      accountAddress: string,
+      expectedOwner?: string,
+      rpcUrl = import.meta.env.VITE_SEPOLIA_RPC_URL // force Sepolia
+    ) => {
+      const provider = new ethers.JsonRpcProvider(rpcUrl);
+    
+      // 1) Ensure it's a contract on this chain
+      const code = await provider.getCode(accountAddress);
+      if (code === '0x') throw new Error(`No contract at ${accountAddress} on Sepolia`);
+    
+      // 2) Try Ownable.owner()
+      try {
+        const ownable = new ethers.Contract(accountAddress, OWNABLE_ABI, provider);
+        const owner: string = await ownable.owner();
+        return { type: 'ownable', owner, isOwner: expectedOwner ? owner.toLowerCase() === expectedOwner.toLowerCase() : undefined };
+      } catch (_) {}
+    
+      // 3) Try Safe.getOwners()
+      try {
+        const safe = new ethers.Contract(accountAddress, SAFE_ABI, provider);
+        const owners: string[] = await safe.getOwners();
+        const isOwner = expectedOwner ? owners.map(o => o.toLowerCase()).includes(expectedOwner.toLowerCase()) : undefined;
+        return { type: 'safe', owners, isOwner };
+      } catch (_) {}
+    
+      // 4) Could be a different smart account implementation
+      // Add more patterns here if you use other wallets (e.g., Kernel, ZeroDev, etc.)
+      throw new Error('Unknown smart account implementation (no owner()/getOwners())');
+    }
 
     const buildSmartWallet = async (owner: any, signatory: any, ) => {
 
@@ -1289,13 +1322,26 @@ export const useWalletConnect = () => {
             console.info("code: ", code)
             const isDeployed = code !== '0x';
             if (isDeployed) {
+
+              const expectedOwner = owner
+              const ownerInfo = await getSmartAccountOwnerInfo(orgAddressValue, expectedOwner, publicClient)
+              isOwner = ownerInfo.isOwner ?? false
+              const onChainOwner = ownerInfo.owner
+
+              /*
+              console.info("ownerInfo: ", ownerInfo)
+
               console.info("org account client is deployed: ", orgAddressValue)
               const data = '0x8da5cb5b';
               const provider = new ethers.BrowserProvider(window.ethereum);
               const returnData = await provider.call({ to: orgAddressValue, data });
+              if (!returnData || returnData === '0x') throw new Error('Empty return (wrong ABI/function or chain)');
+
+              console.info("returnData: ", returnData)
               const coder = new AbiCoder();
               const [onChainOwner] = coder.decode(['address'], returnData);
               isOwner = onChainOwner.toLowerCase() == owner.toLowerCase()
+              */
 
               // make sure this org is not blacklisted
               console.info("find valid existing org account for address: ", orgAddressValue)

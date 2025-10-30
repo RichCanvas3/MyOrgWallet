@@ -64,7 +64,7 @@ interface OrganizationsPageProps {
 
   const OrganizationsPage: React.FC<OrganizationsPageProps> = ({className, appCommand}) => {
 
-    const { chain } = useWallectConnectContext();
+    const { chain, signatory } = useWallectConnectContext();
     const { getUSDCBalance } = useCrossChainAccount();
 
     const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -95,6 +95,7 @@ interface OrganizationsPageProps {
         setSelectedId(undefined);
       }
     };
+
 
     const loadOrganizations = async (chain: Chain) => {
       AttestationService.loadOrganizations(chain)
@@ -134,6 +135,8 @@ interface OrganizationsPageProps {
     }, [chain,orgDid]);
 
     useEffect(() => {
+
+
       
       if (chain) {
         loadOrganizations(chain)
